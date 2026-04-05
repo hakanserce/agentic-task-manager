@@ -1,7 +1,7 @@
 {
   "name": "atm",
   "description": "File-based task management for agentic development. Decompose requirements into tasks, execute them in loops, and watch progress on a live HTML dashboard. Language-agnostic, zero external dependencies.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Hakan Serce",
     "email": "hakanserce@gmail.com"

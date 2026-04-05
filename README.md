@@ -102,15 +102,16 @@ Clone and load directly:
 ```bash
 git clone https://github.com/hakanserce/agentic-task-manager.git
 cd your-project
-claude --plugin-dir /path/to/agentic-task-manager
+claude --plugin-dir /path/to/agentic-task-manager/plugin
 ```
 
 ### Verify installation
 
-Type `/atm:` in Claude Code — you should see three skills in autocomplete:
+Type `/atm:` in Claude Code — you should see four skills in autocomplete:
 - `/atm:create-tasks`
 - `/atm:do-task`
 - `/atm:loop-tasks`
+- `/atm:update-dashboard`
 
 ---
 
@@ -203,6 +204,22 @@ Type `/atm:` in Claude Code — you should see three skills in autocomplete:
 
 **The loop re-reads tasks.json every iteration**, so you can edit tasks, change priorities, or mark tasks as done/skipped from the dashboard or another editor while the agent runs.
 
+### `/atm:update-dashboard`
+
+**Update the dashboard HTML to the latest version.**
+
+```
+/atm:update-dashboard
+```
+
+**What it does:**
+1. Finds the project's `tasks-dashboard.html`
+2. Compares its version tag against the plugin's latest template
+3. If outdated, copies the latest version over it
+4. Reports what changed
+
+The other skills (`do-task`, `loop-tasks`, `create-tasks`) will also hint when the dashboard is outdated.
+
 ---
 
 ## Task Schema
@@ -227,7 +244,9 @@ Type `/atm:` in Claude Code — you should see three skills in autocomplete:
       "use_cases": ["UC-001"],
       "status": "todo",
       "dependencies": ["T-000"],
-      "files": ["src/file.ts"]
+      "files": ["src/file.ts"],
+      "created_at": "2026-04-05T12:00:00Z",
+      "updated_at": "2026-04-05T14:30:00Z"
     }
   ]
 }
@@ -247,6 +266,8 @@ Type `/atm:` in Claude Code — you should see three skills in autocomplete:
 | `requirements` | string[] | ❌ | Requirement IDs (FR-x.x, etc.) |
 | `use_cases` | string[] | ❌ | Use case IDs (UC-xxx, etc.) |
 | `files` | string[] | ❌ | Expected file paths to create/modify |
+| `created_at` | string | ❌ | ISO 8601 UTC timestamp when task was created |
+| `updated_at` | string | ❌ | ISO 8601 UTC timestamp of last status change |
 
 ### Task types
 
@@ -279,9 +300,10 @@ The dashboard is a single self-contained HTML file with no external dependencies
 ### Features
 
 - **Stats bar** — Total, done, in-progress, todo counts with progress bar
+- **Activity timeline** — Mini bar chart showing task completion over time, with hover details
 - **Filters** — Filter by phase, type, and status (multi-select)
 - **Task cards** — Color-coded by status and type, with dependency links
-- **Detail panel** — Click a task to see full description, deps, files
+- **Detail panel** — Click a task to see full description, deps, files, and timestamps
 - **Dependency graph** — Interactive SVG graph with topological layout
 - **Auto-refresh** — Enable with toggle, configurable interval (default 5s)
 - **Manual reload** — Click reload button for instant refresh
@@ -312,7 +334,7 @@ cd docs && ruby -run -e httpd . -p 8000
 
 **Or use the bundled script:**
 ```bash
-./scripts/serve-dashboard.sh 8000 docs
+./plugin/scripts/serve-dashboard.sh 8000 docs
 ```
 
 Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).
@@ -368,23 +390,27 @@ If you run multiple Claude Code sessions, each will pick up different tasks (fir
 ```
 agentic-task-manager/
 ├── .claude-plugin/
-│   ├── plugin.json            # Plugin manifest
-│   └── marketplace.json       # Self-hosted marketplace config
-├── skills/
-│   ├── create-tasks/
-│   │   └── SKILL.md           # /atm:create-tasks
-│   ├── do-task/
-│   │   └── SKILL.md           # /atm:do-task
-│   └── loop-tasks/
-│       └── SKILL.md           # /atm:loop-tasks
-├── scripts/
-│   └── serve-dashboard.sh     # Multi-runtime HTTP server launcher
-├── templates/
-│   ├── tasks.json             # Example tasks.json schema
-│   └── tasks-dashboard.html   # Dashboard HTML (copied to projects)
-├── CLAUDE.md                  # Plugin context for Claude Code
-├── README.md                  # This file
-└── LICENSE                    # MIT
+│   └── marketplace.json         # Self-hosted marketplace config
+├── plugin/                      # Plugin directory
+│   ├── .claude-plugin/
+│   │   └── plugin.json          # Plugin manifest
+│   ├── skills/
+│   │   ├── create-tasks/
+│   │   │   └── SKILL.md         # /atm:create-tasks
+│   │   ├── do-task/
+│   │   │   └── SKILL.md         # /atm:do-task
+│   │   ├── loop-tasks/
+│   │   │   └── SKILL.md         # /atm:loop-tasks
+│   │   └── update-dashboard/
+│   │       └── SKILL.md         # /atm:update-dashboard
+│   ├── scripts/
+│   │   └── serve-dashboard.sh   # Multi-runtime HTTP server launcher
+│   ├── templates/
+│   │   ├── tasks.json           # Example tasks.json schema
+│   │   └── tasks-dashboard.html # Dashboard HTML (copied to projects)
+│   └── CLAUDE.md                # Plugin context for Claude Code
+├── README.md                    # This file
+└── LICENSE                      # MIT
 ```
 
 ---

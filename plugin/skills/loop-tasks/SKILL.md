@@ -71,6 +71,7 @@ while true:
        - If 'skip' → skip this task (leave as todo) and continue to next iteration
 
     6. UPDATE tasks.json: set this task's status to "in_progress"
+       and `updated_at` to the current UTC timestamp (`date -u +"%Y-%m-%dT%H:%M:%SZ"`).
        Write the file immediately.
 
     7. EXECUTE the task:
@@ -81,11 +82,12 @@ while true:
     8. VERIFY the task:
        - Run build/test/lint if available (same as /atm:do-task Step 6)
        - If verification fails after 2 attempts:
-         - Set status back to "todo"
+         - Set status back to "todo" and update `updated_at` to current UTC timestamp
          - Log the failure
          - Continue to next iteration (skip the failed task)
 
     9. UPDATE tasks.json: set status to "done"
+       and `updated_at` to the current UTC timestamp.
        Write the file immediately.
 
     10. completed_count += 1
@@ -121,6 +123,9 @@ When the loop ends (no more tasks, max reached, or user quit), output a final su
 > **Failed:** N tasks that failed verification (if any)
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
+
+> If `tasks-dashboard.html` exists and its `<meta name="atm-dashboard-version">` is older than the plugin's current version:
+> **Note:** Your dashboard is outdated. Run `/atm:update-dashboard` to get the latest version.
 
 If `--batch-push` was set, run `git push` now.
 

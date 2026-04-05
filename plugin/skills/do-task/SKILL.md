@@ -52,7 +52,10 @@ Do NOT proceed if dependencies are unmet.
 
 ## Step 4: Mark as in_progress
 
-Update the task's status to `"in_progress"` in tasks.json.
+Update the task in tasks.json:
+- Set `status` to `"in_progress"`
+- Set `updated_at` to the current UTC timestamp (run `date -u +"%Y-%m-%dT%H:%M:%SZ"` to get it)
+
 **Write the file immediately** so the dashboard reflects the change in real time.
 
 ## Step 5: Execute the task
@@ -83,11 +86,14 @@ After implementation, verify the work:
 
 If verification fails:
 - Try to fix the issue (up to 2 attempts)
-- If still failing after 2 attempts, set the task status back to `"todo"` and report the failure
+- If still failing after 2 attempts, set the task status back to `"todo"`, update `updated_at` to the current UTC timestamp, and report the failure
 
 ## Step 7: Mark as done
 
-If verification passes, update the task's status to `"done"` in tasks.json.
+If verification passes, update the task in tasks.json:
+- Set `status` to `"done"`
+- Set `updated_at` to the current UTC timestamp
+
 **Write the file immediately.**
 
 ## Step 8: Report
@@ -105,3 +111,6 @@ Output a concise completion report:
 > **Verification:** ✅ Build passed, tests passed
 >
 > **Now unblocked:** (list task IDs that were waiting on this task, if any)
+
+> **Dashboard check:** If `tasks-dashboard.html` exists and has a `<meta name="atm-dashboard-version">` tag with a version older than the plugin's current version, append:
+> Tip: Your dashboard is outdated. Run `/atm:update-dashboard` to get the latest version.

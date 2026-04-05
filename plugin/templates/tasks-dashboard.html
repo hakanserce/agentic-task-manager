@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="atm-dashboard-version" content="0.4.0">
 <title>Task Dashboard</title>
 <style>
   :root {
@@ -377,6 +378,73 @@
     font-size: 14px;
   }
 
+  /* Timeline activity chart */
+  .timeline-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    flex-grow: 1;
+    min-width: 200px;
+  }
+
+  .timeline-card .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .timeline-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 40px;
+    position: relative;
+  }
+
+  .timeline-bar {
+    flex: 1;
+    background: var(--green);
+    border-radius: 2px 2px 0 0;
+    min-width: 4px;
+    opacity: 0.6;
+    transition: opacity 0.15s, background 0.15s;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .timeline-bar:hover { opacity: 1; background: var(--cyan); }
+
+  .timeline-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    z-index: 50;
+    pointer-events: none;
+    color: var(--text);
+    max-width: 280px;
+    white-space: normal;
+  }
+
+  .timeline-bar:hover .timeline-tooltip { display: block; }
+
+  .timeline-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
   @media (max-width: 768px) {
     .task-card { grid-template-columns: 50px 1fr; }
     .task-tags { grid-column: 1 / -1; justify-content: flex-start; }
@@ -598,6 +666,58 @@ function renderStats() {
     '<div class="progress-bar"><div class="progress-fill" style="width:' + pct +
     '%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div></div>';
 
+  // Timeline activity chart
+  const completions = tasks
+    .filter(t => t.status === 'done' && t.updated_at)
+    .map(t => ({ id: t.id, name: t.name, time: new Date(t.updated_at).getTime() }))
+    .filter(t => !isNaN(t.time))
+    .sort((a, b) => a.time - b.time);
+
+  if (completions.length >= 2) {
+    const minT = completions[0].time;
+    const maxT = completions[completions.length - 1].time;
+    const bucketCount = Math.min(16, Math.max(4, completions.length));
+    const range = maxT - minT || 1;
+    const bucketSize = range / bucketCount;
+    const buckets = Array.from({length: bucketCount}, () => []);
+
+    completions.forEach(c => {
+      let idx = Math.floor((c.time - minT) / bucketSize);
+      if (idx >= bucketCount) idx = bucketCount - 1;
+      buckets[idx].push(c);
+    });
+
+    const maxCount = Math.max(...buckets.map(b => b.length));
+    const formatDate = (ts) => new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const formatDateTime = (ts) => {
+      const d = new Date(ts);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
+        d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    };
+
+    let barsHtml = '';
+    buckets.forEach((bucket, i) => {
+      const h = bucket.length > 0 ? Math.max(4, Math.round((bucket.length / maxCount) * 40)) : 0;
+      const bucketStart = minT + i * bucketSize;
+      const bucketEnd = minT + (i + 1) * bucketSize;
+      let tooltipContent = '';
+      if (bucket.length > 0) {
+        tooltipContent = '<strong>' + bucket.length + ' completed</strong><br>' +
+          formatDateTime(bucketStart) + ' — ' + formatDateTime(bucketEnd) + '<br>' +
+          bucket.map(t => t.id + ': ' + t.name).join('<br>');
+      }
+      barsHtml += '<div class="timeline-bar" style="height:' + h + 'px">' +
+        (bucket.length > 0 ? '<div class="timeline-tooltip">' + tooltipContent + '</div>' : '') +
+        '</div>';
+    });
+
+    html += '<div class="timeline-card">' +
+      '<div class="label">Activity</div>' +
+      '<div class="timeline-bars">' + barsHtml + '</div>' +
+      '<div class="timeline-range"><span>' + formatDate(minT) + '</span><span>' + formatDate(maxT) + '</span></div>' +
+      '</div>';
+  }
+
   document.getElementById('stats').innerHTML = html;
 }
 
@@ -720,6 +840,10 @@ function showDetail(id) {
       ((t.requirements || []).length ? t.requirements.map(r => '<span class="req-badge">' + r + '</span>').join(' ') : '<span style="color:var(--text-muted)">None</span>') +
     '</div></div>' +
     depsHtml +
+    (t.created_at || t.updated_at ? '<div class="detail-section"><div class="label">Timestamps</div><div class="value" style="font-size:13px;color:var(--text-muted)">' +
+      (t.created_at ? 'Created: ' + new Date(t.created_at).toLocaleString() + '<br>' : '') +
+      (t.updated_at ? 'Updated: ' + new Date(t.updated_at).toLocaleString() : '') +
+    '</div></div>' : '') +
     '<div class="detail-section"><div class="label">Files</div><div class="detail-files">' +
       ((t.files || []).length ? t.files.map(f => '<div>' + f + '</div>').join('') : '<span style="color:var(--text-muted)">None specified</span>') +
     '</div></div>';

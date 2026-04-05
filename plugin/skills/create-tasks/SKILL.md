@@ -77,7 +77,9 @@ Write the tasks file with this structure:
       "use_cases": ["UC-001"],
       "status": "todo",
       "dependencies": ["T-000"],
-      "files": ["src/expected-file.ts"]
+      "files": ["src/expected-file.ts"],
+      "created_at": "<ISO 8601 UTC timestamp>",
+      "updated_at": "<ISO 8601 UTC timestamp>"
     }
   ]
 }
@@ -89,6 +91,7 @@ Rules for task generation:
 - The `files` array should list files that will be created or modified
 - `requirements` and `use_cases` arrays can be empty if not applicable
 - Dependencies should reference only tasks defined in the same file
+- Set `created_at` and `updated_at` to the current UTC timestamp in ISO 8601 format for every new task. Get the timestamp by running `date -u +"%Y-%m-%dT%H:%M:%SZ"` in the shell.
 
 ## Step 5: Set up the dashboard
 
@@ -97,6 +100,10 @@ Check if `tasks-dashboard.html` exists in the same directory as `tasks.json`.
 If it does NOT exist, copy it from the plugin templates:
 - Look for the dashboard template at the plugin root's `templates/tasks-dashboard.html`
 - Copy it to the same directory as `tasks.json`
+
+If `tasks-dashboard.html` already exists, check for a `<meta name="atm-dashboard-version">` tag in it.
+If the version is older than the plugin's current version, suggest:
+> Your dashboard may be outdated. Run `/atm:update-dashboard` to get the latest version with new features.
 
 Then tell the user how to start the dashboard:
 

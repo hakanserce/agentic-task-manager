@@ -9,7 +9,8 @@ This plugin provides file-based task management for agentic development workflow
 ## Task Schema
 Each task has: id, name, phase, type (feature/bugfix/test/infra/docs/refactor/polish),
 description, dependencies (array of task IDs), status (todo/in_progress/done/blocked/skipped),
-requirements (array), use_cases (array), files (array of file paths).
+requirements (array), use_cases (array), files (array of file paths),
+created_at (ISO 8601 UTC, optional), updated_at (ISO 8601 UTC, optional).
 
 ## Conventions
 - Task IDs follow the pattern: T-001, T-002, etc. (or T-P0-01 for phased projects)
@@ -22,3 +23,4 @@ requirements (array), use_cases (array), files (array of file paths).
 - `/atm:create-tasks` — Analyze requirements and create tasks.json
 - `/atm:do-task` — Execute a single task and update its status
 - `/atm:loop-tasks` — Loop through all available tasks automatically
+- `/atm:update-dashboard` — Update the project's dashboard HTML to the latest version

@@ -312,7 +312,7 @@ cd docs && ruby -run -e httpd . -p 8000
 
 **Or use the bundled script:**
 ```bash
-./path/to/agentic-task-manager/scripts/serve-dashboard.sh 8000 docs
+./scripts/serve-dashboard.sh 8000 docs
 ```
 
 Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).

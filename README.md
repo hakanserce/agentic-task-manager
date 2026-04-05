@@ -179,7 +179,7 @@ Type `/atm:` in Claude Code — you should see four skills in autocomplete:
 /atm:loop-tasks --type test               # Only test tasks
 /atm:loop-tasks --max 5                   # Stop after 5 tasks
 /atm:loop-tasks --pause                   # Ask before each task
-/atm:loop-tasks --commit                  # Git commit after each task
+/atm:loop-tasks --no-commit               # Skip auto-commit
 /atm:loop-tasks --push                    # Git commit + push after each
 /atm:loop-tasks --batch-push              # Commit each, push at the end
 /atm:loop-tasks --push-every 3            # Commit each, push every 3
@@ -195,7 +195,7 @@ Type `/atm:` in Claude Code — you should see four skills in autocomplete:
 | `--max <N>` | Stop after N completed tasks |
 | `--dry-run` | Preview execution order without doing anything |
 | `--pause` | Ask for confirmation before each task |
-| `--commit` | `git commit` after each completed task |
+| `--no-commit` | Disable the default auto-commit after each task |
 | `--push` | `git commit` + `git push` after each task |
 | `--batch-push` | `git commit` after each, single `git push` at the end |
 | `--push-every <N>` | `git commit` after each, `git push` every N tasks |
@@ -353,8 +353,8 @@ The `/atm:loop-tasks` skill supports flexible git strategies:
 
 | Strategy | Command | When to use |
 |---|---|---|
-| No git | `/atm:loop-tasks` | You want full manual control |
-| Commit only | `/atm:loop-tasks --commit` | Local history, push manually later |
+| Commit only (default) | `/atm:loop-tasks` | Local history, push manually later |
+| No git | `/atm:loop-tasks --no-commit` | You want full manual control |
 | Commit + push | `/atm:loop-tasks --push` | Real-time backup, CI after every task |
 | Batch push | `/atm:loop-tasks --batch-push` | Clean remote history, single CI run |
 | Periodic push | `/atm:loop-tasks --push-every 5` | Balance: CI every 5 tasks |

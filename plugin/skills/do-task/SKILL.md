@@ -96,6 +96,14 @@ If verification passes, update the task in tasks.json:
 
 **Write the file immediately.**
 
+## Step 7b: Git commit
+
+After marking the task as done, commit the changes:
+- `git add -A`
+- `git commit -m "feat($TASK_ID): $TASK_NAME"`
+
+This is the default behavior. Do NOT push — only commit locally.
+
 ## Step 8: Report
 
 Output a concise completion report:

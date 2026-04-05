@@ -26,12 +26,12 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 | `--max <N>` | unlimited | Stop after completing N tasks |
 | `--dry-run` | off | Show what would be executed without doing it |
 | `--pause` | off | Ask for user confirmation between each task |
-| `--commit` | off | Git commit after each completed task |
+| `--no-commit` | off | Disable the default git commit after each task |
 | `--push` | off | Git commit + push after each task |
 | `--batch-push` | off | Git commit after each task, single push at the end |
 | `--push-every <N>` | off | Git commit after each task, push every N completions |
 
-If no arguments are provided, run all available tasks with no pausing and no git operations.
+If no arguments are provided, run all available tasks with no pausing and auto-commit after each task (default behavior).
 
 ## Dry Run Mode
 
@@ -92,8 +92,8 @@ while true:
 
     10. completed_count += 1
 
-    11. GIT OPERATIONS (if flags are set):
-        - If --commit, --push, --batch-push, or --push-every:
+    11. GIT OPERATIONS (default: commit after each task):
+        - Unless --no-commit is set:
           - git add -A
           - git commit -m "feat($TASK_ID): $TASK_NAME"
         - If --push:

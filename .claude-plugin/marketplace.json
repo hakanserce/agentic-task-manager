@@ -12,7 +12,7 @@
       "name": "agentic-task-manager",
       "description": "File-based task management for agentic development. Decompose requirements into tasks, execute them in loops, and watch progress on a live HTML dashboard.",
       "version": "0.1.0",
-      "source": ".",
+      "source": "./",
       "category": "project-management",
       "homepage": "https://github.com/hakanserce/agentic-task-manager"
     }

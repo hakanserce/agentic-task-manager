@@ -2,11 +2,13 @@
   import { untrack } from 'svelte';
   import { layoutGraph, NODE_H, NODE_W } from '../lib/graph/layout';
   import {
+    anyNodeVisible,
     autoFitView,
     clampView,
     containerHeight,
     fitView,
     isFullyVisible,
+    panToContent,
     toViewBox,
     zoomAt,
     type View,
@@ -36,29 +38,35 @@
   let view = $state<View>({ k: 1, x: 0, y: 0 });
   const active = $derived(dashboard.loaded && !empty && vw > 0 && vh > 0);
 
-  // Once the user pans or zooms, keep their view across reloads; re-fit when the set of visible tasks changes.
-  let userMoved = false;
-  let layoutKey = '';
+  // Only the first layout is fitted automatically (FR-6.3). While the view is still that automatic fit, resizing
+  // or expanding the panel re-fits it. Once the user pans/zooms or the visible tasks change (filters, reloads), the
+  // zoom level is kept; the view only pans when no task would be left on screen (FR-6.4).
+  const nodeSize = { w: NODE_W, h: NODE_H };
+  let fitted = false;
+  let autoFit = true;
+  let shownKey = '';
 
   $effect(() => {
     const key = dashboard.filtered.map((t) => t.id).join(',');
-    if (key !== layoutKey) {
-      layoutKey = key;
-      userMoved = false;
-    }
     if (!active) return;
-    view = userMoved
-      ? clampView(
-          untrack(() => view),
-          content,
-          viewport,
-        )
-      : autoFitView(content, viewport, focus);
+    const current = untrack(() => view);
+    if (!fitted) {
+      view = autoFitView(content, viewport, focus);
+      fitted = true;
+    } else if (key !== shownKey) {
+      autoFit = false;
+      view = anyNodeVisible(current, layout.nodes, nodeSize, viewport)
+        ? clampView(current, content, viewport)
+        : panToContent(current, content, viewport, focus);
+    } else {
+      view = autoFit ? autoFitView(content, viewport, focus) : clampView(current, content, viewport);
+    }
+    shownKey = key;
   });
 
   function setView(v: View) {
     view = clampView(v, content, viewport);
-    userMoved = true;
+    autoFit = false;
   }
 
   const zoomBy = (factor: number) => setView(zoomAt(view, view.k * factor, vw / 2, vh / 2));
@@ -217,7 +225,7 @@
       <GraphControls k={view.k} onzoom={zoomBy} onfit={fitAll} onreset={resetZoom} />
       <Minimap
         nodes={layout.nodes}
-        nodeSize={{ w: NODE_W, h: NODE_H }}
+        {nodeSize}
         {content}
         {view}
         {viewport}

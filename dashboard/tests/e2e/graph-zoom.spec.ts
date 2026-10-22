@@ -23,6 +23,17 @@ async function view(page: Page) {
   });
 }
 
+/** Number of task nodes at least partly inside the graph viewport. */
+async function visibleNodes(page: Page) {
+  return page.locator('#dep-graph').evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    return [...el.querySelectorAll('g')].filter((g) => {
+      const r = g.getBoundingClientRect();
+      return r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom;
+    }).length;
+  });
+}
+
 async function center(page: Page, locator = svg(page)) {
   const b = (await locator.boundingBox())!;
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -163,21 +174,51 @@ test.describe('pan and zoom', () => {
 });
 
 test.describe('view persistence', () => {
-  test('a reload keeps a moved view; changing the visible tasks re-fits', async ({ page, tasksServer }) => {
+  test('a reload keeps a moved view', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'large-90');
     await expect(zoomLabel(page)).toHaveText('60%');
-    const initial = await view(page);
-
     await page.locator('#graph-container').focus();
     await page.keyboard.press('+');
     const moved = await view(page);
     await page.locator('#reload-btn').click();
     await expect.poll(() => tasksServer.requests).toBe(2);
     expect(await view(page)).toEqual(moved);
+  });
 
+  test('filtering keeps a zoom level the user chose', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'large-90');
+    await page.locator('#graph-container').focus();
+    await page.keyboard.press('+');
+    await expect(zoomLabel(page)).toHaveText('75%');
     await filterButton(page, 'phase', '1').click();
+    await expect(zoomLabel(page)).toHaveText('75%');
     await filterButton(page, 'phase', 'all').click();
-    expect(await view(page)).toEqual(initial);
+    await expect(zoomLabel(page)).toHaveText('75%');
+  });
+
+  test('filtering keeps the automatic zoom level too', async ({ page, tasksServer }) => {
+    // standard fits at 74%; its phase 2 alone would fit at 100%, but the zoom must not jump
+    await openDashboard(page, tasksServer, 'standard');
+    const initial = await zoomLabel(page).textContent();
+    expect(initial).not.toBe('100%');
+    await filterButton(page, 'phase', '2').click();
+    await expect(zoomLabel(page)).toHaveText(initial!);
+    await expect(page.locator('#dep-graph g')).toHaveCount(4);
+    expect(await visibleNodes(page)).toBeGreaterThan(0);
+  });
+
+  test('pans, at the same zoom, when no task would be visible', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'large-90');
+    await page.locator('#graph-container').focus();
+    for (let i = 0; i < 4; i++) await page.keyboard.press('+');
+    const zoom = await zoomLabel(page).textContent();
+    // Look at the far right end of the 90-task graph, then show only phase 0 (the far left end)
+    const mm = (await minimap(page).boundingBox())!;
+    await page.mouse.click(mm.x + mm.width * 0.97, mm.y + mm.height / 2);
+    await filterButton(page, 'phase', '0').click();
+    await expect(page.locator('#dep-graph g')).toHaveCount(14);
+    await expect(zoomLabel(page)).toHaveText(zoom!);
+    await expect.poll(() => visibleNodes(page)).toBeGreaterThan(0);
   });
 
   test('collapsing and expanding keeps the view', async ({ page, tasksServer }) => {

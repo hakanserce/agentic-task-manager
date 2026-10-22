@@ -1,0 +1,9 @@
+#!/bin/sh
+# Rebuild the shipped dashboard (plugin/templates/tasks-dashboard.html) whenever its inputs are part of the commit,
+# so the committed artifact never goes stale. CI checks the same thing (see .github/workflows/ci.yml).
+# Enabled by `npm install` in dashboard/ (the "prepare" script sets core.hooksPath to .githooks).
+if git diff --cached --name-only | grep -qE '^(dashboard/(src/|build/|index\.html|vite\.config\.ts|svelte\.config\.js|package(-lock)?\.json)|plugin/\.claude-plugin/plugin\.json)'; then
+  echo "pre-commit: rebuilding plugin/templates/tasks-dashboard.html"
+  (cd dashboard && npm run build --silent >/dev/null) || { echo "pre-commit: dashboard build failed"; exit 1; }
+  git add plugin/templates/tasks-dashboard.html
+fi

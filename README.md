@@ -24,18 +24,14 @@ A **Claude Code plugin** that gives any project file-based task management with 
 
 ### Install the plugin
 
-In Claude Code (terminal or VS Code), run:
-
-```
-/plugin install https://github.com/hakanserce/agentic-task-manager.git
-```
-
-Or add the marketplace first for update support:
+In Claude Code (terminal or VS Code), add the marketplace and install the `atm` plugin:
 
 ```
 /plugin marketplace add hakanserce/agentic-task-manager
-/plugin install agentic-task-manager@hakanserce-plugins
+/plugin install atm@hakanserce-plugins
 ```
+
+Then restart Claude Code so the skills load.
 
 ### Create tasks
 
@@ -82,20 +78,18 @@ Or loop through everything:
 - [Claude Code](https://claude.com/code) (CLI or VS Code extension)
 - A local HTTP server for the dashboard (Python 3 recommended — usually pre-installed)
 
-### Method 1: Direct install from GitHub
+### Method 1: Via marketplace (recommended)
 
-```
-/plugin install https://github.com/hakanserce/agentic-task-manager.git
-```
-
-### Method 2: Via marketplace
+This repo is its own marketplace (`hakanserce-plugins`) containing the `atm` plugin:
 
 ```
 /plugin marketplace add hakanserce/agentic-task-manager
-/plugin install agentic-task-manager@hakanserce-plugins
+/plugin install atm@hakanserce-plugins
 ```
 
-### Method 3: Local development
+Restart Claude Code after installing. To pick up new versions later, run `/plugin marketplace update hakanserce-plugins` and restart again.
+
+### Method 2: Local development
 
 Clone and load directly:
 
@@ -332,9 +326,9 @@ cd docs && php -S localhost:8000
 cd docs && ruby -run -e httpd . -p 8000
 ```
 
-**Or use the bundled script:**
+**Or use the bundled script** (from a clone of this repo; it picks whichever of Python/Node/PHP/Ruby is available):
 ```bash
-./plugin/scripts/serve-dashboard.sh 8000 docs
+/path/to/agentic-task-manager/plugin/scripts/serve-dashboard.sh 8000 docs
 ```
 
 Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).
@@ -391,27 +385,60 @@ If you run multiple Claude Code sessions, each will pick up different tasks (fir
 agentic-task-manager/
 ├── .claude-plugin/
 │   └── marketplace.json         # Self-hosted marketplace config
-├── plugin/                      # Plugin directory
+├── plugin/                      # The plugin (the only part that ships)
 │   ├── .claude-plugin/
-│   │   └── plugin.json          # Plugin manifest
+│   │   └── plugin.json          # Plugin manifest (version source of truth)
 │   ├── skills/
-│   │   ├── create-tasks/
-│   │   │   └── SKILL.md         # /atm:create-tasks
-│   │   ├── do-task/
-│   │   │   └── SKILL.md         # /atm:do-task
-│   │   ├── loop-tasks/
-│   │   │   └── SKILL.md         # /atm:loop-tasks
-│   │   └── update-dashboard/
-│   │       └── SKILL.md         # /atm:update-dashboard
+│   │   ├── create-tasks/SKILL.md      # /atm:create-tasks
+│   │   ├── do-task/SKILL.md           # /atm:do-task
+│   │   ├── loop-tasks/SKILL.md        # /atm:loop-tasks
+│   │   └── update-dashboard/SKILL.md  # /atm:update-dashboard
 │   ├── scripts/
 │   │   └── serve-dashboard.sh   # Multi-runtime HTTP server launcher
 │   ├── templates/
 │   │   ├── tasks.json           # Example tasks.json schema
-│   │   └── tasks-dashboard.html # Dashboard HTML (copied to projects)
+│   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, copied to projects)
 │   └── CLAUDE.md                # Plugin context for Claude Code
+├── dashboard/                   # Dashboard source: Svelte 5 + TypeScript (development only)
+├── docs/                        # This repo's own atm task list and plans
+├── .githooks/pre-commit         # Rebuilds the dashboard when its sources are committed
+├── .github/workflows/ci.yml     # Lint, unit, build-freshness and e2e checks
+├── CLAUDE.md                    # Development notes for Claude Code
 ├── README.md                    # This file
 └── LICENSE                      # MIT
 ```
+
+---
+
+## Development
+
+The dashboard is developed in `dashboard/` (Svelte 5, TypeScript, Vite) and built into a **single self-contained HTML
+file** at `plugin/templates/tasks-dashboard.html`. That file is committed, because the plugin installs straight from
+git with no build step.
+
+```bash
+cd dashboard
+npm install          # also enables the pre-commit hook (git core.hooksPath = .githooks)
+npm run dev          # Vite dev server
+npm run verify       # check + unit tests with coverage + build + e2e — run before committing
+```
+
+| Script | What it does |
+|---|---|
+| `npm run build` | Builds `plugin/templates/tasks-dashboard.html`; the version meta tag comes from `plugin.json` |
+| `npm test` / `npm run test:coverage` | Vitest unit and component tests (`tests/unit/`), 90% line threshold on `src/lib` |
+| `npm run test:e2e` | Build, then the Playwright regression suite (`tests/e2e/`) |
+| `npm run check` | Version consistency, svelte-check, ESLint, Prettier |
+
+**Tests.** e2e specs serve fixtures from `tests/fixtures/` as `tasks.json` per test and fail on any external request.
+They run against two Playwright projects: `svelte` (the build) and `legacy` (the frozen pre-Svelte dashboard, kept
+while the port beds in). Screenshot baselines are per platform; CI runs in the pinned Playwright container.
+
+**Build artifact.** Never edit `plugin/templates/tasks-dashboard.html` by hand. The pre-commit hook rebuilds and stages
+it when dashboard sources change, and CI fails if the committed file doesn't match a fresh build.
+
+**Releasing.** Bump `version` in both `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`
+(`npm run check` enforces that they match) and rebuild, so `/atm:update-dashboard` picks up the new dashboard.
 
 ---
 

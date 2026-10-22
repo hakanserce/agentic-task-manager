@@ -1,0 +1,584 @@
+{
+  "meta": {
+    "project": "ATM Dashboard: Svelte 5 migration",
+    "created": "2026-10-22",
+    "description": "Turn plugin/templates/tasks-dashboard.html into a tested Svelte 5 project (dashboard/) whose single-file build populates the plugin folder. Regression tests against the legacy v0.4.0 dashboard come first and act as the parity oracle. Full plan: docs/svelte-migration-plan.md."
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Stash zoom/pan WIP and create migration branch",
+      "phase": 0,
+      "type": "infra",
+      "description": "Stash the uncommitted zoom/pan/minimap work as 'zoom-pan-minimap wip' (git stash) so the regression baseline is the committed v0.4.0 dashboard. Create branch dev/svelte-dashboard.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:19:41Z"
+    },
+    {
+      "id": "T-002",
+      "name": "Add migration plan and dogfood task list to docs/",
+      "phase": 0,
+      "type": "docs",
+      "description": "Add docs/svelte-migration-plan.md (the approved plan), docs/tasks.json (this file) and docs/tasks-dashboard.html (copy of the v0.4.0 dashboard) so the migration can be run with /atm:do-task and /atm:loop-tasks and watched via `cd docs && python3 -m http.server 8000`.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-001"
+      ],
+      "files": [
+        "docs/svelte-migration-plan.md",
+        "docs/tasks.json",
+        "docs/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:19:41Z"
+    },
+    {
+      "id": "T-003",
+      "name": "Scaffold dashboard/ with Vite, Svelte 5 and TypeScript",
+      "phase": 1,
+      "type": "infra",
+      "description": "Create dashboard/ (not shipped; plugin source is ./plugin) with package.json, vite.config.ts, svelte.config.js, tsconfig.json, index.html (keeping <meta name=\"atm-dashboard-version\">), src/main.ts and a placeholder App.svelte. Use Svelte 5 runes. Add dashboard/node_modules, dist, test-results and playwright-report to .gitignore. `npm run dev` should serve the placeholder.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-002"
+      ],
+      "files": [
+        "dashboard/package.json",
+        "dashboard/vite.config.ts",
+        "dashboard/svelte.config.js",
+        "dashboard/tsconfig.json",
+        "dashboard/index.html",
+        "dashboard/src/main.ts",
+        "dashboard/src/App.svelte",
+        ".gitignore"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:28:27Z"
+    },
+    {
+      "id": "T-004",
+      "name": "Single-file build to dashboard/dist with version injection",
+      "phase": 1,
+      "type": "infra",
+      "description": "Add vite-plugin-singlefile so `npm run build` emits one self-contained dashboard/dist/tasks-dashboard.html (no external JS/CSS). Add a small Vite plugin (transformIndexHtml) that reads the version from plugin/.claude-plugin/plugin.json and writes it into the atm-dashboard-version meta tag. Do NOT write to plugin/templates yet; that happens at cutover (T-023).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/vite.config.ts",
+        "dashboard/build/inject-version.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:28:59Z"
+    },
+    {
+      "id": "T-005",
+      "name": "Configure Vitest with coverage and testing-library",
+      "phase": 1,
+      "type": "test",
+      "description": "Set up Vitest (jsdom) with @testing-library/svelte and @vitest/coverage-v8. Coverage threshold: 90% lines on src/lib/**. Tests live in dashboard/tests/unit/. Add `npm test` and `npm run test:coverage`. Include one trivial passing test to prove the setup.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/vite.config.ts",
+        "dashboard/tests/unit/setup.test.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:29:55Z"
+    },
+    {
+      "id": "T-006",
+      "name": "Playwright harness with legacy and svelte projects",
+      "phase": 1,
+      "type": "test",
+      "description": "Freeze the current shipped dashboard as dashboard/tests/legacy/tasks-dashboard.v0.4.0.html. Configure playwright.config.ts: Chromium only, fixed viewport, webServer serving a static dir; two projects running the same specs, `legacy` (frozen file) and `svelte` (dashboard/dist/tasks-dashboard.html), selected via a per-project baseURL/path. Add tests/e2e/helpers.ts with useFixture(page, name) that serves tests/fixtures/<name>.json for **/tasks.json via page.route (and can swap the response or return 404), plus an auto fixture that fails the test on any non-localhost request. snapshotPathTemplate must omit the project name so svelte compares against legacy screenshots. Add `npm run test:e2e`.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/playwright.config.ts",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/legacy/tasks-dashboard.v0.4.0.html"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:30:36Z"
+    },
+    {
+      "id": "T-007",
+      "name": "Lint, format, svelte-check, npm scripts and root CLAUDE.md",
+      "phase": 1,
+      "type": "infra",
+      "description": "Add ESLint (flat config, eslint-plugin-svelte, typescript-eslint), Prettier (+ prettier-plugin-svelte) and svelte-check. Scripts: dev, build, test, test:coverage, test:e2e, check (svelte-check + eslint + prettier --check), verify (check + test + build + test:e2e). Add a repo-root CLAUDE.md describing the dev workflow, the plugin vs dashboard split, and that plugin/templates/tasks-dashboard.html is a build artifact (after cutover).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/eslint.config.js",
+        "dashboard/.prettierrc",
+        "dashboard/package.json",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:22:04Z"
+    },
+    {
+      "id": "T-008",
+      "name": "Create tasks.json test fixtures",
+      "phase": 2,
+      "type": "test",
+      "description": "In dashboard/tests/fixtures/: empty.json, minimal.json (1 task), standard.json (all 7 types x 5 statuses, 3 phases, deps, use_cases/requirements/files, created_at/updated_at timestamps), cycle.json (dependency cycle), edge-cases.json (unknown type and status, dependency on a missing ID, tasks without timestamps, very long names, unicode, HTML like <b>bold</b> in name and description), no-meta.json (no meta block). Add tests/fixtures/generate-large.mjs that deterministically writes large-90.json (90 tasks, wide graph, ~40 done, 1 in_progress), and commit its output.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-006"
+      ],
+      "files": [
+        "dashboard/tests/fixtures/"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:45:09Z"
+    },
+    {
+      "id": "T-009",
+      "name": "Regression specs: load, stats, timeline",
+      "phase": 2,
+      "type": "test",
+      "description": "tests/e2e/load.spec.ts and stats.spec.ts, green on the legacy project. Load: page title and #dashboard-title use meta.project, subtitle counts tasks and phases, no-meta falls back to 'Task Dashboard', a 404 for tasks.json shows the 'Failed to load tasks.json' box with python3 -m http.server instructions. Stats: Total/Done/In Progress/Todo numbers, Blocked card only when blocked > 0, per-type count cards, progress %. Timeline: shown only when tasks have timestamps, bucket count clamped to 4-16, start/end date labels, tooltip appears on bar hover.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/load.spec.ts",
+        "dashboard/tests/e2e/stats.spec.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:46:00Z"
+    },
+    {
+      "id": "T-010",
+      "name": "Regression specs: filters and task cards",
+      "phase": 2,
+      "type": "test",
+      "description": "tests/e2e/filters.spec.ts and cards.spec.ts, green on legacy. Filters: generated phase/type/status buttons (.filter-btn[data-filter][data-value]), status order todo,in_progress,done,blocked,skipped, capitalized labels, multi-select is OR within a group and AND across groups, 'All' clears the group, active classes stay in sync, 'N of M shown' text, empty-result message in both the card grid and the graph. Cards: .task-card[data-id] with phase/type/status badges, 'needs:' dependency links scroll to and highlight the target card, UC and requirement tags.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/filters.spec.ts",
+        "dashboard/tests/e2e/cards.spec.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:47:53Z"
+    },
+    {
+      "id": "T-011",
+      "name": "Regression specs: detail panel and dependency graph",
+      "phase": 2,
+      "type": "test",
+      "description": "tests/e2e/detail.spec.ts and graph.spec.ts, green on legacy. Detail: opens from a card name and from a graph node (#detail-overlay.open), shows description, UCs, requirements, timestamps, files, 'Depends On' and 'Required By' entries that navigate to the other task; closes via the x button, an overlay click and Escape. Graph: one node per filtered task, edge count matches visible dependencies, #graph-badge says 'N tasks', cycle.json still renders every node, header click collapses and expands the graph.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/detail.spec.ts",
+        "dashboard/tests/e2e/graph.spec.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:48:46Z"
+    },
+    {
+      "id": "T-012",
+      "name": "Regression specs: reload, auto-refresh, edge cases",
+      "phase": 2,
+      "type": "test",
+      "description": "tests/e2e/refresh.spec.ts and edge-cases.spec.ts, green on legacy. Refresh: #reload-btn re-fetches and re-renders after the fixture response is swapped; #auto-refresh-check plus #auto-refresh-interval polls on the configured interval (use page.clock); active filters survive a reload. Edge cases: unknown type/status render with fallback styles, a dependency on a missing ID does not crash, long names are truncated to 22 chars in graph nodes. XSS divergence: a test asserting task text is rendered as literal text (not HTML) is marked test.fail() for the legacy project only, with a comment explaining the svelte port fixes it.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/refresh.spec.ts",
+        "dashboard/tests/e2e/edge-cases.spec.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:49:55Z"
+    },
+    {
+      "id": "T-013",
+      "name": "Visual baseline screenshots from legacy",
+      "phase": 2,
+      "type": "test",
+      "description": "tests/e2e/visual.spec.ts: toHaveScreenshot for full page, graph section and open detail panel on standard, large-90, empty and edge-cases fixtures. Generate baselines from the legacy project only (--project=legacy --update-snapshots) and commit them. Use a small maxDiffPixelRatio. Afterwards the whole suite must be green on legacy; commit this before any app code (phase 3+).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-012"
+      ],
+      "files": [
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T20:53:51Z"
+    },
+    {
+      "id": "T-014",
+      "name": "Port types, theme and loader to src/lib",
+      "phase": 3,
+      "type": "refactor",
+      "description": "Create src/lib/types.ts (Task, TasksFile, Status, TaskType), src/lib/theme.ts (TYPE_COLORS, STATUS_COLORS, PHASE_PALETTE, FALLBACK_TYPE, type/status emoji maps, phaseColor/typeStyle/statusStyle, lifted from the legacy inline script) and src/lib/load.ts (fetch ./tasks.json?<timestamp>, return tasks, taskMap and projectName, or a typed error). Unit tests for the style fallbacks and the loader (mock fetch, including HTTP error and no-meta).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-005",
+        "T-013"
+      ],
+      "files": [
+        "dashboard/src/lib/types.ts",
+        "dashboard/src/lib/theme.ts",
+        "dashboard/src/lib/load.ts",
+        "dashboard/tests/unit/"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:07:35Z"
+    },
+    {
+      "id": "T-015",
+      "name": "Port filter and stats logic with unit tests",
+      "phase": 3,
+      "type": "refactor",
+      "description": "src/lib/filters.ts: filter option derivation (sorted phases, sorted types, statuses in the legacy order with unknowns last, label capitalization) and filterTasks (OR within group, AND across groups, empty set = all), matching legacy buildFilters/filterTasks. src/lib/stats.ts: totals, per-status and per-type counts, progress % as legacy renderStats computes it. Characterization unit tests for both.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-014"
+      ],
+      "files": [
+        "dashboard/src/lib/filters.ts",
+        "dashboard/src/lib/stats.ts",
+        "dashboard/tests/unit/filters.test.ts",
+        "dashboard/tests/unit/stats.test.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:08:35Z"
+    },
+    {
+      "id": "T-016",
+      "name": "Port timeline bucketing with unit tests",
+      "phase": 3,
+      "type": "refactor",
+      "description": "src/lib/timeline.ts: completion events from done tasks' timestamps, bucket count clamped to 4-16, bucket assignment, min/max range and date formatting, matching the legacy timeline code in renderStats. Unit tests including no timestamps, single completion and identical timestamps.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-014"
+      ],
+      "files": [
+        "dashboard/src/lib/timeline.ts",
+        "dashboard/tests/unit/timeline.test.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:09:12Z"
+    },
+    {
+      "id": "T-017",
+      "name": "Port dependency graph layout with unit tests",
+      "phase": 3,
+      "type": "refactor",
+      "description": "src/lib/graph/layout.ts: topological layering of the filtered tasks (only visible deps count; a cycle dumps the remaining tasks into one layer), node positions (nodeW 160, nodeH 52, padX 60, padY 24, layers vertically centered), edge list with bezier path data, total width/height and truncate(name, 22), matching legacy renderDepGraph. Unit tests: chain, diamond, cycle, hidden deps, empty input.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-014"
+      ],
+      "files": [
+        "dashboard/src/lib/graph/layout.ts",
+        "dashboard/tests/unit/layout.test.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:09:58Z"
+    },
+    {
+      "id": "T-018",
+      "name": "App shell, global styles, state, Header, Stats, Timeline",
+      "phase": 4,
+      "type": "feature",
+      "description": "Move the legacy CSS over verbatim (global stylesheet first; scope into components later only if screenshots stay green). src/lib/state.svelte.ts holds tasks, taskMap, filters and autoRefresh with runes. Components Header, Stats and Timeline keep the legacy DOM contract (ids/classes the e2e specs use). Build to dashboard/dist and run the load/stats specs on the svelte project.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-015",
+        "T-016"
+      ],
+      "files": [
+        "dashboard/src/App.svelte",
+        "dashboard/src/app.css",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/components/"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:13:40Z"
+    },
+    {
+      "id": "T-019",
+      "name": "Filters, refresh controls, task grid and cards",
+      "phase": 4,
+      "type": "feature",
+      "description": "Components Filters, RefreshControls (reload button, auto toggle, interval), TaskGrid and TaskCard, preserving the DOM contract (.filter-btn[data-filter][data-value], .task-card[data-id], #reload-btn, #auto-refresh-check, #auto-refresh-interval). Task text is rendered escaped (Svelte default). filters/cards/refresh specs pass on the svelte project.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-018"
+      ],
+      "files": [
+        "dashboard/src/components/Filters.svelte",
+        "dashboard/src/components/RefreshControls.svelte",
+        "dashboard/src/components/TaskGrid.svelte",
+        "dashboard/src/components/TaskCard.svelte"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:16:50Z"
+    },
+    {
+      "id": "T-020",
+      "name": "Detail panel component",
+      "phase": 4,
+      "type": "feature",
+      "description": "DetailPanel component with #detail-overlay/#detail-panel, Depends On / Required By navigation, close via x, overlay click and Escape. The detail spec passes on the svelte project.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-019"
+      ],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:18:05Z"
+    },
+    {
+      "id": "T-021",
+      "name": "Dependency graph component",
+      "phase": 4,
+      "type": "feature",
+      "description": "DepGraph component rendering src/lib/graph/layout.ts output as SVG with the legacy look (viewBox scaling as in v0.4.0; zoom/pan comes in phase 6), node click opens details, collapsible header with #graph-badge. The graph spec passes on the svelte project.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-017",
+        "T-019"
+      ],
+      "files": [
+        "dashboard/src/components/DepGraph.svelte"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:18:52Z"
+    },
+    {
+      "id": "T-022",
+      "name": "Full parity with legacy plus component tests",
+      "phase": 4,
+      "type": "test",
+      "description": "The entire e2e suite, including visual screenshots, passes on both the legacy and svelte projects (the XSS test passes on svelte). Add @testing-library/svelte component tests for TaskCard and Filters. Fix any differences in the port, not by loosening tests; any intentional difference must be documented in the spec. Then switch the test:e2e script from --project=legacy to both projects (until parity it runs legacy only so npm run verify stays green; test:e2e:svelte and test:e2e:all exist for porting work).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-020",
+        "T-021"
+      ],
+      "files": [
+        "dashboard/tests/unit/TaskCard.test.ts",
+        "dashboard/tests/unit/Filters.test.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:20:38Z"
+    },
+    {
+      "id": "T-023",
+      "name": "Cut over: build into plugin/templates, guardrails, pre-commit hook",
+      "phase": 5,
+      "type": "infra",
+      "description": "Switch build.outDir to ../plugin/templates (emptyOutDir: false so templates/tasks.json survives) and point the svelte Playwright project there. Add guardrail tests: the built file references no external URLs and stays under 150 KB. Add a pre-commit hook (simple-git-hooks + lint-staged, scoped to dashboard/**) that rebuilds and stages plugin/templates/tasks-dashboard.html. Commit the built file.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-022"
+      ],
+      "files": [
+        "dashboard/vite.config.ts",
+        "dashboard/playwright.config.ts",
+        "dashboard/tests/e2e/guardrails.spec.ts",
+        "plugin/templates/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:32:44Z"
+    },
+    {
+      "id": "T-024",
+      "name": "GitHub Actions CI",
+      "phase": 5,
+      "type": "infra",
+      "description": ".github/workflows/ci.yml on push and PR: npm ci in dashboard/, npm run check, unit tests with coverage threshold, build then `git diff --exit-code plugin/templates/tasks-dashboard.html` (check-dist pattern; CI never commits), Playwright e2e (install browsers, upload report on failure), and a version-consistency script asserting plugin/.claude-plugin/plugin.json and .claude-plugin/marketplace.json versions match.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-023"
+      ],
+      "files": [
+        ".github/workflows/ci.yml",
+        "dashboard/scripts/check-versions.mjs"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:33:54Z"
+    },
+    {
+      "id": "T-025",
+      "name": "Bump to 0.5.0 and document development workflow",
+      "phase": 5,
+      "type": "docs",
+      "description": "Bump plugin.json and marketplace.json to 0.5.0 and rebuild (the dashboard version comes from plugin.json). README: add a Development section (dashboard/ layout, npm scripts, fixtures, legacy vs svelte Playwright projects, the built file is committed and checked by CI) and update Project Structure.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-023"
+      ],
+      "files": [
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T21:34:32Z"
+    },
+    {
+      "id": "T-026",
+      "name": "Re-baseline screenshots from svelte and retire legacy project",
+      "phase": 5,
+      "type": "test",
+      "description": "Once CI is green with both projects, regenerate screenshot baselines from the svelte project, remove the legacy Playwright project and the legacy-only test.fail annotation. Keep tests/legacy/tasks-dashboard.v0.4.0.html for reference.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-024",
+        "T-025"
+      ],
+      "files": [
+        "dashboard/playwright.config.ts",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:19:41Z"
+    },
+    {
+      "id": "T-027",
+      "name": "Write failing zoom/pan/minimap tests",
+      "phase": 6,
+      "type": "test",
+      "description": "Test-first. tests/e2e/graph-zoom.spec.ts: large-90 opens at >=60% centered on the in-progress task; a small graph opens at 100% centered; dragging pans without opening details; a plain node click opens details; Ctrl/Cmd+wheel zooms around the cursor; the -, +, fit and 1:1 buttons and the + - 0 F and arrow keys work; the minimap appears only when the graph overflows and click/drag moves the view; the view persists across reload and resets when filters change. tests/unit/view.test.ts for fit, clamp and zoom-at-point. These must fail before T-028.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-026"
+      ],
+      "files": [
+        "dashboard/tests/e2e/graph-zoom.spec.ts",
+        "dashboard/tests/unit/view.test.ts"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:19:41Z"
+    },
+    {
+      "id": "T-028",
+      "name": "Implement zoom, pan and minimap",
+      "phase": 6,
+      "type": "feature",
+      "description": "Implement src/lib/graph/view.ts plus GraphControls and Minimap components and update DepGraph to a fixed-height pan/zoom viewport, porting the logic from `git stash show -p stash^{/zoom-pan-minimap}` (applyGraphView, fitGraph, autoFitGraph, zoomGraphAt, the minimap and pointer handling with click suppression after a drag). Make T-027 pass; update screenshot baselines for the graph intentionally.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-027"
+      ],
+      "files": [
+        "dashboard/src/lib/graph/view.ts",
+        "dashboard/src/components/DepGraph.svelte",
+        "dashboard/src/components/GraphControls.svelte",
+        "dashboard/src/components/Minimap.svelte"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:19:41Z"
+    },
+    {
+      "id": "T-029",
+      "name": "Release zoom/pan as 0.6.0 and drop the stash",
+      "phase": 6,
+      "type": "docs",
+      "description": "Bump to 0.6.0, rebuild, add the dependency graph controls to the README dashboard features list, and drop the 'zoom-pan-minimap wip' stash once everything is merged.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-028"
+      ],
+      "files": [
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md"
+      ],
+      "created_at": "2026-10-22T19:19:41Z",
+      "updated_at": "2026-10-22T19:19:41Z"
+    }
+  ]
+}

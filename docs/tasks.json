@@ -329,7 +329,7 @@
       "description": "src/lib/graph/layout.ts: topological layering of the filtered tasks (only visible deps count; a cycle dumps the remaining tasks into one layer), node positions (nodeW 160, nodeH 52, padX 60, padY 24, layers vertically centered), edge list with bezier path data, total width/height and truncate(name, 22), matching legacy renderDepGraph. Unit tests: chain, diamond, cycle, hidden deps, empty input.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-014"
       ],
@@ -338,7 +338,7 @@
         "dashboard/tests/unit/layout.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:09:58Z"
     },
     {
       "id": "T-018",

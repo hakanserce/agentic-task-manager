@@ -591,14 +591,16 @@
         "FR-1.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/prefs.ts",
         "dashboard/tests/unit/prefs.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-22T23:43:25Z",
+      "started_at": "2026-10-22T23:43:11Z",
+      "completed_at": "2026-10-22T23:43:25Z"
     },
     {
       "id": "T-031",

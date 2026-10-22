@@ -370,7 +370,7 @@
       "description": "Components Filters, RefreshControls (reload button, auto toggle, interval), TaskGrid and TaskCard, preserving the DOM contract (.filter-btn[data-filter][data-value], .task-card[data-id], #reload-btn, #auto-refresh-check, #auto-refresh-interval). Task text is rendered escaped (Svelte default). filters/cards/refresh specs pass on the svelte project.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-018"
       ],
@@ -381,7 +381,7 @@
         "dashboard/src/components/TaskCard.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:14:01Z"
+      "updated_at": "2026-10-22T21:16:50Z"
     },
     {
       "id": "T-020",

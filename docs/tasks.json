@@ -169,7 +169,7 @@
       "description": "tests/e2e/load.spec.ts and stats.spec.ts, green on the legacy project. Load: page title and #dashboard-title use meta.project, subtitle counts tasks and phases, no-meta falls back to 'Task Dashboard', a 404 for tasks.json shows the 'Failed to load tasks.json' box with python3 -m http.server instructions. Stats: Total/Done/In Progress/Todo numbers, Blocked card only when blocked > 0, per-type count cards, progress %. Timeline: shown only when tasks have timestamps, bucket count clamped to 4-16, start/end date labels, tooltip appears on bar hover.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-008"
       ],
@@ -178,7 +178,7 @@
         "dashboard/tests/e2e/stats.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T20:46:00Z"
     },
     {
       "id": "T-010",

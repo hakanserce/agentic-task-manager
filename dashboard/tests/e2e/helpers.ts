@@ -69,3 +69,11 @@ export async function openDashboard(page: Page, tasksServer: TasksServer, data: 
   tasksServer.use(data);
   await page.goto('tasks-dashboard.html');
 }
+
+/** The number shown on the stat card with exactly this label (e.g. "Done", "feature"). */
+export function statNumber(page: Page, label: string) {
+  return page
+    .locator('#stats .stat-card')
+    .filter({ has: page.locator('.label', { hasText: new RegExp(`^${label}$`) }) })
+    .locator('.number');
+}

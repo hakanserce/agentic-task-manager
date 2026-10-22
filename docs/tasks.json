@@ -409,7 +409,7 @@
       "description": "DepGraph component rendering src/lib/graph/layout.ts output as SVG with the legacy look (viewBox scaling as in v0.4.0; zoom/pan comes in phase 6), node click opens details, collapsible header with #graph-badge. The graph spec passes on the svelte project.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-017",
         "T-019"
@@ -418,7 +418,7 @@
         "dashboard/src/components/DepGraph.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:18:52Z"
     },
     {
       "id": "T-022",

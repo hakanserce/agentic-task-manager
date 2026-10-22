@@ -687,7 +687,7 @@
         "FR-5.4"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "README.md",
@@ -696,7 +696,9 @@
         "dashboard/src/lib/types.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-22T23:47:08Z",
+      "started_at": "2026-10-22T23:46:38Z",
+      "completed_at": "2026-10-22T23:47:08Z"
     },
     {
       "id": "T-035",

@@ -21,6 +21,10 @@ export interface Task {
   created_at?: string;
   /** ISO 8601 UTC */
   updated_at?: string;
+  /** ISO 8601 UTC; set when the task moves to in_progress */
+  started_at?: string;
+  /** ISO 8601 UTC; set when the task moves to done */
+  completed_at?: string;
 }
 
 export interface TasksFile {

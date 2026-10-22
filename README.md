@@ -236,11 +236,13 @@ The other skills (`do-task`, `loop-tasks`, `create-tasks`) will also hint when t
       "description": "Detailed description of what to implement.",
       "requirements": ["FR-1.1"],
       "use_cases": ["UC-001"],
-      "status": "todo",
+      "status": "done",
       "dependencies": ["T-000"],
       "files": ["src/file.ts"],
       "created_at": "2026-04-05T12:00:00Z",
-      "updated_at": "2026-04-05T14:30:00Z"
+      "updated_at": "2026-04-05T14:30:00Z",
+      "started_at": "2026-04-05T14:22:00Z",
+      "completed_at": "2026-04-05T14:30:00Z"
     }
   ]
 }
@@ -262,6 +264,12 @@ The other skills (`do-task`, `loop-tasks`, `create-tasks`) will also hint when t
 | `files` | string[] | ❌ | Expected file paths to create/modify |
 | `created_at` | string | ❌ | ISO 8601 UTC timestamp when task was created |
 | `updated_at` | string | ❌ | ISO 8601 UTC timestamp of last status change |
+| `started_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `in_progress` |
+| `completed_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `done` |
+
+`/atm:do-task` and `/atm:loop-tasks` maintain the timestamps: `started_at` when a task starts, `completed_at` when it
+is done, and both are removed if a task goes back to `todo`. The dashboard uses them for completion history and
+estimates; files without them still work (`updated_at` is used instead).
 
 ### Task types
 

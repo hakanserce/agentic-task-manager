@@ -91,7 +91,7 @@
       "description": "Set up Vitest (jsdom) with @testing-library/svelte and @vitest/coverage-v8. Coverage threshold: 90% lines on src/lib/**. Tests live in dashboard/tests/unit/. Add `npm test` and `npm run test:coverage`. Include one trivial passing test to prove the setup.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-003"
       ],
@@ -100,7 +100,7 @@
         "dashboard/tests/unit/setup.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T19:29:55Z"
     },
     {
       "id": "T-006",

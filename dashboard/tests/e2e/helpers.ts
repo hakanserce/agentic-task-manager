@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test as base, expect, type Page } from '@playwright/test';
+import { PREFS_KEY } from '../../src/lib/prefs';
 
 export { expect };
 
@@ -64,8 +65,27 @@ export const test = base.extend<Fixtures>({
   ],
 });
 
-/** Serve `data` as tasks.json and open the dashboard. */
-export async function openDashboard(page: Page, tasksServer: TasksServer, data: string | TasksData) {
+/**
+ * Serve `data` as tasks.json and open the dashboard.
+ * Auto-refresh is switched off (unless `autoRefresh: true`) so background reloads can't interfere with what a
+ * test checks. It is only set when no preference is stored yet, so a test that changes it and reloads keeps its choice.
+ */
+export async function openDashboard(
+  page: Page,
+  tasksServer: TasksServer,
+  data: string | TasksData,
+  { autoRefresh = false }: { autoRefresh?: boolean } = {},
+) {
+  if (!autoRefresh) {
+    await page.addInitScript((key) => {
+      try {
+        const prefs = JSON.parse(localStorage.getItem(key) || '{}');
+        if (!('autoRefresh' in prefs)) localStorage.setItem(key, JSON.stringify({ ...prefs, autoRefresh: false }));
+      } catch {
+        // storage unavailable: the dashboard falls back to its defaults
+      }
+    }, PREFS_KEY);
+  }
   tasksServer.use(data);
   await page.goto('tasks-dashboard.html');
 }

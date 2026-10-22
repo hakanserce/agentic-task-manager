@@ -44,7 +44,7 @@ describe('Filters', () => {
   it('includes the refresh controls', () => {
     const { container } = render(Filters);
     expect(container.querySelector('#reload-btn')).not.toBeNull();
-    expect(container.querySelector('#auto-refresh-check')).not.toBeChecked();
+    expect(container.querySelector('#auto-refresh-check')).not.toBeChecked(); // loadIntoDashboard switches it off
     expect(container.querySelector('#auto-refresh-interval')).toHaveValue(5);
   });
 });

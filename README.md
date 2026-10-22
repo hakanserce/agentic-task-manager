@@ -431,8 +431,8 @@ npm run verify       # check + unit tests with coverage + build + e2e — run be
 | `npm run check` | Version consistency, svelte-check, ESLint, Prettier |
 
 **Tests.** e2e specs serve fixtures from `tests/fixtures/` as `tasks.json` per test and fail on any external request.
-They run against two Playwright projects: `svelte` (the build) and `legacy` (the frozen pre-Svelte dashboard, kept
-while the port beds in). Screenshot baselines are per platform; CI runs in the pinned Playwright container.
+They run against the build, with strict screenshot baselines per platform; CI runs them in the pinned Playwright
+container and generates any missing Linux baselines for you to commit.
 
 **Build artifact.** Never edit `plugin/templates/tasks-dashboard.html` by hand. The pre-commit hook rebuilds and stages
 it when dashboard sources change, and CI fails if the committed file doesn't match a fresh build.

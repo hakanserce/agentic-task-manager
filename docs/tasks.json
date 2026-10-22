@@ -508,7 +508,7 @@
       "description": "Once CI is green with both projects, regenerate screenshot baselines from the svelte project, remove the legacy Playwright project and the legacy-only test.fail annotation. Keep tests/legacy/tasks-dashboard.v0.4.0.html for reference.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-024",
         "T-025"
@@ -518,7 +518,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:12:00Z"
     },
     {
       "id": "T-027",

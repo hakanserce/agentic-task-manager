@@ -16,10 +16,8 @@
     "format": "prettier --write .",
     "check": "node scripts/check-versions.mjs && svelte-check --fail-on-warnings && eslint . && prettier --check .",
     "verify": "npm run check && npm run test:coverage && npm run build && npm run test:e2e",
-    "test:e2e:svelte": "vite build && playwright test --project=svelte",
-    "test:e2e:legacy": "playwright test --project=legacy",
     "prepare": "git -C .. config core.hooksPath .githooks 2>/dev/null || echo \"prepare: git hooks not enabled (not a usable git checkout, e.g. CI)\"",
-    "test:e2e:linux-snapshots": "docker run --rm -v \"$(cd .. && pwd)\":/repo -w /repo/dashboard mcr.microsoft.com/playwright:v1.64.1-noble sh -c \"npm ci && npm run build && npx playwright test --project=legacy visual --update-snapshots\""
+    "test:e2e:linux-snapshots": "docker run --rm -v \"$(cd .. && pwd)\":/repo -w /repo/dashboard mcr.microsoft.com/playwright:v1.64.1-noble sh -c \"npm ci && npm run build && npx playwright test visual --update-snapshots=missing\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

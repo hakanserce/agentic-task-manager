@@ -1,7 +1,7 @@
 import { expect, openDashboard, test } from './helpers';
 
-// Baselines are recorded from the legacy project and shared with the svelte project (see snapshotPathTemplate).
-// Regenerate deliberately: npx playwright test --project=legacy visual --update-snapshots
+// Baselines are per platform (-darwin locally, -linux in CI). Regenerate deliberately after an intended UI change:
+//   npx playwright test visual --update-snapshots   (then delete the stale -linux.png files; CI regenerates them)
 
 for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
   test.describe(`visual: ${fixture}`, () => {
@@ -10,18 +10,12 @@ for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
       await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
     });
 
-    // edge-cases T-006 has HTML in its name, which legacy renders as markup and the port escapes
-    const mask = (page: import('@playwright/test').Page) =>
-      fixture === 'edge-cases'
-        ? [page.locator('.task-card[data-id="T-006"]'), page.locator('#dep-graph g', { hasText: 'T-006' })]
-        : [];
-
     test('full page', async ({ page }) => {
-      await expect(page).toHaveScreenshot(`${fixture}-page.png`, { fullPage: true, mask: mask(page) });
+      await expect(page).toHaveScreenshot(`${fixture}-page.png`, { fullPage: true });
     });
 
     test('dependency graph', async ({ page }) => {
-      await expect(page.locator('#graph-section')).toHaveScreenshot(`${fixture}-graph.png`, { mask: mask(page) });
+      await expect(page.locator('#graph-section')).toHaveScreenshot(`${fixture}-graph.png`);
     });
   });
 }

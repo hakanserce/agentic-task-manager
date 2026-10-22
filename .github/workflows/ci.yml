@@ -48,19 +48,23 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm ci
       - run: npm run build
-      # Baselines are per platform. If none exist for Linux yet (or a refresh is requested), generate them in this
-      # pinned container, upload them, and fail until they are committed to tests/e2e/__screenshots__/.
-      - name: Check for Linux screenshot baselines
+      # Baselines are per platform. Any macOS baseline without a Linux counterpart (new, or deleted because the UI
+      # changed on purpose) is generated here in the pinned container, uploaded, and the job fails until the
+      # generated files are committed. update-snapshots regenerates all Linux baselines.
+      - name: Check for missing Linux screenshot baselines
         id: baselines
+        shell: bash
         run: |
-          if [ "${{ inputs.update-snapshots }}" = "true" ] || ! ls tests/e2e/__screenshots__/visual.spec.ts/*-linux.png >/dev/null 2>&1; then
-            echo "generate=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "generate=false" >> "$GITHUB_OUTPUT"
-          fi
+          missing=0
+          for f in $(find tests/e2e/__screenshots__ -name '*-darwin.png'); do
+            [ -f "${f%-darwin.png}-linux.png" ] || { echo "missing: ${f%-darwin.png}-linux.png"; missing=1; }
+          done
+          if [ "${{ inputs.update-snapshots }}" = "true" ]; then mode=all; elif [ $missing = 1 ]; then mode=missing; else mode=none; fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "generate=$([ $mode = none ] && echo false || echo true)" >> "$GITHUB_OUTPUT"
       - name: Generate screenshot baselines
         if: steps.baselines.outputs.generate == 'true'
-        run: npx playwright test --project=legacy visual --update-snapshots
+        run: npx playwright test visual --update-snapshots=${{ steps.baselines.outputs.mode }}
       - uses: actions/upload-artifact@v4
         if: steps.baselines.outputs.generate == 'true'
         with:
@@ -69,7 +73,7 @@ jobs:
       - name: Baselines must be committed
         if: steps.baselines.outputs.generate == 'true'
         run: |
-          echo "::error::Linux screenshot baselines were generated, not compared. Download the linux-screenshot-baselines artifact, commit its *-linux.png files under dashboard/tests/e2e/__screenshots__/, and push."
+          echo "::error::Linux screenshot baselines were generated, not compared. Download the linux-screenshot-baselines artifact, commit its new *-linux.png files under dashboard/tests/e2e/__screenshots__/, and push."
           exit 1
       - name: Run e2e tests
         if: steps.baselines.outputs.generate == 'false'

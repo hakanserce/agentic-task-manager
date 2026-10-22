@@ -18,6 +18,10 @@ To get a new dashboard into a project, update the plugin and run `/atm:update-da
 - `/atm:do-task` and `/atm:loop-tasks` record when each task started (`started_at`) and was completed
   (`completed_at`). The activity timeline uses the completion time.
 
+### Fixed
+- `/atm:update-dashboard` looked for the new dashboard one directory too high inside the installed plugin, and now
+  prints the actual release notes between your old and new version instead of a summary it made up.
+
 ## [0.6.0] - 2026-10-22
 
 ### Added

@@ -900,7 +900,7 @@
         "FR-1.3"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-037"
       ],
@@ -908,7 +908,9 @@
         "plugin/skills/update-dashboard/SKILL.md"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-22T23:55:11Z",
+      "started_at": "2026-10-22T23:54:42Z",
+      "completed_at": "2026-10-22T23:55:11Z"
     },
     {
       "id": "T-044",

@@ -22,8 +22,9 @@ If not found, tell the user:
 
 ## Step 2: Read the plugin's latest template
 
-Read the dashboard template from the plugin's templates directory.
-The latest template is located at: `${CLAUDE_SKILL_DIR}/../../../templates/tasks-dashboard.html`
+The plugin root is two levels above this skill's directory (`<plugin root>/skills/update-dashboard/`):
+- Latest dashboard: `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html`
+- Release notes: `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`
 
 ## Step 3: Compare versions
 
@@ -43,8 +44,21 @@ Copy the plugin's template over the project's `tasks-dashboard.html`.
 
 ## Step 5: Report
 
+Read the plugin's `CHANGELOG.md` (Step 2). It has one `## [x.y.z] - YYYY-MM-DD` section per version, newest
+first, each with `### Added` / `### Changed` / `### Fixed` bullet lists. Select every version that is **newer than
+$OLD_VERSION and not newer than $NEW_VERSION** (compare numerically: 0.10.0 is newer than 0.9.0). If the old
+dashboard had no version tag, treat $OLD_VERSION as 0.0.0. Ignore an `[Unreleased]` section.
+
 > **Dashboard updated!** $OLD_VERSION → $NEW_VERSION
 >
-> Refresh your browser to see the new dashboard.
+> Refresh your browser to see the new dashboard. Its version label (next to the title) opens the same release notes.
 >
-> **What's new:** (briefly describe what changed based on the version difference)
+> **What's new:**
+>
+> **v$VERSION** ($DATE)
+> - (each bullet from that version's Added / Changed / Fixed lists, prefixed with "Added:", "Changed:" or "Fixed:")
+>
+> (repeat for each selected version, newest first)
+
+Copy the changelog bullets as written; don't summarize, merge or invent entries. If `CHANGELOG.md` is missing,
+say "Release notes are not available for this version" instead of describing changes.

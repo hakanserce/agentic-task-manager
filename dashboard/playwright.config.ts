@@ -14,6 +14,9 @@ export default defineConfig({
   use: {
     ...devices['Desktop Chrome'],
     viewport: { width: 1280, height: 900 },
+    // Dates are rendered with toLocale*String: pin them so text and screenshots are stable
+    locale: 'en-US',
+    timezoneId: 'UTC',
     trace: 'retain-on-failure',
   },
   projects: [

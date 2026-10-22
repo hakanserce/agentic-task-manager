@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "project": "Edge Cases"
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Unknown type",
+      "phase": 0,
+      "type": "spike",
+      "description": "Description of T-001: Unknown type.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-002",
+      "name": "Unknown status",
+      "phase": 0,
+      "type": "feature",
+      "description": "Description of T-002: Unknown status.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "review",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-003",
+      "name": "Depends on a missing task",
+      "phase": 0,
+      "type": "feature",
+      "description": "Description of T-003: Depends on a missing task.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": ["T-999"],
+      "files": []
+    },
+    {
+      "id": "T-004",
+      "name": "A very long task name that keeps going well past the graph truncation limit and then some",
+      "phase": 1,
+      "type": "docs",
+      "description": "Description of T-004: A very long task name that keeps going well past the graph truncation limit and then some.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-005",
+      "name": "Ünïcödé naïve café 🚀 任务",
+      "phase": 1,
+      "type": "polish",
+      "description": "Description of T-005: Ünïcödé naïve café 🚀 任务.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-006",
+      "name": "<b>Bold</b> name",
+      "phase": 1,
+      "type": "bug",
+      "description": "Has <i>markup</i> & ampersand",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-007",
+      "name": "Only required fields",
+      "phase": 1,
+      "type": "test",
+      "description": "No optional arrays.",
+      "status": "todo",
+      "dependencies": []
+    }
+  ]
+}

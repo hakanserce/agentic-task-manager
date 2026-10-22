@@ -1,0 +1,28 @@
+{
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Task without meta",
+      "phase": 0,
+      "type": "feature",
+      "description": "Description of T-001: Task without meta.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-002",
+      "name": "Second task",
+      "phase": 1,
+      "type": "test",
+      "description": "Description of T-002: Second task.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": ["T-001"],
+      "files": []
+    }
+  ]
+}

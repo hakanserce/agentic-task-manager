@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "project": "Minimal Project"
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "The only task",
+      "phase": 0,
+      "type": "feature",
+      "description": "Description of T-001: The only task.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": []
+    }
+  ]
+}

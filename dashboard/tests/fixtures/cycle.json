@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "project": "Cycle Project"
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Independent root",
+      "phase": 0,
+      "type": "infra",
+      "description": "Description of T-001: Independent root.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": []
+    },
+    {
+      "id": "T-002",
+      "name": "Cycle A",
+      "phase": 1,
+      "type": "feature",
+      "description": "Description of T-002: Cycle A.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": ["T-004"],
+      "files": []
+    },
+    {
+      "id": "T-003",
+      "name": "Cycle B",
+      "phase": 1,
+      "type": "feature",
+      "description": "Description of T-003: Cycle B.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": ["T-002"],
+      "files": []
+    },
+    {
+      "id": "T-004",
+      "name": "Cycle C",
+      "phase": 1,
+      "type": "feature",
+      "description": "Description of T-004: Cycle C.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": ["T-003"],
+      "files": []
+    },
+    {
+      "id": "T-005",
+      "name": "Depends on cycle",
+      "phase": 2,
+      "type": "test",
+      "description": "Description of T-005: Depends on cycle.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": ["T-002", "T-001"],
+      "files": []
+    }
+  ]
+}

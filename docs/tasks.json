@@ -151,7 +151,7 @@
       "description": "In dashboard/tests/fixtures/: empty.json, minimal.json (1 task), standard.json (all 7 types x 5 statuses, 3 phases, deps, use_cases/requirements/files, created_at/updated_at timestamps), cycle.json (dependency cycle), edge-cases.json (unknown type and status, dependency on a missing ID, tasks without timestamps, very long names, unicode, HTML like <b>bold</b> in name and description), no-meta.json (no meta block). Add tests/fixtures/generate-large.mjs that deterministically writes large-90.json (90 tasks, wide graph, ~40 done, 1 in_progress), and commit its output.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-006"
       ],
@@ -159,7 +159,7 @@
         "dashboard/tests/fixtures/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T20:45:09Z"
     },
     {
       "id": "T-009",

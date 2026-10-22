@@ -207,7 +207,7 @@
       "description": "tests/e2e/detail.spec.ts and graph.spec.ts, green on legacy. Detail: opens from a card name and from a graph node (#detail-overlay.open), shows description, UCs, requirements, timestamps, files, 'Depends On' and 'Required By' entries that navigate to the other task; closes via the x button, an overlay click and Escape. Graph: one node per filtered task, edge count matches visible dependencies, #graph-badge says 'N tasks', cycle.json still renders every node, header click collapses and expands the graph.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-008"
       ],
@@ -216,7 +216,7 @@
         "dashboard/tests/e2e/graph.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T20:48:46Z"
     },
     {
       "id": "T-012",

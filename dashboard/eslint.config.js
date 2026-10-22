@@ -13,6 +13,11 @@ export default ts.config(
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   {
+    // Playwright fixtures must be destructured, even when unused: ({}, testInfo) => ...
+    files: ['tests/e2e/**'],
+    rules: { 'no-empty-pattern': 'off' },
+  },
+  {
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: {
       parserOptions: { projectService: true, extraFileExtensions: ['.svelte'], parser: ts.parser, svelteConfig },

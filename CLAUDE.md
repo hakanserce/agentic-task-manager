@@ -13,9 +13,10 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 Builds to a **single self-contained HTML file** (vite-plugin-singlefile). The `atm-dashboard-version` meta tag is
 injected from `plugin/.claude-plugin/plugin.json` at build time; never edit it by hand.
 
-Migration in progress (see `docs/svelte-migration-plan.md`): until cutover (T-023) the build writes to
-`dashboard/dist/`, and `plugin/templates/tasks-dashboard.html` is still the hand-written legacy file. After cutover it
-becomes a committed build artifact: rebuild it whenever `dashboard/` changes; CI fails if it is stale.
+`npm run build` writes `plugin/templates/tasks-dashboard.html` — a **committed build artifact**, never edit it by hand.
+The pre-commit hook in `.githooks/` rebuilds and stages it when dashboard sources are committed (enabled by
+`npm install` in `dashboard/`, which sets `core.hooksPath`); CI fails if the committed file is stale.
+The pre-port dashboard is frozen at `dashboard/tests/legacy/tasks-dashboard.v0.4.0.html` (see `docs/svelte-migration-plan.md`).
 
 Commands (run in `dashboard/`):
 - `npm run dev` — Vite dev server

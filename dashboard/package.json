@@ -17,7 +17,8 @@
     "check": "svelte-check --fail-on-warnings && eslint . && prettier --check .",
     "verify": "npm run check && npm run test:coverage && npm run build && npm run test:e2e",
     "test:e2e:svelte": "vite build && playwright test --project=svelte",
-    "test:e2e:legacy": "playwright test --project=legacy"
+    "test:e2e:legacy": "playwright test --project=legacy",
+    "prepare": "git -C .. config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

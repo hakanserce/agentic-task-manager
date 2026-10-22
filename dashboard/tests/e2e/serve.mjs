@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const VARIANTS = {
   legacy: root + 'tests/legacy/tasks-dashboard.v0.4.0.html',
-  svelte: root + (process.env.SVELTE_DASHBOARD ?? 'dist/tasks-dashboard.html'),
+  svelte: root + '../plugin/templates/tasks-dashboard.html',
 };
 const port = Number(process.env.PORT ?? 4173);
 

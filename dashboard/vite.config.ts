@@ -10,8 +10,9 @@ const pluginJson = fileURLToPath(new URL('../plugin/.claude-plugin/plugin.json',
 export default defineConfig({
   plugins: [svelte(), viteSingleFile(), injectVersion(pluginJson), renameHtmlOutput('tasks-dashboard.html')],
   build: {
-    // Stays in dist/ until cutover (T-023), then switches to ../plugin/templates
-    outDir: 'dist',
-    emptyOutDir: true,
+    // The build output is what the plugin ships: plugin/templates/tasks-dashboard.html (committed; CI checks it is fresh).
+    // emptyOutDir must stay false: templates/ also holds the tasks.json example.
+    outDir: '../plugin/templates',
+    emptyOutDir: false,
   },
 });

@@ -448,7 +448,7 @@
       "description": "Switch build.outDir to ../plugin/templates (emptyOutDir: false so templates/tasks.json survives) and point the svelte Playwright project there. Add guardrail tests: the built file references no external URLs and stays under 150 KB. Add a pre-commit hook (simple-git-hooks + lint-staged, scoped to dashboard/**) that rebuilds and stages plugin/templates/tasks-dashboard.html. Commit the built file.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-022"
       ],
@@ -459,7 +459,7 @@
         "plugin/templates/tasks-dashboard.html"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:32:44Z"
     },
     {
       "id": "T-024",

@@ -825,7 +825,7 @@
         "NFR-1"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-038"
       ],
@@ -836,7 +836,9 @@
         "dashboard/tests/unit/release-notes.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-22T23:50:41Z",
+      "started_at": "2026-10-22T23:50:08Z",
+      "completed_at": "2026-10-22T23:50:41Z"
     },
     {
       "id": "T-041",

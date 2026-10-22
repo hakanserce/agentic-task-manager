@@ -298,7 +298,7 @@ The dashboard is a single self-contained HTML file with no external dependencies
 - **Filters** — Filter by phase, type, and status (multi-select)
 - **Task cards** — Color-coded by status and type, with dependency links
 - **Detail panel** — Click a task to see full description, deps, files, and timestamps
-- **Dependency graph** — Interactive SVG graph with topological layout
+- **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Your view is kept across auto-refreshes
 - **Auto-refresh** — Enable with toggle, configurable interval (default 5s)
 - **Manual reload** — Click reload button for instant refresh
 

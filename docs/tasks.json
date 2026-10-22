@@ -568,7 +568,7 @@
       "description": "Bump to 0.6.0, rebuild, add the dependency graph controls to the README dashboard features list, and drop the 'zoom-pan-minimap wip' stash once everything is merged.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-028"
       ],
@@ -578,7 +578,7 @@
         "README.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:17:16Z"
     }
   ]
 }

@@ -428,7 +428,7 @@
       "description": "The entire e2e suite, including visual screenshots, passes on both the legacy and svelte projects (the XSS test passes on svelte). Add @testing-library/svelte component tests for TaskCard and Filters. Fix any differences in the port, not by loosening tests; any intentional difference must be documented in the spec. Then switch the test:e2e script from --project=legacy to both projects (until parity it runs legacy only so npm run verify stays green; test:e2e:svelte and test:e2e:all exist for porting work).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-020",
         "T-021"
@@ -438,7 +438,7 @@
         "dashboard/tests/unit/Filters.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:20:38Z"
     },
     {
       "id": "T-023",

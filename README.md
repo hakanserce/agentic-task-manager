@@ -24,18 +24,14 @@ A **Claude Code plugin** that gives any project file-based task management with 
 
 ### Install the plugin
 
-In Claude Code (terminal or VS Code), run:
-
-```
-/plugin install https://github.com/hakanserce/agentic-task-manager.git
-```
-
-Or add the marketplace first for update support:
+In Claude Code (terminal or VS Code), add the marketplace and install the `atm` plugin:
 
 ```
 /plugin marketplace add hakanserce/agentic-task-manager
-/plugin install agentic-task-manager@hakanserce-plugins
+/plugin install atm@hakanserce-plugins
 ```
+
+Then restart Claude Code so the skills load.
 
 ### Create tasks
 
@@ -82,20 +78,18 @@ Or loop through everything:
 - [Claude Code](https://claude.com/code) (CLI or VS Code extension)
 - A local HTTP server for the dashboard (Python 3 recommended — usually pre-installed)
 
-### Method 1: Direct install from GitHub
+### Method 1: Via marketplace (recommended)
 
-```
-/plugin install https://github.com/hakanserce/agentic-task-manager.git
-```
-
-### Method 2: Via marketplace
+This repo is its own marketplace (`hakanserce-plugins`) containing the `atm` plugin:
 
 ```
 /plugin marketplace add hakanserce/agentic-task-manager
-/plugin install agentic-task-manager@hakanserce-plugins
+/plugin install atm@hakanserce-plugins
 ```
 
-### Method 3: Local development
+Restart Claude Code after installing. To pick up new versions later, run `/plugin marketplace update hakanserce-plugins` and restart again.
+
+### Method 2: Local development
 
 Clone and load directly:
 
@@ -332,9 +326,9 @@ cd docs && php -S localhost:8000
 cd docs && ruby -run -e httpd . -p 8000
 ```
 
-**Or use the bundled script:**
+**Or use the bundled script** (from a clone of this repo; it picks whichever of Python/Node/PHP/Ruby is available):
 ```bash
-./plugin/scripts/serve-dashboard.sh 8000 docs
+/path/to/agentic-task-manager/plugin/scripts/serve-dashboard.sh 8000 docs
 ```
 
 Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).

@@ -310,7 +310,7 @@
       "description": "src/lib/timeline.ts: completion events from done tasks' timestamps, bucket count clamped to 4-16, bucket assignment, min/max range and date formatting, matching the legacy timeline code in renderStats. Unit tests including no timestamps, single completion and identical timestamps.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-014"
       ],
@@ -319,7 +319,7 @@
         "dashboard/tests/unit/timeline.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:09:12Z"
     },
     {
       "id": "T-017",

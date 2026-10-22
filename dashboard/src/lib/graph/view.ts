@@ -81,3 +81,26 @@ export function toViewBox(v: View, viewport: Size): string {
 export function containerHeight(contentH: number): number {
   return clamp(contentH + PAD * 2 + BORDER, MIN_CONTAINER_H, MAX_CONTAINER_H);
 }
+
+/** True if at least one node rectangle (content coordinates, top-left x/y) overlaps the viewport. */
+export function anyNodeVisible(v: View, nodes: { x: number; y: number }[], nodeSize: Size, viewport: Size): boolean {
+  return nodes.some((n) => {
+    const left = n.x * v.k + v.x;
+    const top = n.y * v.k + v.y;
+    return left < viewport.w && left + nodeSize.w * v.k > 0 && top < viewport.h && top + nodeSize.h * v.k > 0;
+  });
+}
+
+/**
+ * Bring the content into view without changing the zoom level: along each axis, center the content if it fits,
+ * otherwise center the focus node (clamped like autoFitView), or put the content's start at the padding.
+ */
+export function panToContent(v: View, content: Size, viewport: Size, focus?: { cx: number; cy: number }): View {
+  const axis = (size: number, view: number, center: number | undefined) => {
+    const scaled = size * v.k;
+    if (scaled <= view) return (view - scaled) / 2;
+    if (center === undefined) return PAD;
+    return clamp(view / 2 - center * v.k, view - scaled - PAD, PAD);
+  };
+  return { k: v.k, x: axis(content.w, viewport.w, focus?.cx), y: axis(content.h, viewport.h, focus?.cy) };
+}

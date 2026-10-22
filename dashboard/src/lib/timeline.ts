@@ -25,11 +25,16 @@ export const MAX_BUCKETS = 16;
 const MAX_BAR_HEIGHT = 40;
 const MIN_BAR_HEIGHT = 4;
 
-/** Done tasks with a valid updated_at, oldest first. */
+/** When a done task was finished: completed_at, or updated_at for files written before completed_at existed. */
+export function completedAt(task: Task): string | undefined {
+  return task.completed_at ?? task.updated_at;
+}
+
+/** Done tasks with a valid completion time, oldest first. */
 export function completions(tasks: Task[]): Completion[] {
   return tasks
-    .filter((t) => t.status === 'done' && t.updated_at)
-    .map((t) => ({ id: t.id, name: t.name, time: new Date(t.updated_at!).getTime() }))
+    .filter((t) => t.status === 'done' && completedAt(t))
+    .map((t) => ({ id: t.id, name: t.name, time: new Date(completedAt(t)!).getTime() }))
     .filter((c) => !isNaN(c.time))
     .sort((a, b) => a.time - b.time);
 }

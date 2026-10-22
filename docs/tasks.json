@@ -469,7 +469,7 @@
       "description": ".github/workflows/ci.yml on push and PR: npm ci in dashboard/, npm run check, unit tests with coverage threshold, build then `git diff --exit-code plugin/templates/tasks-dashboard.html` (check-dist pattern; CI never commits), Playwright e2e (install browsers, upload report on failure), and a version-consistency script asserting plugin/.claude-plugin/plugin.json and .claude-plugin/marketplace.json versions match.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-023"
       ],
@@ -478,7 +478,7 @@
         "dashboard/scripts/check-versions.mjs"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:33:54Z"
     },
     {
       "id": "T-025",

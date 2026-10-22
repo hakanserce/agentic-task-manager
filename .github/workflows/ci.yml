@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      update-snapshots:
+        description: Regenerate Linux screenshot baselines and upload them as an artifact
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    working-directory: dashboard
+
+jobs:
+  check:
+    name: Lint, unit tests, build freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: node scripts/check-versions.mjs
+      - run: npm run check
+      - run: npm run test:coverage
+      - run: npm run build
+      # The plugin ships the committed build output; it must match the sources (CI never commits it for you)
+      - name: Built dashboard is up to date
+        run: |
+          git diff --exit-code -- ../plugin/templates/tasks-dashboard.html || {
+            echo "::error::plugin/templates/tasks-dashboard.html is stale. Run 'npm run build' in dashboard/ and commit it."
+            exit 1
+          }
+
+  e2e:
+    name: Playwright regression suite
+    runs-on: ubuntu-latest
+    # Pinned image = pinned fonts/rendering, so Linux screenshot baselines are reproducible
+    container: mcr.microsoft.com/playwright:v1.64.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm run build
+      - name: Update screenshot baselines
+        if: ${{ inputs.update-snapshots }}
+        run: npx playwright test --project=legacy visual --update-snapshots
+      - name: Run e2e tests
+        if: ${{ !inputs.update-snapshots }}
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.update-snapshots }}
+        with:
+          name: linux-screenshot-baselines
+          path: dashboard/tests/e2e/__screenshots__/
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: playwright-report
+          path: |
+            dashboard/playwright-report/
+            dashboard/test-results/

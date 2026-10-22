@@ -40,7 +40,10 @@ Commands (run in `dashboard/`):
   `svelte` (the build). The port must keep the legacy DOM hooks the specs use (ids, `.filter-btn[data-filter]`,
   `.task-card[data-id]`, `#detail-overlay.open`, …). Fix the port, don't loosen the spec; document intentional
   differences in the spec itself.
-- Screenshot baselines are shared between projects (no project name in the snapshot path) and are per-platform.
+- Screenshot baselines are shared between projects (no project name in the snapshot path) and are per-platform:
+  `-darwin.png` for local Macs, `-linux.png` for CI. CI's e2e job runs in the pinned Playwright container; to
+  (re)generate Linux baselines run the CI workflow manually with "update-snapshots" and commit the artifact's files,
+  or run `npm run test:e2e:linux-snapshots` with Docker running. Regenerate both platforms when the UI changes on purpose.
 
 ## Versions
 `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` versions must match. Bump both when the

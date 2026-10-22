@@ -130,7 +130,7 @@
       "description": "Add ESLint (flat config, eslint-plugin-svelte, typescript-eslint), Prettier (+ prettier-plugin-svelte) and svelte-check. Scripts: dev, build, test, test:coverage, test:e2e, check (svelte-check + eslint + prettier --check), verify (check + test + build + test:e2e). Add a repo-root CLAUDE.md describing the dev workflow, the plugin vs dashboard split, and that plugin/templates/tasks-dashboard.html is a build artifact (after cutover).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-003"
       ],
@@ -141,7 +141,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T20:22:04Z"
     },
     {
       "id": "T-008",
@@ -425,7 +425,7 @@
       "name": "Full parity with legacy plus component tests",
       "phase": 4,
       "type": "test",
-      "description": "The entire e2e suite, including visual screenshots, passes on both the legacy and svelte projects (the XSS test passes on svelte). Add @testing-library/svelte component tests for TaskCard and Filters. Fix any differences in the port, not by loosening tests; any intentional difference must be documented in the spec.",
+      "description": "The entire e2e suite, including visual screenshots, passes on both the legacy and svelte projects (the XSS test passes on svelte). Add @testing-library/svelte component tests for TaskCard and Filters. Fix any differences in the port, not by loosening tests; any intentional difference must be documented in the spec. Then switch the test:e2e script from --project=legacy to both projects (until parity it runs legacy only so npm run verify stays green; test:e2e:svelte and test:e2e:all exist for porting work).",
       "requirements": [],
       "use_cases": [],
       "status": "todo",

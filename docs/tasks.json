@@ -110,7 +110,7 @@
       "description": "Freeze the current shipped dashboard as dashboard/tests/legacy/tasks-dashboard.v0.4.0.html. Configure playwright.config.ts: Chromium only, fixed viewport, webServer serving a static dir; two projects running the same specs, `legacy` (frozen file) and `svelte` (dashboard/dist/tasks-dashboard.html), selected via a per-project baseURL/path. Add tests/e2e/helpers.ts with useFixture(page, name) that serves tests/fixtures/<name>.json for **/tasks.json via page.route (and can swap the response or return 404), plus an auto fixture that fails the test on any non-localhost request. snapshotPathTemplate must omit the project name so svelte compares against legacy screenshots. Add `npm run test:e2e`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-003"
       ],
@@ -120,7 +120,7 @@
         "dashboard/tests/legacy/tasks-dashboard.v0.4.0.html"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T19:30:36Z"
     },
     {
       "id": "T-007",

@@ -267,7 +267,7 @@
       "description": "Create src/lib/types.ts (Task, TasksFile, Status, TaskType), src/lib/theme.ts (TYPE_COLORS, STATUS_COLORS, PHASE_PALETTE, FALLBACK_TYPE, type/status emoji maps, phaseColor/typeStyle/statusStyle, lifted from the legacy inline script) and src/lib/load.ts (fetch ./tasks.json?<timestamp>, return tasks, taskMap and projectName, or a typed error). Unit tests for the style fallbacks and the loader (mock fetch, including HTTP error and no-meta).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-005",
         "T-013"
@@ -279,7 +279,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:07:35Z"
     },
     {
       "id": "T-015",

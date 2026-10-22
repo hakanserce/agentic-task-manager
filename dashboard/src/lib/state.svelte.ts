@@ -26,6 +26,8 @@ export class DashboardState {
 
   graphCollapsed = $state(false);
 
+  whatsNewOpen = $state(false);
+
   // On by default (FR-6.1); the user's choice is remembered per browser (FR-6.2)
   autoRefresh = $state(getPref('autoRefresh', true));
   autoRefreshSeconds = $state(getPref('autoRefreshSeconds', 5));
@@ -75,6 +77,14 @@ export class DashboardState {
 
   closeDetail() {
     this.detailOpen = false;
+  }
+
+  openWhatsNew() {
+    this.whatsNewOpen = true;
+  }
+
+  closeWhatsNew() {
+    this.whatsNewOpen = false;
   }
 
   private apply(loaded: { tasks: Task[]; taskMap: ReadonlyMap<string, Task>; projectName: string }) {

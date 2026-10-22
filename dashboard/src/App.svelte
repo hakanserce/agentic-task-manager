@@ -7,6 +7,7 @@
   import DepGraph from './components/DepGraph.svelte';
   import TaskGrid from './components/TaskGrid.svelte';
   import DetailPanel from './components/DetailPanel.svelte';
+  import WhatsNew from './components/WhatsNew.svelte';
 
   onMount(() => {
     dashboard.load();
@@ -19,3 +20,4 @@
 <DepGraph />
 <TaskGrid />
 <DetailPanel />
+<WhatsNew />

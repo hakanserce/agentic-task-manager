@@ -188,7 +188,7 @@
       "description": "tests/e2e/filters.spec.ts and cards.spec.ts, green on legacy. Filters: generated phase/type/status buttons (.filter-btn[data-filter][data-value]), status order todo,in_progress,done,blocked,skipped, capitalized labels, multi-select is OR within a group and AND across groups, 'All' clears the group, active classes stay in sync, 'N of M shown' text, empty-result message in both the card grid and the graph. Cards: .task-card[data-id] with phase/type/status badges, 'needs:' dependency links scroll to and highlight the target card, UC and requirement tags.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-008"
       ],
@@ -197,7 +197,7 @@
         "dashboard/tests/e2e/cards.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T20:47:53Z"
     },
     {
       "id": "T-011",

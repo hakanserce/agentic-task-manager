@@ -77,3 +77,12 @@ export function statNumber(page: Page, label: string) {
     .filter({ has: page.locator('.label', { hasText: new RegExp(`^${label}$`) }) })
     .locator('.number');
 }
+
+export function filterButton(page: Page, group: 'phase' | 'type' | 'status', value: string) {
+  return page.locator(`.filter-btn[data-filter="${group}"][data-value="${value}"]`);
+}
+
+/** IDs of the task cards currently shown, in display order. */
+export function visibleCardIds(page: Page) {
+  return page.locator('.task-card').evaluateAll((cards) => cards.map((c) => (c as HTMLElement).dataset.id));
+}

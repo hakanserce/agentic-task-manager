@@ -1,0 +1,21 @@
+{
+  "name": "atm-dashboard",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Source for the Agentic Task Manager dashboard. Builds to a single self-contained HTML file.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^24.19.2",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5"
+  }
+}

@@ -28,8 +28,14 @@
       "requirements": [],
       "use_cases": [],
       "status": "done",
-      "dependencies": ["T-001"],
-      "files": ["docs/svelte-migration-plan.md", "docs/tasks.json", "docs/tasks-dashboard.html"],
+      "dependencies": [
+        "T-001"
+      ],
+      "files": [
+        "docs/svelte-migration-plan.md",
+        "docs/tasks.json",
+        "docs/tasks-dashboard.html"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -41,11 +47,22 @@
       "description": "Create dashboard/ (not shipped; plugin source is ./plugin) with package.json, vite.config.ts, svelte.config.js, tsconfig.json, index.html (keeping <meta name=\"atm-dashboard-version\">), src/main.ts and a placeholder App.svelte. Use Svelte 5 runes. Add dashboard/node_modules, dist, test-results and playwright-report to .gitignore. `npm run dev` should serve the placeholder.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
-      "dependencies": ["T-002"],
-      "files": ["dashboard/package.json", "dashboard/vite.config.ts", "dashboard/svelte.config.js", "dashboard/tsconfig.json", "dashboard/index.html", "dashboard/src/main.ts", "dashboard/src/App.svelte", ".gitignore"],
+      "status": "done",
+      "dependencies": [
+        "T-002"
+      ],
+      "files": [
+        "dashboard/package.json",
+        "dashboard/vite.config.ts",
+        "dashboard/svelte.config.js",
+        "dashboard/tsconfig.json",
+        "dashboard/index.html",
+        "dashboard/src/main.ts",
+        "dashboard/src/App.svelte",
+        ".gitignore"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T19:28:27Z"
     },
     {
       "id": "T-004",
@@ -56,8 +73,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-003"],
-      "files": ["dashboard/vite.config.ts", "dashboard/build/inject-version.ts"],
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/vite.config.ts",
+        "dashboard/build/inject-version.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -70,8 +92,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-003"],
-      "files": ["dashboard/vite.config.ts", "dashboard/tests/unit/setup.test.ts"],
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/vite.config.ts",
+        "dashboard/tests/unit/setup.test.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -84,8 +111,14 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-003"],
-      "files": ["dashboard/playwright.config.ts", "dashboard/tests/e2e/helpers.ts", "dashboard/tests/legacy/tasks-dashboard.v0.4.0.html"],
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/playwright.config.ts",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/legacy/tasks-dashboard.v0.4.0.html"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -98,8 +131,15 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-003"],
-      "files": ["dashboard/eslint.config.js", "dashboard/.prettierrc", "dashboard/package.json", "CLAUDE.md"],
+      "dependencies": [
+        "T-003"
+      ],
+      "files": [
+        "dashboard/eslint.config.js",
+        "dashboard/.prettierrc",
+        "dashboard/package.json",
+        "CLAUDE.md"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -112,8 +152,12 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-006"],
-      "files": ["dashboard/tests/fixtures/"],
+      "dependencies": [
+        "T-006"
+      ],
+      "files": [
+        "dashboard/tests/fixtures/"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -126,8 +170,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-008"],
-      "files": ["dashboard/tests/e2e/load.spec.ts", "dashboard/tests/e2e/stats.spec.ts"],
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/load.spec.ts",
+        "dashboard/tests/e2e/stats.spec.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -140,8 +189,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-008"],
-      "files": ["dashboard/tests/e2e/filters.spec.ts", "dashboard/tests/e2e/cards.spec.ts"],
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/filters.spec.ts",
+        "dashboard/tests/e2e/cards.spec.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -154,8 +208,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-008"],
-      "files": ["dashboard/tests/e2e/detail.spec.ts", "dashboard/tests/e2e/graph.spec.ts"],
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/detail.spec.ts",
+        "dashboard/tests/e2e/graph.spec.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -168,8 +227,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-008"],
-      "files": ["dashboard/tests/e2e/refresh.spec.ts", "dashboard/tests/e2e/edge-cases.spec.ts"],
+      "dependencies": [
+        "T-008"
+      ],
+      "files": [
+        "dashboard/tests/e2e/refresh.spec.ts",
+        "dashboard/tests/e2e/edge-cases.spec.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -182,8 +246,16 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-009", "T-010", "T-011", "T-012"],
-      "files": ["dashboard/tests/e2e/visual.spec.ts", "dashboard/tests/e2e/__screenshots__/"],
+      "dependencies": [
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-012"
+      ],
+      "files": [
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -196,8 +268,16 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-005", "T-013"],
-      "files": ["dashboard/src/lib/types.ts", "dashboard/src/lib/theme.ts", "dashboard/src/lib/load.ts", "dashboard/tests/unit/"],
+      "dependencies": [
+        "T-005",
+        "T-013"
+      ],
+      "files": [
+        "dashboard/src/lib/types.ts",
+        "dashboard/src/lib/theme.ts",
+        "dashboard/src/lib/load.ts",
+        "dashboard/tests/unit/"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -210,8 +290,15 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-014"],
-      "files": ["dashboard/src/lib/filters.ts", "dashboard/src/lib/stats.ts", "dashboard/tests/unit/filters.test.ts", "dashboard/tests/unit/stats.test.ts"],
+      "dependencies": [
+        "T-014"
+      ],
+      "files": [
+        "dashboard/src/lib/filters.ts",
+        "dashboard/src/lib/stats.ts",
+        "dashboard/tests/unit/filters.test.ts",
+        "dashboard/tests/unit/stats.test.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -224,8 +311,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-014"],
-      "files": ["dashboard/src/lib/timeline.ts", "dashboard/tests/unit/timeline.test.ts"],
+      "dependencies": [
+        "T-014"
+      ],
+      "files": [
+        "dashboard/src/lib/timeline.ts",
+        "dashboard/tests/unit/timeline.test.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -238,8 +330,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-014"],
-      "files": ["dashboard/src/lib/graph/layout.ts", "dashboard/tests/unit/layout.test.ts"],
+      "dependencies": [
+        "T-014"
+      ],
+      "files": [
+        "dashboard/src/lib/graph/layout.ts",
+        "dashboard/tests/unit/layout.test.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -252,8 +349,16 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-015", "T-016"],
-      "files": ["dashboard/src/App.svelte", "dashboard/src/app.css", "dashboard/src/lib/state.svelte.ts", "dashboard/src/components/"],
+      "dependencies": [
+        "T-015",
+        "T-016"
+      ],
+      "files": [
+        "dashboard/src/App.svelte",
+        "dashboard/src/app.css",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/components/"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -266,8 +371,15 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-018"],
-      "files": ["dashboard/src/components/Filters.svelte", "dashboard/src/components/RefreshControls.svelte", "dashboard/src/components/TaskGrid.svelte", "dashboard/src/components/TaskCard.svelte"],
+      "dependencies": [
+        "T-018"
+      ],
+      "files": [
+        "dashboard/src/components/Filters.svelte",
+        "dashboard/src/components/RefreshControls.svelte",
+        "dashboard/src/components/TaskGrid.svelte",
+        "dashboard/src/components/TaskCard.svelte"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -280,8 +392,12 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-019"],
-      "files": ["dashboard/src/components/DetailPanel.svelte"],
+      "dependencies": [
+        "T-019"
+      ],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -294,8 +410,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-017", "T-019"],
-      "files": ["dashboard/src/components/DepGraph.svelte"],
+      "dependencies": [
+        "T-017",
+        "T-019"
+      ],
+      "files": [
+        "dashboard/src/components/DepGraph.svelte"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -308,8 +429,14 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-020", "T-021"],
-      "files": ["dashboard/tests/unit/TaskCard.test.ts", "dashboard/tests/unit/Filters.test.ts"],
+      "dependencies": [
+        "T-020",
+        "T-021"
+      ],
+      "files": [
+        "dashboard/tests/unit/TaskCard.test.ts",
+        "dashboard/tests/unit/Filters.test.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -322,8 +449,15 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-022"],
-      "files": ["dashboard/vite.config.ts", "dashboard/playwright.config.ts", "dashboard/tests/e2e/guardrails.spec.ts", "plugin/templates/tasks-dashboard.html"],
+      "dependencies": [
+        "T-022"
+      ],
+      "files": [
+        "dashboard/vite.config.ts",
+        "dashboard/playwright.config.ts",
+        "dashboard/tests/e2e/guardrails.spec.ts",
+        "plugin/templates/tasks-dashboard.html"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -336,8 +470,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-023"],
-      "files": [".github/workflows/ci.yml", "dashboard/scripts/check-versions.mjs"],
+      "dependencies": [
+        "T-023"
+      ],
+      "files": [
+        ".github/workflows/ci.yml",
+        "dashboard/scripts/check-versions.mjs"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -350,8 +489,14 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-023"],
-      "files": ["plugin/.claude-plugin/plugin.json", ".claude-plugin/marketplace.json", "README.md"],
+      "dependencies": [
+        "T-023"
+      ],
+      "files": [
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -364,8 +509,14 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-024", "T-025"],
-      "files": ["dashboard/playwright.config.ts", "dashboard/tests/e2e/"],
+      "dependencies": [
+        "T-024",
+        "T-025"
+      ],
+      "files": [
+        "dashboard/playwright.config.ts",
+        "dashboard/tests/e2e/"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -378,8 +529,13 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-026"],
-      "files": ["dashboard/tests/e2e/graph-zoom.spec.ts", "dashboard/tests/unit/view.test.ts"],
+      "dependencies": [
+        "T-026"
+      ],
+      "files": [
+        "dashboard/tests/e2e/graph-zoom.spec.ts",
+        "dashboard/tests/unit/view.test.ts"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -392,8 +548,15 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-027"],
-      "files": ["dashboard/src/lib/graph/view.ts", "dashboard/src/components/DepGraph.svelte", "dashboard/src/components/GraphControls.svelte", "dashboard/src/components/Minimap.svelte"],
+      "dependencies": [
+        "T-027"
+      ],
+      "files": [
+        "dashboard/src/lib/graph/view.ts",
+        "dashboard/src/components/DepGraph.svelte",
+        "dashboard/src/components/GraphControls.svelte",
+        "dashboard/src/components/Minimap.svelte"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     },
@@ -406,8 +569,14 @@
       "requirements": [],
       "use_cases": [],
       "status": "todo",
-      "dependencies": ["T-028"],
-      "files": ["plugin/.claude-plugin/plugin.json", ".claude-plugin/marketplace.json", "README.md"],
+      "dependencies": [
+        "T-028"
+      ],
+      "files": [
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md"
+      ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T19:19:41Z"
     }

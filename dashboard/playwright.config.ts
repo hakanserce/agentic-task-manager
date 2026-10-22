@@ -10,7 +10,9 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   // No {projectName}: the svelte port is compared against the legacy baselines
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{platform}{ext}',
-  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
+  // Strict on purpose: the port reuses the legacy CSS, so it should match pixel for pixel. Loosen per test, deliberately.
+  // The default per-pixel threshold (0.2) misses e.g. a green -> cyan text color change.
+  expect: { toHaveScreenshot: { threshold: 0.05 } },
   use: {
     ...devices['Desktop Chrome'],
     viewport: { width: 1280, height: 900 },

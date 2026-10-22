@@ -12,6 +12,21 @@ test.describe('stats', () => {
     await expect(page.locator('#stats .progress-fill')).toHaveAttribute('style', /width:42%/);
   });
 
+  test('status numbers are color-coded', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    const colors = {
+      Total: 'rgb(230, 237, 243)',
+      Done: 'rgb(63, 185, 80)',
+      'In Progress': 'rgb(88, 166, 255)',
+      Todo: 'rgb(139, 148, 158)',
+      Blocked: 'rgb(248, 81, 73)',
+      feature: 'rgb(63, 185, 80)',
+      test: 'rgb(188, 140, 255)',
+    };
+    for (const [label, color] of Object.entries(colors))
+      await expect(statNumber(page, label)).toHaveCSS('color', color);
+  });
+
   test('one card per type, alphabetically, with counts', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     const expected = { bugfix: '1', docs: '2', feature: '3', infra: '2', polish: '1', refactor: '1', test: '2' };

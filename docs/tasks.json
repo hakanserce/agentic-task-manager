@@ -779,7 +779,7 @@
         "FR-1.4"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-037"
       ],
@@ -788,7 +788,9 @@
         "dashboard/tests/unit/changelog.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-22T23:49:22Z",
+      "started_at": "2026-10-22T23:49:08Z",
+      "completed_at": "2026-10-22T23:49:22Z"
     },
     {
       "id": "T-039",

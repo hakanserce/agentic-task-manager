@@ -36,7 +36,8 @@ test.describe('graph sizing', () => {
     const svgCenter = await center(page);
     expect(Math.abs(nodeCenter.x - svgCenter.x)).toBeLessThan(2);
     await expect(minimap(page)).toBeVisible();
-    await expect(page.locator('#graph-container')).toHaveCSS('height', '560px');
+    // Wide but only 4 rows tall: the panel fits the graph's height at 100% (+ padding and border), below the 560px cap
+    await expect(page.locator('#graph-container')).toHaveCSS('height', `${contentSize('large-90').h + 50}px`);
   });
 
   test('a small graph opens at 100%, centered, without a minimap', async ({ page, tasksServer }) => {

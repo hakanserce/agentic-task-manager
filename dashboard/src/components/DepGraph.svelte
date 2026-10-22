@@ -1,19 +1,141 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { layoutGraph, NODE_H, NODE_W } from '../lib/graph/layout';
+  import {
+    autoFitView,
+    clampView,
+    containerHeight,
+    fitView,
+    isFullyVisible,
+    toViewBox,
+    zoomAt,
+    type View,
+  } from '../lib/graph/view';
   import { dashboard } from '../lib/state.svelte';
   import { graphNodeBg, STATUS_EMOJI, TYPE_EMOJI, typeStyle } from '../lib/theme';
+  import GraphControls from './GraphControls.svelte';
+  import Minimap from './Minimap.svelte';
 
-  const MAX_MIN_HEIGHT = 600;
+  const EMPTY_HEIGHT = 100;
+  const DRAG_THRESHOLD = 4;
+  const KEY_PAN = 60;
+  const ZOOM_STEP = 1.25;
 
   const layout = $derived(layoutGraph(dashboard.filtered));
   const empty = $derived(dashboard.filtered.length === 0);
-  // Legacy scales the SVG to the page width via viewBox (zoom/pan replaces this in phase 6)
-  const viewBox = $derived(
-    !dashboard.loaded ? undefined : empty ? '0 0 400 50' : `0 0 ${layout.width} ${layout.height}`,
+  const content = $derived({ w: layout.width, h: layout.height });
+  // When the graph overflows, the initial view centers on the task in progress, else the next one to do
+  const focus = $derived(
+    layout.nodes.find((n) => n.task.status === 'in_progress') ?? layout.nodes.find((n) => n.task.status === 'todo'),
   );
-  const minHeight = $derived(
-    !dashboard.loaded ? undefined : empty ? '50px' : Math.min(layout.height, MAX_MIN_HEIGHT) + 'px',
-  );
+
+  let svg: SVGSVGElement;
+  let vw = $state(0);
+  let vh = $state(0);
+  const viewport = $derived({ w: vw, h: vh });
+  let view = $state<View>({ k: 1, x: 0, y: 0 });
+  const active = $derived(dashboard.loaded && !empty && vw > 0 && vh > 0);
+
+  // Once the user pans or zooms, keep their view across reloads; re-fit when the set of visible tasks changes.
+  let userMoved = false;
+  let layoutKey = '';
+
+  $effect(() => {
+    const key = dashboard.filtered.map((t) => t.id).join(',');
+    if (key !== layoutKey) {
+      layoutKey = key;
+      userMoved = false;
+    }
+    if (!active) return;
+    view = userMoved
+      ? clampView(
+          untrack(() => view),
+          content,
+          viewport,
+        )
+      : autoFitView(content, viewport, focus);
+  });
+
+  function setView(v: View) {
+    view = clampView(v, content, viewport);
+    userMoved = true;
+  }
+
+  const zoomBy = (factor: number) => setView(zoomAt(view, view.k * factor, vw / 2, vh / 2));
+  const resetZoom = () => setView(zoomAt(view, 1, vw / 2, vh / 2));
+  const fitAll = () => setView(fitView(content, viewport));
+
+  // Drag to pan. Pointer capture starts only after a real drag, so plain clicks still open task details.
+  let drag: { sx: number; sy: number; x: number; y: number; id: number; moved: boolean } | null = null;
+  let panning = $state(false);
+  let suppressClick = false;
+
+  function onPointerDown(e: PointerEvent) {
+    if (e.button !== 0 || !active) return;
+    drag = { sx: e.clientX, sy: e.clientY, x: view.x, y: view.y, id: e.pointerId, moved: false };
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.sx;
+    const dy = e.clientY - drag.sy;
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+      drag.moved = true;
+      svg.setPointerCapture(e.pointerId);
+      panning = true;
+    }
+    setView({ k: view.k, x: drag.x + dx, y: drag.y + dy });
+  }
+
+  function endDrag() {
+    if (drag?.moved) {
+      suppressClick = true;
+      setTimeout(() => (suppressClick = false), 0);
+    }
+    drag = null;
+    panning = false;
+  }
+
+  function onClickCapture(e: MouseEvent) {
+    if (suppressClick) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
+
+  // Ctrl/Cmd + wheel (and trackpad pinch) zooms around the cursor; a plain wheel scrolls the page.
+  // Registered manually: it must be non-passive to preventDefault.
+  $effect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || !active) return;
+      e.preventDefault();
+      const r = svg.getBoundingClientRect();
+      setView(zoomAt(view, view.k * Math.exp(-e.deltaY * 0.002), e.clientX - r.left, e.clientY - r.top));
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  });
+
+  function onKeydown(e: KeyboardEvent) {
+    if (!active || e.ctrlKey || e.metaKey) return;
+    const keys: Record<string, () => void> = {
+      '+': () => zoomBy(ZOOM_STEP),
+      '=': () => zoomBy(ZOOM_STEP),
+      '-': () => zoomBy(1 / ZOOM_STEP),
+      '0': resetZoom,
+      f: fitAll,
+      F: fitAll,
+      ArrowLeft: () => setView({ ...view, x: view.x + KEY_PAN }),
+      ArrowRight: () => setView({ ...view, x: view.x - KEY_PAN }),
+      ArrowUp: () => setView({ ...view, y: view.y + KEY_PAN }),
+      ArrowDown: () => setView({ ...view, y: view.y - KEY_PAN }),
+    };
+    const action = keys[e.key];
+    if (!action) return;
+    e.preventDefault();
+    action();
+  }
 </script>
 
 <div class="graph-section" id="graph-section">
@@ -27,11 +149,35 @@
       >{dashboard.loaded ? dashboard.filtered.length + ' tasks' : 'interactive'}</span
     >
   </div>
-  <div class="graph-container" id="graph-container" style:display={dashboard.graphCollapsed ? 'none' : undefined}>
-    <svg id="dep-graph" class="dep-graph" {viewBox} style:min-height={minHeight}>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions (keyboard pan/zoom when focused) -->
+  <div
+    class="graph-container"
+    id="graph-container"
+    tabindex="0"
+    role="application"
+    aria-label="Dependency graph"
+    style:display={dashboard.graphCollapsed ? 'none' : undefined}
+    style:height={dashboard.loaded ? (empty ? EMPTY_HEIGHT : containerHeight(layout.height)) + 'px' : undefined}
+    bind:clientWidth={vw}
+    bind:clientHeight={vh}
+    onkeydown={onKeydown}
+  >
+    <svg
+      bind:this={svg}
+      id="dep-graph"
+      class="dep-graph"
+      class:panning
+      role="presentation"
+      viewBox={active ? toViewBox(view, viewport) : undefined}
+      onpointerdown={onPointerDown}
+      onpointermove={onPointerMove}
+      onpointerup={endDrag}
+      onpointercancel={endDrag}
+      onclickcapture={onClickCapture}
+    >
       {#if dashboard.loaded}
         {#if empty}
-          <text x="20" y="30" fill="var(--text-muted)" font-size="14">No tasks match current filters</text>
+          <text x="20" y="54" fill="var(--text-muted)" font-size="14">No tasks match current filters</text>
         {:else}
           <defs
             ><marker id="arrow" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto"
@@ -67,5 +213,17 @@
         {/if}
       {/if}
     </svg>
+    {#if dashboard.loaded && !empty}
+      <GraphControls k={view.k} onzoom={zoomBy} onfit={fitAll} onreset={resetZoom} />
+      <Minimap
+        nodes={layout.nodes}
+        nodeSize={{ w: NODE_W, h: NODE_H }}
+        {content}
+        {view}
+        {viewport}
+        hidden={!active || isFullyVisible(view, content, viewport)}
+        oncenter={(x, y) => setView({ k: view.k, x: vw / 2 - x * view.k, y: vh / 2 - y * view.k })}
+      />
+    {/if}
   </div>
 </div>

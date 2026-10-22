@@ -547,7 +547,7 @@
       "description": "Implement src/lib/graph/view.ts plus GraphControls and Minimap components and update DepGraph to a fixed-height pan/zoom viewport, porting the logic from `git stash show -p stash^{/zoom-pan-minimap}` (applyGraphView, fitGraph, autoFitGraph, zoomGraphAt, the minimap and pointer handling with click suppression after a drag). Make T-027 pass; update screenshot baselines for the graph intentionally.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-027"
       ],
@@ -558,7 +558,7 @@
         "dashboard/src/components/Minimap.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:16:51Z"
     },
     {
       "id": "T-029",

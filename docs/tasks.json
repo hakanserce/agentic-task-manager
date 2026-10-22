@@ -226,7 +226,7 @@
       "description": "tests/e2e/refresh.spec.ts and edge-cases.spec.ts, green on legacy. Refresh: #reload-btn re-fetches and re-renders after the fixture response is swapped; #auto-refresh-check plus #auto-refresh-interval polls on the configured interval (use page.clock); active filters survive a reload. Edge cases: unknown type/status render with fallback styles, a dependency on a missing ID does not crash, long names are truncated to 22 chars in graph nodes. XSS divergence: a test asserting task text is rendered as literal text (not HTML) is marked test.fail() for the legacy project only, with a comment explaining the svelte port fixes it.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-008"
       ],
@@ -235,7 +235,7 @@
         "dashboard/tests/e2e/edge-cases.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T20:49:55Z"
     },
     {
       "id": "T-013",

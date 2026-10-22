@@ -121,5 +121,10 @@ Output a concise completion report:
 >
 > **Now unblocked:** (list task IDs that were waiting on this task, if any)
 
-> **Dashboard check:** If `tasks-dashboard.html` exists and has a `<meta name="atm-dashboard-version">` tag with a version older than the plugin's current version, append:
-> Tip: Your dashboard is outdated. Run `/atm:update-dashboard` to get the latest version.
+> **Dashboard check:** If `tasks-dashboard.html` exists and its `<meta name="atm-dashboard-version">` tag is missing or older than the plugin's current version, append:
+> Tip: Your dashboard is v$OLD; v$NEW is available ($HEADLINE). Run `/atm:update-dashboard` to update.
+
+The plugin's current dashboard is `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html` (its version is in the
+same meta tag) and its release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`. $HEADLINE is the first sentence of
+the first bullet under `### Added` in the newest released `## [x.y.z]` entry (or of its first bullet if it has no
+Added list); leave the parenthesis out if there are no release notes.

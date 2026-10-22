@@ -126,8 +126,13 @@ When the loop ends (no more tasks, max reached, or user quit), output a final su
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
 
-> If `tasks-dashboard.html` exists and its `<meta name="atm-dashboard-version">` is older than the plugin's current version:
-> **Note:** Your dashboard is outdated. Run `/atm:update-dashboard` to get the latest version.
+> If `tasks-dashboard.html` exists and its `<meta name="atm-dashboard-version">` is missing or older than the plugin's current version:
+> **Note:** Your dashboard is v$OLD; v$NEW is available ($HEADLINE). Run `/atm:update-dashboard` to update.
+
+The plugin's current dashboard is `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html` (its version is in the
+same meta tag) and its release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`. $HEADLINE is the first sentence of
+the first bullet under `### Added` in the newest released `## [x.y.z]` entry (or of its first bullet if it has no
+Added list); leave the parenthesis out if there are no release notes.
 
 If `--batch-push` was set, run `git push` now.
 

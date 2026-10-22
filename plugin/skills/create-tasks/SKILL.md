@@ -102,8 +102,13 @@ If it does NOT exist, copy it from the plugin templates:
 - Copy it to the same directory as `tasks.json`
 
 If `tasks-dashboard.html` already exists, check for a `<meta name="atm-dashboard-version">` tag in it.
-If the version is older than the plugin's current version, suggest:
-> Your dashboard may be outdated. Run `/atm:update-dashboard` to get the latest version with new features.
+If the tag is missing or the version is older than the plugin's current version, suggest:
+> Your dashboard is v$OLD; v$NEW is available ($HEADLINE). Run `/atm:update-dashboard` to update.
+
+The plugin's current dashboard is `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html` (its version is in the
+same meta tag) and its release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`. $HEADLINE is the first sentence of
+the first bullet under `### Added` in the newest released `## [x.y.z]` entry (or of its first bullet if it has no
+Added list); leave the parenthesis out if there are no release notes.
 
 Then tell the user how to start the dashboard:
 
@@ -113,7 +118,7 @@ Then tell the user how to start the dashboard:
 > ```
 > Then open http://localhost:8000/tasks-dashboard.html
 >
-> Tip: Enable "Auto" refresh in the dashboard (set to 5s) to watch progress live
+> The dashboard refreshes itself every 5 seconds, so you can watch progress live
 > while an agent loops through tasks with `/atm:loop-tasks`.
 
 ## Step 6: Summary

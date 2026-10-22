@@ -1,5 +1,7 @@
 import { expect, openDashboard, test } from './helpers';
 
+// The version chip is masked: it shows the version (and a "new" marker) and would otherwise change every page
+// baseline on each release; whats-new.spec covers it.
 // Baselines are per platform (-darwin locally, -linux in CI). Regenerate deliberately after an intended UI change:
 //   npx playwright test visual --update-snapshots   (then delete the stale -linux.png files; CI regenerates them)
 
@@ -11,7 +13,10 @@ for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
     });
 
     test('full page', async ({ page }) => {
-      await expect(page).toHaveScreenshot(`${fixture}-page.png`, { fullPage: true });
+      await expect(page).toHaveScreenshot(`${fixture}-page.png`, {
+        fullPage: true,
+        mask: [page.locator('#version-chip')],
+      });
     });
 
     test('dependency graph', async ({ page }) => {

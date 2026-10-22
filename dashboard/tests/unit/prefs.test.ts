@@ -52,3 +52,30 @@ describe('prefs', () => {
     expect(() => setPref('autoRefreshSeconds', 10)).not.toThrow();
   });
 });
+
+describe('storageAvailable', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('is true when values round-trip and leaves no probe behind', async () => {
+    const { storageAvailable } = await import('../../src/lib/prefs');
+    localStorage.clear();
+    expect(storageAvailable()).toBe(true);
+    expect(localStorage.length).toBe(0);
+  });
+
+  it('is false when writing throws', async () => {
+    const { storageAvailable } = await import('../../src/lib/prefs');
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    expect(storageAvailable()).toBe(false);
+  });
+
+  it('is false when localStorage is inaccessible', async () => {
+    const { storageAvailable } = await import('../../src/lib/prefs');
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError');
+    });
+    expect(storageAvailable()).toBe(false);
+  });
+});

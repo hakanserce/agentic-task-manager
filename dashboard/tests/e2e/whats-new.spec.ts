@@ -18,7 +18,8 @@ test.describe("What's new", () => {
   });
 
   test('the header shows the dashboard version', async ({ page }) => {
-    await expect(chip(page)).toHaveText(`v${pluginVersion}`);
+    // First visit: the "new" marker sits inside the chip, after the version
+    await expect(chip(page)).toHaveText(new RegExp(`^v${pluginVersion.replace(/\./g, '\\.')}`));
     // The title keeps its exact text; the chip sits next to it
     await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
   });
@@ -59,5 +60,50 @@ test.describe("What's new", () => {
     await chip(page).click();
     await page.keyboard.press('Escape');
     await expect(overlay(page)).toBeHidden();
+  });
+});
+
+test.describe('"new" marker', () => {
+  const marker = (page: Page) => page.locator('#version-chip .version-new');
+
+  test('shows until the release notes are opened, and stays gone after a reload', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(marker(page)).toBeVisible();
+    await chip(page).click();
+    await expect(marker(page)).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await page.reload();
+    await expect(chip(page)).toHaveText(`v${pluginVersion}`);
+    await expect(marker(page)).toHaveCount(0);
+  });
+
+  test('comes back after an upgrade', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await chip(page).click();
+    // Pretend the last version whose notes were read is older than this dashboard
+    await page.evaluate(() => {
+      const prefs = JSON.parse(localStorage.getItem('atm-dashboard') || '{}');
+      localStorage.setItem('atm-dashboard', JSON.stringify({ ...prefs, lastSeenVersion: '0.1.0' }));
+    });
+    await page.reload();
+    await expect(marker(page)).toBeVisible();
+  });
+
+  test('is never shown when storage is unavailable, and nothing breaks', async ({ page, tasksServer }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'localStorage', {
+        get() {
+          throw new DOMException('denied', 'SecurityError');
+        },
+      });
+    });
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(chip(page)).toHaveText(`v${pluginVersion}`);
+    await expect(marker(page)).toHaveCount(0);
+    await chip(page).click();
+    await expect(overlay(page)).toBeVisible();
+    expect(errors).toEqual([]);
   });
 });

@@ -18,6 +18,21 @@ function storage(): Storage | null {
   }
 }
 
+/** True only if values can actually be written and read back (not just if localStorage exists). */
+export function storageAvailable(): boolean {
+  try {
+    const s = storage();
+    if (!s) return false;
+    const probe = PREFS_KEY + ':probe';
+    s.setItem(probe, '1');
+    const ok = s.getItem(probe) === '1';
+    s.removeItem(probe);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function readAll(): Partial<Prefs> {
   try {
     const raw = storage()?.getItem(PREFS_KEY);

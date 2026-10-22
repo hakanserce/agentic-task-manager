@@ -6,6 +6,10 @@ To get a new dashboard into a project, update the plugin and run `/atm:update-da
 
 ## [Unreleased]
 
+### Added
+- Release notes in the dashboard: the version next to the title opens a "What's new" panel, and shows a "new" marker
+  after an upgrade until you've opened it.
+
 ### Changed
 - Auto-refresh is now on by default (every 5 seconds), and the dashboard remembers whether you switched it off and
   which interval you chose.

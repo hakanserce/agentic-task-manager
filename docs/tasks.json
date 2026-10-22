@@ -348,7 +348,7 @@
       "description": "Move the legacy CSS over verbatim (global stylesheet first; scope into components later only if screenshots stay green). src/lib/state.svelte.ts holds tasks, taskMap, filters and autoRefresh with runes. Components Header, Stats and Timeline keep the legacy DOM contract (ids/classes the e2e specs use). Build to dashboard/dist and run the load/stats specs on the svelte project.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-015",
         "T-016"
@@ -360,7 +360,7 @@
         "dashboard/src/components/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:13:40Z"
     },
     {
       "id": "T-019",
@@ -381,7 +381,7 @@
         "dashboard/src/components/TaskCard.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:14:01Z"
     },
     {
       "id": "T-020",

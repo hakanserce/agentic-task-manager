@@ -9,7 +9,7 @@ test.describe('stats', () => {
     await expect(statNumber(page, 'Todo')).toHaveText('4');
     await expect(statNumber(page, 'Blocked')).toHaveText('1');
     await expect(statNumber(page, 'Progress')).toHaveText('42%');
-    await expect(page.locator('#stats .progress-fill')).toHaveAttribute('style', /width:42%/);
+    expect(await page.locator('#stats .progress-fill').evaluate((el) => (el as HTMLElement).style.width)).toBe('42%');
   });
 
   test('status numbers are color-coded', async ({ page, tasksServer }) => {

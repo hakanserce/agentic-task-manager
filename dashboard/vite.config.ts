@@ -2,8 +2,8 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { viteSingleFile } from 'vite-plugin-singlefile';
-import { injectVersion } from './build/inject-version';
-import { renameHtmlOutput } from './build/rename-output';
+import { injectVersion } from './build/inject-version.ts';
+import { renameHtmlOutput } from './build/rename-output.ts';
 
 const pluginJson = fileURLToPath(new URL('../plugin/.claude-plugin/plugin.json', import.meta.url));
 

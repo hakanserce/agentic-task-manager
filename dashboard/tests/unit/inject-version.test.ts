@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { readPluginVersion, setDashboardVersion } from '../../build/inject-version';
+import { readPluginVersion, setDashboardVersion } from '../../build/inject-version.ts';
 
 const meta = (v: string) => `<meta name="atm-dashboard-version" content="${v}">`;
 

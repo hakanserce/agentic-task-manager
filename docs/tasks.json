@@ -488,7 +488,7 @@
       "description": "Bump plugin.json and marketplace.json to 0.5.0 and rebuild (the dashboard version comes from plugin.json). README: add a Development section (dashboard/ layout, npm scripts, fixtures, legacy vs svelte Playwright projects, the built file is committed and checked by CI) and update Project Structure.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-023"
       ],
@@ -498,7 +498,7 @@
         "README.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:34:32Z"
     },
     {
       "id": "T-026",

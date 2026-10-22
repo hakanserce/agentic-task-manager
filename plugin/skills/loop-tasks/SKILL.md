@@ -70,8 +70,9 @@ while true:
        - If 'n' or 'quit' → EXIT the loop
        - If 'skip' → skip this task (leave as todo) and continue to next iteration
 
-    6. UPDATE tasks.json: set this task's status to "in_progress"
-       and `updated_at` to the current UTC timestamp (`date -u +"%Y-%m-%dT%H:%M:%SZ"`).
+    6. UPDATE tasks.json: set this task's status to "in_progress",
+       set `updated_at` and `started_at` to the current UTC timestamp (`date -u +"%Y-%m-%dT%H:%M:%SZ"`),
+       and remove `completed_at` if present.
        Write the file immediately.
 
     7. EXECUTE the task:
@@ -82,12 +83,13 @@ while true:
     8. VERIFY the task:
        - Run build/test/lint if available (same as /atm:do-task Step 6)
        - If verification fails after 2 attempts:
-         - Set status back to "todo" and update `updated_at` to current UTC timestamp
+         - Set status back to "todo", update `updated_at` to current UTC timestamp,
+           and remove `started_at` and `completed_at`
          - Log the failure
          - Continue to next iteration (skip the failed task)
 
-    9. UPDATE tasks.json: set status to "done"
-       and `updated_at` to the current UTC timestamp.
+    9. UPDATE tasks.json: set status to "done",
+       set `updated_at` and `completed_at` to the current UTC timestamp (keep `started_at`).
        Write the file immediately.
 
     10. completed_count += 1

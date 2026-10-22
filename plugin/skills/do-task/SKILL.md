@@ -54,7 +54,8 @@ Do NOT proceed if dependencies are unmet.
 
 Update the task in tasks.json:
 - Set `status` to `"in_progress"`
-- Set `updated_at` to the current UTC timestamp (run `date -u +"%Y-%m-%dT%H:%M:%SZ"` to get it)
+- Set `updated_at` and `started_at` to the current UTC timestamp (run `date -u +"%Y-%m-%dT%H:%M:%SZ"` to get it)
+- Remove `completed_at` if the task has one (e.g. from an earlier attempt)
 
 **Write the file immediately** so the dashboard reflects the change in real time.
 
@@ -86,15 +87,15 @@ After implementation, verify the work:
 
 If verification fails:
 - Try to fix the issue (up to 2 attempts)
-- If still failing after 2 attempts, set the task status back to `"todo"`, update `updated_at` to the current UTC timestamp, and report the failure
+- If still failing after 2 attempts, set the task status back to `"todo"`, update `updated_at` to the current UTC timestamp, remove `started_at` and `completed_at`, and report the failure
 
 ## Step 7: Mark as done
 
 If verification passes, update the task in tasks.json:
 - Set `status` to `"done"`
-- Set `updated_at` to the current UTC timestamp
+- Set `updated_at` and `completed_at` to the current UTC timestamp (keep `started_at`)
 
-**Write the file immediately.**
+**Write the file immediately.** The dashboard uses `started_at` and `completed_at` for its completion history and estimates.
 
 ## Step 7b: Git commit
 

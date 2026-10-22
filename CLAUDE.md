@@ -22,8 +22,7 @@ Commands (run in `dashboard/`):
 - `npm run dev` — Vite dev server
 - `npm run build` — single-file build
 - `npm test` / `npm run test:coverage` — Vitest unit tests (`tests/unit/`, 90% line threshold on `src/lib`)
-- `npm run test:e2e` — build, then the Playwright regression suite against both projects
-- `npm run test:e2e:legacy` / `npm run test:e2e:svelte` — one project only
+- `npm run test:e2e` — build, then the Playwright e2e suite
 - `npm run check` — svelte-check, ESLint, Prettier
 - `npm run verify` — everything above; run before committing
 
@@ -36,14 +35,13 @@ Commands (run in `dashboard/`):
   The suffix matters: macOS file systems are case-insensitive, so `Filters.test.ts` would overwrite `filters.test.ts`.
 - Component tests share the `dashboard` state singleton; reset it with `loadIntoDashboard()` from
   `tests/unit/components.helpers.ts`.
-- The same specs run against two Playwright projects: `legacy` (frozen `tests/legacy/tasks-dashboard.v0.4.0.html`) and
-  `svelte` (the build). The port must keep the legacy DOM hooks the specs use (ids, `.filter-btn[data-filter]`,
-  `.task-card[data-id]`, `#detail-overlay.open`, …). Fix the port, don't loosen the spec; document intentional
-  differences in the spec itself.
-- Screenshot baselines are shared between projects (no project name in the snapshot path) and are per-platform:
-  `-darwin.png` for local Macs, `-linux.png` for CI. CI's e2e job runs in the pinned Playwright container; to
-  (re)generate Linux baselines run the CI workflow manually with "update-snapshots" and commit the artifact's files,
-  or run `npm run test:e2e:linux-snapshots` with Docker running. Regenerate both platforms when the UI changes on purpose.
+- Specs run against the build (`plugin/templates/tasks-dashboard.html`). They rely on stable DOM hooks (ids,
+  `.filter-btn[data-filter]`, `.task-card[data-id]`, `#detail-overlay.open`, …) that date from the pre-Svelte
+  dashboard, which was the parity oracle during the port and is kept, unused, at `tests/legacy/`.
+- Screenshot baselines are strict and per platform: `-darwin.png` locally, `-linux.png` in CI (pinned Playwright
+  container). After an intended UI change: `npx playwright test visual --update-snapshots`, delete the matching
+  `-linux.png` files, push; CI generates the missing Linux baselines as an artifact and fails until you commit them
+  (or run `npm run test:e2e:linux-snapshots` with Docker running).
 
 ## Versions
 `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` versions must match. Bump both when the

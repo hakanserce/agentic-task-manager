@@ -508,7 +508,7 @@
       "description": "Once CI is green with both projects, regenerate screenshot baselines from the svelte project, remove the legacy Playwright project and the legacy-only test.fail annotation. Keep tests/legacy/tasks-dashboard.v0.4.0.html for reference.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-024",
         "T-025"
@@ -518,7 +518,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:12:00Z"
     },
     {
       "id": "T-027",
@@ -528,7 +528,7 @@
       "description": "Test-first. tests/e2e/graph-zoom.spec.ts: large-90 opens at >=60% centered on the in-progress task; a small graph opens at 100% centered; dragging pans without opening details; a plain node click opens details; Ctrl/Cmd+wheel zooms around the cursor; the -, +, fit and 1:1 buttons and the + - 0 F and arrow keys work; the minimap appears only when the graph overflows and click/drag moves the view; the view persists across reload and resets when filters change. tests/unit/view.test.ts for fit, clamp and zoom-at-point. These must fail before T-028.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-026"
       ],
@@ -537,7 +537,7 @@
         "dashboard/tests/unit/view.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:14:09Z"
     },
     {
       "id": "T-028",
@@ -547,7 +547,7 @@
       "description": "Implement src/lib/graph/view.ts plus GraphControls and Minimap components and update DepGraph to a fixed-height pan/zoom viewport, porting the logic from `git stash show -p stash^{/zoom-pan-minimap}` (applyGraphView, fitGraph, autoFitGraph, zoomGraphAt, the minimap and pointer handling with click suppression after a drag). Make T-027 pass; update screenshot baselines for the graph intentionally.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-027"
       ],
@@ -558,7 +558,7 @@
         "dashboard/src/components/Minimap.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:16:51Z"
     },
     {
       "id": "T-029",
@@ -568,7 +568,7 @@
       "description": "Bump to 0.6.0, rebuild, add the dependency graph controls to the README dashboard features list, and drop the 'zoom-pan-minimap wip' stash once everything is merged.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-028"
       ],
@@ -578,7 +578,7 @@
         "README.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:17:16Z"
     }
   ]
 }

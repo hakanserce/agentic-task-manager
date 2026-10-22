@@ -58,9 +58,8 @@ test.describe('edge cases', () => {
     await expect(graphNode(page, 'T-005')).toContainText('Ünïcödé naïve café 🚀…');
   });
 
-  test('task text is rendered as text, not HTML', async ({ page }, testInfo) => {
-    // Known legacy bug (XSS): v0.4.0 injects task fields with innerHTML. The Svelte port escapes them.
-    test.fail(testInfo.project.name === 'legacy', 'legacy dashboard renders task text as HTML');
+  test('task text is rendered as text, not HTML', async ({ page }) => {
+    // Regression guard: the pre-Svelte dashboard (v0.4.0) injected task fields with innerHTML (XSS).
     await expect(card(page, 'T-006').locator('.task-name')).toHaveText('<b>Bold</b> name');
     await card(page, 'T-006').locator('.task-name').click();
     await expect(page.locator('#detail-panel')).toContainText('Has <i>markup</i> & ampersand');

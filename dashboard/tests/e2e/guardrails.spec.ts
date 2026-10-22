@@ -7,8 +7,6 @@ const PLUGIN_JSON = new URL('../../../plugin/.claude-plugin/plugin.json', import
 const MAX_BYTES = 150 * 1024;
 
 test.describe('shipped dashboard file', () => {
-  test.beforeEach(({}, testInfo) => test.skip(testInfo.project.name !== 'svelte', 'checks the build output only'));
-
   const html = () => readFileSync(BUILT, 'utf8');
 
   test('is a single self-contained file', () => {

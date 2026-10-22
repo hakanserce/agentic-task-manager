@@ -1,12 +1,11 @@
-// Minimal static server for e2e tests. Each dashboard variant is served as
-// /<variant>/tasks-dashboard.html; tasks.json is always supplied per test via page.route.
+// Minimal static server for e2e tests. The built dashboard is served as /svelte/tasks-dashboard.html;
+// tasks.json is always supplied per test via page.route.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const VARIANTS = {
-  legacy: root + 'tests/legacy/tasks-dashboard.v0.4.0.html',
   svelte: root + '../plugin/templates/tasks-dashboard.html',
 };
 const port = Number(process.env.PORT ?? 4173);

@@ -528,7 +528,7 @@
       "description": "Test-first. tests/e2e/graph-zoom.spec.ts: large-90 opens at >=60% centered on the in-progress task; a small graph opens at 100% centered; dragging pans without opening details; a plain node click opens details; Ctrl/Cmd+wheel zooms around the cursor; the -, +, fit and 1:1 buttons and the + - 0 F and arrow keys work; the minimap appears only when the graph overflows and click/drag moves the view; the view persists across reload and resets when filters change. tests/unit/view.test.ts for fit, clamp and zoom-at-point. These must fail before T-028.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-026"
       ],
@@ -537,7 +537,7 @@
         "dashboard/tests/unit/view.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T22:14:09Z"
     },
     {
       "id": "T-028",

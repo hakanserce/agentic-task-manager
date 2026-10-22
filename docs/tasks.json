@@ -944,7 +944,7 @@
       "description": "Turn \"[Unreleased]\" into \"[0.7.0] - <date>\" (auto-refresh on by default, graph keeps zoom on filter changes, What's new panel, update-dashboard shows real release notes, started_at/completed_at), bump plugin.json and marketplace.json to 0.7.0, rebuild, update README (dashboard features; Auto refresh tip in Quick Start no longer needed), copy the build to docs/tasks-dashboard.html. npm run verify green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-031",
         "T-033",
@@ -962,7 +962,9 @@
         "docs/tasks-dashboard.html"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-22T23:56:19Z",
+      "started_at": "2026-10-22T23:55:56Z",
+      "completed_at": "2026-10-22T23:56:19Z"
     },
     {
       "id": "T-046",

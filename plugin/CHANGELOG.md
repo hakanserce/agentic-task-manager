@@ -4,7 +4,7 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
-## [Unreleased]
+## [0.7.0] - 2026-10-22
 
 ### Added
 - Release notes in the dashboard: the version next to the title opens a "What's new" panel, and shows a "new" marker

@@ -16,7 +16,7 @@ A **Claude Code plugin** that gives any project file-based task management with 
 
 3. **Loop through all tasks** — "Ralph Wiggum mode" 🫠 — the agent continuously picks up the next available task and works through the entire backlog while you watch.
 
-4. **Watch progress live** — A self-contained HTML dashboard reads `tasks.json` over HTTP and shows filterable task cards, stats, and an interactive dependency graph. Enable auto-refresh to watch tasks turn green as the agent works.
+4. **Watch progress live** — A self-contained HTML dashboard reads `tasks.json` over HTTP and shows filterable task cards, stats, and an interactive dependency graph. It refreshes itself every few seconds, so you can watch tasks turn green as the agent works.
 
 ---
 
@@ -50,7 +50,7 @@ cd docs  # or wherever tasks.json was created
 python3 -m http.server 8000
 ```
 
-Open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html) in your browser. Enable **Auto** refresh (5s) to watch live.
+Open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html) in your browser. It refreshes every 5 seconds, so it stays live while agents work.
 
 ### Execute tasks
 
@@ -306,8 +306,9 @@ The dashboard is a single self-contained HTML file with no external dependencies
 - **Filters** — Filter by phase, type, and status (multi-select)
 - **Task cards** — Color-coded by status and type, with dependency links
 - **Detail panel** — Click a task to see full description, deps, files, and timestamps
-- **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Your view is kept across auto-refreshes
-- **Auto-refresh** — Enable with toggle, configurable interval (default 5s)
+- **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Filtering and auto-refresh keep your zoom level
+- **Auto-refresh** — On by default every 5s; the toggle and interval are remembered per browser
+- **What's new** — The version next to the title opens the release notes; a "new" marker appears after an upgrade
 - **Manual reload** — Click reload button for instant refresh
 
 ### Starting the dashboard
@@ -343,7 +344,7 @@ Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tas
 
 ### Watching live progress
 
-1. Start the dashboard with auto-refresh enabled (5s interval)
+1. Start the dashboard (auto-refresh is on by default, every 5s)
 2. In another terminal, start Claude Code and run `/atm:loop-tasks`
 3. Watch tasks move from todo → in_progress → done in real time
 

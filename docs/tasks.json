@@ -391,7 +391,7 @@
       "description": "DetailPanel component with #detail-overlay/#detail-panel, Depends On / Required By navigation, close via x, overlay click and Escape. The detail spec passes on the svelte project.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-019"
       ],
@@ -399,7 +399,7 @@
         "dashboard/src/components/DetailPanel.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-22T21:18:05Z"
     },
     {
       "id": "T-021",

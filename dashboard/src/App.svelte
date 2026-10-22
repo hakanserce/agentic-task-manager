@@ -5,6 +5,7 @@
   import Stats from './components/Stats.svelte';
   import Filters from './components/Filters.svelte';
   import TaskGrid from './components/TaskGrid.svelte';
+  import DetailPanel from './components/DetailPanel.svelte';
 
   onMount(() => {
     dashboard.load();
@@ -15,3 +16,4 @@
 <Stats />
 <Filters />
 <TaskGrid />
+<DetailPanel />

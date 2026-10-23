@@ -309,6 +309,7 @@ The dashboard is a single self-contained HTML file with no external dependencies
 - **Views** — Tabs for the Dependency Graph, a Kanban board and Progress; the selected tab is kept in the URL
 - **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Filtering and auto-refresh keep your zoom level
 - **Kanban board** — Todo / In Progress / Blocked / Done columns; todo cards show whether they're ready or what they wait on, and **Next up** marks the task `/atm:loop-tasks` will pick next; optional swimlanes per phase
+- **Progress** — Burndown chart (remaining vs. scope, with a forecast) and per-phase completion estimates in agent working time; click a phase to focus the chart. Estimates are most accurate with `started_at`/`completed_at`, which `/atm:do-task` and `/atm:loop-tasks` write since 0.7.0
 - **Auto-refresh** — On by default every 5s; the toggle and interval are remembered per browser
 - **What's new** — The version next to the title opens the release notes; a "new" marker appears after an upgrade
 - **Manual reload** — Click reload button for instant refresh

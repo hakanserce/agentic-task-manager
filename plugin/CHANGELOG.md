@@ -4,6 +4,17 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.9.0] - 2026-10-23
+
+### Added
+- **Progress** tab: a burndown chart of remaining work and total scope over time, with a forecast to the estimated
+  finish. Click a phase to see only that phase.
+- Per-phase table with progress, remaining work and a completion estimate, e.g. "≈ 1 h 10 m of agent work
+  (50 m – 1 h 40 m)", plus the clock time if the loop keeps running. Estimates use the median time per task over
+  the last 10 completed tasks and follow the loop's phase order; blocked work is flagged, not estimated.
+- Estimates use `started_at`/`completed_at` when present (written by the skills since 0.7.0). Older task files
+  still work: the time between completions is used instead, with idle gaps capped at 30 minutes.
+
 ## [0.8.0] - 2026-10-23
 
 ### Added

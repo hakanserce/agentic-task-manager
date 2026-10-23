@@ -1060,7 +1060,7 @@
         "FR-3.6"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-045"
       ],
@@ -1068,7 +1068,9 @@
         "dashboard/tests/fixtures/kanban.json"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-23T00:13:09Z",
+      "started_at": "2026-10-23T00:12:40Z",
+      "completed_at": "2026-10-23T00:13:09Z"
     },
     {
       "id": "T-050",

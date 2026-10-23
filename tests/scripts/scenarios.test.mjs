@@ -5,6 +5,7 @@
 //   "setup": { "files": {...}, "git": true, "commit": true, "commands": [[...]] },   see makeProject()
 //   "cwd": "docs",                          optional, relative to the project root
 //   "args": ["paths", "--json"],
+//   "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },   optional extra environment
 //   "expect": {
 //     "exit": 0,
 //     "stdout": "exact text", "json": <value parsed from stdout>, "stdoutIncludes": ["..."], "stderrIncludes": ["..."],
@@ -49,7 +50,7 @@ describe('scenarios', () => {
       try {
         const vars = { root, version: PLUGIN_VERSION };
         const e = fill(s.expect, vars);
-        const r = runAtm(s.args, path.join(root, s.cwd || '.'));
+        const r = runAtm(s.args, path.join(root, s.cwd || '.'), s.env);
         const context = `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`;
         assert.equal(r.code, e.exit ?? 0, `exit code\n${context}`);
         if ('stdout' in e) assert.equal(r.stdout, e.stdout, context);

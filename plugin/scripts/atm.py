@@ -48,6 +48,12 @@ commands:
                  and set up the folder (.gitignore, current dashboard)
   serve [start|stop|status] [--open] [--port N]
                  run the dashboard server for this project in the background
+  start <id>     mark a task in_progress (its dependencies must be done)
+  done <id>      mark an in_progress task done
+  fail <id> [--reason TEXT]
+                 put an in_progress task back to todo, recording why
+  release <id>   put an in_progress task back to todo
+                 (start/done/fail/release take --json to print the updated task)
   help           show this help
 """
 
@@ -104,8 +110,14 @@ def parse_options(args, flags=(), options=()):
     return positional, values
 
 
+def now():
+    """The current time; ATM_NOW (ISO 8601 UTC) overrides it, for tests."""
+    fixed = os.environ.get("ATM_NOW")
+    return parse_iso(fixed) if fixed else datetime.now(timezone.utc)
+
+
 def now_iso():
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def parse_iso(text):
@@ -634,6 +646,83 @@ def cmd_serve_child(args):
     server.serve_forever()
 
 
+# ---- task status ----
+
+STATUS_CHANGES = {
+    # command: (allowed current statuses, new status)
+    "start": (("todo",), "in_progress"),
+    "done": (("in_progress",), "done"),
+    "fail": (("in_progress",), "todo"),
+    "release": (("in_progress",), "todo"),
+}
+
+
+def load_tasks(paths):
+    if not os.path.isfile(paths["tasks"]):
+        raise AtmError(f"no tasks.json in {paths['dir']}. Run /atm:create-tasks first.")
+    data = read_json(paths["tasks"])
+    if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
+        raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
+    return data
+
+
+def find_task(data, task_id):
+    for task in data["tasks"]:
+        if task.get("id") == task_id:
+            return task
+    raise AtmError(f"no task {task_id}")
+
+
+def unfinished_dependencies(data, task):
+    status = {t.get("id"): t.get("status") for t in data["tasks"]}
+    return [(dep, status.get(dep, "missing")) for dep in task.get("dependencies", []) if status.get(dep) != "done"]
+
+
+def change_status(task, data, command, reason=None):
+    """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed."""
+    allowed, new = STATUS_CHANGES[command]
+    current = task.get("status")
+    if current not in allowed:
+        raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(allowed)}")
+    if command == "start":
+        blocking = unfinished_dependencies(data, task)
+        if blocking:
+            raise AtmError(f"can't start {task['id']}: waiting on " + ", ".join(f"{d} ({s})" for d, s in blocking))
+    stamp = now_iso()
+    task["status"] = new
+    task["updated_at"] = stamp
+    if command == "start":
+        task["started_at"] = stamp
+        task.pop("completed_at", None)
+    elif command == "done":
+        task["completed_at"] = stamp
+    else:
+        task.pop("started_at", None)
+        task.pop("completed_at", None)
+        if command == "fail":
+            task["last_failure"] = {"at": stamp, "reason": reason or "verification failed"}
+    return current
+
+
+def cmd_status_change(command):
+    def run(args):
+        positional, values = parse_options(args, flags=("--json",), options=("--reason",))
+        if len(positional) != 1:
+            raise AtmError(f"usage: atm {command} <task id>", 2)
+        paths = find_paths(os.getcwd())
+        with locked(paths["dir"]):
+            data = load_tasks(paths)
+            task = find_task(data, positional[0])
+            previous = change_status(task, data, command, values.get("--reason"))
+            write_json_atomic(paths["tasks"], data)
+        if "--json" in values:
+            out(to_json(task))
+        else:
+            out(f"{task['id']}: {previous} -> {task['status']}")
+
+    return run
+
+
 def cmd_lock_test(args):
     """Test hook: hold the task folder's lock for `seconds`, logging to .lock-test.log, so tests can check exclusion."""
     seconds = float(args[0]) if args else 0.0
@@ -656,6 +745,10 @@ COMMANDS = {
     "paths": cmd_paths,
     "migrate": cmd_migrate,
     "serve": cmd_serve,
+    "start": cmd_status_change("start"),
+    "done": cmd_status_change("done"),
+    "fail": cmd_status_change("fail"),
+    "release": cmd_status_change("release"),
     "_serve-child": cmd_serve_child,
     "_lock-test": cmd_lock_test,
     "help": cmd_help,

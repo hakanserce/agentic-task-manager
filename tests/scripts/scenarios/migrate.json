@@ -28,13 +28,15 @@
           "tasks": []
         },
         ".agentic-task-manager/tasks-dashboard.html": true,
-        ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n"
+        ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/.gitattributes": "tasks.json merge=atm\n"
       },
       "git": {
         "staged": [
           "R docs/tasks.json .agentic-task-manager/tasks.json",
           "D docs/tasks-dashboard.html",
-          "A .agentic-task-manager/.gitignore"
+          "A .agentic-task-manager/.gitignore",
+          "A .agentic-task-manager/.gitattributes"
         ]
       }
     }
@@ -61,6 +63,7 @@
         "removed_dashboard": "docs/tasks-dashboard.html",
         "warning": null,
         "gitignore_updated": true,
+        "merge_driver_updated": true,
         "dashboard": {
           "action": "updated",
           "from": "",
@@ -91,6 +94,7 @@
         "removed_dashboard": "docs/tasks-dashboard.html",
         "warning": null,
         "gitignore_updated": true,
+        "merge_driver_updated": true,
         "dashboard": {
           "action": "current",
           "from": "{version}",
@@ -119,7 +123,7 @@
         }
       },
       "git": {
-        "staged": ["A .agentic-task-manager/.gitignore"]
+        "staged": ["A .agentic-task-manager/.gitignore", "A .agentic-task-manager/.gitattributes"]
       }
     }
   },
@@ -172,7 +176,7 @@
         }
       },
       "git": {
-        "staged": ["A .agentic-task-manager/.gitignore"]
+        "staged": ["A .agentic-task-manager/.gitignore", "A .agentic-task-manager/.gitattributes"]
       }
     }
   },

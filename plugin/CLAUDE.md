@@ -26,3 +26,4 @@ completed_at (ISO 8601 UTC, optional; set when moving to done). Both are removed
 - `/atm:do-task` — Execute a single task and update its status
 - `/atm:loop-tasks` — Loop through all available tasks automatically
 - `/atm:update-dashboard` — Update the project's dashboard HTML to the latest version
+- `/atm:serve` — Start, stop or check the dashboard's local server (`start`, `stop`, `status`, `--open`)

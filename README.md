@@ -338,10 +338,7 @@ cd docs && php -S localhost:8000
 cd docs && ruby -run -e httpd . -p 8000
 ```
 
-**Or use the bundled script** (from a clone of this repo; it picks whichever of Python/Node/PHP/Ruby is available):
-```bash
-/path/to/agentic-task-manager/plugin/scripts/serve-dashboard.sh 8000 docs
-```
+**Or let atm run it:** `/atm:serve` starts a background server for the project (see below).
 
 Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).
 
@@ -404,9 +401,12 @@ agentic-task-manager/
 │   │   ├── create-tasks/SKILL.md      # /atm:create-tasks
 │   │   ├── do-task/SKILL.md           # /atm:do-task
 │   │   ├── loop-tasks/SKILL.md        # /atm:loop-tasks
+│   │   ├── serve/SKILL.md             # /atm:serve
 │   │   └── update-dashboard/SKILL.md  # /atm:update-dashboard
 │   ├── scripts/
-│   │   └── serve-dashboard.sh   # Multi-runtime HTTP server launcher
+│   │   ├── atm                  # Helper launcher: runs atm.py (Python 3.9+) or atm.mjs (Node 18+)
+│   │   ├── atm.py
+│   │   └── atm.mjs
 │   ├── templates/
 │   │   ├── tasks.json           # Example tasks.json schema
 │   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, copied to projects)

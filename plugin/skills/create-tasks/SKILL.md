@@ -112,11 +112,8 @@ Added list); leave the parenthesis out if there are no release notes.
 
 Then tell the user how to start the dashboard:
 
-> **Dashboard ready!** Start a local server to view your tasks:
-> ```
-> cd <directory-containing-tasks.json> && python3 -m http.server 8000
-> ```
-> Then open http://localhost:8000/tasks-dashboard.html
+> **Dashboard ready!** Run `/atm:serve` to start it in the background (`/atm:serve --open` also opens your
+> browser), or `/atm:serve stop` to stop it later.
 >
 > The dashboard refreshes itself every 5 seconds, so you can watch progress live
 > while an agent loops through tasks with `/atm:loop-tasks`.

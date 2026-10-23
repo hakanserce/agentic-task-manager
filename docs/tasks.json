@@ -2,7 +2,7 @@
   "meta": {
     "project": "ATM Dashboard",
     "created": "2026-10-22",
-    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md): 7 = 0.7.0 behaviour fixes, release notes, start/complete timestamps; 8 = 0.8.0 tabs and Kanban; 9 = 0.9.0 progress/burndown. Every task must leave `npm run verify` (in dashboard/) green: a behaviour change lands together with the tests it changes."
+    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the script test suite (tests/scripts, both runtimes) green: a behaviour change lands together with the tests it changes. Python and Node implementations of the helper change together."
   },
   "tasks": [
     {
@@ -1383,6 +1383,819 @@
       "updated_at": "2026-10-23T00:46:49Z",
       "started_at": "2026-10-23T00:46:30Z",
       "completed_at": "2026-10-23T00:46:49Z"
+    },
+    {
+      "id": "T-062",
+      "name": "Helper launcher and twin runtimes skeleton",
+      "phase": 10,
+      "type": "infra",
+      "description": "Create plugin/scripts/atm (POSIX sh, executable): if python3 >= 3.9 is on PATH run atm.py, else if node >= 18 run atm.mjs, else print what to install and exit 127. ATM_RUNTIME=python|node forces one (used by tests; error if that runtime is missing). Create plugin/scripts/atm.py (stdlib only) and plugin/scripts/atm.mjs (Node built-ins only) with argument parsing, `--help`, `version` (prints the plugin version read from ../.claude-plugin/plugin.json) and `paths --json` (prints project root = git top level or cwd, task dir, tasks.json path, dashboard path, legacy location if any: .agentic-task-manager/ first, then docs/tasks.json, then tasks.json in the root). Identical output from both. Keep the two files structured the same way (same function names/order) so they are easy to keep equal.",
+      "requirements": [
+        "FR-8.1",
+        "FR-6.10",
+        "NFR-2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "plugin/scripts/atm",
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-063",
+      "name": "Conformance test suite for both runtimes, in CI",
+      "phase": 10,
+      "type": "test",
+      "description": "Create tests/scripts/ at the repo root: a dependency-free Node runner (node:test) that runs every scenario against the launcher once with ATM_RUNTIME=python and once with ATM_RUNTIME=node. Scenarios are data (tests/scripts/scenarios/*.json: setup files, optional `git init`, command, expected exit code, stdout/JSON, expected files afterwards) so they are language-neutral; helpers create temp dirs/repos. Cover T-062's version, paths (each location, legacy detection, git vs non-git). Add `npm run test:scripts` in dashboard/package.json (runs node ../tests/scripts/run.mjs) and include it in `npm run verify`. CI: new `scripts` job with a matrix of (python 3.9, node 18) and (python 3.13, node 24) running the suite. Document in root CLAUDE.md (layout, commands, 'change both implementations together').",
+      "requirements": [
+        "FR-8.1a",
+        "NFR-2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-062"
+      ],
+      "files": [
+        "tests/scripts/run.mjs",
+        "tests/scripts/scenarios/",
+        "dashboard/package.json",
+        ".github/workflows/ci.yml",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-064",
+      "name": "`atm migrate`: automatic move to .agentic-task-manager/",
+      "phase": 10,
+      "type": "feature",
+      "description": "Both runtimes. `atm migrate [--json]`: if .agentic-task-manager/tasks.json exists and a legacy file too, move nothing and print a warning (exit 0). If only a legacy tasks.json exists (docs/ or root): create the folder, `git mv` it when tracked (plain move otherwise); for the legacy tasks-dashboard.html next to it: `git rm --cached` if tracked, then delete. Always ensure .agentic-task-manager/.gitignore contains tasks-dashboard.html, .server.json, claims.json, .lock/ (idempotent; preserve user lines). Copy the plugin's templates/tasks-dashboard.html into the folder if missing or older (compare atm-dashboard-version meta numerically; shared helper `ensure_dashboard`). Prints one line describing what moved (or nothing to do). Never commits. Conformance scenarios: tracked/untracked, docs/ and root legacy, both locations present, already migrated (idempotent), non-git directory, gitignore merging.",
+      "requirements": [
+        "FR-1.1",
+        "FR-1.2",
+        "FR-1.3",
+        "FR-1.4",
+        "FR-1.7"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-063"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/scenarios/migrate-*.json"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-065",
+      "name": "`atm serve` in Python: start/stop/status",
+      "phase": 10,
+      "type": "feature",
+      "description": "atm.py `serve [start|stop|status] [--open] [--port N]`. start: run `migrate` checks' ensure_dashboard, then spawn a detached child (new session, stdio to .agentic-task-manager/.server.log) running a stdlib http.server bound to 127.0.0.1 that serves the folder by absolute path (works after the launching shell's cwd is deleted) and answers GET /__atm/whoami with {project folder, pid, runtime}. Port: --port or 8000, else the next free port up to 8099. Record {pid, port, folder, runtime, started_at} in .agentic-task-manager/.server.json. If a record exists and whoami at that port answers with this folder: report its URL instead of starting. Stale record (pid gone or whoami mismatch): remove it and start. stop: only kill the pid if whoami confirms it is this folder's server, then remove the record; otherwise just clean the record and say so. status: running (URL, pid, uptime) or not running. Output: the URL http://localhost:PORT/tasks-dashboard.html; --open opens it (open / xdg-open). Server survives the parent process exiting.",
+      "requirements": [
+        "FR-6.1",
+        "FR-6.2",
+        "FR-6.3",
+        "FR-6.4",
+        "FR-6.5",
+        "FR-6.6",
+        "FR-6.7",
+        "FR-6.8"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-064"
+      ],
+      "files": [
+        "plugin/scripts/atm.py"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-066",
+      "name": "`atm serve` in Node, plus serve tests for both",
+      "phase": 10,
+      "type": "feature",
+      "description": "atm.mjs equivalent of T-065 (node:http static server with correct content types for .html/.json, detached child via spawn({detached:true, stdio:[ignore, log, log]}).unref(), same whoami endpoint, record format and output). Conformance tests (both runtimes, temp project, a test port range to avoid 8000): start then status reports it and the dashboard and tasks.json are served; second start reuses; port in use moves to the next port; stale record (fake pid) is cleaned; stop refuses to kill a pid whose whoami doesn't match (spawn an unrelated sleeping process and record its pid); serving keeps working after the launching cwd is removed; stop leaves no process. Always stop servers in test teardown.",
+      "requirements": [
+        "FR-6.1",
+        "FR-6.3",
+        "FR-6.4",
+        "FR-6.5",
+        "FR-6.6",
+        "FR-6.10"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-065"
+      ],
+      "files": [
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/serve.test.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-067",
+      "name": "`/atm:serve` skill; retire serve-dashboard.sh",
+      "phase": 10,
+      "type": "feature",
+      "description": "plugin/skills/serve/SKILL.md: parses `start` (default) | `stop` | `status` and `--open`, runs `${CLAUDE_SKILL_DIR}/../../scripts/atm serve ...` from the project root and relays the URL or status. Mentions it keeps running after the session and how to stop it. Delete plugin/scripts/serve-dashboard.sh (replace references). create-tasks Step 5: suggest `/atm:serve` instead of the python3 -m http.server command.",
+      "requirements": [
+        "FR-6.1",
+        "FR-6.8",
+        "FR-6.9"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-066"
+      ],
+      "files": [
+        "plugin/skills/serve/SKILL.md",
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/scripts/serve-dashboard.sh"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-068",
+      "name": "Skills use .agentic-task-manager/ and migrate automatically",
+      "phase": 10,
+      "type": "feature",
+      "description": "Every skill (create-tasks, do-task, loop-tasks, update-dashboard, serve) starts by running `atm migrate` and relays its one-line report; then uses `atm paths --json` instead of its own location search. create-tasks: creates .agentic-task-manager/ (via migrate) and writes tasks.json there. loop-tasks: if migrate moved something and committing is on, commit only the moved/removed paths and .gitignore as `chore: move atm files to .agentic-task-manager/` before the first task; other skills say the move is staged. update-dashboard: uses ensure_dashboard behaviour (or `atm` command) and still prints the release notes. plugin/CLAUDE.md: new location, dashboard not committed.",
+      "requirements": [
+        "FR-1.1",
+        "FR-1.3",
+        "FR-1.4",
+        "FR-1.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-064",
+        "T-067"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/skills/update-dashboard/SKILL.md",
+        "plugin/CLAUDE.md"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-069",
+      "name": "README: new folder, /atm:serve, /reload-plugins update steps",
+      "phase": 10,
+      "type": "docs",
+      "description": "README: install/update steps use `/plugin marketplace update hakanserce-plugins` then `/reload-plugins`; remove every 'restart Claude Code' instruction (currently around the install and update sections). Document .agentic-task-manager/ (what's committed: tasks.json; ignored: dashboard, server state, claims), automatic migration from docs/, `/atm:serve [stop|status] [--open]`, and the runtime requirement (Python 3.9+ or Node 18+). FR-7.2: add a line to the release task's checklist in the PR description asking the maintainer to confirm a fresh install works with /reload-plugins (can't be done from inside a session).",
+      "requirements": [
+        "FR-7.1",
+        "FR-7.2",
+        "FR-1.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-068"
+      ],
+      "files": [
+        "README.md"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-070",
+      "name": "Release 0.10.0",
+      "phase": 10,
+      "type": "docs",
+      "description": "Changelog [0.10.0]: Added (/atm:serve, .agentic-task-manager/ folder with automatic migration, runtime launcher), Changed (dashboard no longer committed; update with /reload-plugins). Bump plugin.json and marketplace.json to 0.10.0, rebuild the dashboard. npm run verify and the scripts suite green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-069"
+      ],
+      "files": [
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "plugin/templates/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-071",
+      "name": "Dogfood: move this repo's tasks into .agentic-task-manager/",
+      "phase": 10,
+      "type": "infra",
+      "description": "Last task of phase 10. Run `plugin/scripts/atm migrate` in this repo: docs/tasks.json moves to .agentic-task-manager/tasks.json (git mv), docs/tasks-dashboard.html leaves git. Update root CLAUDE.md (docs/ now holds plans only; task list in .agentic-task-manager/) and any dev script or doc that points at docs/tasks.json. Mark this task done in the NEW file. Note: the installed 0.9.0 skills only look in docs/, so phases 11-12 need the 0.10.0 plugin installed (merge, /plugin marketplace update, /reload-plugins) before looping on.",
+      "requirements": [
+        "FR-1.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-070"
+      ],
+      "files": [
+        ".agentic-task-manager/tasks.json",
+        ".agentic-task-manager/.gitignore",
+        "docs/tasks.json",
+        "docs/tasks-dashboard.html",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-072",
+      "name": "Shared lock directory and atomic writes",
+      "phase": 11,
+      "type": "feature",
+      "description": "Both runtimes, per design §4 'The lock': acquire = mkdir <dir>/.lock, write owner.json {host, pid, runtime, acquired_at}; retry every 50 ms up to 10 s; break the lock only if owner is on this host and the pid is gone, or it is older than 60 s; release removes it (also on exceptions/signals). Atomic write = write temp file in the same dir, fsync, rename over target, fsync dir where supported. Expose a `with_lock(path, fn)` / `withLock` helper and `write_json_atomic`. Conformance/unit tests: mutual exclusion, stale lock from a dead pid is broken, live foreign lock times out with a clear error, a Python holder blocks a Node waiter and vice versa.",
+      "requirements": [
+        "FR-8.1",
+        "FR-8.1a"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-071"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/lock.test.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-073",
+      "name": "`atm start|done|fail|release` status commands",
+      "phase": 11,
+      "type": "feature",
+      "description": "Both runtimes. Under the tasks lock: re-read tasks.json, validate the task exists and the transition is legal (start: todo -> in_progress, sets started_at and updated_at; done: in_progress -> done, sets completed_at; fail: in_progress -> todo with a `last_failure` note; release: in_progress -> todo). Write atomically preserving key order and 2-space formatting (byte-identical output from both runtimes). Clear exit codes and messages. Conformance scenarios for each transition, illegal transitions, unknown id, missing file.",
+      "requirements": [
+        "FR-8.1",
+        "FR-8.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-072"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/scenarios/status-*.json"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-074",
+      "name": "Claims with leases: store, heartbeat, claims, expiry",
+      "phase": 11,
+      "type": "feature",
+      "description": "Both runtimes. Claims file = $(git rev-parse --git-common-dir)/atm/claims.json (fallback .agentic-task-manager/claims-store.json outside git), guarded by its own lock dir. Claim = {task, agent (CLAUDE_SESSION_ID or ATM_AGENT env, else host:pid), branch, worktree, claimed_at, lease_expires_at}; lease default 30 min (meta.lease_minutes overrides). start takes a claim and fails if another live claim holds the task; done/fail/release drop it; `heartbeat <id>` extends it (only for the holder); `claims [--json]` lists live claims with time left. Any command first expires stale leases: task back to todo with `last_failure: 'lease expired (agent X)'`. After every change write the gitignored snapshot .agentic-task-manager/claims.json for the dashboard. Tests incl. two worktrees of one repo seeing each other's claims and lease expiry with an injectable clock (ATM_NOW).",
+      "requirements": [
+        "FR-8.4",
+        "FR-8.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-073"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/claims.test.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-075",
+      "name": "`atm next --claim` with the loop's selection rule",
+      "phase": 11,
+      "type": "feature",
+      "description": "Both runtimes. `atm next [--phase N] [--type T] [--claim] [--json]`: lowest phase then lowest id among todo tasks whose dependencies are all done and that have no live claim; with --claim, start+claim it in the same lock section. Prints the task (JSON with --json) or exits 3 with 'no task available' (distinguishing 'blocked' from 'all done'). Conformance scenarios mirroring the dashboard's Next-up rule (dashboard/src/lib/kanban.ts) so both agree.",
+      "requirements": [
+        "FR-8.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-074"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/scenarios/next-*.json"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-076",
+      "name": "Concurrency stress test with mixed runtimes",
+      "phase": 11,
+      "type": "test",
+      "description": "tests/scripts/stress.test.mjs: a 40-task project; spawn 16 concurrent workers (half Python, half Node) that loop `atm next --claim` then `atm done` until none left; assert every task done exactly once and no claim double-granted (each worker logs what it got). In parallel a reader polls tasks.json and claims.json every few ms and asserts it always parses. Run in a temp git repo with two worktrees. Keep runtime under ~30 s.",
+      "requirements": [
+        "FR-8.10"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-075"
+      ],
+      "files": [
+        "tests/scripts/stress.test.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-077",
+      "name": "tasks.json merge driver and `atm init`",
+      "phase": 11,
+      "type": "feature",
+      "description": "Both runtimes. `atm merge-driver %O %A %B` merges task by task (design option E): union of tasks by id; same id changed on one side takes that side; changed on both: status takes the furthest along (todo < in_progress < done, blocked/skipped explicit wins over todo), timestamps take the newest, definition fields (name, description, deps, files, phase, type, requirements) changed differently on both sides = conflict (exit 1, leave conflict markers-free file plus a report on stderr); new tasks on both sides with colliding ids: keep both, renumber theirs to the next free id and rewrite dependencies that point to it within their new tasks. Writes the result to %A in the standard format. `atm init`: adds `tasks.json merge=atm` to .agentic-task-manager/.gitattributes and sets git config merge.atm.name/driver (pointing at the launcher by absolute path), idempotent.",
+      "requirements": [
+        "FR-8.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-073"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-078",
+      "name": "Merge driver tests from the design's experiments",
+      "phase": 11,
+      "type": "test",
+      "description": "tests/scripts/merge.test.mjs (both runtimes): in temp repos with `atm init`, reproduce the design doc's experiments with real `git merge`: adjacent status changes (clean), finishing adjacent tasks (clean), same task claimed on both branches (clean merge, status in_progress, newest timestamp), both sides append a task (both kept, renumbered, deps rewritten), same task's description edited differently (merge fails and reports it). Plus unit scenarios for the driver directly.",
+      "requirements": [
+        "FR-8.6",
+        "FR-8.10"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-077"
+      ],
+      "files": [
+        "tests/scripts/merge.test.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-079",
+      "name": "Skills use atm for every status change; commit hygiene",
+      "phase": 11,
+      "type": "feature",
+      "description": "do-task and loop-tasks: get work only via `atm next --claim` (or `atm start <id>`), finish with `atm done`, `atm fail` on failure, `atm heartbeat` roughly every 10 minutes on long tasks; never edit status/started_at/completed_at by hand (state the 6 agent rules from design §4). Commit `.agentic-task-manager/tasks.json` plus exactly the files the agent changed for this task (tracked by the agent; `git add <paths>`), never `git add -A`/`git add .`. create-tasks runs `atm init`. Remove the now-obsolete manual timestamp instructions.",
+      "requirements": [
+        "FR-8.2",
+        "FR-8.3",
+        "FR-8.7"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-075",
+        "T-077"
+      ],
+      "files": [
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/skills/create-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-080",
+      "name": "Dashboard shows live claims",
+      "phase": 11,
+      "type": "feature",
+      "description": "Load ./claims.json alongside tasks.json on every (auto-)refresh; a missing file or 404 means no claims (no error shown). src/lib/claims.ts: parse, keep live ones, map by task id. In-progress task cards and Kanban cards show the agent (short form), branch and 'claimed 12 m ago'; the detail panel shows the full claim and lease expiry. Extend the e2e tasksServer fixture to route claims.json (default 404, can serve an object). Unit tests for claims.ts (90% coverage), component/e2e tests, update screenshots if card layout changes.",
+      "requirements": [
+        "FR-8.8"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-074"
+      ],
+      "files": [
+        "dashboard/src/lib/claims.ts",
+        "dashboard/src/lib/load.ts",
+        "dashboard/src/components/TaskCard.svelte",
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/unit/claims.test.ts",
+        "dashboard/tests/e2e/claims.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-081",
+      "name": "Remote claims via refs/atm/claims (P2)",
+      "phase": 11,
+      "type": "feature",
+      "description": "Both runtimes, opt-in with meta.coordination = 'remote'. Claiming also runs `git push origin <HEAD sha>:refs/atm/claims/<id>` and only proceeds if accepted (rejected = someone else holds it; roll back the local claim); done/fail/release/expiry push a deletion (best-effort, logged on failure). `atm claims --remote` lists remote claim refs (git ls-remote). Tests with a local bare repo as origin and two clones. Skip if it can't be done cheaply; record the reason.",
+      "requirements": [
+        "FR-8.11"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-075"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "tests/scripts/remote.test.mjs"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-082",
+      "name": "README: Running agents in parallel",
+      "phase": 11,
+      "type": "docs",
+      "description": "README section: the problem in two sentences, recommended setup (one worktree + branch per agent from one clone, `git worktree add ../proj-agent2 -b agent2`, run /atm:loop-tasks in each), what atm guarantees (single writer with lock, claims shared across worktrees, leases, merge driver) and what it doesn't (same files edited in one working tree; different machines without remote claims), the agent rules, the atm commands for humans, and remote claims if T-081 shipped. Link docs/parallel-agents-design.md.",
+      "requirements": [
+        "FR-8.9"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-079",
+        "T-080"
+      ],
+      "files": [
+        "README.md"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-083",
+      "name": "Release 0.11.0",
+      "phase": 11,
+      "type": "docs",
+      "description": "Changelog [0.11.0] (parallel agents: atm helper, claims with leases, merge driver, commit hygiene, claims on the dashboard). Bump to 0.11.0, rebuild. All suites green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-076",
+        "T-078",
+        "T-081",
+        "T-082"
+      ],
+      "files": [
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "plugin/templates/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-084",
+      "name": "Faceted filter counts (logic)",
+      "phase": 12,
+      "type": "feature",
+      "description": "src/lib/filters.ts: facetCounts(tasks, filters) -> for each group and value, the number of tasks matching that value given the selections in the OTHER groups (OR within group, AND across), plus the group's 'All' count. Unit tests incl. empty selections, multiple selections, unknown values.",
+      "requirements": [
+        "FR-4.1",
+        "FR-4.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-083"
+      ],
+      "files": [
+        "dashboard/src/lib/filters.ts",
+        "dashboard/tests/unit/filters.test.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-085",
+      "name": "Count badges on filter buttons",
+      "phase": 12,
+      "type": "feature",
+      "description": "Filters.svelte: badge with the faceted count on every button incl. All; count 0 dims the button but it stays clickable; aria-label like 'Feature, 3 tasks'. Updates with filters, reload and auto-refresh. Component test + e2e; update screenshot baselines (delete matching -linux.png).",
+      "requirements": [
+        "FR-4.1",
+        "FR-4.3",
+        "FR-4.4",
+        "FR-4.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-084"
+      ],
+      "files": [
+        "dashboard/src/components/Filters.svelte",
+        "dashboard/tests/unit/Filters.component.test.ts",
+        "dashboard/tests/e2e/filters.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-086",
+      "name": "Saved view per project (storage logic)",
+      "phase": 12,
+      "type": "feature",
+      "description": "src/lib/view-store.ts: project key = meta.id, else meta.project, else 'default'; stores {filters, tab, graphCollapsed, kanban:{groupByPhase, showSkipped}, progressPhase} under localStorage 'atm-dashboard:view:<key>' (reuse prefs.ts safe storage). sanitize(view, tasks) drops phases/types/statuses that no longer exist. Migrate the per-browser Kanban options from the old prefs key on first read. Unit tests (90%).",
+      "requirements": [
+        "FR-5.1",
+        "FR-5.2",
+        "FR-5.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-083"
+      ],
+      "files": [
+        "dashboard/src/lib/view-store.ts",
+        "dashboard/src/lib/prefs.ts",
+        "dashboard/tests/unit/view-store.test.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-087",
+      "name": "Restore and save the view; Reset view",
+      "phase": 12,
+      "type": "feature",
+      "description": "state.svelte.ts restores the saved view after the first load and saves on change. URL #view= overrides the saved tab. Theme, mode, auto-refresh and last-seen version stay in the per-browser prefs. A 'Reset view' control (header or filters row) clears this project's saved view and returns to defaults. create-tasks writes meta.id (random, e.g. 8 hex chars) for new task files and `atm init` adds one when missing. e2e: reload restores filters/tab/collapsed/kanban/progress focus; two projects (different meta.id) on the same origin keep separate views; hash wins; reset works.",
+      "requirements": [
+        "FR-5.1",
+        "FR-5.2",
+        "FR-5.4",
+        "FR-5.5",
+        "FR-5.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-086"
+      ],
+      "files": [
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/components/Header.svelte",
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/scripts/atm.py",
+        "plugin/scripts/atm.mjs",
+        "dashboard/tests/e2e/saved-view.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-088",
+      "name": "Save graph zoom and pan per project (P2)",
+      "phase": 12,
+      "type": "feature",
+      "description": "Add the graph view (scale, offset) to the saved view; restore it when the graph first renders instead of the initial fit, if the content still overlaps the viewport (else fall back to the normal initial view). e2e.",
+      "requirements": [
+        "FR-5.7"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-087"
+      ],
+      "files": [
+        "dashboard/src/lib/view-store.ts",
+        "dashboard/src/components/DepGraph.svelte",
+        "dashboard/tests/e2e/saved-view.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-089",
+      "name": "Colour tokens everywhere (no visual change)",
+      "phase": 12,
+      "type": "refactor",
+      "description": "Move every colour to CSS custom properties: surfaces, text, borders, accent, status, type and phase colours, chart series, graph node fills/strokes/edges, minimap. theme.ts exposes token names instead of hex values where components need colours in JS (SVG attributes use var(--...)). No hard-coded colour remains in components (add a unit/lint test that greps src/components and src/lib for hex/rgb literals outside the token files). Existing dark screenshots must stay identical.",
+      "requirements": [
+        "FR-2.1",
+        "FR-3.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-085",
+        "T-087"
+      ],
+      "files": [
+        "dashboard/src/app.css",
+        "dashboard/src/lib/theme.ts",
+        "dashboard/src/components/DepGraph.svelte",
+        "dashboard/src/components/Minimap.svelte",
+        "dashboard/src/components/BurndownChart.svelte",
+        "dashboard/tests/unit/no-hardcoded-colours.test.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-090",
+      "name": "Themes as data; light/dark for Default; mode control",
+      "phase": 12,
+      "type": "feature",
+      "description": "src/lib/themes/: one token map per theme with light and dark variants; Default dark = today's colours, Default light = a GitHub-light style counterpart. Apply via data-theme/data-mode on <html>. Header control System/Light/Dark (System follows prefers-color-scheme live); stored per browser. Inline script in index.html applies the stored theme/mode before first paint (no flash). Burndown series re-validated for the light surface with the dataviz validator (record the result in a comment). Unit tests for theme resolution; e2e for the control, persistence and emulated prefers-color-scheme.",
+      "requirements": [
+        "FR-2.2",
+        "FR-2.3",
+        "FR-2.4",
+        "FR-2.5",
+        "FR-3.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-089"
+      ],
+      "files": [
+        "dashboard/src/lib/themes/",
+        "dashboard/index.html",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/tests/e2e/theme.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-091",
+      "name": "Light-mode screenshot baselines and view check",
+      "phase": 12,
+      "type": "test",
+      "description": "Visual specs in light mode for the main views (task grid, graph, Kanban, Progress, detail and What's new panels). Inspect every view in light mode for unreadable or invisible elements and fix tokens. Add the new -darwin baselines; CI generates -linux.",
+      "requirements": [
+        "FR-2.5",
+        "FR-2.6",
+        "NFR-4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-090"
+      ],
+      "files": [
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-092",
+      "name": "Themes: Nord, Solarized; theme picker",
+      "phase": 12,
+      "type": "feature",
+      "description": "Token maps for Nord (light: Snow Storm surfaces, dark: Polar Night) and Solarized (light/dark), from their published palettes; status colours keep meaning (done green-ish, blocked red-ish). Theme picker next to the mode control, stored per browser, applied before first paint. e2e: switching theme changes tokens and persists.",
+      "requirements": [
+        "FR-3.1",
+        "FR-3.2",
+        "FR-3.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-090"
+      ],
+      "files": [
+        "dashboard/src/lib/themes/nord.ts",
+        "dashboard/src/lib/themes/solarized.ts",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/tests/e2e/theme.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-093",
+      "name": "Themes: Catppuccin, Tokyo Night, High contrast",
+      "phase": 12,
+      "type": "feature",
+      "description": "Catppuccin (Latte light, Mocha dark), Tokyo Night (Day light, Night dark) from their published palettes; High contrast light and dark designed for WCAG AAA text (7:1). Where a palette colour fails validation for a slot, use the nearest passing colour and note it in the theme file.",
+      "requirements": [
+        "FR-3.1",
+        "FR-3.3",
+        "FR-3.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-092"
+      ],
+      "files": [
+        "dashboard/src/lib/themes/catppuccin.ts",
+        "dashboard/src/lib/themes/tokyo-night.ts",
+        "dashboard/src/lib/themes/high-contrast.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-094",
+      "name": "Contrast checks for every theme and mode",
+      "phase": 12,
+      "type": "test",
+      "description": "Unit test that, for every theme x mode, computes WCAG contrast of text tokens (primary, secondary, muted, on-accent, badge text) against the surfaces they are used on: >= 4.5 (muted >= 3 for large/secondary labels as documented), High contrast >= 7. Run the dataviz palette validator on each theme's chart series per mode and fix failures; record results in docs/theme-validation.md. Screenshot one main view per theme (dark and light) to catch regressions. Check the 150 KB budget (guardrails spec) still holds.",
+      "requirements": [
+        "FR-3.4",
+        "NFR-1",
+        "NFR-4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-093",
+        "T-091"
+      ],
+      "files": [
+        "dashboard/tests/unit/theme-contrast.test.ts",
+        "docs/theme-validation.md",
+        "dashboard/tests/e2e/visual.spec.ts"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-095",
+      "name": "Release 0.12.0",
+      "phase": 12,
+      "type": "docs",
+      "description": "Changelog [0.12.0] (filter counts, saved views per project, light/dark modes, six themes). README dashboard features. Bump to 0.12.0, rebuild. All suites green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-088",
+        "T-094"
+      ],
+      "files": [
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md",
+        "plugin/templates/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-23T16:41:18Z",
+      "updated_at": "2026-10-23T16:41:18Z"
     }
   ]
 }

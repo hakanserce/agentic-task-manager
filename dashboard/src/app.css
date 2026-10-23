@@ -541,6 +541,45 @@ h1 {
   margin-bottom: 12px;
 }
 
+.view-tabs {
+  display: flex;
+  gap: 4px;
+}
+.view-tab {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.view-tab:hover {
+  color: var(--text);
+}
+.view-tab[aria-selected='true'] {
+  color: var(--text);
+  background: var(--surface2);
+  border-color: var(--border);
+}
+.view-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.view-panel[hidden] {
+  display: none;
+}
+.view-placeholder {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
 .graph-container {
   position: relative;
   background: var(--surface);

@@ -1,0 +1,79 @@
+// Shared helpers for the atm script tests. Tests run the helper through its launcher (plugin/scripts/atm), as the
+// skills do.
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+export const ATM = path.join(REPO, 'plugin/scripts/atm');
+export const PLUGIN_VERSION = JSON.parse(
+  fs.readFileSync(path.join(REPO, 'plugin/.claude-plugin/plugin.json'), 'utf8'),
+).version;
+
+/** Run `atm args...`; returns { code, stdout, stderr }. */
+export function runAtm(args, cwd, env = {}) {
+  const result = spawnSync(ATM, args, {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, ...env },
+  });
+  if (result.error) throw result.error;
+  return { code: result.status, stdout: result.stdout, stderr: result.stderr };
+}
+
+export function git(args, cwd) {
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  if (result.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${result.stderr}`);
+  return result.stdout.trim();
+}
+
+/** A fresh temporary directory (real path, so it matches what the scripts report on macOS). */
+export function tempDir(prefix = 'atm-test-') {
+  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
+}
+
+/**
+ * Create a project from a scenario `setup`:
+ *   files:  { "relative/path": "text" | <JSON value> }   written before anything else
+ *   git:    true to `git init`; commit: true to also commit everything
+ *   commands: [["git", "mv", ...], ...] extra commands run after the commit, with $ATM set to the launcher
+ */
+export function makeProject(setup = {}) {
+  const root = tempDir();
+  for (const [file, content] of Object.entries(setup.files || {})) {
+    const full = path.join(root, file);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, typeof content === 'string' ? content : JSON.stringify(content, null, 2) + '\n');
+  }
+  if (setup.git || setup.commit) {
+    git(['init', '-q', '-b', 'main'], root);
+    git(['config', 'user.email', 'test@example.com'], root);
+    git(['config', 'user.name', 'atm test'], root);
+    git(['config', 'commit.gpgsign', 'false'], root);
+  }
+  if (setup.commit) {
+    git(['add', '-A'], root);
+    git(['commit', '-q', '-m', 'setup', '--allow-empty'], root);
+  }
+  for (const [cmd, ...args] of setup.commands || []) {
+    const env = { ...process.env, ATM };
+    const result = spawnSync(cmd, args, { cwd: root, encoding: 'utf8', env });
+    if (result.status !== 0) throw new Error(`${cmd} ${args.join(' ')} failed: ${result.stderr}`);
+  }
+  return root;
+}
+
+/** Replace {root} and {version} placeholders in strings anywhere inside an expected value. */
+export function fill(value, vars) {
+  if (typeof value === 'string') return value.replace(/\{(root|version)\}/g, (_, k) => vars[k]);
+  if (Array.isArray(value)) return value.map((v) => fill(v, vars));
+  if (value && typeof value === 'object')
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, fill(v, vars)]));
+  return value;
+}
+
+export function removeDir(dir) {
+  fs.rmSync(dir, { recursive: true, force: true });
+}

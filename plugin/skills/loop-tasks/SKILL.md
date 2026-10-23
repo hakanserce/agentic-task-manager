@@ -33,6 +33,34 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 
 If no arguments are provided, run all available tasks with no pausing and auto-commit after each task (default behavior).
 
+## Locate tasks.json
+
+Before anything else (also for `--dry-run`):
+
+From the project root, run the plugin's helper:
+
+```bash
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+```
+
+It keeps the project's `.agentic-task-manager/` folder in order:
+- an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
+  staged in git, not committed;
+- the dashboard there (`tasks-dashboard.html`, a copy that isn't committed) is installed or updated to the plugin's
+  version.
+
+Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
+atm needs it, so ask the user to install it and stop.
+
+The task file is `.agentic-task-manager/tasks.json` at the project root. If the helper said "No tasks.json found",
+tell the user to run `/atm:create-tasks` and stop.
+
+If it moved files and committing is on (no `--no-commit`, and not `--dry-run`), commit the move on its own before the
+first task:
+`git commit -m "chore: move atm files to .agentic-task-manager/" -- <old tasks.json> .agentic-task-manager/tasks.json .agentic-task-manager/.gitignore`
+(add the old `tasks-dashboard.html` path too if it was removed). With `--no-commit`, mention in the final summary that
+the move is staged but not committed.
+
 ## Dry Run Mode
 
 If `--dry-run` is set, do NOT execute any tasks. Instead:
@@ -125,14 +153,6 @@ When the loop ends (no more tasks, max reached, or user quit), output a final su
 > **Failed:** N tasks that failed verification (if any)
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
-
-> If `tasks-dashboard.html` exists and its `<meta name="atm-dashboard-version">` is missing or older than the plugin's current version:
-> **Note:** Your dashboard is v$OLD; v$NEW is available ($HEADLINE). Run `/atm:update-dashboard` to update.
-
-The plugin's current dashboard is `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html` (its version is in the
-same meta tag) and its release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`. $HEADLINE is the first sentence of
-the first bullet under `### Added` in the newest released `## [x.y.z]` entry (or of its first bullet if it has no
-Added list); leave the parenthesis out if there are no release notes.
 
 If `--batch-push` was set, run `git push` now.
 

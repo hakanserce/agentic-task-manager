@@ -2,7 +2,7 @@
 
 A **Claude Code plugin** that gives any project file-based task management with a live HTML dashboard. Agents decompose requirements into granular tasks, execute them in a loop, and humans watch progress in real time.
 
-**One command to install. Zero external dependencies. Works with any language.**
+**One command to install. Nothing to set up beyond Python 3. Works with any language.**
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
@@ -31,7 +31,7 @@ In Claude Code (terminal or VS Code), add the marketplace and install the `atm` 
 /plugin install atm@hakanserce-plugins
 ```
 
-Then restart Claude Code so the skills load.
+Then run `/reload-plugins` so the skills load (no restart needed).
 
 ### Create tasks
 
@@ -41,16 +41,17 @@ Then restart Claude Code so the skills load.
 
 The agent searches your project for requirement documents (PRD, use cases, ADRs, roadmap) and decomposes them into granular tasks. If it can't find any, it asks you where to look or lets you describe requirements directly.
 
+Tasks go to `.agentic-task-manager/tasks.json` in your project, next to a copy of the dashboard.
+
 ### Start the dashboard
 
-In a separate terminal:
-
-```bash
-cd docs  # or wherever tasks.json was created
-python3 -m http.server 8000
+```
+/atm:serve --open
 ```
 
-Open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html) in your browser. It refreshes every 5 seconds, so it stays live while agents work.
+This starts a small local server in the background and opens the dashboard in your browser. It refreshes every
+5 seconds, so it stays live while agents work. `/atm:serve stop` stops it; it otherwise keeps running after you close
+Claude Code.
 
 ### Execute tasks
 
@@ -76,7 +77,9 @@ Or loop through everything:
 ### Prerequisites
 
 - [Claude Code](https://claude.com/code) (CLI or VS Code extension)
-- A local HTTP server for the dashboard (Python 3 recommended — usually pre-installed)
+- **Python 3.9 or newer** (`python3`). The skills run a small helper script (`plugin/scripts/atm.py`) that moves task
+  files and serves the dashboard. It uses only Python's standard library, so there is nothing to install. On macOS,
+  `python3` comes with the Command Line Tools (the same install that provides `git`). macOS and Linux are supported.
 
 ### Method 1: Via marketplace (recommended)
 
@@ -87,7 +90,15 @@ This repo is its own marketplace (`hakanserce-plugins`) containing the `atm` plu
 /plugin install atm@hakanserce-plugins
 ```
 
-Restart Claude Code after installing. To pick up new versions later, run `/plugin marketplace update hakanserce-plugins` and restart again.
+Then run `/reload-plugins` to load the skills. To get a new version later:
+
+```
+/plugin marketplace update hakanserce-plugins
+/reload-plugins
+```
+
+No restart is needed. Your project's dashboard is updated automatically the next time a skill runs (or with
+`/atm:update-dashboard`, which also shows what's new).
 
 ### Method 2: Local development
 
@@ -101,10 +112,11 @@ claude --plugin-dir /path/to/agentic-task-manager/plugin
 
 ### Verify installation
 
-Type `/atm:` in Claude Code — you should see four skills in autocomplete:
+Type `/atm:` in Claude Code — you should see five skills in autocomplete:
 - `/atm:create-tasks`
 - `/atm:do-task`
 - `/atm:loop-tasks`
+- `/atm:serve`
 - `/atm:update-dashboard`
 
 ---
@@ -127,7 +139,7 @@ Type `/atm:` in Claude Code — you should see four skills in autocomplete:
 2. If nothing found, asks you where to look
 3. Decomposes requirements into granular tasks (~10 min each)
 4. Assigns phases, types, dependencies
-5. Writes `tasks.json` and copies the dashboard HTML
+5. Writes `.agentic-task-manager/tasks.json` and sets up the folder (dashboard copy, `.gitignore`)
 6. Outputs a summary with task counts and suggested starting tasks
 
 **Supported requirement sources** (searched automatically):
@@ -207,12 +219,49 @@ Type `/atm:` in Claude Code — you should see four skills in autocomplete:
 ```
 
 **What it does:**
-1. Finds the project's `tasks-dashboard.html`
-2. Compares its version tag against the plugin's latest template
-3. If outdated, copies the latest version over it
-4. Reports what changed
+1. Compares `.agentic-task-manager/tasks-dashboard.html` with the plugin's latest version
+2. If it's outdated (or missing), copies the latest version over it
+3. Prints the release notes since your previous version
 
-The other skills (`do-task`, `loop-tasks`, `create-tasks`) will also hint when the dashboard is outdated.
+The other skills (`do-task`, `loop-tasks`, `create-tasks`, `serve`) also bring the dashboard up to date when they
+start; this skill is the way to see what changed.
+
+### `/atm:serve`
+
+**Run the dashboard server.**
+
+```
+/atm:serve              # start it (or show the one already running)
+/atm:serve --open       # start it and open the browser
+/atm:serve status       # is it running, and where?
+/atm:serve stop         # stop it
+```
+
+The server serves `.agentic-task-manager/` on `localhost`, port 8000 or the next free port, in the background, and
+keeps running after the session ends. Each project gets its own server; `stop` only stops the one started for this
+project. Its port and process ID are kept in `.agentic-task-manager/.server.json` (not committed).
+
+---
+
+## Project files
+
+atm keeps everything in one folder at the root of your project (the top of the git repository):
+
+```
+.agentic-task-manager/
+├── tasks.json             # the task list — committed
+├── .gitignore             # written by atm — committed
+├── tasks-dashboard.html   # copy of the plugin's dashboard — not committed, updated automatically
+└── .server.json, .server.log   # dashboard server state — not committed
+```
+
+The dashboard isn't committed because it is the same file for every project; atm copies the current version in when
+it's missing or outdated, so plugin updates don't produce large diffs in your repository.
+
+**Upgrading from an earlier version:** projects that keep `tasks.json` in `docs/` (or the project root) are moved
+automatically the first time any atm skill runs. The move uses `git mv`, so history is kept; the old
+`tasks-dashboard.html` is removed from git. The change is staged for you to commit — `/atm:loop-tasks` commits it on
+its own (`chore: move atm files to .agentic-task-manager/`) before its first task.
 
 ---
 
@@ -316,31 +365,11 @@ The dashboard is a single self-contained HTML file with no external dependencies
 
 ### Starting the dashboard
 
-The dashboard must be served over HTTP (not `file://`) because it fetches `tasks.json` via XHR.
+The dashboard must be served over HTTP (not `file://`) because it fetches `tasks.json`. The easiest way is
+`/atm:serve` (see [Skills Reference](#atmserve)). Any static server works too, for example:
 
-**Python** (recommended):
 ```bash
-cd docs && python3 -m http.server 8000
-```
-
-**Node.js:**
-```bash
-cd docs && npx serve -p 8000
-```
-
-**PHP:**
-```bash
-cd docs && php -S localhost:8000
-```
-
-**Ruby:**
-```bash
-cd docs && ruby -run -e httpd . -p 8000
-```
-
-**Or use the bundled script** (from a clone of this repo; it picks whichever of Python/Node/PHP/Ruby is available):
-```bash
-/path/to/agentic-task-manager/plugin/scripts/serve-dashboard.sh 8000 docs
+cd .agentic-task-manager && python3 -m http.server 8000
 ```
 
 Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).
@@ -404,15 +433,18 @@ agentic-task-manager/
 │   │   ├── create-tasks/SKILL.md      # /atm:create-tasks
 │   │   ├── do-task/SKILL.md           # /atm:do-task
 │   │   ├── loop-tasks/SKILL.md        # /atm:loop-tasks
+│   │   ├── serve/SKILL.md             # /atm:serve
 │   │   └── update-dashboard/SKILL.md  # /atm:update-dashboard
 │   ├── scripts/
-│   │   └── serve-dashboard.sh   # Multi-runtime HTTP server launcher
+│   │   ├── atm                  # Helper launcher: checks for Python 3.9+, runs atm.py
+│   │   └── atm.py               # The helper (standard library only)
 │   ├── templates/
 │   │   ├── tasks.json           # Example tasks.json schema
 │   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, copied to projects)
 │   └── CLAUDE.md                # Plugin context for Claude Code
 ├── dashboard/                   # Dashboard source: Svelte 5 + TypeScript (development only)
-├── docs/                        # This repo's own atm task list and plans
+├── .agentic-task-manager/       # This repo's own atm task list (we dogfood atm)
+├── docs/                        # Requirements, designs and plans
 ├── .githooks/pre-commit         # Rebuilds the dashboard when its sources are committed
 ├── .github/workflows/ci.yml     # Lint, unit, build-freshness and e2e checks
 ├── CLAUDE.md                    # Development notes for Claude Code

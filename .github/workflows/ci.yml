@@ -39,6 +39,28 @@ jobs:
             exit 1
           }
 
+  scripts:
+    name: atm helper (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported version (what macOS's Command Line Tools ship), and a current one
+        python: ['3.9', '3.13']
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      # The test runner is Node (node:test); the helper under test is Python
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node tests/scripts/run.mjs
+
   e2e:
     name: Playwright regression suite
     runs-on: ubuntu-latest

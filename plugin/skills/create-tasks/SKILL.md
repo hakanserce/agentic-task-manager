@@ -11,6 +11,26 @@ description: >
 You are a task decomposition agent. Your job is to analyze project requirements
 and create a granular task list in `tasks.json` format.
 
+## Step 0: Prepare the task folder
+
+From the project root, run the plugin's helper:
+
+```bash
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+```
+
+It keeps the project's `.agentic-task-manager/` folder in order:
+- an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
+  staged in git, not committed;
+- the dashboard there (`tasks-dashboard.html`, a copy that isn't committed) is installed or updated to the plugin's
+  version.
+
+Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
+atm needs it, so ask the user to install it and stop.
+
+Tasks live in `.agentic-task-manager/tasks.json` at the project root (after the step above, an existing task file is
+already there).
+
 ## Step 1: Find Requirements
 
 Search the project for requirement sources. Use Glob and Grep to find them in this priority order:
@@ -22,7 +42,7 @@ Search the project for requirement sources. Use Glob and Grep to find them in th
 4. **ROADMAP** — look for: `**/ROADMAP.md`, `**/roadmap*`
 5. **GitHub Issues / TODO files** — look for: `**/TODO.md`, `**/BACKLOG.md`, `**/TODO`
 6. **README with feature descriptions** — `README.md`
-7. **Existing tasks.json** — if one exists, load it and extend/update rather than overwrite
+7. **Existing tasks.json** — if `.agentic-task-manager/tasks.json` exists, load it and extend/update rather than overwrite
 
 If `$ARGUMENTS` is provided, treat it as either:
 - A file path to read requirements from
@@ -50,10 +70,7 @@ For each requirement or feature:
 
 ## Step 3: Determine tasks.json location
 
-Check where to place the file:
-1. If `docs/tasks.json` already exists → update it there
-2. If `docs/` directory exists → create `docs/tasks.json`
-3. Otherwise → create `tasks.json` in the project root
+Always `.agentic-task-manager/tasks.json` at the project root (the git top level). Create the folder if needed.
 
 ## Step 4: Generate tasks.json
 
@@ -95,28 +112,19 @@ Rules for task generation:
 
 ## Step 5: Set up the dashboard
 
-Check if `tasks-dashboard.html` exists in the same directory as `tasks.json`.
+Run the helper again, now that `tasks.json` exists:
 
-If it does NOT exist, copy it from the plugin templates:
-- Look for the dashboard template at the plugin root's `templates/tasks-dashboard.html`
-- Copy it to the same directory as `tasks.json`
+```bash
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+```
 
-If `tasks-dashboard.html` already exists, check for a `<meta name="atm-dashboard-version">` tag in it.
-If the tag is missing or the version is older than the plugin's current version, suggest:
-> Your dashboard is v$OLD; v$NEW is available ($HEADLINE). Run `/atm:update-dashboard` to update.
-
-The plugin's current dashboard is `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html` (its version is in the
-same meta tag) and its release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`. $HEADLINE is the first sentence of
-the first bullet under `### Added` in the newest released `## [x.y.z]` entry (or of its first bullet if it has no
-Added list); leave the parenthesis out if there are no release notes.
+It writes `.agentic-task-manager/.gitignore` (the dashboard and runtime files aren't committed; `tasks.json` is) and
+installs the plugin's current dashboard next to `tasks.json`. Relay what it prints, except "Nothing to migrate.".
 
 Then tell the user how to start the dashboard:
 
-> **Dashboard ready!** Start a local server to view your tasks:
-> ```
-> cd <directory-containing-tasks.json> && python3 -m http.server 8000
-> ```
-> Then open http://localhost:8000/tasks-dashboard.html
+> **Dashboard ready!** Run `/atm:serve` to start it in the background (`/atm:serve --open` also opens your
+> browser), or `/atm:serve stop` to stop it later.
 >
 > The dashboard refreshes itself every 5 seconds, so you can watch progress live
 > while an agent loops through tasks with `/atm:loop-tasks`.

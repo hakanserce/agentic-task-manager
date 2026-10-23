@@ -10,39 +10,42 @@ description: >
 
 You update the project's `tasks-dashboard.html` to the latest version from the plugin.
 
-## Step 1: Find the project's dashboard
+## Step 1: Update the dashboard
 
-Search for `tasks-dashboard.html` in this order:
-1. Same directory as `tasks.json` (check `docs/` first, then project root)
-2. `docs/tasks-dashboard.html`
-3. `tasks-dashboard.html` (project root)
+From the project root, run the plugin's helper:
 
-If not found, tell the user:
-> No tasks-dashboard.html found. Run `/atm:create-tasks` first — it will set up both tasks.json and the dashboard.
+```bash
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate --json
+```
 
-## Step 2: Read the plugin's latest template
+It moves an old `docs/tasks.json` (or `tasks.json` in the project root) into `.agentic-task-manager/` if needed (the
+move is staged in git, not committed), and installs or updates `.agentic-task-manager/tasks-dashboard.html` to the
+plugin's version. If it exits with code 127, Python 3.9 or newer is not installed: atm
+needs it, so ask the user to install it and stop.
 
-The plugin root is two levels above this skill's directory (`<plugin root>/skills/update-dashboard/`):
-- Latest dashboard: `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html`
-- Release notes: `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`
+In its JSON output:
+- `moved` (not null): tell the user which file moved and that the move is staged, to be committed.
+- `warning` (not null): show it.
+- `dashboard` is null: there is no task file. Tell the user:
+  > No tasks.json found. Run `/atm:create-tasks` first — it will set up both tasks.json and the dashboard.
+- `dashboard.action` is `"current"`: report
+  > **Dashboard is up to date** (v$VERSION). No update needed.
 
-## Step 3: Compare versions
+  with `dashboard.from` as $VERSION, and stop.
+- `dashboard.action` is `"installed"` (there was no dashboard before): report
+  > **Dashboard installed** (v$VERSION). Start it with `/atm:serve`.
 
-Check for a `<meta name="atm-dashboard-version" content="...">` tag in both files.
+  with `dashboard.to` as $VERSION, and stop.
+- `dashboard.action` is `"updated"`: $OLD_VERSION is `dashboard.from` (empty means the old dashboard had no version
+  tag) and $NEW_VERSION is `dashboard.to`. Continue with Step 2.
 
-- If the project's dashboard has no version tag, it is outdated (pre-versioning).
-- If both have version tags and they match, the dashboard is already up to date.
-- If the plugin's version is newer, proceed with the update.
+The dashboard is not committed (`.agentic-task-manager/.gitignore` lists it), so updating it changes nothing in git.
 
-If already up to date, report:
-> **Dashboard is up to date** (v$VERSION). No update needed.
+## Step 2: Read the release notes
 
-## Step 4: Update the dashboard
+The plugin's release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`.
 
-Copy the plugin's template over the project's `tasks-dashboard.html`.
-**Preserve the file location** — write it to the same path where the old one was found.
-
-## Step 5: Report
+## Step 3: Report
 
 Read the plugin's `CHANGELOG.md` (Step 2). It has one `## [x.y.z] - YYYY-MM-DD` section per version, newest
 first, each with `### Added` / `### Changed` / `### Fixed` bullet lists. Select every version that is **newer than

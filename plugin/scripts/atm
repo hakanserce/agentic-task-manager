@@ -1,0 +1,9 @@
+#!/bin/sh
+# atm: the Agentic Task Manager helper. Runs atm.py (standard library only) with Python 3.9+.
+dir=$(cd "$(dirname "$0")" && pwd)
+
+if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; then
+  exec python3 "$dir/atm.py" "$@"
+fi
+echo "atm: needs Python 3.9 or newer (python3). Install it and try again." >&2
+exit 127

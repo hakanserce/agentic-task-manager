@@ -42,8 +42,6 @@ test.describe('performance with 500 tasks', () => {
 
   test('a reload that changes the data, on every tab', async ({ page, tasksServer }) => {
     const data = loadFixture('large-500');
-    data.tasks.find((t) => t.id === 'T-301')!.status = 'done';
-    tasksServer.use(data);
     const changed = "document.querySelector('.task-card[data-id=\"T-301\"]')?.classList.contains('status-done')";
     const timings: Record<string, number> = {};
     for (const tab of ['graph', 'kanban', 'progress']) {

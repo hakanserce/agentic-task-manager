@@ -32,9 +32,7 @@ function generate(count, doneCount, { timed = false } = {}) {
       updated_at: updated,
       ...(timed && status !== 'todo'
         ? {
-            started_at: `2026-04-${day}T${pad(i % 24)}:00:00Z`
-              .replace(/:00:00Z$/, ':00:00Z')
-              .replace(/T(\d\d):00/, (_, h) => `T${h}:00`),
+            started_at: `2026-04-${day}T${pad(i % 24)}:00:00Z`,
             ...(status === 'done' ? { completed_at: `2026-04-${day}T${pad(i % 24)}:${pad(5 + (i % 10))}:00Z` } : {}),
           }
         : {}),

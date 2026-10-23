@@ -4,6 +4,23 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.10.0] - 2026-10-23
+
+### Added
+- `/atm:serve` starts the dashboard in a background server (`--open` opens the browser, `stop` and `status` manage
+  it). It uses port 8000 or the next free one, keeps running after the session ends, and only ever stops the server
+  it started for this project.
+- Everything atm needs now lives in one folder, `.agentic-task-manager/`, at the root of your project.
+
+### Changed
+- Projects that keep `tasks.json` in `docs/` or the project root are moved into `.agentic-task-manager/` the first
+  time a skill runs, with `git mv` so history is kept. The move is staged for you to commit; `/atm:loop-tasks`
+  commits it on its own before its first task.
+- The dashboard HTML is no longer committed to your repository. It's a copy of the plugin's dashboard, listed in
+  `.agentic-task-manager/.gitignore`, and the skills bring it up to date automatically when they run.
+- The skills use a small helper script that runs with Python 3.9+ or Node 18+, whichever is installed.
+- Updating the plugin: run `/plugin marketplace update hakanserce-plugins`, then `/reload-plugins`. No restart.
+
 ## [0.9.0] - 2026-10-23
 
 ### Added

@@ -1,0 +1,7 @@
+/* Applied to full-page screenshots (visual.spec.ts): a fixed-width version chip, so the mask over it doesn't move
+   when the version number gets longer. */
+#version-chip {
+  display: inline-block;
+  width: 8em;
+  overflow: hidden;
+}

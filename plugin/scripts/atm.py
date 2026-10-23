@@ -4,11 +4,13 @@ Run through the `atm` launcher, which checks for Python 3.9+. Standard library o
 with nothing to install.
 """
 
+import contextlib
 import json
 import os
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -30,6 +32,11 @@ SERVER_LOG = ".server.log"
 DEFAULT_PORT = 8000
 PORT_TRIES = 100
 WHOAMI = "/__atm/whoami"
+LOCK_DIR = ".lock"
+LOCK_OWNER = "owner.json"
+LOCK_TIMEOUT = 10.0  # seconds a command waits for the lock (ATM_LOCK_TIMEOUT overrides)
+LOCK_STALE = 60.0  # a lock older than this is abandoned: commands hold it for milliseconds
+LOCK_POLL = 0.05
 
 USAGE = """usage: atm <command> [options]
 
@@ -114,13 +121,38 @@ def format_duration(seconds):
     return f"{seconds // 3600}h {seconds % 3600 // 60}m"
 
 
+def fsync_dir(directory):
+    """Make a rename in `directory` durable. Not every platform can open a directory; that's fine to skip."""
+    try:
+        fd = os.open(directory, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(fd)
+    except OSError:
+        pass
+    finally:
+        os.close(fd)
+
+
+def write_text_atomic(p, text):
+    """Replace a file so readers only ever see the complete old or the complete new content."""
+    tmp = f"{p}.{os.getpid()}.{os.urandom(4).hex()}.tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, p)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.remove(tmp)
+        raise
+    fsync_dir(os.path.dirname(os.path.abspath(p)))
+
+
 def write_json_atomic(p, value):
-    tmp = f"{p}.{os.getpid()}.tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(to_json(value) + "\n")
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, p)
+    write_text_atomic(p, to_json(value) + "\n")
 
 
 def read_json(p):
@@ -129,6 +161,90 @@ def read_json(p):
             return json.load(f)
     except (OSError, ValueError):
         return None
+
+
+# ---- the lock ----
+#
+# A lock is a directory: mkdir succeeds for exactly one process, on every OS and file system. The holder writes
+# owner.json inside it and removes the directory when done. A crashed holder leaves the directory behind, so a waiter
+# breaks the lock when its owner is provably gone (same host, pid not running) or it is older than LOCK_STALE. See
+# docs/parallel-agents-design.md, section 4.
+
+
+def lock_timeout():
+    try:
+        return float(os.environ.get("ATM_LOCK_TIMEOUT", LOCK_TIMEOUT))
+    except ValueError:
+        return LOCK_TIMEOUT
+
+
+def lock_owner(lock):
+    return read_json(os.path.join(lock, LOCK_OWNER))
+
+
+def lock_age(lock, owner):
+    """Seconds since the lock was taken: from owner.json, or the directory itself if owner.json isn't written yet."""
+    try:
+        since = parse_iso(owner["acquired_at"]).timestamp() if owner else os.stat(lock).st_mtime
+    except (OSError, KeyError, TypeError, ValueError):
+        return 0.0
+    return time.time() - since
+
+
+def lock_is_stale(lock, owner):
+    if owner and owner.get("host") == socket.gethostname() and isinstance(owner.get("pid"), int):
+        if not pid_alive(owner["pid"]):
+            return True
+    return lock_age(lock, owner) > LOCK_STALE
+
+
+def break_lock(lock, owner):
+    """Move a stale lock aside. Re-checks the owner first, so a lock that another waiter broke and re-took meanwhile
+    is left alone. Returns True if this process broke it."""
+    if lock_owner(lock) != owner:
+        return False
+    aside = f"{lock}.stale.{os.getpid()}.{os.urandom(4).hex()}"
+    try:
+        os.rename(lock, aside)
+    except OSError:
+        return False
+    shutil.rmtree(aside, ignore_errors=True)
+    return True
+
+
+def describe_owner(owner):
+    if not owner:
+        return "another process"
+    return f"pid {owner.get('pid')} on {owner.get('host')} since {owner.get('acquired_at')}"
+
+
+@contextlib.contextmanager
+def locked(directory):
+    """Hold the lock for `directory` (creating it if needed) for the duration of the block."""
+    os.makedirs(directory, exist_ok=True)
+    lock = os.path.join(directory, LOCK_DIR)
+    deadline = time.time() + lock_timeout()
+    while True:
+        try:
+            os.mkdir(lock)
+            break
+        except FileExistsError:
+            owner = lock_owner(lock)
+            if lock_is_stale(lock, owner) and break_lock(lock, owner):
+                continue
+            if time.time() >= deadline:
+                raise AtmError(f"timed out waiting for the lock {lock} (held by {describe_owner(owner)})")
+            time.sleep(LOCK_POLL)
+    # SIGTERM would otherwise end the process without running the cleanup below
+    previous = signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+    try:
+        write_json_atomic(
+            os.path.join(lock, LOCK_OWNER), {"host": socket.gethostname(), "pid": os.getpid(), "acquired_at": now_iso()}
+        )
+        yield
+    finally:
+        shutil.rmtree(lock, ignore_errors=True)
+        signal.signal(signal.SIGTERM, previous)
 
 
 def rel(root, p):
@@ -518,6 +634,19 @@ def cmd_serve_child(args):
     server.serve_forever()
 
 
+def cmd_lock_test(args):
+    """Test hook: hold the task folder's lock for `seconds`, logging to .lock-test.log, so tests can check exclusion."""
+    seconds = float(args[0]) if args else 0.0
+    task_dir = find_paths(os.getcwd())["dir"]
+    log = os.path.join(task_dir, ".lock-test.log")
+    with locked(task_dir):
+        with open(log, "a", encoding="utf-8") as f:
+            f.write(f"acquire {os.getpid()}\n")
+        time.sleep(seconds)
+        with open(log, "a", encoding="utf-8") as f:
+            f.write(f"release {os.getpid()}\n")
+
+
 def cmd_help(args):
     sys.stdout.write(USAGE)
 
@@ -528,6 +657,7 @@ COMMANDS = {
     "migrate": cmd_migrate,
     "serve": cmd_serve,
     "_serve-child": cmd_serve_child,
+    "_lock-test": cmd_lock_test,
     "help": cmd_help,
 }
 

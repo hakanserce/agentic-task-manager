@@ -1,0 +1,118 @@
+import { describe, expect, it } from 'vitest';
+import { forecastPhases, pace, percentile, taskDurations } from '../../src/lib/forecast';
+import type { Task } from '../../src/lib/types';
+import progress from '../fixtures/progress.json';
+
+// Expected numbers: tests/fixtures/progress.md
+const NOW = Date.parse('2026-04-06T12:00:00Z');
+const tasks = progress.tasks as Task[];
+const t = (id: string, status: string, extra: Partial<Task> = {}): Task => ({
+  id,
+  name: id,
+  phase: 0,
+  type: 'feature',
+  description: '',
+  status,
+  ...extra,
+});
+
+describe('taskDurations', () => {
+  it('uses start/complete times, falls back to the gap since the previous completion, and caps idle gaps', () => {
+    expect(taskDurations(tasks).map((d) => [d.id, d.minutes])).toEqual([
+      ['T-001', 6],
+      ['T-002', 8],
+      ['T-003', 10],
+      ['T-004', 6],
+      ['T-005', 12],
+      ['T-006', 8],
+      ['T-007', 9],
+      ['T-008', 30],
+    ]);
+  });
+
+  it('leaves out a first completion with nothing to measure from', () => {
+    expect(taskDurations([t('a', 'done', { updated_at: '2026-04-01T10:00:00Z' })])).toEqual([]);
+  });
+
+  it('ignores a started_at after the completion and unusable timestamps', () => {
+    const d = taskDurations([
+      t('a', 'done', { completed_at: '2026-04-01T10:00:00Z', started_at: '2026-04-01T09:50:00Z' }),
+      t('b', 'done', { completed_at: '2026-04-01T10:05:00Z', started_at: '2026-04-01T11:00:00Z' }),
+      t('c', 'done', { completed_at: 'nonsense' }),
+      t('d', 'todo', { started_at: '2026-04-01T09:00:00Z' }),
+    ]);
+    expect(d.map((x) => [x.id, x.minutes])).toEqual([
+      ['a', 10],
+      ['b', 5],
+    ]);
+  });
+});
+
+describe('percentile and pace', () => {
+  it('interpolates between ranks', () => {
+    const s = [6, 6, 8, 8, 9, 10, 12, 30];
+    expect([percentile(s, 0.25), percentile(s, 0.5), percentile(s, 0.75)]).toEqual([7.5, 8.5, 10.5]);
+    expect(percentile([], 0.5)).toBeNaN();
+  });
+
+  it('is the median of recent durations with an interquartile range', () => {
+    expect(pace(taskDurations(tasks))).toEqual({ likely: 8.5, low: 7.5, high: 10.5, basedOn: 8 });
+  });
+
+  it('uses only the last 10 completions', () => {
+    const many = Array.from({ length: 15 }, (_, i) => ({ id: String(i), completedAt: i, minutes: i < 5 ? 100 : 1 }));
+    expect(pace(many)).toMatchObject({ likely: 1, basedOn: 10 });
+  });
+
+  it('needs at least 3 timed completions', () => {
+    expect(
+      pace([
+        { id: 'a', completedAt: 0, minutes: 5 },
+        { id: 'b', completedAt: 1, minutes: 5 },
+      ]),
+    ).toBeNull();
+  });
+});
+
+describe('forecastPhases', () => {
+  const f = forecastPhases(tasks, NOW);
+
+  it('reports per-phase progress and state', () => {
+    expect(f.phases.map((p) => [p.phase, p.done, p.total, p.remaining, p.blocked, p.state])).toEqual([
+      [0, 4, 4, 0, 0, 'done'],
+      [1, 4, 6, 1, 1, 'in_progress'],
+      [2, 0, 6, 5, 0, 'not_started'],
+    ]);
+  });
+
+  it('dates finished phases by their last completion', () => {
+    expect(f.phases[0].completedAt).toBe(Date.parse('2026-04-01T09:30:00Z'));
+    expect(f.phases[0].estimate).toBeUndefined();
+  });
+
+  it('accumulates remaining work in phase order', () => {
+    expect(f.phases[1].estimate!.minutes).toEqual({ likely: 8.5, low: 7.5, high: 10.5 });
+    expect(f.phases[2].estimate!.minutes).toEqual({ likely: 51, low: 45, high: 63 });
+    expect(f.phases[2].estimate!.finishAt.likely).toBe(Date.parse('2026-04-06T12:51:00Z'));
+  });
+
+  it('gives no estimate without enough history', () => {
+    const few = forecastPhases([t('a', 'done', { completed_at: '2026-04-01T10:00:00Z' }), t('b', 'todo')], NOW);
+    expect(few.pace).toBeNull();
+    expect(few.phases[0].estimate).toBeUndefined();
+  });
+
+  it('gives no estimate for a phase where only blocked work is left', () => {
+    const blockedOnly = [...tasks.filter((x) => x.phase !== 1), t('x', 'blocked', { phase: 1 })];
+    const p1 = forecastPhases(blockedOnly, NOW).phases[1];
+    expect([p1.state, p1.remaining, p1.blocked, p1.estimate]).toEqual(['not_started', 0, 1, undefined]);
+  });
+
+  it('can measure the pace on other tasks than the ones it estimates', () => {
+    const phase2 = tasks.filter((x) => x.phase === 2);
+    expect(forecastPhases(phase2, NOW).pace).toBeNull();
+    const withHistory = forecastPhases(phase2, NOW, tasks);
+    expect(withHistory.pace?.likely).toBe(8.5);
+    expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
+  });
+});

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  anyNodeVisible,
   AUTO_FIT_MIN_K,
   autoFitView,
   clampView,
@@ -8,6 +9,7 @@ import {
   isFullyVisible,
   MAX_K,
   MIN_K,
+  panToContent,
   toViewBox,
   zoomAt,
   type Size,
@@ -103,5 +105,60 @@ describe('containerHeight', () => {
     expect(containerHeight(268)).toBe(318);
     expect(containerHeight(10)).toBe(220);
     expect(containerHeight(5000)).toBe(560);
+  });
+});
+
+describe('anyNodeVisible', () => {
+  const node = { w: 160, h: 52 };
+  const at = (x: number, y: number) => ({ x, y });
+
+  it('detects a node inside the viewport', () => {
+    expect(anyNodeVisible({ k: 1, x: 0, y: 0 }, [at(100, 100)], node, viewport)).toBe(true);
+  });
+
+  it('counts partially visible nodes', () => {
+    // right edge of the node pokes 10px into the viewport from the left
+    expect(anyNodeVisible({ k: 1, x: -150, y: 0 }, [at(0, 100)], node, viewport)).toBe(true);
+  });
+
+  it('is false when every node is off-screen', () => {
+    const nodes = [at(0, 0), at(2000, 0), at(0, 900)];
+    expect(anyNodeVisible({ k: 1, x: -170, y: 0 }, nodes, node, viewport)).toBe(false);
+  });
+
+  it('applies the zoom level', () => {
+    // at 2x the node at x=480 starts at 960 + 0 and reaches past 1000: visible
+    expect(anyNodeVisible({ k: 2, x: 0, y: 0 }, [at(480, 10)], node, viewport)).toBe(true);
+    expect(anyNodeVisible({ k: 2, x: 0, y: 0 }, [at(500, 10)], node, viewport)).toBe(false);
+  });
+
+  it('is false for no nodes', () => {
+    expect(anyNodeVisible({ k: 1, x: 0, y: 0 }, [], node, viewport)).toBe(false);
+  });
+});
+
+describe('panToContent', () => {
+  it('never changes the zoom level', () => {
+    expect(panToContent({ k: 1.7, x: -9999, y: 9999 }, { w: 5000, h: 200 }, viewport).k).toBe(1.7);
+  });
+
+  it('centers content that fits along an axis', () => {
+    expect(panToContent({ k: 1, x: -9999, y: -9999 }, { w: 400, h: 200 }, viewport)).toEqual({ k: 1, x: 300, y: 150 });
+  });
+
+  it('centers the focus node when content overflows', () => {
+    const v = panToContent({ k: 2, x: 0, y: 0 }, { w: 5000, h: 2000 }, viewport, { cx: 2500, cy: 1000 });
+    expect(v.x + 2500 * v.k).toBeCloseTo(viewport.w / 2);
+    expect(v.y + 1000 * v.k).toBeCloseTo(viewport.h / 2);
+  });
+
+  it('starts at the padding without a focus', () => {
+    expect(panToContent({ k: 1, x: -9999, y: 0 }, { w: 5000, h: 200 }, viewport)).toMatchObject({ x: 24 });
+  });
+
+  it('leaves at least one node visible afterwards', () => {
+    const content = { w: 5000, h: 200 };
+    const v = panToContent({ k: 1, x: -99999, y: 0 }, content, viewport, { cx: 4900, cy: 100 });
+    expect(anyNodeVisible(v, [{ x: 4820, y: 74 }], { w: 160, h: 52 }, viewport)).toBe(true);
   });
 });

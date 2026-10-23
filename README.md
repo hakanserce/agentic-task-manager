@@ -16,7 +16,7 @@ A **Claude Code plugin** that gives any project file-based task management with 
 
 3. **Loop through all tasks** — "Ralph Wiggum mode" 🫠 — the agent continuously picks up the next available task and works through the entire backlog while you watch.
 
-4. **Watch progress live** — A self-contained HTML dashboard reads `tasks.json` over HTTP and shows filterable task cards, stats, and an interactive dependency graph. Enable auto-refresh to watch tasks turn green as the agent works.
+4. **Watch progress live** — A self-contained HTML dashboard reads `tasks.json` over HTTP and shows filterable task cards, stats, and an interactive dependency graph. It refreshes itself every few seconds, so you can watch tasks turn green as the agent works.
 
 ---
 
@@ -50,7 +50,7 @@ cd docs  # or wherever tasks.json was created
 python3 -m http.server 8000
 ```
 
-Open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html) in your browser. Enable **Auto** refresh (5s) to watch live.
+Open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html) in your browser. It refreshes every 5 seconds, so it stays live while agents work.
 
 ### Execute tasks
 
@@ -236,11 +236,13 @@ The other skills (`do-task`, `loop-tasks`, `create-tasks`) will also hint when t
       "description": "Detailed description of what to implement.",
       "requirements": ["FR-1.1"],
       "use_cases": ["UC-001"],
-      "status": "todo",
+      "status": "done",
       "dependencies": ["T-000"],
       "files": ["src/file.ts"],
       "created_at": "2026-04-05T12:00:00Z",
-      "updated_at": "2026-04-05T14:30:00Z"
+      "updated_at": "2026-04-05T14:30:00Z",
+      "started_at": "2026-04-05T14:22:00Z",
+      "completed_at": "2026-04-05T14:30:00Z"
     }
   ]
 }
@@ -262,6 +264,12 @@ The other skills (`do-task`, `loop-tasks`, `create-tasks`) will also hint when t
 | `files` | string[] | ❌ | Expected file paths to create/modify |
 | `created_at` | string | ❌ | ISO 8601 UTC timestamp when task was created |
 | `updated_at` | string | ❌ | ISO 8601 UTC timestamp of last status change |
+| `started_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `in_progress` |
+| `completed_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `done` |
+
+`/atm:do-task` and `/atm:loop-tasks` maintain the timestamps: `started_at` when a task starts, `completed_at` when it
+is done, and both are removed if a task goes back to `todo`. The dashboard uses them for completion history and
+estimates; files without them still work (`updated_at` is used instead).
 
 ### Task types
 
@@ -298,8 +306,12 @@ The dashboard is a single self-contained HTML file with no external dependencies
 - **Filters** — Filter by phase, type, and status (multi-select)
 - **Task cards** — Color-coded by status and type, with dependency links
 - **Detail panel** — Click a task to see full description, deps, files, and timestamps
-- **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Your view is kept across auto-refreshes
-- **Auto-refresh** — Enable with toggle, configurable interval (default 5s)
+- **Views** — Tabs for the Dependency Graph, a Kanban board and Progress; the selected tab is kept in the URL
+- **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Filtering and auto-refresh keep your zoom level
+- **Kanban board** — Todo / In Progress / Blocked / Done columns; todo cards show whether they're ready or what they wait on, and **Next up** marks the task `/atm:loop-tasks` will pick next; optional swimlanes per phase
+- **Progress** — Burndown chart (remaining vs. scope, with a forecast) and per-phase completion estimates in agent working time; click a phase to focus the chart. Estimates are most accurate with `started_at`/`completed_at`, which `/atm:do-task` and `/atm:loop-tasks` write since 0.7.0
+- **Auto-refresh** — On by default every 5s; the toggle and interval are remembered per browser
+- **What's new** — The version next to the title opens the release notes; a "new" marker appears after an upgrade
 - **Manual reload** — Click reload button for instant refresh
 
 ### Starting the dashboard
@@ -335,7 +347,7 @@ Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tas
 
 ### Watching live progress
 
-1. Start the dashboard with auto-refresh enabled (5s interval)
+1. Start the dashboard (auto-refresh is on by default, every 5s)
 2. In another terminal, start Claude Code and run `/atm:loop-tasks`
 3. Watch tasks move from todo → in_progress → done in real time
 

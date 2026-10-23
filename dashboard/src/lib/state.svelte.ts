@@ -1,4 +1,5 @@
 import { DEFAULT_PROJECT_NAME, loadTasks } from './load';
+import { getPref, setPref } from './prefs';
 import { emptyFilters, filterTasks, toggleFilter, type FilterGroup, type Filters } from './filters';
 import type { Task } from './types';
 
@@ -25,8 +26,11 @@ export class DashboardState {
 
   graphCollapsed = $state(false);
 
-  autoRefresh = $state(false);
-  autoRefreshSeconds = $state(5);
+  whatsNewOpen = $state(false);
+
+  // On by default (FR-6.1); the user's choice is remembered per browser (FR-6.2)
+  autoRefresh = $state(getPref('autoRefresh', true));
+  autoRefreshSeconds = $state(getPref('autoRefreshSeconds', 5));
 
   async load() {
     try {
@@ -51,6 +55,16 @@ export class DashboardState {
     setTimeout(() => (this.reloading = false), RELOAD_SPIN_MS);
   }
 
+  setAutoRefresh(on: boolean) {
+    this.autoRefresh = on;
+    setPref('autoRefresh', on);
+  }
+
+  setAutoRefreshSeconds(seconds: number) {
+    this.autoRefreshSeconds = seconds;
+    setPref('autoRefreshSeconds', seconds);
+  }
+
   toggleFilter(group: FilterGroup, value: string) {
     this.filters = toggleFilter(this.filters, group, value);
   }
@@ -63,6 +77,14 @@ export class DashboardState {
 
   closeDetail() {
     this.detailOpen = false;
+  }
+
+  openWhatsNew() {
+    this.whatsNewOpen = true;
+  }
+
+  closeWhatsNew() {
+    this.whatsNewOpen = false;
   }
 
   private apply(loaded: { tasks: Task[]; taskMap: ReadonlyMap<string, Task>; projectName: string }) {

@@ -30,6 +30,90 @@ body {
   line-height: 1.5;
 }
 
+/* Title and version chip share a row; the row carries the title's bottom margin */
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.title-row h1 {
+  margin-bottom: 0;
+}
+
+.version-chip {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.version-chip:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.version-chip.unseen {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.version-new {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.whats-new h3 {
+  margin-bottom: 4px;
+}
+.whats-new .release {
+  margin-top: 18px;
+}
+.whats-new h4 {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.whats-new .release-date {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.whats-new .release-section {
+  margin-top: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.whats-new ul {
+  margin: 4px 0 0 18px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.whats-new li {
+  margin-bottom: 3px;
+}
+.whats-new code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  padding: 0 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 h1 {
   font-size: 28px;
   font-weight: 600;
@@ -457,6 +541,45 @@ h1 {
   margin-bottom: 12px;
 }
 
+.view-tabs {
+  display: flex;
+  gap: 4px;
+}
+.view-tab {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.view-tab:hover {
+  color: var(--text);
+}
+.view-tab[aria-selected='true'] {
+  color: var(--text);
+  background: var(--surface2);
+  border-color: var(--border);
+}
+.view-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.view-panel[hidden] {
+  display: none;
+}
+.view-placeholder {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
 .graph-container {
   position: relative;
   background: var(--surface);
@@ -674,4 +797,378 @@ svg.graph-minimap.hidden {
   .stat-card .number {
     font-size: 24px;
   }
+}
+
+/* Kanban board */
+.kanban-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.kanban-lane + .kanban-lane {
+  margin-top: 16px;
+}
+.kanban-lane-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.kanban-lane-progress {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.kanban-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.kanban-board {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.kanban-column {
+  flex: 1 1 200px;
+  min-width: 200px;
+  max-height: 640px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.kanban-column-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.kanban-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  overflow-y: auto;
+}
+.kanban-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  cursor: pointer;
+}
+.kanban-card:hover {
+  border-color: var(--accent);
+}
+.kanban-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.kanban-card.status-done,
+.kanban-card.status-skipped {
+  opacity: 0.65;
+}
+.kanban-card.next-up {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.kanban-card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.kanban-card-id {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.kanban-next-up {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--bg);
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.kanban-card-name {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.kanban-readiness {
+  margin-top: 6px;
+  font-size: 11px;
+}
+.kanban-readiness.ready {
+  color: var(--green);
+}
+.kanban-readiness.waiting {
+  color: var(--text-muted);
+}
+.kanban-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px 0;
+}
+.kanban-show-all {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Progress tab */
+.progress-view {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.progress-basis {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.progress-basis code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.progress-empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 12px 0;
+}
+.phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.phase-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.phase-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.phase-table tr:last-child td {
+  border-bottom: none;
+}
+.phase-table .num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.phase-table-progress {
+  width: 22%;
+}
+.phase-table .progress-bar {
+  margin-top: 0;
+}
+.phase-blocked {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--red);
+}
+.estimate-range {
+  color: var(--text-muted);
+}
+.estimate-calendar {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.estimate-none {
+  color: var(--text-muted);
+}
+
+/* Burndown chart. Series colors are validated for the dark surface (dataviz validator: blue/orange slots). */
+:root {
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+.burndown {
+  position: relative;
+  margin-bottom: 16px;
+}
+.burndown-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.burndown-legend .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  border-top: 2px solid;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.burndown-legend .swatch.remaining {
+  border-color: var(--series-remaining);
+}
+.burndown-legend .swatch.scope {
+  border-color: var(--series-scope);
+}
+.burndown-legend .swatch.forecast {
+  border-color: var(--series-remaining);
+  border-top-style: dashed;
+}
+.burndown svg {
+  display: block;
+  overflow: visible;
+}
+.burndown-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.burndown-axis {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.burndown-now {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+.burndown-scope,
+.burndown-remaining {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.burndown-scope {
+  stroke: var(--series-scope);
+}
+.burndown-remaining {
+  stroke: var(--series-remaining);
+}
+.burndown-forecast {
+  stroke: var(--series-remaining);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+.burndown-fan {
+  fill: var(--series-remaining);
+  opacity: 0.12;
+}
+.burndown-dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.burndown-dot.scope {
+  fill: var(--series-scope);
+}
+.burndown-dot.remaining {
+  fill: var(--series-remaining);
+}
+.burndown-label {
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+.burndown-forecast-label {
+  fill: var(--text-muted);
+  font-weight: 400;
+}
+.burndown-crosshair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  pointer-events: none;
+}
+.burndown-hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+.burndown-tooltip {
+  position: absolute;
+  min-width: 150px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  pointer-events: none;
+}
+.burndown-tooltip .title {
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.burndown-scope-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.burndown-focus {
+  font-size: 13px;
+  font-weight: 600;
+}
+.burndown-all {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+}
+.phase-table tr.selectable {
+  cursor: pointer;
+}
+.phase-table tr.selectable:hover td {
+  background: var(--surface2);
+}
+.phase-table tr.selected td {
+  background: var(--surface2);
+}
+.phase-table tr.selected td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.phase-table tr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }

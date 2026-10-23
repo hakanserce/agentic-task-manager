@@ -1,8 +1,8 @@
 {
   "meta": {
-    "project": "ATM Dashboard: Svelte 5 migration",
+    "project": "ATM Dashboard",
     "created": "2026-10-22",
-    "description": "Turn plugin/templates/tasks-dashboard.html into a tested Svelte 5 project (dashboard/) whose single-file build populates the plugin folder. Regression tests against the legacy v0.4.0 dashboard come first and act as the parity oracle. Full plan: docs/svelte-migration-plan.md."
+    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md): 7 = 0.7.0 behaviour fixes, release notes, start/complete timestamps; 8 = 0.8.0 tabs and Kanban; 9 = 0.9.0 progress/burndown. Every task must leave `npm run verify` (in dashboard/) green: a behaviour change lands together with the tests it changes."
   },
   "tasks": [
     {
@@ -579,6 +579,810 @@
       ],
       "created_at": "2026-10-22T19:19:41Z",
       "updated_at": "2026-10-22T22:17:16Z"
+    },
+    {
+      "id": "T-030",
+      "name": "Safe localStorage preferences module",
+      "phase": 7,
+      "type": "feature",
+      "description": "Add src/lib/prefs.ts: typed get/set helpers for per-browser dashboard preferences stored in localStorage under one namespaced key (e.g. \"atm-dashboard\"). Every read/write is wrapped in try/catch: when storage is unavailable or the stored value is corrupt, reads return the given default and writes are no-ops (no exceptions, no console errors). Unit tests (jsdom): round trip, defaults when empty, corrupt JSON, and a localStorage whose methods throw. See docs/dashboard-v2-requirements.md FR-6.2.",
+      "requirements": [
+        "FR-6.2",
+        "FR-1.5"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/prefs.ts",
+        "dashboard/tests/unit/prefs.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:43:25Z",
+      "started_at": "2026-10-22T23:43:11Z",
+      "completed_at": "2026-10-22T23:43:25Z"
+    },
+    {
+      "id": "T-031",
+      "name": "Auto-refresh on by default and remembered",
+      "phase": 7,
+      "type": "bugfix",
+      "description": "Make auto-refresh default to ON (5 s) and persist the on/off choice and interval via src/lib/prefs.ts (FR-6.1, FR-6.2). Test isolation first: openDashboard() in tests/e2e/helpers.ts must store auto-refresh OFF via page.addInitScript before navigation unless called with { autoRefresh: true }, so existing specs (request counts, screenshots) are unaffected by background reloads. Replace refresh.spec \"is off by default\" with: on by default (fresh browser, no init script), polls every 5 s (page.clock), switching off survives a page reload, a changed interval survives a reload. Update state unit tests. Screenshots must not change (the visual spec runs with auto-refresh off).",
+      "requirements": [
+        "FR-6.1",
+        "FR-6.2"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-030"
+      ],
+      "files": [
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/components/RefreshControls.svelte",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/e2e/refresh.spec.ts",
+        "dashboard/tests/unit/state.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:44:34Z",
+      "started_at": "2026-10-22T23:43:46Z",
+      "completed_at": "2026-10-22T23:44:34Z"
+    },
+    {
+      "id": "T-032",
+      "name": "View math: detect visible nodes and pan to content",
+      "phase": 7,
+      "type": "feature",
+      "description": "Extend src/lib/graph/view.ts with pure functions for FR-6.3/6.4: anyNodeVisible(view, nodes, nodeSize, viewport) - true if at least one node rectangle intersects the viewport; and panToContent(view, content, viewport, focus?) - same zoom k, pan so the focus node is centered (clamped like autoFitView), or, without focus, the content's top-left sits at the padding. Unit tests for both, including partially visible nodes and the k-is-unchanged guarantee.",
+      "requirements": [
+        "FR-6.3",
+        "FR-6.4"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/graph/view.ts",
+        "dashboard/tests/unit/view.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:45:09Z",
+      "started_at": "2026-10-22T23:44:55Z",
+      "completed_at": "2026-10-22T23:45:09Z"
+    },
+    {
+      "id": "T-033",
+      "name": "Graph keeps zoom when visible tasks change",
+      "phase": 7,
+      "type": "bugfix",
+      "description": "Change DepGraph so only the first successful layout auto-fits. Afterwards, when the visible task set changes (filters or a reload), keep k always (whether or not the user zoomed); keep the pan if anyNodeVisible(), otherwise panToContent() with the in-progress/next-todo focus (FR-6.3, FR-6.4). The minimap and zoom label follow (FR-6.5). Replace the graph-zoom spec \"changing the visible tasks re-fits\" with specs: zoom in, filter by a phase -> zoom label unchanged; a filter whose nodes would all be off-screen -> view pans (same k) and at least one node is in the viewport; clearing the filter keeps k; the fit button still fits. Window resize/expand behaviour stays as today.",
+      "requirements": [
+        "FR-6.3",
+        "FR-6.4",
+        "FR-6.5"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-032"
+      ],
+      "files": [
+        "dashboard/src/components/DepGraph.svelte",
+        "dashboard/tests/e2e/graph-zoom.spec.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:46:32Z",
+      "started_at": "2026-10-22T23:45:35Z",
+      "completed_at": "2026-10-22T23:46:32Z"
+    },
+    {
+      "id": "T-034",
+      "name": "Document started_at/completed_at task fields",
+      "phase": 7,
+      "type": "docs",
+      "description": "Add optional started_at (set when a task moves to in_progress) and completed_at (set when it moves to done), ISO 8601 UTC, both cleared when a task goes back to todo. Update the schema table and example in README.md, the schema line in plugin/CLAUDE.md, the example in plugin/templates/tasks.json, and the Task type in dashboard/src/lib/types.ts. No behaviour changes.",
+      "requirements": [
+        "FR-5.1",
+        "FR-5.4"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "README.md",
+        "plugin/CLAUDE.md",
+        "plugin/templates/tasks.json",
+        "dashboard/src/lib/types.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:47:08Z",
+      "started_at": "2026-10-22T23:46:38Z",
+      "completed_at": "2026-10-22T23:47:08Z"
+    },
+    {
+      "id": "T-035",
+      "name": "Skills write started_at and completed_at",
+      "phase": 7,
+      "type": "feature",
+      "description": "Update /atm:do-task and /atm:loop-tasks: when setting in_progress also set started_at; when setting done also set completed_at; when a task fails and goes back to todo remove started_at/completed_at; always keep updating updated_at. Use the same date -u command the skills already use. Keep wording consistent between the two skills. Verify by reading both files end to end (no automated test covers skill text); npm run verify must still pass.",
+      "requirements": [
+        "FR-5.1"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-034"
+      ],
+      "files": [
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:47:38Z",
+      "started_at": "2026-10-22T23:47:13Z",
+      "completed_at": "2026-10-22T23:47:38Z"
+    },
+    {
+      "id": "T-036",
+      "name": "Timeline uses completed_at with updated_at fallback",
+      "phase": 7,
+      "type": "feature",
+      "description": "In src/lib/timeline.ts completions(): use completed_at when present, else updated_at (FR-5.2). Unit tests: completed_at wins over a later updated_at; fallback for old files. Optionally add completed_at to some done tasks in a fixture only if no screenshot/e2e expectation changes; otherwise leave fixtures alone.",
+      "requirements": [
+        "FR-5.2"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-034"
+      ],
+      "files": [
+        "dashboard/src/lib/timeline.ts",
+        "dashboard/tests/unit/timeline.test.ts",
+        "dashboard/tests/fixtures/standard.json"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:48:03Z",
+      "started_at": "2026-10-22T23:47:49Z",
+      "completed_at": "2026-10-22T23:48:03Z"
+    },
+    {
+      "id": "T-037",
+      "name": "Create plugin/CHANGELOG.md with backfilled history",
+      "phase": 7,
+      "type": "docs",
+      "description": "Create plugin/CHANGELOG.md (Keep a Changelog style: \"## [x.y.z] - YYYY-MM-DD\", \"### Added/Changed/Fixed\" bullet lists, newest first) with an \"## [Unreleased]\" section for the 0.7.0 work. Backfill from git history: 0.1.0 (2026-04-04, initial plugin: skills + dashboard), 0.2.0 (2026-04-04, restructure, rename to atm), 0.3.0 (2026-04-04, plugin in its own subdirectory), 0.4.0 (2026-04-05, task timestamps, activity timeline, /atm:update-dashboard; loop auto-commits by default), 0.5.0 (2026-10-22, dashboard rebuilt in Svelte 5 with tests; task text escaped (XSS fix); filters/tab title refresh on reload), 0.6.0 (2026-10-22, graph zoom/pan/minimap). Write for plugin users, not developers; check details against git log.",
+      "requirements": [
+        "FR-1.1",
+        "FR-1.2"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "plugin/CHANGELOG.md"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:48:39Z",
+      "started_at": "2026-10-22T23:48:10Z",
+      "completed_at": "2026-10-22T23:48:39Z"
+    },
+    {
+      "id": "T-038",
+      "name": "Changelog parser and version range selection",
+      "phase": 7,
+      "type": "feature",
+      "description": "Add src/lib/changelog.ts: parseChangelog(markdown) -> [{ version, date, sections: [{ title, items[] }] }] (newest first; supports [Unreleased]); compareVersions(a, b) for x.y.z; entriesBetween(entries, fromExclusive, toInclusive) treating a missing version as 0.0.0. Pure TS, no Markdown library; inline Markdown in items is kept as plain text. Unit tests against the real plugin/CHANGELOG.md plus edge cases (empty file, missing date, unknown section names).",
+      "requirements": [
+        "FR-1.3",
+        "FR-1.4"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-037"
+      ],
+      "files": [
+        "dashboard/src/lib/changelog.ts",
+        "dashboard/tests/unit/changelog.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:49:22Z",
+      "started_at": "2026-10-22T23:49:08Z",
+      "completed_at": "2026-10-22T23:49:22Z"
+    },
+    {
+      "id": "T-039",
+      "name": "CI/check fails without a changelog entry for the version",
+      "phase": 7,
+      "type": "infra",
+      "description": "Extend scripts/check-versions.mjs (run by npm run check and CI) to also fail with a clear message when plugin/CHANGELOG.md has no \"## [<plugin.json version>]\" entry. While the version is still 0.6.0 this passes via the backfilled entry. Test the failure path manually (temporary edit, restore) as done for the version mismatch.",
+      "requirements": [
+        "FR-1.6"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-038"
+      ],
+      "files": [
+        "dashboard/scripts/check-versions.mjs"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:49:47Z",
+      "started_at": "2026-10-22T23:49:33Z",
+      "completed_at": "2026-10-22T23:49:47Z"
+    },
+    {
+      "id": "T-040",
+      "name": "Embed the parsed changelog in the build",
+      "phase": 7,
+      "type": "infra",
+      "description": "Make the changelog available to the app at build time with no runtime fetch: a small Vite plugin exposing a virtual module (e.g. \"virtual:atm-changelog\") that reads plugin/CHANGELOG.md and returns parseChangelog() output as JSON, plus src/lib/release-notes.ts that imports it with a typed wrapper (and a .d.ts for the virtual module). Vitest must be able to resolve it too. The guardrail tests (single file, size budget) must still pass.",
+      "requirements": [
+        "FR-1.4",
+        "NFR-1"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-038"
+      ],
+      "files": [
+        "dashboard/build/changelog.ts",
+        "dashboard/vite.config.ts",
+        "dashboard/src/lib/release-notes.ts",
+        "dashboard/tests/unit/release-notes.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:50:41Z",
+      "started_at": "2026-10-22T23:50:08Z",
+      "completed_at": "2026-10-22T23:50:41Z"
+    },
+    {
+      "id": "T-041",
+      "name": "Version chip and What's new panel",
+      "phase": 7,
+      "type": "feature",
+      "description": "Header shows a version chip \"v<version>\" (version from the atm-dashboard-version meta tag). Clicking it opens a What's new panel listing changelog versions newest first with their Added/Changed/Fixed items; closes via x, backdrop and Escape like the detail panel (reuse its styles/patterns). e2e spec: chip text, panel opens and lists versions in order, closes three ways. The header change alters page screenshots: regenerate the -darwin baselines intentionally, delete the matching -linux ones (CI regenerates them), and check the new images.",
+      "requirements": [
+        "FR-1.4"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-040"
+      ],
+      "files": [
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/WhatsNew.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/whats-new.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:52:37Z",
+      "started_at": "2026-10-22T23:51:00Z",
+      "completed_at": "2026-10-22T23:52:37Z"
+    },
+    {
+      "id": "T-042",
+      "name": "\"New\" marker on the version chip after upgrades",
+      "phase": 7,
+      "type": "feature",
+      "description": "Store the last-seen dashboard version via prefs.ts. When the current version is newer than the last seen one (or none was ever seen), the chip shows a \"new\" marker until the What's new panel is opened once; opening it records the current version. Without storage, never show the marker and never error. e2e: marker present on first visit, gone after opening, stays gone after reload, reappears when a lower last-seen version is stored. Visual specs must stay stable (decide and document whether they run with the marker seen).",
+      "requirements": [
+        "FR-1.5"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-041",
+        "T-030"
+      ],
+      "files": [
+        "dashboard/src/components/Header.svelte",
+        "dashboard/tests/e2e/whats-new.spec.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:54:32Z",
+      "started_at": "2026-10-22T23:53:11Z",
+      "completed_at": "2026-10-22T23:54:32Z"
+    },
+    {
+      "id": "T-043",
+      "name": "update-dashboard reports real changelog entries",
+      "phase": 7,
+      "type": "feature",
+      "description": "Rewrite the report step of /atm:update-dashboard: read <plugin root>/CHANGELOG.md, take every entry with version > the project's old version (no version tag = 0.0.0) and <= the new version, and print them under \"What's new\" (version headers + bullets, newest first). Remove the instruction to describe changes from the version difference. If CHANGELOG.md is missing, say so instead of guessing.",
+      "requirements": [
+        "FR-1.3"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-037"
+      ],
+      "files": [
+        "plugin/skills/update-dashboard/SKILL.md"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:55:11Z",
+      "started_at": "2026-10-22T23:54:42Z",
+      "completed_at": "2026-10-22T23:55:11Z"
+    },
+    {
+      "id": "T-044",
+      "name": "Outdated-dashboard hints name the headline change (P2)",
+      "phase": 7,
+      "type": "polish",
+      "description": "Where create-tasks, do-task and loop-tasks say the dashboard is outdated, also name the first \"Added\" item of the newest CHANGELOG.md entry (e.g. \"0.8.0 adds a Kanban board\"). Keep the hint to one line.",
+      "requirements": [
+        "FR-1.7"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-043"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:55:48Z",
+      "started_at": "2026-10-22T23:55:15Z",
+      "completed_at": "2026-10-22T23:55:48Z"
+    },
+    {
+      "id": "T-045",
+      "name": "Release 0.7.0",
+      "phase": 7,
+      "type": "docs",
+      "description": "Turn \"[Unreleased]\" into \"[0.7.0] - <date>\" (auto-refresh on by default, graph keeps zoom on filter changes, What's new panel, update-dashboard shows real release notes, started_at/completed_at), bump plugin.json and marketplace.json to 0.7.0, rebuild, update README (dashboard features; Auto refresh tip in Quick Start no longer needed), copy the build to docs/tasks-dashboard.html. npm run verify green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-031",
+        "T-033",
+        "T-035",
+        "T-036",
+        "T-039",
+        "T-042",
+        "T-044"
+      ],
+      "files": [
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md",
+        "docs/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-22T23:56:19Z",
+      "started_at": "2026-10-22T23:55:56Z",
+      "completed_at": "2026-10-22T23:56:19Z"
+    },
+    {
+      "id": "T-046",
+      "name": "View-tab state: hash parsing and persistence",
+      "phase": 8,
+      "type": "feature",
+      "description": "Add src/lib/tabs.ts: the view ids (graph, kanban, progress), parse \"#view=<id>\" from location.hash (unknown/missing -> graph) and serialize back without disturbing other hash content. Unit tests.",
+      "requirements": [
+        "FR-2.2"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-045"
+      ],
+      "files": [
+        "dashboard/src/lib/tabs.ts",
+        "dashboard/tests/unit/tabs.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:09:33Z",
+      "started_at": "2026-10-23T00:09:18Z",
+      "completed_at": "2026-10-23T00:09:33Z"
+    },
+    {
+      "id": "T-047",
+      "name": "Tabbed panel: Dependency Graph | Kanban | Progress",
+      "phase": 8,
+      "type": "feature",
+      "description": "Replace the graph section header with a WAI-ARIA tablist (role=tablist/tab/tabpanel, Left/Right arrows, roving tabindex) with tabs Dependency Graph (default), Kanban, Progress; Kanban and Progress show \"Coming soon\" placeholders until their tasks land. The selected tab syncs with #view=... (back/forward work). Keep panels mounted and hide inactive ones so the graph keeps its pan/zoom (FR-2.4). Keep #graph-section, #graph-container, #dep-graph, #graph-badge working and collapse/expand for the whole panel. e2e tabs.spec: default tab, click + keyboard switching, hash deep link and reload, graph zoom survives a tab round trip, filters + badge apply. Regenerate affected screenshots intentionally (darwin; delete linux).",
+      "requirements": [
+        "FR-2.1",
+        "FR-2.2",
+        "FR-2.3",
+        "FR-2.4",
+        "FR-2.5",
+        "FR-2.6"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-046"
+      ],
+      "files": [
+        "dashboard/src/components/ViewTabs.svelte",
+        "dashboard/src/components/DepGraph.svelte",
+        "dashboard/src/App.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/tabs.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:11:19Z",
+      "started_at": "2026-10-23T00:09:53Z",
+      "completed_at": "2026-10-23T00:11:19Z"
+    },
+    {
+      "id": "T-048",
+      "name": "Kanban model: columns, ordering, readiness, next up",
+      "phase": 8,
+      "type": "feature",
+      "description": "Add src/lib/kanban.ts: buildBoard(tasks, allTasks, { showSkipped, statusFilter }) -> columns Todo, In Progress, Blocked, Done (+ Skipped when shown, + Other for unknown statuses when present), each with count and ordered cards: Todo ready-first then phase/id; In Progress by started_at (fallback updated_at) newest first; Done by completed_at (fallback updated_at) newest first; Blocked by phase/id. readiness(task, taskMap) -> ready or the list of unfinished dependency ids (deps outside the file count as unfinished). nextUp(allTasks) implements exactly the loop-tasks selection rule (status todo, all deps done, lowest phase then lowest id). With a status filter only matching columns are returned. Unit tests incl. a test that nextUp matches the rule described in plugin/skills/loop-tasks/SKILL.md.",
+      "requirements": [
+        "FR-3.1",
+        "FR-3.3",
+        "FR-3.4",
+        "FR-3.5",
+        "FR-3.8"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-045"
+      ],
+      "files": [
+        "dashboard/src/lib/kanban.ts",
+        "dashboard/tests/unit/kanban.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:12:22Z",
+      "started_at": "2026-10-23T00:11:33Z",
+      "completed_at": "2026-10-23T00:12:22Z"
+    },
+    {
+      "id": "T-049",
+      "name": "Kanban test fixture",
+      "phase": 8,
+      "type": "test",
+      "description": "Add tests/fixtures/kanban.json: every status incl. an unknown one, todo tasks that are ready and waiting (including waiting on a missing id), several in_progress with started_at, more than 20 done tasks with distinct completed_at, skipped tasks, 3 phases. The fixtures smoke spec must load it without errors.",
+      "requirements": [
+        "FR-3.3",
+        "FR-3.5",
+        "FR-3.6"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-045"
+      ],
+      "files": [
+        "dashboard/tests/fixtures/kanban.json"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:13:09Z",
+      "started_at": "2026-10-23T00:12:40Z",
+      "completed_at": "2026-10-23T00:13:09Z"
+    },
+    {
+      "id": "T-050",
+      "name": "Kanban board component",
+      "phase": 8,
+      "type": "feature",
+      "description": "Render buildBoard() in the Kanban tab: columns with header + count, compact cards (id, name, phase + type badges using theme colours, \"Ready\" / \"Waiting on ...\" for todo, a \"Next up\" marker), click opens the existing detail panel, \"Show skipped\" toggle, Done limited to 20 with \"Show all (N)\", columns scroll independently, horizontal scroll on narrow screens. Respect filters. Stable hooks for tests: .kanban-column[data-status], .kanban-card[data-id].",
+      "requirements": [
+        "FR-3.1",
+        "FR-3.2",
+        "FR-3.3",
+        "FR-3.4",
+        "FR-3.6",
+        "NFR-3"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-047",
+        "T-048",
+        "T-049"
+      ],
+      "files": [
+        "dashboard/src/components/KanbanBoard.svelte",
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:32:28Z",
+      "started_at": "2026-10-23T00:13:44Z",
+      "completed_at": "2026-10-23T00:32:28Z"
+    },
+    {
+      "id": "T-051",
+      "name": "Kanban e2e specs and screenshots",
+      "phase": 8,
+      "type": "test",
+      "description": "e2e kanban.spec on kanban.json and standard: columns and counts, card order per column, readiness text, Next up on the right card (and it moves after a reload where that task is done), detail opens on click, skipped toggle, Show all, status filter limits columns, live update via Reload. Add Kanban screenshots to visual.spec (standard, kanban) - darwin baselines; CI generates linux.",
+      "requirements": [
+        "FR-3.1",
+        "FR-3.2",
+        "FR-3.3",
+        "FR-3.4",
+        "FR-3.5",
+        "FR-3.6",
+        "FR-3.8"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-050"
+      ],
+      "files": [
+        "dashboard/tests/e2e/kanban.spec.ts",
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:33:28Z",
+      "started_at": "2026-10-23T00:32:56Z",
+      "completed_at": "2026-10-23T00:33:28Z"
+    },
+    {
+      "id": "T-052",
+      "name": "Kanban: group by phase (P2)",
+      "phase": 8,
+      "type": "feature",
+      "description": "\"Group by phase\" toggle splits the board into one swimlane per phase (phase header with done/total), same columns in each lane; remembered via prefs.ts. Unit + e2e coverage.",
+      "requirements": [
+        "FR-3.7"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-051"
+      ],
+      "files": [
+        "dashboard/src/components/KanbanBoard.svelte",
+        "dashboard/src/lib/kanban.ts",
+        "dashboard/tests/e2e/kanban.spec.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:34:55Z",
+      "started_at": "2026-10-23T00:34:03Z",
+      "completed_at": "2026-10-23T00:34:55Z"
+    },
+    {
+      "id": "T-053",
+      "name": "Release 0.8.0",
+      "phase": 8,
+      "type": "docs",
+      "description": "Changelog entry [0.8.0] (tabs, Kanban board with readiness and Next up), bump to 0.8.0, rebuild, README dashboard features, copy build to docs/. npm run verify green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-051",
+        "T-052"
+      ],
+      "files": [
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md",
+        "docs/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:35:22Z",
+      "started_at": "2026-10-23T00:35:06Z",
+      "completed_at": "2026-10-23T00:35:22Z"
+    },
+    {
+      "id": "T-054",
+      "name": "Progress test fixture",
+      "phase": 9,
+      "type": "test",
+      "description": "Add tests/fixtures/progress.json: 3 phases across several days, done tasks with started_at/completed_at (and some with only updated_at), an idle gap of hours between sessions, tasks added midway (later created_at), one blocked and one skipped task, phase 0 fully done. Document the intended expected numbers (pace, ranges, ETAs at a fixed \"now\") in a comment block in the generator or a sibling README so tests can cite them.",
+      "requirements": [
+        "FR-4.1",
+        "FR-4.3",
+        "FR-4.4"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-053"
+      ],
+      "files": [
+        "dashboard/tests/fixtures/progress.json"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:36:14Z",
+      "started_at": "2026-10-23T00:35:57Z",
+      "completed_at": "2026-10-23T00:36:14Z"
+    },
+    {
+      "id": "T-055",
+      "name": "Forecast model",
+      "phase": 9,
+      "type": "feature",
+      "description": "Implement docs/dashboard-v2-requirements.md section 3 in src/lib/forecast.ts: per-task durations (completed_at - started_at, else gap since previous completion capped at 30 min), pace = median of the last 10 with P25/P75 range, phase estimates accumulated in loop order (unfinished tasks in phases <= N; blocked/skipped excluded; blocked counted for a warning), working-time result plus calendar time from an injected \"now\", done phases report their last completion date, fewer than 3 timed completions -> \"not enough history\". Unit tests with fake timers.",
+      "requirements": [
+        "FR-4.3",
+        "FR-4.4",
+        "FR-5.2"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-054"
+      ],
+      "files": [
+        "dashboard/src/lib/forecast.ts",
+        "dashboard/tests/unit/forecast.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:37:31Z",
+      "started_at": "2026-10-23T00:36:59Z",
+      "completed_at": "2026-10-23T00:37:31Z"
+    },
+    {
+      "id": "T-056",
+      "name": "Burndown series",
+      "phase": 9,
+      "type": "feature",
+      "description": "src/lib/burndown.ts: step series of remaining tasks and of total scope (by created_at; done time from completed_at/updated_at) over time, plus a forecast segment from now to the projected finish (from forecast.ts). Optional phase filter for FR-4.6. Handles missing created_at (fall back to the earliest known timestamp). Unit tests.",
+      "requirements": [
+        "FR-4.1"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-055"
+      ],
+      "files": [
+        "dashboard/src/lib/burndown.ts",
+        "dashboard/tests/unit/burndown.test.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:38:21Z",
+      "started_at": "2026-10-23T00:38:02Z",
+      "completed_at": "2026-10-23T00:38:21Z"
+    },
+    {
+      "id": "T-057",
+      "name": "Progress tab: phase table",
+      "phase": 9,
+      "type": "feature",
+      "description": "Phase table in the Progress tab: phase (phase colour), done/total, progress bar, remaining, state (Done / In progress / Not started), estimate \"≈ 1 h 10 m of agent work (50 m - 1 h 40 m)\" with the calendar time secondary (\"if the loop keeps running: ...\"), done date for finished phases, blocked warning, \"based on the last N tasks: ~X min each\", and \"Not enough history to estimate\" when applicable. e2e with page.clock at a fixed time on progress.json and on a fixture with too little history.",
+      "requirements": [
+        "FR-4.2",
+        "FR-4.3",
+        "FR-4.4",
+        "FR-4.5"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-055",
+        "T-047"
+      ],
+      "files": [
+        "dashboard/src/components/ProgressTab.svelte",
+        "dashboard/src/components/PhaseTable.svelte",
+        "dashboard/tests/e2e/progress.spec.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:40:09Z",
+      "started_at": "2026-10-23T00:39:06Z",
+      "completed_at": "2026-10-23T00:40:09Z"
+    },
+    {
+      "id": "T-058",
+      "name": "Progress tab: burndown chart",
+      "phase": 9,
+      "type": "feature",
+      "description": "Hand-written SVG burndown above the phase table: remaining (step line), scope (step line), dashed forecast segment, time axis with dates, hover tooltips on data points; follow the dataviz skill for colours/marks and keep both themes' tokens consistent with app.css. Responsive width. e2e for tooltip content and lines present; screenshot baselines (darwin; CI linux). Size budget still met.",
+      "requirements": [
+        "FR-4.1",
+        "FR-4.5",
+        "NFR-1",
+        "NFR-3"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-056",
+        "T-057"
+      ],
+      "files": [
+        "dashboard/src/components/BurndownChart.svelte",
+        "dashboard/tests/e2e/progress.spec.ts",
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:43:24Z",
+      "started_at": "2026-10-23T00:41:05Z",
+      "completed_at": "2026-10-23T00:43:24Z"
+    },
+    {
+      "id": "T-059",
+      "name": "Progress: click a phase to focus the burndown (P2)",
+      "phase": 9,
+      "type": "feature",
+      "description": "Clicking a phase row limits the burndown to that phase (click again or \"All phases\" to reset); selected row highlighted. e2e.",
+      "requirements": [
+        "FR-4.6"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-058"
+      ],
+      "files": [
+        "dashboard/src/components/ProgressTab.svelte",
+        "dashboard/tests/e2e/progress.spec.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:44:20Z",
+      "started_at": "2026-10-23T00:43:32Z",
+      "completed_at": "2026-10-23T00:44:20Z"
+    },
+    {
+      "id": "T-060",
+      "name": "Performance and backward-compatibility checks",
+      "phase": 9,
+      "type": "test",
+      "description": "Generate a 500-task fixture (extend generate-large.mjs) and an e2e check that switching between all tabs and a Reload each render within 200 ms (measure via performance marks; generous CI margin documented). compat.spec: a 0.6.0-era tasks.json (no started_at/completed_at, no estimates) renders every tab without page errors and with sensible fallbacks.",
+      "requirements": [
+        "NFR-2",
+        "NFR-5"
+      ],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-058"
+      ],
+      "files": [
+        "dashboard/tests/fixtures/generate-large.mjs",
+        "dashboard/tests/e2e/performance.spec.ts",
+        "dashboard/tests/e2e/compat.spec.ts"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:45:45Z",
+      "started_at": "2026-10-23T00:44:34Z",
+      "completed_at": "2026-10-23T00:45:45Z"
+    },
+    {
+      "id": "T-061",
+      "name": "Release 0.9.0",
+      "phase": 9,
+      "type": "docs",
+      "description": "Changelog [0.9.0] (Progress tab: burndown and per-phase estimates), bump to 0.9.0, rebuild, README dashboard features + note that estimates need started_at/completed_at (written by the skills since 0.7.0), copy build to docs/. npm run verify green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [
+        "T-059",
+        "T-060"
+      ],
+      "files": [
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "README.md",
+        "docs/tasks-dashboard.html"
+      ],
+      "created_at": "2026-10-22T23:33:50Z",
+      "updated_at": "2026-10-23T00:46:49Z",
+      "started_at": "2026-10-23T00:46:30Z",
+      "completed_at": "2026-10-23T00:46:49Z"
     }
   ]
 }

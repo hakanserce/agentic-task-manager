@@ -15,5 +15,7 @@ export function loadIntoDashboard(data: TasksFile) {
     filters: emptyFilters(),
     detailId: null,
     detailOpen: false,
+    // Keep component tests free of background reloads (the real default is on)
+    autoRefresh: false,
   });
 }

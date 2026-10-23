@@ -30,47 +30,57 @@ test.describe('reload', () => {
 });
 
 test.describe('auto-refresh', () => {
+  const requests = (tasksServer: { requests: number }) => expect.poll(() => tasksServer.requests);
+  const toggle = (page: import('@playwright/test').Page) => page.locator('.auto-refresh-toggle');
+  const check = (page: import('@playwright/test').Page) => page.locator('#auto-refresh-check');
+  const interval = (page: import('@playwright/test').Page) => page.locator('#auto-refresh-interval');
+
   test.beforeEach(async ({ page, tasksServer }) => {
     await page.clock.install();
-    await openDashboard(page, tasksServer, 'standard');
+    // A fresh browser profile: no stored preferences, so the dashboard's defaults apply
+    await openDashboard(page, tasksServer, 'standard', { autoRefresh: true });
   });
 
-  const requests = (tasksServer: { requests: number }) => expect.poll(() => tasksServer.requests);
-
-  test('is off by default', async ({ page, tasksServer }) => {
-    await expect(page.locator('#auto-refresh-check')).not.toBeChecked();
-    await expect(page.locator('#auto-refresh-interval')).toHaveValue('5');
-    await page.clock.runFor(30_000);
-    expect(tasksServer.requests).toBe(1);
-  });
-
-  test('polls every 5 seconds when enabled and stops when disabled', async ({ page, tasksServer }) => {
-    await page.locator('.auto-refresh-toggle').click();
-    await expect(page.locator('#auto-refresh-check')).toBeChecked();
+  test('is on by default and polls every 5 seconds', async ({ page, tasksServer }) => {
+    await expect(check(page)).toBeChecked();
+    await expect(interval(page)).toHaveValue('5');
     await page.clock.runFor(5_000);
     await requests(tasksServer).toBe(2);
     await page.clock.runFor(5_000);
     await requests(tasksServer).toBe(3);
+  });
 
-    await page.locator('.auto-refresh-toggle').click();
+  test('stops polling when switched off', async ({ page, tasksServer }) => {
+    await toggle(page).click();
+    await expect(check(page)).not.toBeChecked();
     await page.clock.runFor(30_000);
-    await requests(tasksServer).toBe(3);
+    await requests(tasksServer).toBe(1);
+  });
+
+  test('switching it off is remembered across reloads', async ({ page, tasksServer }) => {
+    await toggle(page).click();
+    await page.reload();
+    await expect(check(page)).not.toBeChecked();
+    const afterReload = tasksServer.requests;
+    await page.clock.runFor(30_000);
+    expect(tasksServer.requests).toBe(afterReload);
   });
 
   test('picks up changes on the next tick', async ({ page, tasksServer }) => {
-    await page.locator('.auto-refresh-toggle').click();
     tasksServer.use(standardWithT005Done());
     await page.clock.runFor(5_000);
     await expect(statNumber(page, 'Done')).toHaveText('6');
   });
 
-  test('changing the interval while enabled reschedules polling', async ({ page, tasksServer }) => {
-    await page.locator('.auto-refresh-toggle').click();
-    await page.locator('#auto-refresh-interval').fill('2');
-    await page.locator('#auto-refresh-interval').press('Tab');
+  test('a changed interval applies immediately and is remembered', async ({ page, tasksServer }) => {
+    await interval(page).fill('2');
+    await interval(page).press('Tab');
     await page.clock.runFor(2_000);
     await requests(tasksServer).toBe(2);
     await page.clock.runFor(2_000);
     await requests(tasksServer).toBe(3);
+    await page.reload();
+    await expect(interval(page)).toHaveValue('2');
+    await expect(check(page)).toBeChecked();
   });
 });

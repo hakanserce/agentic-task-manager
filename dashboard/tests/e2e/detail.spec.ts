@@ -70,7 +70,7 @@ test.describe('detail panel', () => {
 
   test('closes with the × button', async ({ page }) => {
     await openFromCard(page, 'T-004');
-    await page.locator('.detail-close').click();
+    await page.locator('#detail-panel .detail-close').click();
     await expect(overlay(page)).toBeHidden();
   });
 

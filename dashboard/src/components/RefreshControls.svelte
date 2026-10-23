@@ -3,7 +3,7 @@
 
   // Like the legacy dashboard, the interval only applies on "change" (blur/enter), not on every keystroke
   function onIntervalChange(e: Event) {
-    dashboard.autoRefreshSeconds = parseInt((e.currentTarget as HTMLInputElement).value) || 5;
+    dashboard.setAutoRefreshSeconds(parseInt((e.currentTarget as HTMLInputElement).value) || 5);
   }
 
   $effect(() => {
@@ -21,8 +21,12 @@
   onclick={() => dashboard.reload()}><span class="icon">&#x21bb;</span> Reload</button
 >
 <label class="auto-refresh-toggle" title="Auto-refresh tasks.json"
-  ><input type="checkbox" id="auto-refresh-check" bind:checked={dashboard.autoRefresh} /><span class="toggle-track"
-  ></span> Auto</label
+  ><input
+    type="checkbox"
+    id="auto-refresh-check"
+    checked={dashboard.autoRefresh}
+    onchange={(e) => dashboard.setAutoRefresh(e.currentTarget.checked)}
+  /><span class="toggle-track"></span> Auto</label
 >
 <input
   type="number"

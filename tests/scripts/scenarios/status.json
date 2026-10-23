@@ -180,7 +180,8 @@
         "dependencies": [],
         "updated_at": "2026-05-01T10:00:00Z",
         "started_at": "2026-05-01T09:00:00Z",
-        "completed_at": "2026-05-01T10:00:00Z"
+        "completed_at": "2026-05-01T10:00:00Z",
+        "claim": null
       }
     },
     "env": {
@@ -279,7 +280,8 @@
         "last_failure": {
           "at": "2026-05-01T10:00:00Z",
           "reason": "verification failed"
-        }
+        },
+        "claim": null
       }
     },
     "env": {

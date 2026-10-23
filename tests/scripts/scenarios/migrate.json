@@ -28,7 +28,7 @@
           "tasks": []
         },
         ".agentic-task-manager/tasks-dashboard.html": true,
-        ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n"
+        ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n"
       },
       "git": {
         "staged": [
@@ -183,7 +183,7 @@
         ".agentic-task-manager/tasks.json": {
           "tasks": []
         },
-        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n",
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
         ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"> current"
       }
     },
@@ -191,7 +191,7 @@
     "expect": {
       "stdout": "Nothing to migrate.\n",
       "files": {
-        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n",
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
         ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"> current"
       }
     }
@@ -211,7 +211,7 @@
     "expect": {
       "stdout": "Nothing to migrate.\n",
       "files": {
-        ".agentic-task-manager/.gitignore": "notes.txt\n.server.json\ntasks-dashboard.html\n.server.log\nclaims.json\n.lock/\n"
+        ".agentic-task-manager/.gitignore": "notes.txt\n.server.json\ntasks-dashboard.html\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n"
       }
     }
   },
@@ -252,7 +252,7 @@
         ".agentic-task-manager/tasks.json": {
           "tasks": []
         },
-        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n",
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
         ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"99.10.0\">"
       }
     },

@@ -9,7 +9,9 @@ import { after, describe, test } from 'node:test';
 import { makeProject, removeDir, runAtm } from './helpers.mjs';
 
 const TASKS = { meta: { project: 'Serve' }, tasks: [] };
-let nextPort = 18400;
+// A different range per run: ports of the previous run can still be in TIME_WAIT, and the server deliberately doesn't
+// use SO_REUSEADDR (on macOS it would let it share a port another server is listening on).
+let nextPort = 20000 + (process.pid % 400) * 50;
 /** A block of ports for one test, so tests never collide even if a stop fails. */
 const ports = () => (nextPort += 10) - 10;
 

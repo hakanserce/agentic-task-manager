@@ -1707,7 +1707,7 @@
         "FR-8.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-073"
       ],
@@ -1716,7 +1716,9 @@
         "tests/scripts/claims.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:06:54Z",
+      "started_at": "2026-10-23T23:01:31Z",
+      "completed_at": "2026-10-23T23:06:54Z"
     },
     {
       "id": "T-075",

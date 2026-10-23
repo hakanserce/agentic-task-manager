@@ -1,0 +1,24 @@
+#!/bin/sh
+# atm: the Agentic Task Manager helper. Runs atm.py with Python 3.9+ if available, otherwise atm.mjs with Node 18+.
+# Both implementations behave identically (tests/scripts runs one suite against each).
+# ATM_RUNTIME=python|node forces one of them.
+dir=$(cd "$(dirname "$0")" && pwd)
+
+has_python() { command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))' 2>/dev/null; }
+has_node() { command -v node >/dev/null 2>&1 && node -e 'process.exit(+process.versions.node.split(".")[0] < 18 ? 1 : 0)' 2>/dev/null; }
+
+case "${ATM_RUNTIME:-}" in
+  python)
+    has_python || { echo "atm: ATM_RUNTIME=python, but Python 3.9+ (python3) was not found" >&2; exit 127; }
+    exec python3 "$dir/atm.py" "$@" ;;
+  node)
+    has_node || { echo "atm: ATM_RUNTIME=node, but Node 18+ (node) was not found" >&2; exit 127; }
+    exec node "$dir/atm.mjs" "$@" ;;
+  "") ;;
+  *) echo "atm: ATM_RUNTIME must be 'python' or 'node', not '$ATM_RUNTIME'" >&2; exit 2 ;;
+esac
+
+if has_python; then exec python3 "$dir/atm.py" "$@"; fi
+if has_node; then exec node "$dir/atm.mjs" "$@"; fi
+echo "atm: needs Python 3.9+ (python3) or Node 18+ (node). Install either one and try again." >&2
+exit 127

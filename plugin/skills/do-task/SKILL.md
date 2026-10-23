@@ -34,42 +34,32 @@ tell the user:
 
 Read and parse the file. Build a map of task IDs to task objects.
 
-## Step 2: Select a task
+## Step 2: Select and claim a task
 
-If `$ARGUMENTS` specifies a task ID (e.g., `T-005` or `T-P1-03`), select that task.
+Every status change goes through the plugin's helper. Below, `atm` stands for
+`"${CLAUDE_SKILL_DIR}/../../scripts/atm"`: write out that full path in each command, run from the project root.
+It locks the task file while it changes it, writes the timestamps, and records which agent works on which task (a
+**claim**), so other agents running at the same time won't take the same task. Never edit `status`, `started_at`,
+`completed_at` or `updated_at` in tasks.json yourself.
 
-If no specific task is given, select the **next available task** using this priority:
-1. Filter to tasks with `"status": "todo"`
-2. From those, keep only tasks where ALL dependencies have `"status": "done"`
-3. Sort by: lowest phase first, then lowest task ID (natural sort)
-4. Pick the first one
+If `$ARGUMENTS` specifies a task ID (e.g., `T-005` or `T-P1-03`), run `atm start <id>`. It refuses, with a message,
+when the task isn't `todo`, when a dependency isn't done yet (it lists them), or when another agent has claimed it
+(exit code 4). Report the message and stop:
+> **Task $ID can't start:** (the message)
+>
+> Complete the blocking tasks first, or pick a different task.
 
-If no task is available, report clearly:
-> **No tasks available.** All tasks are either done, in progress, or blocked by unfinished dependencies.
+If no task ID is given, run `atm next --claim --json`. It picks the **next available task** (status todo, all
+dependencies done, not claimed by another agent; lowest phase first, then lowest task ID), starts it and claims it
+in one step. The JSON has the task under `"task"`.
+
+If it exits with code 3, no task is available; its `"reason"` says why. Report clearly:
+> **No tasks available.** (the reason)
 >
 > Remaining tasks:
 > - (list any todo/in_progress tasks and what blocks them)
 
-## Step 3: Validate dependencies
-
-Before starting, verify ALL dependency tasks have `"status": "done"`.
-
-If any dependency is NOT done, report:
-> **Task $ID is blocked.** These dependencies are not yet done:
-> - $DEP_ID: $DEP_NAME (status: $DEP_STATUS)
->
-> Complete those first, or pick a different task.
-
-Do NOT proceed if dependencies are unmet.
-
-## Step 4: Mark as in_progress
-
-Update the task in tasks.json:
-- Set `status` to `"in_progress"`
-- Set `updated_at` and `started_at` to the current UTC timestamp (run `date -u +"%Y-%m-%dT%H:%M:%SZ"` to get it)
-- Remove `completed_at` if the task has one (e.g. from an earlier attempt)
-
-**Write the file immediately** so the dashboard reflects the change in real time.
+The dashboard shows the change immediately.
 
 ## Step 5: Execute the task
 
@@ -86,7 +76,11 @@ Execution approach by task type:
 - **polish**: Make the UI/UX improvements described.
 
 Use the `files` array as hints for which files to create or modify, but also create
-any additional files that are needed.
+any additional files that are needed. Keep a list of every file you create, change or delete: Step 7b commits
+exactly those.
+
+On a long task, run `atm heartbeat $TASK_ID` every ten minutes or so (before a long build or test run is a good
+moment). Your claim has a lease (30 minutes by default); if it runs out, the task goes back to `todo` for others.
 
 ## Step 6: Verify
 
@@ -99,15 +93,13 @@ After implementation, verify the work:
 
 If verification fails:
 - Try to fix the issue (up to 2 attempts)
-- If still failing after 2 attempts, set the task status back to `"todo"`, update `updated_at` to the current UTC timestamp, remove `started_at` and `completed_at`, and report the failure
+- If still failing after 2 attempts, run `atm fail $TASK_ID --reason "<one line on what failed>"` (the task goes back
+  to `todo` and the reason is recorded) and report the failure
 
 ## Step 7: Mark as done
 
-If verification passes, update the task in tasks.json:
-- Set `status` to `"done"`
-- Set `updated_at` and `completed_at` to the current UTC timestamp (keep `started_at`)
-
-**Write the file immediately.** The dashboard uses `started_at` and `completed_at` for its completion history and estimates.
+If verification passes, run `atm done $TASK_ID`. It sets the status and `completed_at`, and drops your claim.
+If it says your lease expired and another agent holds the task, tell the user instead of committing.
 
 ## Step 7b: Git commit
 
@@ -115,8 +107,12 @@ After marking the task as done, commit the changes.
 If the helper moved files in Step 1 and you are going to commit, first commit the move on its own:
 `git commit -m "chore: move atm files to .agentic-task-manager/" -- <old tasks.json> .agentic-task-manager/tasks.json .agentic-task-manager/.gitignore`
 (add the old `tasks-dashboard.html` path too if it was removed). Then commit the task.
-- `git add -A`
+- `git add -- <the files from your list> .agentic-task-manager/tasks.json` (`git add -A -- <path>` for a deleted
+  file; also add `.agentic-task-manager/.gitignore` and `.agentic-task-manager/.gitattributes` if `git status` shows
+  them staged by atm)
 - `git commit -m "feat($TASK_ID): $TASK_NAME"`
+
+Never `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree.
 
 This is the default behavior. Do NOT push — only commit locally.
 

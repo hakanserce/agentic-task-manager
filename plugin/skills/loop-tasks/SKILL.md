@@ -65,10 +65,28 @@ the move is staged but not committed.
 
 If `--dry-run` is set, do NOT execute any tasks. Instead:
 
-1. Load tasks.json
+1. Load tasks.json (`atm next --json` shows the first task the loop would take)
 2. Walk through the selection logic and list tasks in the order they would execute
 3. Show the dependency chain and estimated execution order
 4. Report total count and exit
+
+## The atm helper
+
+Every status change goes through the plugin's helper. Below, `atm` stands for
+`"${CLAUDE_SKILL_DIR}/../../scripts/atm"`: write out that full path in each command, run from the project root.
+It locks the task file while it changes it, writes timestamps, and records which agent works on which task (a
+**claim**), so several agents can run loops on one project, in one working tree or in separate git worktrees, without
+taking the same task. Its exit codes: 0 ok, 3 no task available, 4 the task is claimed by another agent, 1 other
+errors (the message says what).
+
+**Rules:**
+1. Never edit `status`, `started_at`, `completed_at` or `updated_at` in tasks.json yourself; use `atm`.
+2. Get work only from `atm next --claim` (or `atm start <id>`).
+3. On long tasks, run `atm heartbeat <id>` every ten minutes or so (before long builds or test runs is a good
+   moment), so your claim's lease (30 minutes by default) doesn't expire and the task go to someone else.
+4. Finish with `atm done <id>`; give up with `atm fail <id> --reason "..."`.
+5. Commit only the files you changed for the task, plus `.agentic-task-manager/tasks.json`. Never `git add -A`
+   or `git add .`: another agent's unfinished work may be in the same working tree.
 
 ## The Main Loop
 
@@ -77,64 +95,54 @@ completed_count = 0
 
 while true:
 
-    1. READ tasks.json (fresh read every iteration — the human or another
-       agent may have edited it since the last iteration)
+    1. If --max is set and completed_count >= max → EXIT the loop
 
-    2. FIND the next available task:
-       - status == "todo"
-       - all dependencies have status == "done"
-       - matches --phase filter if specified
-       - matches --type filter if specified
-       - sort by: lowest phase first, then lowest task ID
-       - pick the first match
+    2. GET the next task:
+       - Without --pause: `atm next --claim --json [--phase N] [--type T]`
+         This picks the next task by the loop's rule (status todo, all dependencies done, not claimed by another
+         agent; lowest phase, then lowest task ID) and starts and claims it in one step, so no other agent can
+         take it. The JSON has the task under "task".
+       - With --pause: `atm next --json [--phase N] [--type T]` (looks without claiming), then show it and ask:
+         "About to start $TASK_ID: $TASK_NAME. Proceed? (y/n/skip/quit)"
+         - 'n' or 'quit' → EXIT the loop
+         - 'skip' → leave it, remember to skip it, and continue with the next iteration
+         - 'y' → `atm start $TASK_ID`; if that fails (another agent was faster), continue with the next iteration
+       - Exit code 3 means no task is available ("reason" says why) → EXIT the loop
 
-    3. If NO task available → EXIT the loop
-
-    4. If --max is set and completed_count >= max → EXIT the loop
-
-    5. If --pause is set:
-       - Show the task that's about to be executed
-       - Ask: "About to start $TASK_ID: $TASK_NAME. Proceed? (y/n/skip/quit)"
-       - If 'n' or 'quit' → EXIT the loop
-       - If 'skip' → skip this task (leave as todo) and continue to next iteration
-
-    6. UPDATE tasks.json: set this task's status to "in_progress",
-       set `updated_at` and `started_at` to the current UTC timestamp (`date -u +"%Y-%m-%dT%H:%M:%SZ"`),
-       and remove `completed_at` if present.
-       Write the file immediately.
-
-    7. EXECUTE the task:
-       - Read the task description carefully
+    3. EXECUTE the task:
+       - Read the task description carefully (re-read tasks.json if you need the other tasks: a human or another
+         agent may have changed it)
        - Implement what it describes (same approach as /atm:do-task Step 5)
        - Follow project conventions
+       - Keep a list of the files you create, change or delete for this task
+       - On long tasks, `atm heartbeat $TASK_ID` now and then (rule 3)
 
-    8. VERIFY the task:
+    4. VERIFY the task:
        - Run build/test/lint if available (same as /atm:do-task Step 6)
        - If verification fails after 2 attempts:
-         - Set status back to "todo", update `updated_at` to current UTC timestamp,
-           and remove `started_at` and `completed_at`
+         - `atm fail $TASK_ID --reason "<one line on what failed>"`
          - Log the failure
-         - Continue to next iteration (skip the failed task)
+         - Continue to next iteration (the failed task is back in todo; skip it for the rest of this loop)
 
-    9. UPDATE tasks.json: set status to "done",
-       set `updated_at` and `completed_at` to the current UTC timestamp (keep `started_at`).
-       Write the file immediately.
+    5. `atm done $TASK_ID`
 
-    10. completed_count += 1
+    6. completed_count += 1
 
-    11. GIT OPERATIONS (default: commit after each task):
+    7. GIT OPERATIONS (default: commit after each task):
         - Unless --no-commit is set:
-          - git add -A
-          - git commit -m "feat($TASK_ID): $TASK_NAME"
+          - `git add -- <the files from your list> .agentic-task-manager/tasks.json`
+            (`git add -A -- <path>` for a deleted file; also add `.agentic-task-manager/.gitignore` and
+            `.agentic-task-manager/.gitattributes` if `git status` shows them staged by atm)
+          - `git commit -m "feat($TASK_ID): $TASK_NAME"`
         - If --push:
           - git push
         - If --push-every <N> and completed_count % N == 0:
           - git push
 
-    12. BRIEF REPORT for this task:
+    8. BRIEF REPORT for this task:
         - "✅ $TASK_ID: $TASK_NAME — done ($completed_count completed so far)"
 
-    13. Loop back to step 1
+    9. Loop back to step 1
 ```
 
 ## On Loop Exit
@@ -159,15 +167,20 @@ If `--batch-push` was set, run `git push` now.
 ## Error Handling
 
 - If tasks.json cannot be read → stop the loop, report the error
-- If a task fails verification → set it back to "todo", skip it, continue
+- If a task fails verification → `atm fail` it (back to todo), skip it, continue
+- If `atm` exits with code 4 (claimed by another agent) → leave that task alone and continue
+- If `atm` reports that your lease expired → another agent may have taken the task: stop working on it, don't
+  commit it, and continue with the next iteration
 - If git commit/push fails → log a warning but continue the loop
-- If the task description is too vague to execute → set it back to "todo", skip it,
+- If the task description is too vague to execute → `atm release $TASK_ID`, skip it,
   note it in the summary as "skipped: unclear description"
 
 ## Important Notes
 
-- **Re-read tasks.json every iteration.** The human watching the dashboard might
-  change a task's status, add new tasks, or re-prioritize while the loop runs.
-- **Write tasks.json after every status change.** This keeps the dashboard live.
+- **atm re-reads tasks.json for every command.** The human watching the dashboard might change a task's status,
+  add new tasks, or re-prioritize while the loop runs; the next `atm next` sees it.
+- **Every status change is written immediately** (by atm), so the dashboard stays live.
+- **Running several loops at once** works: each one claims its own tasks. For agents that edit code in parallel, give
+  each its own git worktree (`git worktree add ../project-2 -b agent-2`) so they don't edit the same files.
 - **Don't skip verification.** Quality matters even in a loop.
 - **Respect the --pause flag.** When set, always wait for user input.

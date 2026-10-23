@@ -9,6 +9,11 @@ This plugin provides file-based task management for agentic development workflow
 - `scripts/atm` (in the plugin) is the helper the skills run: `atm migrate` moves an old `docs/tasks.json` or root
   `tasks.json` into `.agentic-task-manager/` (staged with `git mv`, not committed) and keeps the dashboard current;
   `atm serve` runs the dashboard server. It needs Python 3.9+ (standard library only)
+- Status changes go through the helper, never by editing tasks.json: `atm next --claim`, `atm start|done|fail|release
+  <id>`, `atm heartbeat <id>`, `atm claims`. It locks the file, writes timestamps and records claims (which agent works
+  on which task, with a 30-minute lease), shared by all git worktrees of a clone. Commit only the files a task
+  changed plus tasks.json; never `git add -A`
+- `tasks.json` merges task by task through atm's git merge driver (`.agentic-task-manager/.gitattributes`)
 
 ## Task Schema
 Each task has: id, name, phase, type (feature/bugfix/test/infra/docs/refactor/polish),

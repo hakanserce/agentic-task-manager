@@ -32,3 +32,12 @@ test('visual: detail panel', async ({ page, tasksServer }) => {
   await page.locator('.task-card[data-id="T-004"] .task-name').click();
   await expect(page.locator('#detail-panel')).toHaveScreenshot('standard-detail.png');
 });
+
+for (const fixture of ['standard', 'kanban']) {
+  test(`visual: kanban board (${fixture})`, async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, fixture);
+    await page.locator('#tab-kanban').click();
+    await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
+    await expect(page.locator('#graph-section')).toHaveScreenshot(`${fixture}-kanban.png`);
+  });
+}

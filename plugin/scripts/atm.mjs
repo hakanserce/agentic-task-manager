@@ -279,6 +279,7 @@ function migrate(paths) {
     gitignore_updated: false,
     dashboard: null,
   };
+  let legacyVersion = null;
   if (legacy && paths.tasks_exists) {
     result.warning =
       `both ${rel(root, legacy.tasks)} and ${rel(root, paths.tasks)} exist; ` +
@@ -298,6 +299,7 @@ function migrate(paths) {
       git: tracked,
     };
     if (legacy.dashboard) {
+      legacyVersion = dashboardVersion(legacy.dashboard);
       if (isTracked(root, legacy.dashboard)) git(['rm', '--cached', '-q', '--', rel(root, legacy.dashboard)], root);
       fs.rmSync(legacy.dashboard);
       result.removed_dashboard = rel(root, legacy.dashboard);
@@ -308,7 +310,12 @@ function migrate(paths) {
     result.gitignore_updated = true;
     if (inGit(root)) git(['add', '--', rel(root, path.join(taskDir, '.gitignore'))], root);
   }
-  const [action, old, next] = ensureDashboard(paths.dashboard);
+  let [action, old, next] = ensureDashboard(paths.dashboard);
+  if (action === 'installed' && legacyVersion !== null) {
+    // Report against the dashboard the project had before the move
+    old = legacyVersion;
+    action = compareVersions(parseVersion(old), parseVersion(next)) >= 0 ? 'current' : 'updated';
+  }
   result.dashboard = { action, from: old, to: next };
   return result;
 }

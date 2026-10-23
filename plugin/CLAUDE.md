@@ -3,8 +3,12 @@
 This plugin provides file-based task management for agentic development workflows.
 
 ## Key Files
-- `tasks.json` in the project's `docs/` directory (or project root) holds all task definitions
-- `tasks-dashboard.html` is a self-contained HTML dashboard served via local HTTP
+- `.agentic-task-manager/tasks.json` at the project root holds all task definitions (committed)
+- `.agentic-task-manager/tasks-dashboard.html` is a self-contained HTML dashboard served via local HTTP
+  (`/atm:serve`). It is a copy of the plugin's template, listed in `.agentic-task-manager/.gitignore`, not committed
+- `scripts/atm` (in the plugin) is the helper the skills run: `atm migrate` moves an old `docs/tasks.json` or root
+  `tasks.json` into `.agentic-task-manager/` (staged with `git mv`, not committed) and keeps the dashboard current;
+  `atm serve` runs the dashboard server. It needs Python 3.9+ or Node 18+
 
 ## Task Schema
 Each task has: id, name, phase, type (feature/bugfix/test/infra/docs/refactor/polish),

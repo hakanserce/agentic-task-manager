@@ -251,6 +251,7 @@ def migrate(paths):
     """Move a legacy tasks.json into the task folder and set the folder up. Never commits."""
     root, task_dir, legacy = paths["root"], paths["dir"], paths["legacy"]
     result = {"moved": None, "removed_dashboard": None, "warning": None, "gitignore_updated": False, "dashboard": None}
+    legacy_version = None
     if legacy and paths["tasks_exists"]:
         result["warning"] = (
             f"both {rel(root, legacy['tasks'])} and {rel(root, paths['tasks'])} exist; "
@@ -266,6 +267,7 @@ def migrate(paths):
             os.rename(legacy["tasks"], paths["tasks"])
         result["moved"] = {"from": rel(root, legacy["tasks"]), "to": rel(root, paths["tasks"]), "git": tracked}
         if legacy["dashboard"]:
+            legacy_version = dashboard_version(legacy["dashboard"])
             if is_tracked(root, legacy["dashboard"]):
                 git(["rm", "--cached", "-q", "--", rel(root, legacy["dashboard"])], root)
             os.remove(legacy["dashboard"])
@@ -277,6 +279,10 @@ def migrate(paths):
         if in_git(root):
             git(["add", "--", rel(root, os.path.join(task_dir, ".gitignore"))], root)
     action, old, new = ensure_dashboard(paths["dashboard"])
+    if action == "installed" and legacy_version is not None:
+        # Report against the dashboard the project had before the move
+        old = legacy_version
+        action = "current" if parse_version(old) >= parse_version(new) else "updated"
     result["dashboard"] = {"action": action, "from": old, "to": new}
     return result
 

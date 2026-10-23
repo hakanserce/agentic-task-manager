@@ -13,11 +13,23 @@ implement it, verify it, and mark it done.
 
 ## Step 1: Locate and load tasks.json
 
-Search for the tasks file in this order:
-1. `docs/tasks.json`
-2. `tasks.json` (project root)
+From the project root, run the plugin's helper:
 
-If not found, tell the user:
+```bash
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+```
+
+It keeps the project's `.agentic-task-manager/` folder in order:
+- an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
+  staged in git, not committed;
+- the dashboard there (`tasks-dashboard.html`, a copy that isn't committed) is installed or updated to the plugin's
+  version.
+
+Relay what it prints, except "Nothing to migrate.". If it exits with code 127, neither Python 3.9+ nor Node 18+ is
+installed: ask the user to install one and stop.
+
+The task file is `.agentic-task-manager/tasks.json` at the project root. If the helper said "No tasks.json found",
+tell the user:
 > No tasks.json found. Run `/atm:create-tasks` first to generate tasks from your requirements.
 
 Read and parse the file. Build a map of task IDs to task objects.
@@ -99,7 +111,10 @@ If verification passes, update the task in tasks.json:
 
 ## Step 7b: Git commit
 
-After marking the task as done, commit the changes:
+After marking the task as done, commit the changes.
+If the helper moved files in Step 1 and you are going to commit, first commit the move on its own:
+`git commit -m "chore: move atm files to .agentic-task-manager/" -- <old tasks.json> .agentic-task-manager/tasks.json .agentic-task-manager/.gitignore`
+(add the old `tasks-dashboard.html` path too if it was removed). Then commit the task.
 - `git add -A`
 - `git commit -m "feat($TASK_ID): $TASK_NAME"`
 
@@ -120,11 +135,3 @@ Output a concise completion report:
 > **Verification:** ✅ Build passed, tests passed
 >
 > **Now unblocked:** (list task IDs that were waiting on this task, if any)
-
-> **Dashboard check:** If `tasks-dashboard.html` exists and its `<meta name="atm-dashboard-version">` tag is missing or older than the plugin's current version, append:
-> Tip: Your dashboard is v$OLD; v$NEW is available ($HEADLINE). Run `/atm:update-dashboard` to update.
-
-The plugin's current dashboard is `${CLAUDE_SKILL_DIR}/../../templates/tasks-dashboard.html` (its version is in the
-same meta tag) and its release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`. $HEADLINE is the first sentence of
-the first bullet under `### Added` in the newest released `## [x.y.z]` entry (or of its first bullet if it has no
-Added list); leave the parenthesis out if there are no release notes.

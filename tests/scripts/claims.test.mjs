@@ -132,6 +132,30 @@ describe('claims', () => {
     }
   });
 
+  test('a task done in one worktree is not handed out again in another before the branches merge', () => {
+    const root = repo();
+    const wt = path.join(tempDir(), 'wt2');
+    try {
+      git(['worktree', 'add', '-q', '-b', 'agent-2', wt], root);
+      runAtm(['start', 'T-001'], root, as('alice'));
+      runAtm(['done', 'T-001'], root, as('alice', 5));
+      // In the other worktree T-001 is still todo, and unclaimed, but it is done
+      assert.equal(statusOf(wt, 'T-001').status, 'todo');
+      const next = JSON.parse(runAtm(['next', '--json'], wt, as('bob', 6)).stdout);
+      assert.equal(next.task.id, 'T-002');
+      // T-003 depends on T-001, which isn't done in this worktree's file yet, so nothing else is available
+      runAtm(['next', '--claim'], wt, as('bob', 6));
+      const none = runAtm(['next'], wt, as('bob', 7));
+      assert.equal(none.code, 3);
+      assert.match(none.stdout, /done in another worktree, not merged yet: T-001/);
+      // Starting it explicitly is still possible (deliberate rework)
+      assert.equal(runAtm(['start', 'T-001'], wt, as('bob', 8)).code, 0);
+    } finally {
+      removeDir(root);
+      removeDir(path.dirname(wt));
+    }
+  });
+
   test('outside git, claims are kept in the task folder', () => {
     const root = makeProject({ files: { '.agentic-task-manager/tasks.json': TASKS } });
     try {

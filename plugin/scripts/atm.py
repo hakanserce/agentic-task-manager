@@ -763,15 +763,18 @@ def locked_with_claims(paths):
         yield
 
 
-def read_claims(paths):
+def read_store(paths):
+    """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere)."""
     data = read_json(claims_store_path(paths))
-    return data.get("claims", {}) if isinstance(data, dict) else {}
+    data = data if isinstance(data, dict) else {}
+    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}}
 
 
-def write_claims(paths, claims):
+def write_store(paths, store):
     os.makedirs(claims_dir(paths), exist_ok=True)
-    write_json_atomic(claims_store_path(paths), {"claims": claims})
-    write_claims_snapshot(paths, claims)
+    write_json_atomic(claims_store_path(paths), store)
+    write_claims_snapshot(paths, store["claims"])
 
 
 def write_claims_snapshot(paths, claims):
@@ -827,6 +830,16 @@ def new_claim(paths, data, task_id, agent):
     }
 
 
+def completion(paths, task_id, agent):
+    return {
+        "task": task_id,
+        "agent": agent,
+        "branch": git(["rev-parse", "--abbrev-ref", "HEAD"], paths["root"]),
+        "worktree": paths["root"],
+        "completed_at": now_iso(),
+    }
+
+
 def check_holder(claims, task_id, agent, command):
     claim = claims.get(task_id)
     if claim and claim.get("agent") != agent:
@@ -845,17 +858,21 @@ def cmd_status_change(command):
         paths = find_paths(os.getcwd())
         with locked_with_claims(paths):
             data = load_tasks(paths)
-            claims = read_claims(paths)
+            store = read_store(paths)
+            claims = store["claims"]
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
             check_holder(claims, task_id, agent, command)
             previous = change_status(task, data, command, values.get("--reason"))
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
+                store["completed"].pop(task_id, None)  # starting a task again on purpose
             else:
                 claims.pop(task_id, None)
+            if command == "done":
+                store["completed"][task_id] = completion(paths, task_id, agent)
             write_json_atomic(paths["tasks"], data)
-            write_claims(paths, claims)
+            write_store(paths, store)
         for claim in expired:
             sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
         if "--json" in values:
@@ -875,9 +892,11 @@ def phase_of(task):
     return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
-def next_task(data, claims, phase=None, task_type=None):
-    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed, matching the
-    filters; lowest phase first, then lowest ID. Returns (task, reason) where reason explains an empty result."""
+def next_task(data, store, phase=None, task_type=None):
+    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
+    in another worktree, matching the filters; lowest phase first, then lowest ID. Returns (task, reason) where reason
+    explains an empty result."""
+    claims, completed = store["claims"], store["completed"]
     candidates = [
         t
         for t in data["tasks"]
@@ -885,15 +904,19 @@ def next_task(data, claims, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in claims]
+    taken = set(claims) | set(completed)
+    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
         return min(ready, key=lambda t: (phase_of(t), natural_key(t.get("id")))), None
     if not candidates:
         return None, "nothing left to do"
-    claimed = [t for t in candidates if t.get("id") in claims]
+    claimed = [t["id"] for t in candidates if t.get("id") in claims]
+    done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
     reason = f"{len(candidates)} todo task(s) waiting on dependencies"
     if claimed:
-        reason += f" or claimed by other agents ({', '.join(t['id'] for t in claimed)})"
+        reason += f" or claimed by other agents ({', '.join(claimed)})"
+    if done_elsewhere:
+        reason += f"; done in another worktree, not merged yet: {', '.join(done_elsewhere)}"
     return None, reason
 
 
@@ -907,15 +930,16 @@ def cmd_next(args):
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
-        claims = read_claims(paths)
+        store = read_store(paths)
+        claims = store["claims"]
         expired = expire_claims(paths, data, claims)
-        task, reason = next_task(data, claims, phase, values.get("--type"))
+        task, reason = next_task(data, store, phase, values.get("--type"))
         if task and "--claim" in values:
             change_status(task, data, "start")
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
         if expired or (task and "--claim" in values):
             write_json_atomic(paths["tasks"], data)
-            write_claims(paths, claims)
+            write_store(paths, store)
     for claim in expired:
         sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
     claim = claims.get(task["id"]) if task and "--claim" in values else None
@@ -938,7 +962,8 @@ def cmd_heartbeat(args):
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
-        claims = read_claims(paths)
+        store = read_store(paths)
+        claims = store["claims"]
         expired = expire_claims(paths, data, claims)
         claim = claims.get(task_id)
         if claim:
@@ -946,7 +971,7 @@ def cmd_heartbeat(args):
             claim["lease_expires_at"] = lease_until(data)
         if expired:
             write_json_atomic(paths["tasks"], data)
-        write_claims(paths, claims)
+        write_store(paths, store)
     if not claim:
         gone = any(c["task"] == task_id for c in expired)
         raise AtmError(f"{task_id} has no live claim" + (" (its lease expired)" if gone else ""), 4)
@@ -961,10 +986,11 @@ def cmd_claims(args):
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
-        claims = read_claims(paths)
+        store = read_store(paths)
+        claims = store["claims"]
         if expire_claims(paths, data, claims):
             write_json_atomic(paths["tasks"], data)
-        write_claims(paths, claims)
+        write_store(paths, store)
     live = sorted(claims.values(), key=lambda c: c["task"])
     if "--json" in values:
         out(to_json(live))

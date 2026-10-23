@@ -1753,7 +1753,7 @@
         "FR-8.10"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-075"
       ],
@@ -1761,7 +1761,9 @@
         "tests/scripts/stress.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:12:22Z",
+      "started_at": "2026-10-23T23:09:22Z",
+      "completed_at": "2026-10-23T23:12:22Z"
     },
     {
       "id": "T-077",

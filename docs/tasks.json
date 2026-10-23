@@ -1035,7 +1035,7 @@
         "FR-3.8"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-045"
       ],
@@ -1044,7 +1044,9 @@
         "dashboard/tests/unit/kanban.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-23T00:12:22Z",
+      "started_at": "2026-10-23T00:11:33Z",
+      "completed_at": "2026-10-23T00:12:22Z"
     },
     {
       "id": "T-049",

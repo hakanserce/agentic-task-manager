@@ -1,7 +1,7 @@
-"""atm: the Agentic Task Manager helper (Python implementation).
+"""atm: the Agentic Task Manager helper that the skills run.
 
-Twin of atm.mjs: both must behave identically (same commands, output, exit codes and files), and are kept in the same
-structure so a change to one maps line by line onto the other. Run through the `atm` launcher. Standard library only.
+Run through the `atm` launcher, which checks for Python 3.9+. Standard library only: the plugin is used as cloned,
+with nothing to install.
 """
 
 import json
@@ -25,7 +25,6 @@ TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
 # Runtime files in the task folder that must not be committed (the dashboard is a copy of the plugin's template)
 IGNORED = ["tasks-dashboard.html", ".server.json", ".server.log", "claims.json", ".lock/"]
 VERSION_META = re.compile(r'<meta name="atm-dashboard-version" content="([^"]*)"')
-RUNTIME = "python"
 SERVER_RECORD = ".server.json"
 SERVER_LOG = ".server.log"
 DEFAULT_PORT = 8000
@@ -432,7 +431,7 @@ def serve_status(paths, values):
         out("Dashboard server is not running.")
         return
     up = format_duration((datetime.now(timezone.utc) - parse_iso(record["started_at"])).total_seconds())
-    out(f"Dashboard server running: {server_url(record['port'])} (pid {record['pid']}, {record['runtime']}, up {up})")
+    out(f"Dashboard server running: {server_url(record['port'])} (pid {record['pid']}, up {up})")
 
 
 def cmd_serve(args):
@@ -466,7 +465,7 @@ def cmd_serve_child(args):
         def do_GET(self):
             path = self.path.split("?", 1)[0]
             if path == WHOAMI:
-                body = json.dumps({"atm": True, "folder": task_dir, "pid": os.getpid(), "runtime": RUNTIME}).encode()
+                body = json.dumps({"atm": True, "folder": task_dir, "pid": os.getpid()}).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))
@@ -505,7 +504,6 @@ def cmd_serve_child(args):
         "pid": os.getpid(),
         "port": server.server_address[1],
         "folder": task_dir,
-        "runtime": RUNTIME,
         "started_at": now_iso(),
     }
     write_json_atomic(record_path, record)

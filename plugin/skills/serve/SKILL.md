@@ -36,7 +36,7 @@ The helper:
 - serves `.agentic-task-manager/` on `localhost` in a background process that keeps running after this session ends;
 - only ever stops the server it started for this project.
 
-If it exits with code 127, neither Python 3.9+ nor Node 18+ is installed: tell the user to install one of them.
+If it exits with code 127, Python 3.9 or newer is not installed: atm needs it, so tell the user to install it.
 For any other error, show its message.
 
 ## Step 3: Report

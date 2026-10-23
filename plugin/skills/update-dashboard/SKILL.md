@@ -20,8 +20,8 @@ From the project root, run the plugin's helper:
 
 It moves an old `docs/tasks.json` (or `tasks.json` in the project root) into `.agentic-task-manager/` if needed (the
 move is staged in git, not committed), and installs or updates `.agentic-task-manager/tasks-dashboard.html` to the
-plugin's version. If it exits with code 127, neither Python 3.9+ nor Node 18+ is installed: ask the user to install
-one and stop.
+plugin's version. If it exits with code 127, Python 3.9 or newer is not installed: atm
+needs it, so ask the user to install it and stop.
 
 In its JSON output:
 - `moved` (not null): tell the user which file moved and that the move is staged, to be committed.

@@ -2,7 +2,7 @@
 
 A **Claude Code plugin** that gives any project file-based task management with a live HTML dashboard. Agents decompose requirements into granular tasks, execute them in a loop, and humans watch progress in real time.
 
-**One command to install. Zero external dependencies. Works with any language.**
+**One command to install. Nothing to set up beyond Python 3. Works with any language.**
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
@@ -77,8 +77,9 @@ Or loop through everything:
 ### Prerequisites
 
 - [Claude Code](https://claude.com/code) (CLI or VS Code extension)
-- **Python 3.9+ or Node 18+.** The skills use a small helper script (`plugin/scripts/atm`) that runs with whichever
-  is installed; it moves task files, serves the dashboard and needs no packages. macOS and Linux are supported.
+- **Python 3.9 or newer** (`python3`). The skills run a small helper script (`plugin/scripts/atm.py`) that moves task
+  files and serves the dashboard. It uses only Python's standard library, so there is nothing to install. On macOS,
+  `python3` comes with the Command Line Tools (the same install that provides `git`). macOS and Linux are supported.
 
 ### Method 1: Via marketplace (recommended)
 
@@ -435,9 +436,8 @@ agentic-task-manager/
 │   │   ├── serve/SKILL.md             # /atm:serve
 │   │   └── update-dashboard/SKILL.md  # /atm:update-dashboard
 │   ├── scripts/
-│   │   ├── atm                  # Helper launcher: runs atm.py (Python 3.9+) or atm.mjs (Node 18+)
-│   │   ├── atm.py
-│   │   └── atm.mjs
+│   │   ├── atm                  # Helper launcher: checks for Python 3.9+, runs atm.py
+│   │   └── atm.py               # The helper (standard library only)
 │   ├── templates/
 │   │   ├── tasks.json           # Example tasks.json schema
 │   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, copied to projects)

@@ -40,15 +40,13 @@ jobs:
           }
 
   scripts:
-    name: atm helper (Python ${{ matrix.python }}, Node ${{ matrix.node }})
+    name: atm helper (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Oldest supported versions, and current ones
-          - { python: '3.9', node: '18' }
-          - { python: '3.13', node: '24' }
+        # Oldest supported version (what macOS's Command Line Tools ship), and a current one
+        python: ['3.9', '3.13']
     defaults:
       run:
         working-directory: .
@@ -57,10 +55,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      # The test runner is Node (node:test); the helper under test is Python
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-      # The same suite runs against both implementations (ATM_RUNTIME=python and node)
+          node-version: 24
       - run: node tests/scripts/run.mjs
 
   e2e:

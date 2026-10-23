@@ -93,7 +93,7 @@ Priorities: **P1** must ship in this round; **P2** if cheap, otherwise later.
 | FR-6.7 | P1 | Before starting, it makes sure `tasks-dashboard.html` exists and is current; if not, it copies the plugin's version. |
 | FR-6.8 | P1 | Output: the URL to open. `--open` also opens it in the default browser. |
 | FR-6.9 | P1 | `/atm:create-tasks` suggests `/atm:serve` instead of the `python3 -m http.server` command. |
-| FR-6.10 | P1 | Implemented as plugin scripts with automated tests, using whichever runtime is available: Python 3.9+ or Node 18+ (see "Runtimes" in `docs/parallel-agents-design.md` §4). macOS and Linux; Windows is P2. |
+| FR-6.10 | P1 | Implemented in the plugin's Python helper (Python 3.9+, standard library only) with automated tests. macOS and Linux; Windows is P2. |
 
 ### FR-7 Update instructions
 
@@ -106,8 +106,7 @@ Priorities: **P1** must ship in this round; **P2** if cheap, otherwise later.
 
 | ID | P | Requirement |
 |---|---|---|
-| FR-8.1 | P1 | The `atm` helper: makes every status change under an exclusive lock, with atomic replace-on-write (design L1). Shipped as a Python and a Node implementation behind one launcher, `plugin/scripts/atm`, which uses `python3` if present, otherwise `node`, and explains what to install if neither is. |
-| FR-8.1a | P1 | Both implementations pass one shared conformance test suite (same commands, output, exit codes and file formats), and use the same lock protocol, so agents running different runtimes on one project still exclude each other. |
+| FR-8.1 | P1 | The `atm` helper: makes every status change under an exclusive lock, with atomic replace-on-write (design L1). One implementation, `plugin/scripts/atm.py`, behind a launcher (`plugin/scripts/atm`) that explains what to install if Python 3.9+ is missing (see `docs/helper-runtime-proposal.md`). |
 | FR-8.2 | P1 | `/atm:do-task` and `/atm:loop-tasks` use it for every status change and never edit status fields by hand. |
 | FR-8.3 | P1 | `atm next --claim` chooses and claims the next ready task in one atomic step, using the loop's selection rule and skipping tasks with a live claim (L2). |
 | FR-8.4 | P1 | Claims record agent identity, branch, worktree, claim time and a lease (default 30 min). `heartbeat` extends the lease, `release`/`done`/`fail` end it, and expired claims make the task available again (L2). |
@@ -124,7 +123,7 @@ Priorities: **P1** must ship in this round; **P2** if cheap, otherwise later.
 | ID | Requirement |
 |---|---|
 | NFR-1 | The dashboard stays one self-contained file within 150 KB (0.9.0 is 114 KB; themes add CSS). |
-| NFR-2 | New scripts need no installed packages: Python 3.9+ standard library or Node 18+ built-ins only. CI runs the test suites against both runtimes (and the oldest supported versions). |
+| NFR-2 | New scripts need no installed packages: Python 3.9+ standard library only. Python is atm's one runtime requirement. CI runs the test suite with Python 3.9 and a current version. |
 | NFR-3 | Backward compatible: old locations, old `tasks.json` files and dashboards without `meta.id` keep working. |
 | NFR-4 | Strict screenshots continue, now in both modes for the main views. |
 
@@ -136,12 +135,13 @@ Priorities: **P1** must ship in this round; **P2** if cheap, otherwise later.
 | **0.11.0** | FR-8 (parallel agents, P1 parts) | Correctness for anyone running loops in parallel, before more UI. It changes how the skills write `tasks.json`. |
 | **0.12.0** | FR-4 (filter counts), FR-5 (saved views), FR-2 and FR-3 (modes and themes) | UI improvements together, with one round of screenshot updates. |
 
-## 4. Decisions (review round 1)
+## 4. Decisions (review rounds)
 1. **Dashboard HTML is not committed** (FR-1.2, FR-1.7); `tasks.json` stays committed.
 2. **Themes:** Default, Nord, Solarized, Catppuccin, Tokyo Night and High contrast (FR-3.1).
 3. **Theme and mode are per browser** (FR-5.6).
 4. **Migration is automatic** (FR-1.3, FR-1.4).
-5. **Helper runtimes:** Python or Node, whichever is installed (FR-8.1, FR-8.1a, NFR-2).
+5. **Helper runtime:** Python 3.9+ only, one implementation (FR-8.1, NFR-2). Round 1 chose Python *or* Node; the
+   phase 10 review replaced that with a single implementation, see `docs/helper-runtime-proposal.md`.
 
 ## 5. Open questions
 1. The remaining questions at the end of `docs/parallel-agents-design.md` (lease length, remote claims now or

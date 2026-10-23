@@ -2,7 +2,7 @@
   "meta": {
     "project": "ATM Dashboard",
     "created": "2026-10-22",
-    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the script test suite (tests/scripts, both runtimes) green: a behaviour change lands together with the tests it changes. Python and Node implementations of the helper change together."
+    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the helper's test suite (tests/scripts) green: a behaviour change lands together with the tests it changes. The helper is plugin/scripts/atm.py: Python 3.9+, standard library only (docs/helper-runtime-proposal.md)."
   },
   "tasks": [
     {
@@ -1651,13 +1651,12 @@
     },
     {
       "id": "T-072",
-      "name": "Shared lock directory and atomic writes",
+      "name": "Lock directory and atomic writes",
       "phase": 11,
       "type": "feature",
-      "description": "Both runtimes, per design §4 'The lock': acquire = mkdir <dir>/.lock, write owner.json {host, pid, runtime, acquired_at}; retry every 50 ms up to 10 s; break the lock only if owner is on this host and the pid is gone, or it is older than 60 s; release removes it (also on exceptions/signals). Atomic write = write temp file in the same dir, fsync, rename over target, fsync dir where supported. Expose a `with_lock(path, fn)` / `withLock` helper and `write_json_atomic`. Conformance/unit tests: mutual exclusion, stale lock from a dead pid is broken, live foreign lock times out with a clear error, a Python holder blocks a Node waiter and vice versa.",
+      "description": "atm.py, per design §4 'The lock': acquire = mkdir <dir>/.lock, write owner.json {host, pid, acquired_at}; retry every 50 ms up to 10 s; break the lock only if owner is on this host and the pid is gone, or it is older than 60 s; release removes it (also on exceptions/signals). Atomic write = write temp file in the same dir, fsync, rename over target, fsync dir where supported. Expose a `with_lock(path, fn)` context helper and reuse `write_json_atomic`. Tests (tests/scripts/lock.test.mjs, driving small atm commands or a hidden `_lock-test` command): mutual exclusion between processes, stale lock from a dead pid is broken, live foreign lock times out with a clear error.",
       "requirements": [
-        "FR-8.1",
-        "FR-8.1a"
+        "FR-8.1"
       ],
       "use_cases": [],
       "status": "todo",
@@ -1666,18 +1665,17 @@
       ],
       "files": [
         "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs",
         "tests/scripts/lock.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-073",
       "name": "`atm start|done|fail|release` status commands",
       "phase": 11,
       "type": "feature",
-      "description": "Both runtimes. Under the tasks lock: re-read tasks.json, validate the task exists and the transition is legal (start: todo -> in_progress, sets started_at and updated_at; done: in_progress -> done, sets completed_at; fail: in_progress -> todo with a `last_failure` note; release: in_progress -> todo). Write atomically preserving key order and 2-space formatting (byte-identical output from both runtimes). Clear exit codes and messages. Conformance scenarios for each transition, illegal transitions, unknown id, missing file.",
+      "description": "atm.py. Under the tasks lock: re-read tasks.json, validate the task exists and the transition is legal (start: todo -> in_progress, sets started_at and updated_at; done: in_progress -> done, sets completed_at; fail: in_progress -> todo with a `last_failure` note; release: in_progress -> todo). Write atomically preserving key order and 2-space formatting (unchanged tasks byte-identical). Clear exit codes and messages. Scenarios for each transition, illegal transitions, unknown id, missing file.",
       "requirements": [
         "FR-8.1",
         "FR-8.2"
@@ -1689,18 +1687,17 @@
       ],
       "files": [
         "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs",
         "tests/scripts/scenarios/status-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-074",
       "name": "Claims with leases: store, heartbeat, claims, expiry",
       "phase": 11,
       "type": "feature",
-      "description": "Both runtimes. Claims file = $(git rev-parse --git-common-dir)/atm/claims.json (fallback .agentic-task-manager/claims-store.json outside git), guarded by its own lock dir. Claim = {task, agent (CLAUDE_SESSION_ID or ATM_AGENT env, else host:pid), branch, worktree, claimed_at, lease_expires_at}; lease default 30 min (meta.lease_minutes overrides). start takes a claim and fails if another live claim holds the task; done/fail/release drop it; `heartbeat <id>` extends it (only for the holder); `claims [--json]` lists live claims with time left. Any command first expires stale leases: task back to todo with `last_failure: 'lease expired (agent X)'`. After every change write the gitignored snapshot .agentic-task-manager/claims.json for the dashboard. Tests incl. two worktrees of one repo seeing each other's claims and lease expiry with an injectable clock (ATM_NOW).",
+      "description": "atm.py: Claims file = $(git rev-parse --git-common-dir)/atm/claims.json (fallback .agentic-task-manager/claims-store.json outside git), guarded by its own lock dir. Claim = {task, agent (CLAUDE_SESSION_ID or ATM_AGENT env, else host:pid), branch, worktree, claimed_at, lease_expires_at}; lease default 30 min (meta.lease_minutes overrides). start takes a claim and fails if another live claim holds the task; done/fail/release drop it; `heartbeat <id>` extends it (only for the holder); `claims [--json]` lists live claims with time left. Any command first expires stale leases: task back to todo with `last_failure: 'lease expired (agent X)'`. After every change write the gitignored snapshot .agentic-task-manager/claims.json for the dashboard. Tests incl. two worktrees of one repo seeing each other's claims and lease expiry with an injectable clock (ATM_NOW).",
       "requirements": [
         "FR-8.4",
         "FR-8.5"
@@ -1712,18 +1709,17 @@
       ],
       "files": [
         "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs",
         "tests/scripts/claims.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-075",
       "name": "`atm next --claim` with the loop's selection rule",
       "phase": 11,
       "type": "feature",
-      "description": "Both runtimes. `atm next [--phase N] [--type T] [--claim] [--json]`: lowest phase then lowest id among todo tasks whose dependencies are all done and that have no live claim; with --claim, start+claim it in the same lock section. Prints the task (JSON with --json) or exits 3 with 'no task available' (distinguishing 'blocked' from 'all done'). Conformance scenarios mirroring the dashboard's Next-up rule (dashboard/src/lib/kanban.ts) so both agree.",
+      "description": "atm.py: `atm next [--phase N] [--type T] [--claim] [--json]`: lowest phase then lowest id among todo tasks whose dependencies are all done and that have no live claim; with --claim, start+claim it in the same lock section. Prints the task (JSON with --json) or exits 3 with 'no task available' (distinguishing 'blocked' from 'all done'). Conformance scenarios mirroring the dashboard's Next-up rule (dashboard/src/lib/kanban.ts) so both agree.",
       "requirements": [
         "FR-8.3"
       ],
@@ -1734,18 +1730,17 @@
       ],
       "files": [
         "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs",
         "tests/scripts/scenarios/next-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-076",
-      "name": "Concurrency stress test with mixed runtimes",
+      "name": "Concurrency stress test",
       "phase": 11,
       "type": "test",
-      "description": "tests/scripts/stress.test.mjs: a 40-task project; spawn 16 concurrent workers (half Python, half Node) that loop `atm next --claim` then `atm done` until none left; assert every task done exactly once and no claim double-granted (each worker logs what it got). In parallel a reader polls tasks.json and claims.json every few ms and asserts it always parses. Run in a temp git repo with two worktrees. Keep runtime under ~30 s.",
+      "description": "tests/scripts/stress.test.mjs: a 40-task project; spawn 16 concurrent workers that loop `atm next --claim` then `atm done` until none left; assert every task done exactly once and no claim double-granted (each worker logs what it got). In parallel a reader polls tasks.json and claims.json every few ms and asserts it always parses. Run in a temp git repo with two worktrees (workers split across them). Keep the test under ~30 s.",
       "requirements": [
         "FR-8.10"
       ],
@@ -1758,14 +1753,14 @@
         "tests/scripts/stress.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-077",
       "name": "tasks.json merge driver and `atm init`",
       "phase": 11,
       "type": "feature",
-      "description": "Both runtimes. `atm merge-driver %O %A %B` merges task by task (design option E): union of tasks by id; same id changed on one side takes that side; changed on both: status takes the furthest along (todo < in_progress < done, blocked/skipped explicit wins over todo), timestamps take the newest, definition fields (name, description, deps, files, phase, type, requirements) changed differently on both sides = conflict (exit 1, leave conflict markers-free file plus a report on stderr); new tasks on both sides with colliding ids: keep both, renumber theirs to the next free id and rewrite dependencies that point to it within their new tasks. Writes the result to %A in the standard format. `atm init`: adds `tasks.json merge=atm` to .agentic-task-manager/.gitattributes and sets git config merge.atm.name/driver (pointing at the launcher by absolute path), idempotent.",
+      "description": "atm.py: `atm merge-driver %O %A %B` merges task by task (design option E): union of tasks by id; same id changed on one side takes that side; changed on both: status takes the furthest along (todo < in_progress < done, blocked/skipped explicit wins over todo), timestamps take the newest, definition fields (name, description, deps, files, phase, type, requirements) changed differently on both sides = conflict (exit 1, leave conflict markers-free file plus a report on stderr); new tasks on both sides with colliding ids: keep both, renumber theirs to the next free id and rewrite dependencies that point to it within their new tasks. Writes the result to %A in the standard format. `atm init`: adds `tasks.json merge=atm` to .agentic-task-manager/.gitattributes and sets git config merge.atm.name/driver (pointing at the launcher by absolute path), idempotent.",
       "requirements": [
         "FR-8.6"
       ],
@@ -1775,18 +1770,17 @@
         "T-073"
       ],
       "files": [
-        "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs"
+        "plugin/scripts/atm.py"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-078",
       "name": "Merge driver tests from the design's experiments",
       "phase": 11,
       "type": "test",
-      "description": "tests/scripts/merge.test.mjs (both runtimes): in temp repos with `atm init`, reproduce the design doc's experiments with real `git merge`: adjacent status changes (clean), finishing adjacent tasks (clean), same task claimed on both branches (clean merge, status in_progress, newest timestamp), both sides append a task (both kept, renumbered, deps rewritten), same task's description edited differently (merge fails and reports it). Plus unit scenarios for the driver directly.",
+      "description": "tests/scripts/merge.test.mjs: in temp repos with `atm init`, reproduce the design doc's experiments with real `git merge`: adjacent status changes (clean), finishing adjacent tasks (clean), same task claimed on both branches (clean merge, status in_progress, newest timestamp), both sides append a task (both kept, renumbered, deps rewritten), same task's description edited differently (merge fails and reports it). Plus unit scenarios for the driver directly.",
       "requirements": [
         "FR-8.6",
         "FR-8.10"
@@ -1800,7 +1794,7 @@
         "tests/scripts/merge.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-079",
@@ -1859,7 +1853,7 @@
       "name": "Remote claims via refs/atm/claims (P2)",
       "phase": 11,
       "type": "feature",
-      "description": "Both runtimes, opt-in with meta.coordination = 'remote'. Claiming also runs `git push origin <HEAD sha>:refs/atm/claims/<id>` and only proceeds if accepted (rejected = someone else holds it; roll back the local claim); done/fail/release/expiry push a deletion (best-effort, logged on failure). `atm claims --remote` lists remote claim refs (git ls-remote). Tests with a local bare repo as origin and two clones. Skip if it can't be done cheaply; record the reason.",
+      "description": "atm.py: opt-in with meta.coordination = 'remote'. Claiming also runs `git push origin <HEAD sha>:refs/atm/claims/<id>` and only proceeds if accepted (rejected = someone else holds it; roll back the local claim); done/fail/release/expiry push a deletion (best-effort, logged on failure). `atm claims --remote` lists remote claim refs (git ls-remote). Tests with a local bare repo as origin and two clones. Skip if it can't be done cheaply; record the reason.",
       "requirements": [
         "FR-8.11"
       ],
@@ -1870,11 +1864,10 @@
       ],
       "files": [
         "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs",
         "tests/scripts/remote.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-082",
@@ -2015,11 +2008,10 @@
         "dashboard/src/components/Header.svelte",
         "plugin/skills/create-tasks/SKILL.md",
         "plugin/scripts/atm.py",
-        "plugin/scripts/atm.mjs",
         "dashboard/tests/e2e/saved-view.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T22:23:54Z"
     },
     {
       "id": "T-088",

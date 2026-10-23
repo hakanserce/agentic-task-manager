@@ -1,5 +1,5 @@
-// Shared helpers for the atm script tests. Every test runs once per runtime (Python and Node) through the launcher,
-// so both implementations are held to the same behaviour.
+// Shared helpers for the atm script tests. Tests run the helper through its launcher (plugin/scripts/atm), as the
+// skills do.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -8,17 +8,16 @@ import { fileURLToPath } from 'node:url';
 
 export const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const ATM = path.join(REPO, 'plugin/scripts/atm');
-export const RUNTIMES = (process.env.ATM_TEST_RUNTIMES || 'python,node').split(',');
 export const PLUGIN_VERSION = JSON.parse(
   fs.readFileSync(path.join(REPO, 'plugin/.claude-plugin/plugin.json'), 'utf8'),
 ).version;
 
-/** Run `atm args...` with the given runtime; returns { code, stdout, stderr }. */
-export function runAtm(runtime, args, cwd, env = {}) {
+/** Run `atm args...`; returns { code, stdout, stderr }. */
+export function runAtm(args, cwd, env = {}) {
   const result = spawnSync(ATM, args, {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, ATM_RUNTIME: runtime, ...env },
+    env: { ...process.env, ...env },
   });
   if (result.error) throw result.error;
   return { code: result.status, stdout: result.stdout, stderr: result.stderr };
@@ -40,9 +39,8 @@ export function tempDir(prefix = 'atm-test-') {
  *   files:  { "relative/path": "text" | <JSON value> }   written before anything else
  *   git:    true to `git init`; commit: true to also commit everything
  *   commands: [["git", "mv", ...], ...] extra commands run after the commit, with $ATM set to the launcher
- * `runtime` is passed to those commands as ATM_RUNTIME.
  */
-export function makeProject(setup = {}, runtime = RUNTIMES[0]) {
+export function makeProject(setup = {}) {
   const root = tempDir();
   for (const [file, content] of Object.entries(setup.files || {})) {
     const full = path.join(root, file);
@@ -60,7 +58,7 @@ export function makeProject(setup = {}, runtime = RUNTIMES[0]) {
     git(['commit', '-q', '-m', 'setup', '--allow-empty'], root);
   }
   for (const [cmd, ...args] of setup.commands || []) {
-    const env = { ...process.env, ATM, ATM_RUNTIME: runtime };
+    const env = { ...process.env, ATM };
     const result = spawnSync(cmd, args, { cwd: root, encoding: 'utf8', env });
     if (result.status !== 0) throw new Error(`${cmd} ${args.join(' ')} failed: ${result.stderr}`);
   }

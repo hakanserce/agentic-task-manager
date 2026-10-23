@@ -51,7 +51,7 @@ automated tests.
 | Append-only `events.jsonl` with `merge=union` in `.gitattributes`, two branches appending | Clean merge |
 | Two worktrees of one clone: `git rev-parse --git-common-dir` | Same directory for both. A file written there by one worktree is immediately visible to the other |
 | Claims as git refs on a shared remote: two clones push `refs/atm/claims/T-030` | First push wins; the second is rejected as non-fast-forward. After the owner deletes the ref, the other clone can claim it |
-| `python3` with `fcntl.flock` | Available. Node has no `flock` in its standard library, which matters once the helper also ships in Node (see Runtimes, §4) |
+| `python3` with `fcntl.flock` | Available; the protocol uses a lock directory instead, which also works on Windows (§4) |
 
 ## 3. Alternatives
 
@@ -110,8 +110,8 @@ multi-machine safety for those who need it.
 
 Five layers, each solving the failures the previous ones can't:
 
-**L1. A single writer tool.** The plugin ships `scripts/atm`, a small launcher in front of two equivalent
-implementations (see Runtimes below). Every status change goes through it; skills never hand-edit status fields:
+**L1. A single writer tool.** The plugin ships `scripts/atm`, a Python helper behind a small launcher (see Runtime
+below). Every status change goes through it; skills never hand-edit status fields:
 
 ```
 atm next --claim                 # atomically: choose the next ready task (loop rule) and claim it
@@ -124,28 +124,20 @@ Each command takes the project lock (below), re-reads `tasks.json`, applies the 
 `fsync`s it and renames it over the original. The dashboard and other agents therefore only ever see a complete old
 or new file (F1, F3). The tool also writes `started_at`/`completed_at`, so skills can't get them wrong.
 
-**Runtimes.** The skills can't assume one language is installed, so the helper (and `/atm:serve`) exist twice:
+**Runtime.** The helper is a single Python 3.9+ script using only the standard library, run through a small
+launcher (`scripts/atm`, POSIX sh) that explains what to install if Python is missing. An earlier draft shipped it
+twice, in Python and Node; that was dropped in review because two hand-written copies of the locking and merge logic
+would drift. The options considered (an embedded Lua core, Haxe, a compiled Go binary, and others) are in
+`docs/helper-runtime-proposal.md`; a single binary is the upgrade path if Node-only environments or Windows need
+support.
 
-| Option | Covers | Cost |
-|---|---|---|
-| Python only | Most macOS/Linux machines; anyone who already serves the dashboard with `python3` | Users with only Node are stuck |
-| Node only | Anyone with a JS toolchain | Many Python, Go, Rust projects have no Node |
-| **Python and Node behind one launcher (recommended)** | Almost everyone running Claude Code | Two implementations to keep equal |
-| POSIX shell + `git` only | Every macOS/Linux machine | JSON editing in shell needs `jq`, which isn't guaranteed; fragile |
-
-The launcher (`scripts/atm`, POSIX sh) runs `atm.py` with `python3` (3.9+) if present, otherwise `atm.mjs` with
-`node` (18+), otherwise prints what to install. Both are small (a few hundred lines, no packages) and are held
-equal by one **conformance suite**: a language-neutral set of scenarios (inputs, command, expected `tasks.json`,
-output, exit code) that CI runs against each implementation, plus the concurrency stress test with *mixed*
-runtimes contending for the same project.
-
-**The lock, shared by both runtimes.** Mixed runtimes on one project must exclude each other, and Node has no
-`flock`. So the lock is a **lock directory**: `mkdir .agentic-task-manager/.lock` succeeds for exactly one process
+**The lock.** The lock is a **lock directory** rather than `flock`, so the same protocol keeps working if the helper is
+ever ported (to a Windows build or a single binary): `mkdir .agentic-task-manager/.lock` succeeds for exactly one process
 (atomic on every OS and file system, including Windows), and is removed when the command finishes. The holder writes
-`owner.json` inside it (host, pid, runtime, start time). A waiting process retries for up to 10 seconds; it breaks
+`owner.json` inside it (host, pid, start time). A waiting process retries for up to 10 seconds; it breaks
 the lock only when the owner is on the same host and its pid is gone, or the lock is older than 60 seconds (a
 command holds it for milliseconds). This loses `flock`'s automatic release on crash, but stale-lock breaking covers
-that, and it works the same in both languages and on Windows (§6 Q4). The claims file in the git common directory
+that, and it works on Windows too (§6 Q4). The claims file in the git common directory
 uses the same protocol.
 
 **L2. Claims with leases and agent identity.** A claim records the task, the agent identity (session ID if
@@ -199,8 +191,8 @@ push rights.
 
 ## 6. Open questions
 
-1. ~~Python as the helper's language~~ — decided in review round 1: Python and Node behind one launcher
-   (Runtimes, §4).
+1. ~~Python as the helper's language~~ — decided: Python 3.9+ only, one implementation (Runtime, §4;
+   `docs/helper-runtime-proposal.md`).
 2. **Lease length:** 30 minutes by default? Agent tasks so far take 0.5 to 19 minutes.
 3. **Remote claims (L5):** in this round, or wait until someone needs multi-machine work?
 4. **Windows:** the lock-directory protocol already works on Windows, so what remains is the launcher (a `.cmd`

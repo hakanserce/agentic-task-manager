@@ -1,4 +1,5 @@
-// Language-neutral conformance scenarios (scenarios/*.json), each run against every runtime. A scenario is:
+// Data-driven scenarios (scenarios/*.json): set up a project, run one atm command, check its output and files. A
+// scenario is:
 // {
 //   "name": "...",
 //   "setup": { "files": {...}, "git": true, "commit": true, "commands": [[...]] },   see makeProject()
@@ -16,7 +17,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, test } from 'node:test';
-import { PLUGIN_VERSION, REPO, RUNTIMES, fill, git, makeProject, removeDir, runAtm } from './helpers.mjs';
+import { PLUGIN_VERSION, REPO, fill, git, makeProject, removeDir, runAtm } from './helpers.mjs';
 
 const dir = path.join(REPO, 'tests/scripts/scenarios');
 const scenarios = fs
@@ -41,36 +42,34 @@ function checkFile(root, file, expected) {
   else assert.deepEqual(JSON.parse(text), expected, file);
 }
 
-for (const runtime of RUNTIMES) {
-  describe(`conformance (${runtime})`, () => {
-    for (const s of scenarios) {
-      test(`${s.file}: ${s.name}`, () => {
-        const root = makeProject(fill(s.setup, { root: '{root}', version: PLUGIN_VERSION }), runtime);
-        try {
-          const vars = { root, version: PLUGIN_VERSION };
-          const e = fill(s.expect, vars);
-          const r = runAtm(runtime, s.args, path.join(root, s.cwd || '.'));
-          const context = `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`;
-          assert.equal(r.code, e.exit ?? 0, `exit code\n${context}`);
-          if ('stdout' in e) assert.equal(r.stdout, e.stdout, context);
-          if ('json' in e) assert.deepEqual(JSON.parse(r.stdout), e.json, context);
-          for (const s of e.stdoutIncludes || [])
-            assert.ok(r.stdout.includes(s), `stdout should include "${s}"\n${context}`);
-          for (const s of e.stderrIncludes || [])
-            assert.ok(r.stderr.includes(s), `stderr should include "${s}"\n${context}`);
-          for (const [file, expected] of Object.entries(e.files || {})) checkFile(root, file, expected);
-          if (e.git?.staged) {
-            const staged = git(['diff', '--cached', '--name-status', '-M'], root)
-              .split('\n')
-              .filter(Boolean)
-              .map((l) => l.replace(/^R\d+/, 'R').replace(/\t/g, ' '))
-              .sort();
-            assert.deepEqual(staged, [...e.git.staged].sort());
-          }
-        } finally {
-          removeDir(root);
+describe('scenarios', () => {
+  for (const s of scenarios) {
+    test(`${s.file}: ${s.name}`, () => {
+      const root = makeProject(fill(s.setup, { root: '{root}', version: PLUGIN_VERSION }));
+      try {
+        const vars = { root, version: PLUGIN_VERSION };
+        const e = fill(s.expect, vars);
+        const r = runAtm(s.args, path.join(root, s.cwd || '.'));
+        const context = `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`;
+        assert.equal(r.code, e.exit ?? 0, `exit code\n${context}`);
+        if ('stdout' in e) assert.equal(r.stdout, e.stdout, context);
+        if ('json' in e) assert.deepEqual(JSON.parse(r.stdout), e.json, context);
+        for (const s of e.stdoutIncludes || [])
+          assert.ok(r.stdout.includes(s), `stdout should include "${s}"\n${context}`);
+        for (const s of e.stderrIncludes || [])
+          assert.ok(r.stderr.includes(s), `stderr should include "${s}"\n${context}`);
+        for (const [file, expected] of Object.entries(e.files || {})) checkFile(root, file, expected);
+        if (e.git?.staged) {
+          const staged = git(['diff', '--cached', '--name-status', '-M'], root)
+            .split('\n')
+            .filter(Boolean)
+            .map((l) => l.replace(/^R\d+/, 'R').replace(/\t/g, ' '))
+            .sort();
+          assert.deepEqual(staged, [...e.git.staged].sort());
         }
-      });
-    }
-  });
-}
+      } finally {
+        removeDir(root);
+      }
+    });
+  }
+});

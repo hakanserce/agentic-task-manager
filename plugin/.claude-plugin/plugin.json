@@ -1,6 +1,6 @@
 {
   "name": "atm",
-  "description": "File-based task management for agentic development. Decompose requirements into tasks, execute them in loops, and watch progress on a live HTML dashboard. Language-agnostic, zero external dependencies.",
+  "description": "File-based task management for agentic development. Decompose requirements into tasks, execute them in loops, and watch progress on a live HTML dashboard. Works with any language; needs only Python 3.9+ (standard library).",
   "version": "0.10.0",
   "author": {
     "name": "Hakan Serce",

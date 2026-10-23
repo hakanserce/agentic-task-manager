@@ -1,4 +1,4 @@
-// Runs every tests/scripts/*.test.mjs file with node:test, against each runtime (ATM_TEST_RUNTIMES=python,node).
+// Runs every tests/scripts/*.test.mjs file with node:test. The tests drive plugin/scripts/atm (Python) as a user would.
 // Usage: node tests/scripts/run.mjs   (works on Node 18+, unlike `node --test <dir>` whose argument rules changed)
 import fs from 'node:fs';
 import path from 'node:path';

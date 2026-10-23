@@ -49,8 +49,8 @@ It keeps the project's `.agentic-task-manager/` folder in order:
 - the dashboard there (`tasks-dashboard.html`, a copy that isn't committed) is installed or updated to the plugin's
   version.
 
-Relay what it prints, except "Nothing to migrate.". If it exits with code 127, neither Python 3.9+ nor Node 18+ is
-installed: ask the user to install one and stop.
+Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
+atm needs it, so ask the user to install it and stop.
 
 The task file is `.agentic-task-manager/tasks.json` at the project root. If the helper said "No tasks.json found",
 tell the user to run `/atm:create-tasks` and stop.

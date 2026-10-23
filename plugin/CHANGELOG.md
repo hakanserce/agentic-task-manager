@@ -18,7 +18,8 @@ To get a new dashboard into a project, update the plugin and run `/atm:update-da
   commits it on its own before its first task.
 - The dashboard HTML is no longer committed to your repository. It's a copy of the plugin's dashboard, listed in
   `.agentic-task-manager/.gitignore`, and the skills bring it up to date automatically when they run.
-- The skills use a small helper script that runs with Python 3.9+ or Node 18+, whichever is installed.
+- The skills use a small helper script that needs **Python 3.9 or newer** (standard library only, nothing to
+  install). On macOS it comes with the Command Line Tools, like `git`.
 - Updating the plugin: run `/plugin marketplace update hakanserce-plugins`, then `/reload-plugins`. No restart.
 
 ## [0.9.0] - 2026-10-23

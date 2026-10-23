@@ -1876,7 +1876,7 @@
         "FR-8.11"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "skipped",
       "dependencies": [
         "T-075"
       ],
@@ -1885,7 +1885,8 @@
         "tests/scripts/remote.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:25:02Z",
+      "skip_reason": "Not cheap enough for this round: a safe version needs create-only pushes (--force-with-lease), leases on the remote (claim commits carrying the expiry, heartbeats that push, clearing expired refs) so a crashed machine can't block a task forever, and a network round-trip inside the lock. Open question for the maintainer (design §6 Q3: remote claims now or later); revisit when multi-machine work is needed."
     },
     {
       "id": "T-082",
@@ -1920,7 +1921,6 @@
       "dependencies": [
         "T-076",
         "T-078",
-        "T-081",
         "T-082"
       ],
       "files": [
@@ -1930,7 +1930,7 @@
         "plugin/templates/tasks-dashboard.html"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T23:25:02Z"
     },
     {
       "id": "T-084",

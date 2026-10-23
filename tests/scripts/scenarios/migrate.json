@@ -29,7 +29,8 @@
         },
         ".agentic-task-manager/tasks-dashboard.html": true,
         ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/.gitattributes": "tasks.json merge=atm\n"
+        ".agentic-task-manager/.gitattributes": "tasks.json merge=atm\n",
+        ".agentic-task-manager/claims.json": true
       },
       "git": {
         "staged": [

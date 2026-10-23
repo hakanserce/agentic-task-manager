@@ -434,6 +434,9 @@ def migrate(paths):
         if in_git(root):
             git(["add", "--", rel(root, os.path.join(task_dir, ".gitignore"))], root)
     result["merge_driver_updated"] = ensure_merge_driver(paths)
+    if not os.path.exists(os.path.join(task_dir, CLAIMS_SNAPSHOT)):
+        # So the dashboard finds the file from the start instead of logging a 404 on every refresh
+        write_claims_snapshot(paths, read_store(paths)["claims"])
     action, old, new = ensure_dashboard(paths["dashboard"])
     if action == "installed" and legacy_version is not None:
         # Report against the dashboard the project had before the move

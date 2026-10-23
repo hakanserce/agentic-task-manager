@@ -3,6 +3,7 @@
   import { phaseColor, statusLabel, statusStyle, typeStyle } from '../lib/theme';
 
   const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
+  const claim = $derived(task?.status === 'in_progress' ? dashboard.claims.get(task.id) : undefined);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
 
   function onOverlayClick(e: MouseEvent) {
@@ -54,6 +55,18 @@
             {#each requiredBy as dep (dep.id)}
               {@render depItem('→', dep.id, dep.name, dep.status)}
             {/each}
+          </div>
+        </div>
+      {/if}
+      {#if claim}
+        {@const since = new Date(claim.claimed_at).toLocaleString()}
+        {@const until = new Date(claim.lease_expires_at).toLocaleTimeString()}
+        <div class="detail-section" id="detail-claim">
+          <div class="label">Claimed by</div>
+          <div class="value" style="font-size:13px">
+            <div><strong>{claim.agent}</strong>{claim.branch ? ` on ${claim.branch}` : ''}</div>
+            <div style="color:var(--text-muted)">Since {since} · lease until {until}</div>
+            {#if claim.worktree}<div style="color:var(--text-muted)">{claim.worktree}</div>{/if}
           </div>
         </div>
       {/if}

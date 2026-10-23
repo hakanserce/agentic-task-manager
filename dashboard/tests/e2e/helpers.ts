@@ -7,15 +7,17 @@ export { expect };
 export type TasksData = { meta?: Record<string, unknown>; tasks: Record<string, unknown>[] };
 
 const TASKS_JSON = /\/tasks\.json(\?.*)?$/;
+const CLAIMS_JSON = /\/claims\.json(\?.*)?$/;
 
 export function loadFixture(name: string): TasksData {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
 }
 
-/** Controls what the dashboard gets when it fetches tasks.json. */
+/** Controls what the dashboard gets when it fetches tasks.json (and the optional claims.json, a 404 by default). */
 export class TasksServer {
   private body: string | null = null;
   private status = 200;
+  private claimsBody: string | null = null;
   requests = 0;
 
   constructor(private page: Page) {}
@@ -25,6 +27,17 @@ export class TasksServer {
       this.requests++;
       return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '' });
     });
+    await this.page.route(CLAIMS_JSON, (route) =>
+      this.claimsBody === null
+        ? route.fulfill({ status: 404, body: 'not found' })
+        : route.fulfill({ status: 200, contentType: 'application/json', body: this.claimsBody }),
+    );
+  }
+
+  /** Serve claims.json (the `atm` claims snapshot); null makes it a 404 again. */
+  claims(claims: Record<string, unknown>[] | null) {
+    this.claimsBody = claims === null ? null : JSON.stringify({ generated_at: '2026-01-01T00:00:00Z', claims });
+    return this;
   }
 
   /** Serve a fixture by name (tests/fixtures/<name>.json) or an inline object. */

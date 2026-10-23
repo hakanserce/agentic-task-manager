@@ -1,3 +1,4 @@
+import { loadClaims, type ClaimMap } from './claims';
 import { DEFAULT_PROJECT_NAME, loadTasks } from './load';
 import { getPref, setPref } from './prefs';
 import { emptyFilters, filterTasks, toggleFilter, type FilterGroup, type Filters } from './filters';
@@ -11,6 +12,12 @@ export class DashboardState {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   taskMap = $state.raw<ReadonlyMap<string, Task>>(new Map());
   projectName = $state(DEFAULT_PROJECT_NAME);
+  /** Live claims by task ID (who works on what), from the optional claims.json; empty without it. */
+  // Replaced on every (re)load, never mutated (like taskMap)
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  claims = $state.raw<ClaimMap>(new Map());
+  /** When the data was last loaded; "12 m ago" labels are relative to it. */
+  loadedAt = $state(Date.now());
   /** True once tasks.json has loaded successfully at least once. */
   loaded = $state(false);
   /** Message from a failed initial load; shown instead of the task grid. */
@@ -34,7 +41,7 @@ export class DashboardState {
 
   async load() {
     try {
-      this.apply(await loadTasks());
+      this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
       this.loaded = true;
       this.loadError = null;
     } catch (e) {
@@ -46,7 +53,7 @@ export class DashboardState {
   async reload() {
     this.reloading = true;
     try {
-      this.apply(await loadTasks());
+      this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
       this.loaded = true;
       this.loadError = null;
     } catch (e) {
@@ -87,10 +94,12 @@ export class DashboardState {
     this.whatsNewOpen = false;
   }
 
-  private apply(loaded: { tasks: Task[]; taskMap: ReadonlyMap<string, Task>; projectName: string }) {
+  private apply(loaded: { tasks: Task[]; taskMap: ReadonlyMap<string, Task>; projectName: string }, claims: ClaimMap) {
     this.tasks = loaded.tasks;
     this.taskMap = loaded.taskMap;
     this.projectName = loaded.projectName;
+    this.claims = claims;
+    this.loadedAt = Date.now();
   }
 }
 

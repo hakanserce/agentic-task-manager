@@ -251,8 +251,10 @@ atm keeps everything in one folder at the root of your project (the top of the g
 .agentic-task-manager/
 ├── tasks.json             # the task list — committed
 ├── .gitignore             # written by atm — committed
+├── .gitattributes         # merges tasks.json task by task (see below) — committed
 ├── tasks-dashboard.html   # copy of the plugin's dashboard — not committed, updated automatically
-└── .server.json, .server.log   # dashboard server state — not committed
+├── claims.json            # who works on what, for the dashboard — not committed
+└── .server.json, .server.log, .lock/   # server state and the write lock — not committed
 ```
 
 The dashboard isn't committed because it is the same file for every project; atm copies the current version in when
@@ -315,8 +317,9 @@ its own (`chore: move atm files to .agentic-task-manager/`) before its first tas
 | `updated_at` | string | ❌ | ISO 8601 UTC timestamp of last status change |
 | `started_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `in_progress` |
 | `completed_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `done` |
+| `last_failure` | object | ❌ | `{at, reason}` when an attempt failed or its lease expired (written by `atm`) |
 
-`/atm:do-task` and `/atm:loop-tasks` maintain the timestamps: `started_at` when a task starts, `completed_at` when it
+`/atm:do-task` and `/atm:loop-tasks` maintain the timestamps (through the `atm` helper): `started_at` when a task starts, `completed_at` when it
 is done, and both are removed if a task goes back to `todo`. The dashboard uses them for completion history and
 estimates; files without them still work (`updated_at` is used instead).
 
@@ -409,14 +412,70 @@ Use dependencies to enforce execution order. A task won't be picked up until all
 Use phases to group related work. Phase 0 is typically setup/foundation. Higher phases build on earlier ones. The loop processes lower phases first.
 
 ### Manual intervention
-You can edit `tasks.json` while the loop runs. Changes are picked up on the next iteration. Use this to:
+You can edit `tasks.json` while the loop runs. Changes are picked up on the next iteration. Edit task definitions
+freely, but change statuses with the helper (`plugin/scripts/atm start|done|fail|release <id>`), which locks the file
+so your change and an agent's can't overwrite each other. Use this to:
 - Mark a task as `skipped` if it's no longer needed
 - Mark a task as `blocked` to prevent the agent from picking it up
 - Add new tasks mid-loop
 - Change task descriptions or dependencies
 
 ### Multiple agents
-If you run multiple Claude Code sessions, each will pick up different tasks (first-come, first-served via the `in_progress` status). This works for parallelism but there's no formal locking — be aware of potential race conditions on `tasks.json` writes.
+See [Running agents in parallel](#running-agents-in-parallel).
+
+---
+
+## Running agents in parallel
+
+You can run several `/atm:loop-tasks` (or `/atm:do-task`) sessions on one project at the same time. atm makes sure
+they don't take the same task or overwrite each other's changes to `tasks.json`.
+
+**Recommended setup: one git worktree per agent.** Agents that edit code in the same folder step on each other's
+files and builds, which atm can't prevent. Give each agent its own worktree and branch from the same clone:
+
+```bash
+git worktree add ../myproject-agent2 -b agent2
+cd ../myproject-agent2 && claude      # then /atm:loop-tasks
+```
+
+Merge each branch back as usual (or open a PR per branch).
+
+**What atm guarantees**
+- **One writer at a time.** Every status change goes through the plugin's helper (`atm`), which takes a lock,
+  re-reads `tasks.json`, changes one task and writes the file atomically. The dashboard and other agents never see a
+  half-written file, and two changes never overwrite each other.
+- **Claims.** `atm next --claim` picks the next task and claims it in one step. Claims record the agent (each Claude
+  Code session has its own identity), branch and worktree. They are stored in the clone's `.git` directory, so agents
+  in different worktrees of the clone see each other's claims straight away. A task finished in one worktree isn't
+  handed out again in another before the branches merge.
+- **Leases.** A claim lasts 30 minutes and is renewed by `atm heartbeat` during long tasks (`"lease_minutes"` in
+  `tasks.json`'s `meta` changes the length). If an agent crashes, its task goes back to `todo` when the lease runs out,
+  with a note in `last_failure`.
+- **Merging `tasks.json`.** A git merge driver (registered automatically) merges `tasks.json` task by task. Status
+  changes from different branches combine (the further-along status wins, e.g. `done` over `in_progress`). Tasks
+  added on both branches are both kept, and the incoming ones are renumbered if their IDs collide. Only conflicting
+  edits to the same task's definition still need you.
+- **Clean commits.** The skills commit only the files a task changed plus `tasks.json`, never `git add -A`, so a
+  commit doesn't carry another agent's unfinished work.
+- **Live view.** In-progress tasks on the dashboard show who works on them, on which branch, and since when.
+
+**What it doesn't do**
+- Two agents in the **same** working tree can still edit the same source files. Use worktrees.
+- Agents on **different machines or clones** don't see each other's claims; they may start the same task, and the
+  merge driver then reconciles the statuses.
+
+**For humans: the helper's commands** (run from the project; the plugin's `scripts/atm`):
+
+| Command | What it does |
+|---|---|
+| `atm claims` | Who works on what, with time left on each lease |
+| `atm next [--phase N] [--claim]` | The task the loop would take next (and claim it) |
+| `atm start\|done\|fail\|release <id>` | Change a task's status (with `--reason` for `fail`) |
+| `atm heartbeat <id>` | Extend your claim's lease |
+| `atm init` | Register the `tasks.json` merge driver (the skills do this automatically) |
+
+The full analysis (scenarios, failure modes, the alternatives considered) is in
+[docs/parallel-agents-design.md](docs/parallel-agents-design.md).
 
 ---
 
@@ -495,8 +554,8 @@ it when dashboard sources change, and CI fails if the committed file doesn't mat
 - **Aider** (via convention files)
 - **Windsurf** (via Cascade rules)
 
-### Multi-agent coordination
-Formal task claiming with `"assigned_to"` field and lock files to support parallel agents without race conditions.
+### Multi-machine coordination
+Claims shared between clones on different machines, through refs on the shared remote (see the design doc).
 
 ### External tool sync
 MCP servers to sync `tasks.json` bidirectionally with GitHub Issues, Linear, or Jira.

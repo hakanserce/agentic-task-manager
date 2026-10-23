@@ -39,5 +39,7 @@ Unfinished = todo + in progress; blocked and skipped tasks don't count (T-010 is
 ## Burndown
 
 - Scope (skipped tasks excluded): 10 from 2026-04-01 08:00, 15 from 2026-04-02 15:00.
-- Remaining = scope − completed: 10 at the start, 6 after phase 0 (09:30 on 04-01), 4 at 14:20 on 04-02, 3 at 14:29,
-  8 when phase 2 is added (15:00), 7 at 10:00 on 04-03, and 7 now (T-009 in progress, T-010 blocked, 5 todo).
+- Remaining = scope − completed (blocked tasks count as remaining): 10 at the start; 9, 8, 7, 6 as phase 0 finishes
+  (09:06–09:30 on 04-01); 5, 4, 3 at 14:12, 14:20, 14:29 on 04-02; 8 when phase 2 is added (15:00); 7 at 10:00 on
+  04-03; 7 now.
+- Forecast: from 7 now down to 1 (the blocked T-010) at 12:51, range 12:45–13:03.

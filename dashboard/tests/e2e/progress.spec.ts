@@ -78,3 +78,53 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#progress')).toContainText('No tasks match current filters');
   });
 });
+
+test.describe('Progress tab: burndown chart', () => {
+  test('summarises the burndown for screen readers', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await expect(page.locator('#burndown svg')).toHaveAttribute(
+      'aria-label',
+      'Burndown: 7 of 15 tasks remaining, forecast done around 12:51 PM',
+    );
+  });
+
+  test('draws remaining, scope and the forecast with direct labels and a legend', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'progress');
+    for (const cls of ['burndown-remaining', 'burndown-scope', 'burndown-forecast', 'burndown-fan']) {
+      await expect(page.locator(`#burndown .${cls}`)).toHaveCount(1);
+    }
+    await expect(page.locator('.burndown-label-remaining')).toHaveText('Remaining 7');
+    await expect(page.locator('.burndown-label-scope')).toHaveText('Scope 15');
+    await expect(page.locator('.burndown-forecast-label')).toHaveText('done ≈ 12:51 PM');
+    await expect(page.locator('.burndown-legend')).toHaveText(/Remaining\s*Scope\s*Forecast/);
+  });
+
+  test('hovering shows the values at that time, or the forecast after now', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'progress');
+    const hit = (await page.locator('.burndown-hit').boundingBox())!;
+    const tooltip = page.locator('.burndown-tooltip');
+    await expect(tooltip).toHaveCount(0);
+
+    // Halfway through the history (Apr 3–4): phase 2 has been added, T-008 is done
+    await page.mouse.move(hit.x + hit.width * 0.5, hit.y + 20);
+    await expect(tooltip).toContainText('Remaining 7');
+    await expect(tooltip).toContainText('Scope 15');
+    await expect(page.locator('.burndown-crosshair')).toHaveCount(1);
+
+    // Just after "now": the forecast
+    await page.mouse.move(hit.x + hit.width - 1, hit.y + 20);
+    await expect(tooltip).toContainText('Forecast');
+    await expect(tooltip).toContainText('Done ≈ 12:51 PM');
+    await expect(tooltip).toContainText('Range 12:45 PM – 01:03 PM');
+
+    await page.mouse.move(hit.x - 30, hit.y - 30);
+    await expect(tooltip).toHaveCount(0);
+  });
+
+  test('no forecast without enough history', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'minimal');
+    await expect(page.locator('#burndown .burndown-remaining')).toHaveCount(1);
+    await expect(page.locator('#burndown .burndown-forecast')).toHaveCount(0);
+    await expect(page.locator('.burndown-legend')).not.toContainText('Forecast');
+  });
+});

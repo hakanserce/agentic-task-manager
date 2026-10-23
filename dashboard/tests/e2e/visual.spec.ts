@@ -41,3 +41,11 @@ for (const fixture of ['standard', 'kanban']) {
     await expect(page.locator('#graph-section')).toHaveScreenshot(`${fixture}-kanban.png`);
   });
 }
+
+test('visual: progress tab', async ({ page, tasksServer }) => {
+  await page.clock.setFixedTime(new Date('2026-04-06T12:00:00Z'));
+  await openDashboard(page, tasksServer, 'progress');
+  await page.locator('#tab-progress').click();
+  await expect(page.locator('#burndown svg')).toBeVisible();
+  await expect(page.locator('#graph-section')).toHaveScreenshot('progress-progress.png');
+});

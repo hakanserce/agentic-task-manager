@@ -1,0 +1,204 @@
+[
+  {
+    "name": "tracked docs/tasks.json and dashboard: git mv, dashboard leaves git, folder set up",
+    "setup": {
+      "commit": true,
+      "files": {
+        "docs/tasks.json": { "meta": { "project": "P" }, "tasks": [] },
+        "docs/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"0.4.0\">",
+        "docs/plan.md": "plans stay"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Moved docs/tasks.json to .agentic-task-manager/tasks.json (staged with git mv, not committed); removed docs/tasks-dashboard.html (a current copy now sits next to tasks.json, ignored by git).\nDashboard v{version} installed.\n",
+      "files": {
+        "docs/tasks.json": false,
+        "docs/tasks-dashboard.html": false,
+        "docs/plan.md": "plans stay",
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "project": "P" },
+          "tasks": []
+        },
+        ".agentic-task-manager/tasks-dashboard.html": true,
+        ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n"
+      },
+      "git": {
+        "staged": [
+          "R docs/tasks.json .agentic-task-manager/tasks.json",
+          "D docs/tasks-dashboard.html",
+          "A .agentic-task-manager/.gitignore"
+        ]
+      }
+    }
+  },
+  {
+    "name": "--json describes the migration",
+    "setup": {
+      "commit": true,
+      "files": {
+        "docs/tasks.json": { "tasks": [] },
+        "docs/tasks-dashboard.html": "old"
+      }
+    },
+    "args": ["migrate", "--json"],
+    "expect": {
+      "json": {
+        "moved": {
+          "from": "docs/tasks.json",
+          "to": ".agentic-task-manager/tasks.json",
+          "git": true
+        },
+        "removed_dashboard": "docs/tasks-dashboard.html",
+        "warning": null,
+        "gitignore_updated": true,
+        "dashboard": { "action": "installed", "from": null, "to": "{version}" }
+      }
+    }
+  },
+  {
+    "name": "untracked tasks.json in the root of a git repository: plain move",
+    "setup": { "git": true, "files": { "tasks.json": { "tasks": [] } } },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Moved tasks.json to .agentic-task-manager/tasks.json.\nDashboard v{version} installed.\n",
+      "files": {
+        "tasks.json": false,
+        ".agentic-task-manager/tasks.json": { "tasks": [] }
+      },
+      "git": { "staged": ["A .agentic-task-manager/.gitignore"] }
+    }
+  },
+  {
+    "name": "outside git: plain move of docs/tasks.json and its dashboard",
+    "setup": {
+      "files": {
+        "docs/tasks.json": { "tasks": [] },
+        "docs/tasks-dashboard.html": "old"
+      }
+    },
+    "cwd": "docs",
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Moved docs/tasks.json to .agentic-task-manager/tasks.json; removed docs/tasks-dashboard.html (a current copy now sits next to tasks.json, ignored by git).\nDashboard v{version} installed.\n",
+      "files": {
+        "docs/tasks.json": false,
+        "docs/tasks-dashboard.html": false,
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/.gitignore": true
+      }
+    }
+  },
+  {
+    "name": "both locations exist: nothing moves, a warning, the new folder is used",
+    "setup": {
+      "commit": true,
+      "files": {
+        "docs/tasks.json": { "tasks": ["old"] },
+        ".agentic-task-manager/tasks.json": { "tasks": ["new"] }
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "warning: both docs/tasks.json and .agentic-task-manager/tasks.json exist; using .agentic-task-manager/tasks.json. Remove the old file when you no longer need it.\nDashboard v{version} installed.\n",
+      "files": {
+        "docs/tasks.json": { "tasks": ["old"] },
+        ".agentic-task-manager/tasks.json": { "tasks": ["new"] }
+      },
+      "git": { "staged": ["A .agentic-task-manager/.gitignore"] }
+    }
+  },
+  {
+    "name": "already set up: nothing to do, files untouched",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n",
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"> current"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n",
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"> current"
+      }
+    }
+  },
+  {
+    "name": "an existing .gitignore keeps its lines and gains the missing entries",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/.gitignore": "notes.txt\n.server.json",
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\">"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": {
+        ".agentic-task-manager/.gitignore": "notes.txt\n.server.json\ntasks-dashboard.html\n.server.log\nclaims.json\n.lock/\n"
+      }
+    }
+  },
+  {
+    "name": "an older dashboard is updated",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"0.1.0\">"
+      }
+    },
+    "args": ["migrate"],
+    "expect": { "stdout": "Dashboard updated from v0.1.0 to v{version}.\n" }
+  },
+  {
+    "name": "a dashboard without a version tag is updated",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-dashboard.html": "x"
+      }
+    },
+    "args": ["migrate"],
+    "expect": { "stdout": "Dashboard updated from v? to v{version}.\n" }
+  },
+  {
+    "name": "a newer dashboard is left alone (0.10.0 is newer than 0.9.0)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\n.lock/\n",
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"99.10.0\">"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": {
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"99.10.0\">"
+      }
+    }
+  },
+  {
+    "name": "no tasks.json anywhere: nothing is created",
+    "setup": { "git": true },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "No tasks.json found. Run /atm:create-tasks to create one.\n",
+      "files": { ".agentic-task-manager": false }
+    }
+  },
+  {
+    "name": "running twice is harmless",
+    "setup": {
+      "commit": true,
+      "files": { "docs/tasks.json": { "tasks": [] } },
+      "commands": [["sh", "-c", "\"$ATM\" migrate"]]
+    },
+    "args": ["migrate"],
+    "expect": { "stdout": "Nothing to migrate.\n" }
+  }
+]

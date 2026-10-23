@@ -7,7 +7,10 @@
   {
     "name": "no command prints usage",
     "args": [],
-    "expect": { "exit": 0, "stdoutIncludes": ["usage: atm <command>", "paths [--json]"] }
+    "expect": {
+      "exit": 0,
+      "stdoutIncludes": ["usage: atm <command>", "paths [--json]"]
+    }
   },
   {
     "name": "help prints usage",
@@ -17,6 +20,10 @@
   {
     "name": "an unknown command is a usage error",
     "args": ["frobnicate"],
-    "expect": { "exit": 2, "stdout": "", "stderrIncludes": ["atm: unknown command 'frobnicate'", "usage: atm"] }
+    "expect": {
+      "exit": 2,
+      "stdout": "",
+      "stderrIncludes": ["atm: unknown command 'frobnicate'", "usage: atm"]
+    }
   }
 ]

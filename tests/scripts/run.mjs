@@ -5,6 +5,9 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.test.mjs')).sort()) {
+for (const file of fs
+  .readdirSync(dir)
+  .filter((f) => f.endsWith('.test.mjs'))
+  .sort()) {
   await import(pathToFileURL(path.join(dir, file)).href);
 }

@@ -39,9 +39,10 @@ export function tempDir(prefix = 'atm-test-') {
  * Create a project from a scenario `setup`:
  *   files:  { "relative/path": "text" | <JSON value> }   written before anything else
  *   git:    true to `git init`; commit: true to also commit everything
- *   commands: [["git", "mv", ...], ...] extra commands run after the commit
+ *   commands: [["git", "mv", ...], ...] extra commands run after the commit, with $ATM set to the launcher
+ * `runtime` is passed to those commands as ATM_RUNTIME.
  */
-export function makeProject(setup = {}) {
+export function makeProject(setup = {}, runtime = RUNTIMES[0]) {
   const root = tempDir();
   for (const [file, content] of Object.entries(setup.files || {})) {
     const full = path.join(root, file);
@@ -59,7 +60,8 @@ export function makeProject(setup = {}) {
     git(['commit', '-q', '-m', 'setup', '--allow-empty'], root);
   }
   for (const [cmd, ...args] of setup.commands || []) {
-    const result = spawnSync(cmd, args, { cwd: root, encoding: 'utf8' });
+    const env = { ...process.env, ATM, ATM_RUNTIME: runtime };
+    const result = spawnSync(cmd, args, { cwd: root, encoding: 'utf8', env });
     if (result.status !== 0) throw new Error(`${cmd} ${args.join(' ')} failed: ${result.stderr}`);
   }
   return root;
@@ -69,7 +71,8 @@ export function makeProject(setup = {}) {
 export function fill(value, vars) {
   if (typeof value === 'string') return value.replace(/\{(root|version)\}/g, (_, k) => vars[k]);
   if (Array.isArray(value)) return value.map((v) => fill(v, vars));
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, fill(v, vars)]));
+  if (value && typeof value === 'object')
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, fill(v, vars)]));
   return value;
 }
 

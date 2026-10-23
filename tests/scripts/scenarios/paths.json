@@ -15,7 +15,12 @@
   },
   {
     "name": "inside a git repository the root is the top level, from any subdirectory",
-    "setup": { "git": true, "files": { "src/a/x.txt": "x" } },
+    "setup": {
+      "git": true,
+      "files": {
+        "src/a/x.txt": "x"
+      }
+    },
     "cwd": "src/a",
     "args": ["paths", "--json"],
     "expect": {
@@ -30,8 +35,31 @@
     }
   },
   {
+    "name": "outside git, a subdirectory finds the project by its task folder",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": []
+        },
+        "src/deep/x.txt": "x"
+      }
+    },
+    "cwd": "src/deep",
+    "args": ["paths"],
+    "expect": {
+      "stdout": "root: {root}\ndir: {root}/.agentic-task-manager\ntasks: {root}/.agentic-task-manager/tasks.json\ndashboard: {root}/.agentic-task-manager/tasks-dashboard.html\n"
+    }
+  },
+  {
     "name": "new location",
-    "setup": { "git": true, "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "setup": {
+      "git": true,
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": []
+        }
+      }
+    },
     "args": ["paths", "--json"],
     "expect": {
       "json": {
@@ -48,7 +76,12 @@
     "name": "legacy docs/ location with a dashboard",
     "setup": {
       "git": true,
-      "files": { "docs/tasks.json": { "tasks": [] }, "docs/tasks-dashboard.html": "<html></html>" }
+      "files": {
+        "docs/tasks.json": {
+          "tasks": []
+        },
+        "docs/tasks-dashboard.html": "<html></html>"
+      }
     },
     "cwd": "docs",
     "args": ["paths", "--json"],
@@ -59,13 +92,22 @@
         "tasks": "{root}/.agentic-task-manager/tasks.json",
         "tasks_exists": false,
         "dashboard": "{root}/.agentic-task-manager/tasks-dashboard.html",
-        "legacy": { "tasks": "{root}/docs/tasks.json", "dashboard": "{root}/docs/tasks-dashboard.html" }
+        "legacy": {
+          "tasks": "{root}/docs/tasks.json",
+          "dashboard": "{root}/docs/tasks-dashboard.html"
+        }
       }
     }
   },
   {
     "name": "legacy root location without a dashboard",
-    "setup": { "files": { "tasks.json": { "tasks": [] } } },
+    "setup": {
+      "files": {
+        "tasks.json": {
+          "tasks": []
+        }
+      }
+    },
     "args": ["paths", "--json"],
     "expect": {
       "json": {
@@ -74,13 +116,25 @@
         "tasks": "{root}/.agentic-task-manager/tasks.json",
         "tasks_exists": false,
         "dashboard": "{root}/.agentic-task-manager/tasks-dashboard.html",
-        "legacy": { "tasks": "{root}/tasks.json", "dashboard": null }
+        "legacy": {
+          "tasks": "{root}/tasks.json",
+          "dashboard": null
+        }
       }
     }
   },
   {
     "name": "docs/ wins over the root when both legacy locations exist",
-    "setup": { "files": { "tasks.json": { "tasks": [] }, "docs/tasks.json": { "tasks": [] } } },
+    "setup": {
+      "files": {
+        "tasks.json": {
+          "tasks": []
+        },
+        "docs/tasks.json": {
+          "tasks": []
+        }
+      }
+    },
     "args": ["paths", "--json"],
     "expect": {
       "json": {
@@ -89,13 +143,22 @@
         "tasks": "{root}/.agentic-task-manager/tasks.json",
         "tasks_exists": false,
         "dashboard": "{root}/.agentic-task-manager/tasks-dashboard.html",
-        "legacy": { "tasks": "{root}/docs/tasks.json", "dashboard": null }
+        "legacy": {
+          "tasks": "{root}/docs/tasks.json",
+          "dashboard": null
+        }
       }
     }
   },
   {
     "name": "text output",
-    "setup": { "files": { "docs/tasks.json": { "tasks": [] } } },
+    "setup": {
+      "files": {
+        "docs/tasks.json": {
+          "tasks": []
+        }
+      }
+    },
     "args": ["paths"],
     "expect": {
       "stdout": "root: {root}\ndir: {root}/.agentic-task-manager\ntasks: {root}/.agentic-task-manager/tasks.json\ndashboard: {root}/.agentic-task-manager/tasks-dashboard.html\nlegacy: {root}/docs/tasks.json\n"

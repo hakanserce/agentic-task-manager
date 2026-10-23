@@ -1165,7 +1165,7 @@
       "description": "Changelog entry [0.8.0] (tabs, Kanban board with readiness and Next up), bump to 0.8.0, rebuild, README dashboard features, copy build to docs/. npm run verify green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-051",
         "T-052"
@@ -1178,7 +1178,9 @@
         "docs/tasks-dashboard.html"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-23T00:35:22Z",
+      "started_at": "2026-10-23T00:35:06Z",
+      "completed_at": "2026-10-23T00:35:22Z"
     },
     {
       "id": "T-054",

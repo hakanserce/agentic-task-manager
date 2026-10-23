@@ -4,6 +4,18 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.8.0] - 2026-10-23
+
+### Added
+- Kanban board: the dependency graph now shares its panel with a **Kanban** tab (and a Progress tab, coming next).
+  The selected tab is part of the URL, so a reload or a shared link opens the same view.
+- Kanban columns for Todo, In Progress, Blocked and Done (Skipped on request). Todo cards say whether they are
+  ready or which tasks they are waiting on, and **Next up** marks the task `/atm:loop-tasks` will pick next.
+- Optional "Group by phase" swimlanes on the Kanban board, remembered per browser.
+
+### Changed
+- The graph keeps its zoom and position while you look at another tab.
+
 ## [0.7.0] - 2026-10-22
 
 ### Added

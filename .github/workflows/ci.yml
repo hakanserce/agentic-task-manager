@@ -39,6 +39,30 @@ jobs:
             exit 1
           }
 
+  scripts:
+    name: atm helper (Python ${{ matrix.python }}, Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest supported versions, and current ones
+          - { python: '3.9', node: '18' }
+          - { python: '3.13', node: '24' }
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # The same suite runs against both implementations (ATM_RUNTIME=python and node)
+      - run: node tests/scripts/run.mjs
+
   e2e:
     name: Playwright regression suite
     runs-on: ubuntu-latest

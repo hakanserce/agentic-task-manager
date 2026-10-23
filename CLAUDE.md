@@ -6,7 +6,9 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 ## Layout
 - `plugin/skills/*/SKILL.md` — the `/atm:*` skills
 - `plugin/templates/tasks-dashboard.html` — the dashboard that skills copy into user projects
+- `plugin/scripts/atm` — the helper the skills call (launcher for `atm.py` / `atm.mjs`, see below)
 - `dashboard/` — Svelte 5 + TypeScript source for the dashboard (dev only, not shipped)
+- `tests/scripts/` — tests for the helper (dev only)
 - `docs/` — this repo's own task list (`tasks.json`) and migration plan; we dogfood atm here
 
 ## Dashboard (`dashboard/`)
@@ -24,7 +26,18 @@ Commands (run in `dashboard/`):
 - `npm test` / `npm run test:coverage` — Vitest unit tests (`tests/unit/`, 90% line threshold on `src/lib`)
 - `npm run test:e2e` — build, then the Playwright e2e suite
 - `npm run check` — svelte-check, ESLint, Prettier
+- `npm run test:scripts` — the helper's test suite, against both runtimes (see below)
 - `npm run verify` — everything above; run before committing
+
+## Helper (`plugin/scripts/`)
+`atm` is a POSIX sh launcher: it runs `atm.py` with Python 3.9+ if available, otherwise `atm.mjs` with Node 18+
+(`ATM_RUNTIME=python|node` forces one). The two are **twins**: same commands, output, exit codes and files, written
+with the same structure and function order. Change both in the same commit; standard library / Node built-ins only.
+
+Tests (`tests/scripts/`, run with `node tests/scripts/run.mjs` or `npm run test:scripts`) run every test once per
+runtime. Prefer language-neutral scenarios in `tests/scripts/scenarios/*.json` (format at the top of
+`scenarios.test.mjs`); use `*.test.mjs` with `helpers.mjs` for things scenarios can't express (servers, concurrency,
+git merges). CI runs the suite with the oldest (Python 3.9, Node 18) and current versions.
 
 ## Testing conventions
 - e2e specs import `test`/`expect` from `tests/e2e/helpers.ts`. `tasks.json` is never served from disk: use the

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "version prints the plugin version",
+    "args": ["version"],
+    "expect": { "exit": 0, "stdout": "{version}\n" }
+  },
+  {
+    "name": "no command prints usage",
+    "args": [],
+    "expect": { "exit": 0, "stdoutIncludes": ["usage: atm <command>", "paths [--json]"] }
+  },
+  {
+    "name": "help prints usage",
+    "args": ["help"],
+    "expect": { "exit": 0, "stdoutIncludes": ["usage: atm <command>"] }
+  },
+  {
+    "name": "an unknown command is a usage error",
+    "args": ["frobnicate"],
+    "expect": { "exit": 2, "stdout": "", "stderrIncludes": ["atm: unknown command 'frobnicate'", "usage: atm"] }
+  }
+]

@@ -1,0 +1,779 @@
+[
+  {
+    "name": "lowest phase, then lowest id in natural order (T-2 before T-10); unmet or missing dependencies skipped",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": {
+      "stdout": "Next: T-2 Task T-2 (phase 0, feature)\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "--phase and --type filter",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--phase", "1", "--json"],
+    "expect": {
+      "json": {
+        "task": {
+          "id": "T-5",
+          "name": "Task T-5",
+          "phase": 1,
+          "type": "test",
+          "status": "todo",
+          "dependencies": []
+        },
+        "claim": null,
+        "reason": null
+      }
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "--type with no match: exit 3 and why",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--type", "docs"],
+    "expect": {
+      "exit": 3,
+      "stdout": "No task available: nothing left to do.\n"
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "only blocked work left: exit 3 and why",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-1"]
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-9"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--phase", "0"],
+    "expect": {
+      "exit": 3,
+      "stdout": "No task available: 2 todo task(s) waiting on dependencies.\n"
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "all done",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": {
+      "exit": 3,
+      "stdout": "No task available: nothing left to do.\n"
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "--claim starts and claims the task in one step",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--claim", "--json"],
+    "expect": {
+      "json": {
+        "task": {
+          "id": "T-2",
+          "name": "Task T-2",
+          "phase": 0,
+          "type": "feature",
+          "status": "in_progress",
+          "dependencies": [],
+          "updated_at": "2026-05-01T10:00:00Z",
+          "started_at": "2026-05-01T10:00:00Z"
+        },
+        "claim": {
+          "task": "T-2",
+          "agent": "alice",
+          "branch": null,
+          "worktree": "{root}",
+          "claimed_at": "2026-05-01T10:00:00Z",
+          "lease_expires_at": "2026-05-01T10:30:00Z"
+        },
+        "reason": null
+      },
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-05-01T10:00:00Z",
+              "started_at": "2026-05-01T10:00:00Z"
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "a task claimed in another worktree is skipped",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-2": {
+              "task": "T-2",
+              "agent": "bob",
+              "branch": "agent-2",
+              "worktree": "/elsewhere",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T11:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": {
+      "stdout": "Next: T-10 Task T-10 (phase 0, feature)\n"
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "...and named when it's the reason nothing is available",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            }
+          ]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-2": {
+              "task": "T-2",
+              "agent": "bob",
+              "branch": "agent-2",
+              "worktree": "/elsewhere",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T11:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["next", "--phase", "0", "--type", "feature"],
+    "expect": {
+      "exit": 3,
+      "stdout": "No task available: 1 todo task(s) waiting on dependencies or claimed by other agents (T-2).\n"
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "an expired claim no longer blocks the task",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "N"
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Task T-1",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "dependencies": []
+            },
+            {
+              "id": "T-10",
+              "name": "Task T-10",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-2",
+              "name": "Task T-2",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-3",
+              "name": "Task T-3",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-4"]
+            },
+            {
+              "id": "T-4",
+              "name": "Task T-4",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "dependencies": []
+            },
+            {
+              "id": "T-5",
+              "name": "Task T-5",
+              "phase": 1,
+              "type": "test",
+              "status": "todo",
+              "dependencies": []
+            },
+            {
+              "id": "T-0",
+              "name": "Task T-0",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-404"]
+            }
+          ]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-2": {
+              "task": "T-2",
+              "agent": "bob",
+              "branch": "agent-2",
+              "worktree": "/elsewhere",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T11:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": {
+      "stdout": "Next: T-2 Task T-2 (phase 0, feature)\n"
+    },
+    "env": {
+      "ATM_AGENT": "alice",
+      "ATM_NOW": "2026-05-01T11:00:01Z"
+    }
+  }
+]

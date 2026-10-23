@@ -57,6 +57,9 @@ commands:
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why
   release <id>   put an in_progress task back to todo
+  next [--phase N] [--type T] [--claim] [--json]
+                 the task /atm:loop-tasks works on next; --claim also starts and claims it,
+                 atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease
   claims [--json]
                  list live claims, shared by all worktrees of this clone
@@ -68,6 +71,14 @@ commands:
 class AtmError(Exception):
     def __init__(self, message, code=1):
         super().__init__(message)
+        self.code = code
+
+
+class AtmExit(Exception):
+    """End with an exit code after normal output (not an error)."""
+
+    def __init__(self, code):
+        super().__init__(code)
         self.code = code
 
 
@@ -855,6 +866,70 @@ def cmd_status_change(command):
     return run
 
 
+def natural_key(task_id):
+    """Sort T-2 before T-10, like the dashboard's localeCompare(..., { numeric: true })."""
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(task_id))]
+
+
+def phase_of(task):
+    return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
+
+
+def next_task(data, claims, phase=None, task_type=None):
+    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed, matching the
+    filters; lowest phase first, then lowest ID. Returns (task, reason) where reason explains an empty result."""
+    candidates = [
+        t
+        for t in data["tasks"]
+        if t.get("status") == "todo"
+        and (phase is None or phase_of(t) == phase)
+        and (task_type is None or t.get("type") == task_type)
+    ]
+    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in claims]
+    if ready:
+        return min(ready, key=lambda t: (phase_of(t), natural_key(t.get("id")))), None
+    if not candidates:
+        return None, "nothing left to do"
+    claimed = [t for t in candidates if t.get("id") in claims]
+    reason = f"{len(candidates)} todo task(s) waiting on dependencies"
+    if claimed:
+        reason += f" or claimed by other agents ({', '.join(t['id'] for t in claimed)})"
+    return None, reason
+
+
+def cmd_next(args):
+    _, values = parse_options(args, flags=("--claim", "--json"), options=("--phase", "--type", "--agent"))
+    try:
+        phase = float(values["--phase"]) if "--phase" in values else None
+    except ValueError:
+        raise AtmError("--phase needs a number", 2)
+    agent = agent_identity(values)
+    paths = find_paths(os.getcwd())
+    with locked_with_claims(paths):
+        data = load_tasks(paths)
+        claims = read_claims(paths)
+        expired = expire_claims(paths, data, claims)
+        task, reason = next_task(data, claims, phase, values.get("--type"))
+        if task and "--claim" in values:
+            change_status(task, data, "start")
+            claims[task["id"]] = new_claim(paths, data, task["id"], agent)
+        if expired or (task and "--claim" in values):
+            write_json_atomic(paths["tasks"], data)
+            write_claims(paths, claims)
+    for claim in expired:
+        sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
+    claim = claims.get(task["id"]) if task and "--claim" in values else None
+    if "--json" in values:
+        out(to_json({"task": task, "claim": claim, "reason": reason}))
+    elif task:
+        verb = "Claimed" if claim else "Next"
+        out(f"{verb}: {task['id']} {task.get('name', '')} (phase {task.get('phase')}, {task.get('type')})")
+    else:
+        out(f"No task available: {reason}.")
+    if not task:
+        raise AtmExit(3)
+
+
 def cmd_heartbeat(args):
     positional, values = parse_options(args, flags=("--json",), options=("--agent",))
     if len(positional) != 1:
@@ -929,6 +1004,7 @@ COMMANDS = {
     "done": cmd_status_change("done"),
     "fail": cmd_status_change("fail"),
     "release": cmd_status_change("release"),
+    "next": cmd_next,
     "heartbeat": cmd_heartbeat,
     "claims": cmd_claims,
     "_serve-child": cmd_serve_child,
@@ -949,6 +1025,8 @@ def main(argv):
         command(argv[1:])
     except AtmError as e:
         sys.stderr.write(f"atm: {e}\n")
+        return e.code
+    except AtmExit as e:
         return e.code
     return 0
 

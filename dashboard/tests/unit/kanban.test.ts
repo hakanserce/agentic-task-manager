@@ -130,3 +130,25 @@ describe('buildBoard', () => {
     expect(todo.cards[0].nextUp).toBe(false);
   });
 });
+
+describe('buildLanes', () => {
+  it('makes one lane per phase with progress, all with the same columns', async () => {
+    const { buildLanes } = await import('../../src/lib/kanban');
+    const tasks = [
+      t('a', 'done', { phase: 0 }),
+      t('b', 'todo', { phase: 0 }),
+      t('c', 'review', { phase: 1 }),
+      t('d', 'in_progress', { phase: 1 }),
+    ];
+    const lanes = buildLanes(tasks, tasks, all);
+    expect(lanes.map((l) => [l.phase, l.done, l.total])).toEqual([
+      [0, 1, 2],
+      [1, 0, 2],
+    ]);
+    // "Other" exists because of phase 1; phase 0 gets it too (empty) so lanes line up
+    for (const lane of lanes)
+      expect(lane.columns.map((c) => c.id)).toEqual(['todo', 'in_progress', 'blocked', 'done', 'other']);
+    expect(lanes[0].columns.find((c) => c.id === 'other')!.cards).toEqual([]);
+    expect(ids(lanes[1].columns.find((c) => c.id === 'other')!.cards)).toEqual(['c']);
+  });
+});

@@ -106,3 +106,35 @@ test.describe('Kanban board', () => {
     expect(columns).toEqual(['blocked', 'done']);
   });
 });
+
+test.describe('Kanban: group by phase', () => {
+  const lanes = (page: Page) => page.locator('.kanban-lane');
+
+  test('one swimlane per phase, with progress and aligned columns; remembered', async ({ page, tasksServer }) => {
+    await openKanban(page, tasksServer, 'kanban');
+    await page.locator('#kanban-group-by-phase').check();
+    await expect(lanes(page)).toHaveCount(3);
+    await expect(page.locator('.kanban-lane-header')).toHaveText([
+      /Phase 0\s*16\/16 done/,
+      /Phase 1\s*8\/15 done/,
+      /Phase 2\s*0\/7 done/,
+    ]);
+    for (const lane of await lanes(page).all()) {
+      await expect(lane.locator('.kanban-column-title')).toHaveText([
+        'Todo',
+        'In Progress',
+        'Blocked',
+        'Done',
+        'Other',
+      ]);
+    }
+    await expect(
+      page.locator('.kanban-lane[data-phase="1"] .kanban-column[data-status="todo"] .kanban-card'),
+    ).toHaveCount(3);
+
+    await page.reload();
+    await page.locator('#tab-kanban').click();
+    await expect(page.locator('#kanban-group-by-phase')).toBeChecked();
+    await expect(lanes(page)).toHaveCount(3);
+  });
+});

@@ -803,7 +803,21 @@ svg.graph-minimap.hidden {
 .kanban-toolbar {
   display: flex;
   justify-content: flex-end;
+  gap: 16px;
   margin-bottom: 8px;
+}
+.kanban-lane + .kanban-lane {
+  margin-top: 16px;
+}
+.kanban-lane-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.kanban-lane-progress {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 .kanban-option {
   display: flex;

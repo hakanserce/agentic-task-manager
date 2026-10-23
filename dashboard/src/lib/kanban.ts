@@ -67,11 +67,15 @@ const ORDER: Record<ColumnId, (a: Task, b: Task) => number> = {
   other: byPhaseThenId,
 };
 
-/** Columns for the visible (filtered) tasks; readiness and next-up are judged against all tasks. */
+/**
+ * Columns for the visible (filtered) tasks; readiness and next-up are judged against all tasks.
+ * `columns` forces a column set (used to keep swimlanes aligned).
+ */
 export function buildBoard(
   tasks: Task[],
   allTasks: Task[],
   { showSkipped, statusFilter }: BoardOptions,
+  columns?: ColumnId[],
 ): KanbanColumn[] {
   const taskMap = new Map(allTasks.map((t) => [t.id, t]));
   const next = nextUp(allTasks)?.id;
@@ -85,7 +89,8 @@ export function buildBoard(
     return id !== 'skipped' || showSkipped;
   };
 
-  return (['todo', 'in_progress', 'blocked', 'done', 'skipped', 'other'] as ColumnId[]).filter(wanted).map((id) => {
+  const ids = columns ?? (['todo', 'in_progress', 'blocked', 'done', 'skipped', 'other'] as ColumnId[]).filter(wanted);
+  return ids.map((id) => {
     const cards = (grouped.get(id) ?? []).map((task) => ({
       task,
       ...(id === 'todo' ? { readiness: readiness(task, taskMap) } : {}),
@@ -99,5 +104,27 @@ export function buildBoard(
       return ORDER[id](a.task, b.task);
     });
     return { id, label: COLUMN_LABELS[id], cards };
+  });
+}
+
+export interface KanbanLane {
+  phase: number;
+  done: number;
+  total: number;
+  columns: KanbanColumn[];
+}
+
+/** One swimlane per phase (FR-3.7), all with the same columns as the ungrouped board so they line up. */
+export function buildLanes(tasks: Task[], allTasks: Task[], options: BoardOptions): KanbanLane[] {
+  const columns = buildBoard(tasks, allTasks, options).map((c) => c.id);
+  const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
+  return phases.map((phase) => {
+    const inPhase = tasks.filter((t) => t.phase === phase);
+    return {
+      phase,
+      done: inPhase.filter((t) => t.status === 'done').length,
+      total: inPhase.length,
+      columns: buildBoard(inPhase, allTasks, options, columns),
+    };
   });
 }

@@ -1143,7 +1143,7 @@
         "FR-3.7"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-051"
       ],
@@ -1153,7 +1153,9 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:33:50Z"
+      "updated_at": "2026-10-23T00:34:55Z",
+      "started_at": "2026-10-23T00:34:03Z",
+      "completed_at": "2026-10-23T00:34:55Z"
     },
     {
       "id": "T-053",

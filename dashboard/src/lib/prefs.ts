@@ -8,6 +8,7 @@ export interface Prefs {
   autoRefreshSeconds: number;
   /** Last dashboard version whose release notes were opened */
   lastSeenVersion: string;
+  kanbanGroupByPhase: boolean;
 }
 
 function storage(): Storage | null {

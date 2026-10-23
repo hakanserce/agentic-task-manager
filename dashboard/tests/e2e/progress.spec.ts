@@ -128,3 +128,40 @@ test.describe('Progress tab: burndown chart', () => {
     await expect(page.locator('.burndown-legend')).not.toContainText('Forecast');
   });
 });
+
+test.describe('Progress tab: focus a phase', () => {
+  const label = (page: Page) => page.locator('#burndown svg');
+
+  test('clicking a phase row limits the burndown to that phase; clicking again resets', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+    await row(page, 1).click();
+    await expect(row(page, 1)).toHaveClass(/selected/);
+    await expect(page.locator('#burndown-focus')).toHaveText('Phase 1');
+    // Phase 1: 6 tasks, 2 not done (T-009 in progress, T-010 blocked); its estimate covers T-009 only
+    await expect(label(page)).toHaveAttribute(
+      'aria-label',
+      'Burndown: 2 of 6 tasks remaining, forecast done around 12:08 PM',
+    );
+    await row(page, 1).click();
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+    await expect(row(page, 1)).not.toHaveClass(/selected/);
+  });
+
+  test('"Show all phases", the keyboard, and filters that hide the phase', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await row(page, 0).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#burndown-focus')).toHaveText('Phase 0');
+    await expect(label(page)).toHaveAttribute('aria-label', 'Burndown: 0 of 4 tasks remaining');
+    await page.getByRole('button', { name: 'Show all phases' }).click();
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+
+    await row(page, 2).click();
+    await filterButton(page, 'phase', '1').click();
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+  });
+});

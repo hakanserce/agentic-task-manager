@@ -3,7 +3,19 @@
   import { formatMinutes, formatMinutesRange, formatWhen } from '../lib/format';
   import { phaseColor } from '../lib/theme';
 
-  let { forecast, now }: { forecast: Forecast; now: number } = $props();
+  let {
+    forecast,
+    now,
+    selected,
+    onselect,
+  }: { forecast: Forecast; now: number; selected?: number; onselect?: (phase: number) => void } = $props();
+
+  function onRowKeydown(e: KeyboardEvent, phase: number) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onselect?.(phase);
+    }
+  }
 
   const STATE_LABELS = { done: 'Done', in_progress: 'In progress', not_started: 'Not started' } as const;
   const pct = (done: number, total: number) => (total ? Math.round((done / total) * 100) : 0);
@@ -33,7 +45,16 @@
   <tbody>
     {#each forecast.phases as row (row.phase)}
       {@const color = phaseColor(row.phase)}
-      <tr data-phase={row.phase} data-state={row.state}>
+      <tr
+        data-phase={row.phase}
+        data-state={row.state}
+        class:selected={selected === row.phase}
+        class:selectable={!!onselect}
+        tabindex={onselect ? 0 : undefined}
+        aria-selected={onselect ? selected === row.phase : undefined}
+        onclick={() => onselect?.(row.phase)}
+        onkeydown={(e) => onRowKeydown(e, row.phase)}
+      >
         <td><span class="phase-badge" style="background:{color}20;color:{color}">Phase {row.phase}</span></td>
         <td class="num">{row.done}/{row.total}</td>
         <td class="phase-table-progress">

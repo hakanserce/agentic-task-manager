@@ -1919,7 +1919,7 @@
       "description": "Changelog [0.11.0] (parallel agents: atm helper, claims with leases, merge driver, commit hygiene, claims on the dashboard). Bump to 0.11.0, rebuild. All suites green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-076",
         "T-078",
@@ -1932,7 +1932,9 @@
         "plugin/templates/tasks-dashboard.html"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:25:02Z"
+      "updated_at": "2026-10-23T23:28:34Z",
+      "started_at": "2026-10-23T23:27:07Z",
+      "completed_at": "2026-10-23T23:28:34Z"
     },
     {
       "id": "T-084",

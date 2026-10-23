@@ -116,7 +116,7 @@ Priorities: **P1** must ship in this round; **P2** if cheap, otherwise later.
 | FR-8.8 | P1 | The dashboard shows live claims (agent, branch, how long ago) on in-progress cards and in the Kanban board, from the gitignored claims snapshot. |
 | FR-8.9 | P1 | README gets a "Running agents in parallel" section with the recommended worktree setup and the agent rules. |
 | FR-8.10 | P1 | Tests: a stress test where many processes claim concurrently and no task is claimed twice; atomic-write tests (readers never see invalid JSON); merge-driver tests covering the design's experiments; lease expiry. |
-| FR-8.11 | P2 | Optional remote claims through `refs/atm/claims/<task-id>` for several clones or machines (L5). |
+| FR-8.11 | P2 | Optional remote claims through `refs/atm/claims/<task-id>` for several clones or machines (L5). *Deferred: see the reason recorded on T-081.* |
 
 ### Non-functional requirements
 

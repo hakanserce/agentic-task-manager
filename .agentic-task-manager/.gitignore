@@ -1,0 +1,6 @@
+# atm runtime files (managed by atm)
+tasks-dashboard.html
+.server.json
+.server.log
+claims.json
+.lock/

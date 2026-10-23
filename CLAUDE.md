@@ -9,7 +9,8 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 - `plugin/scripts/atm` — the helper the skills call (launcher for `atm.py` / `atm.mjs`, see below)
 - `dashboard/` — Svelte 5 + TypeScript source for the dashboard (dev only, not shipped)
 - `tests/scripts/` — tests for the helper (dev only)
-- `docs/` — this repo's own task list (`tasks.json`) and migration plan; we dogfood atm here
+- `.agentic-task-manager/tasks.json` — this repo's own task list; we dogfood atm here (`/atm:serve` shows it)
+- `docs/` — requirements, designs and plans the tasks were created from
 
 ## Dashboard (`dashboard/`)
 Builds to a **single self-contained HTML file** (vite-plugin-singlefile). The `atm-dashboard-version` meta tag is

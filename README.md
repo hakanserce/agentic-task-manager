@@ -443,7 +443,8 @@ agentic-task-manager/
 │   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, copied to projects)
 │   └── CLAUDE.md                # Plugin context for Claude Code
 ├── dashboard/                   # Dashboard source: Svelte 5 + TypeScript (development only)
-├── docs/                        # This repo's own atm task list and plans
+├── .agentic-task-manager/       # This repo's own atm task list (we dogfood atm)
+├── docs/                        # Requirements, designs and plans
 ├── .githooks/pre-commit         # Rebuilds the dashboard when its sources are committed
 ├── .github/workflows/ci.yml     # Lint, unit, build-freshness and e2e checks
 ├── CLAUDE.md                    # Development notes for Claude Code

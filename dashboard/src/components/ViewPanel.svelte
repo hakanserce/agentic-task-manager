@@ -2,6 +2,7 @@
   import { adjacentView, parseViewHash, VIEW_LABELS, VIEWS, withViewHash, type ViewId } from '../lib/tabs';
   import { dashboard } from '../lib/state.svelte';
   import DepGraph from './DepGraph.svelte';
+  import KanbanBoard from './KanbanBoard.svelte';
 
   let view = $state<ViewId>(parseViewHash(location.hash));
   const tabs: Partial<Record<ViewId, HTMLButtonElement>> = {};
@@ -61,7 +62,7 @@
       <DepGraph />
     </div>
     <div class="view-panel" id="panel-kanban" role="tabpanel" aria-labelledby="tab-kanban" hidden={view !== 'kanban'}>
-      <div class="view-placeholder">Kanban board: coming soon</div>
+      <KanbanBoard />
     </div>
     <div
       class="view-panel"

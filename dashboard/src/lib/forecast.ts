@@ -104,9 +104,12 @@ export function pace(durations: TimedCompletion[]): Pace | null {
 
 const UNFINISHED_EXCLUDED = new Set(['done', 'skipped', 'blocked']);
 
-/** Per-phase progress and estimates; phases are worked in ascending order, like /atm:loop-tasks. */
-export function forecastPhases(tasks: Task[], now: number): Forecast {
-  const p = pace(taskDurations(tasks));
+/**
+ * Per-phase progress and estimates; phases are worked in ascending order, like /atm:loop-tasks.
+ * `history` is what the pace is measured on (all tasks), so filtering the view doesn't change the pace.
+ */
+export function forecastPhases(tasks: Task[], now: number, history: Task[] = tasks): Forecast {
+  const p = pace(taskDurations(history));
   const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
   let cumulative = 0;
 

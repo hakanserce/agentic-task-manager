@@ -948,3 +948,74 @@ svg.graph-minimap.hidden {
   font-size: 12px;
   cursor: pointer;
 }
+
+/* Progress tab */
+.progress-view {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.progress-basis {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.progress-basis code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.progress-empty {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 12px 0;
+}
+.phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.phase-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.phase-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.phase-table tr:last-child td {
+  border-bottom: none;
+}
+.phase-table .num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.phase-table-progress {
+  width: 22%;
+}
+.phase-table .progress-bar {
+  margin-top: 0;
+}
+.phase-blocked {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--red);
+}
+.estimate-range {
+  color: var(--text-muted);
+}
+.estimate-calendar {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.estimate-none {
+  color: var(--text-muted);
+}

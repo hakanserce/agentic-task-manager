@@ -1,0 +1,73 @@
+<script lang="ts">
+  import type { Forecast } from '../lib/forecast';
+  import { formatMinutes, formatMinutesRange, formatWhen } from '../lib/format';
+  import { phaseColor } from '../lib/theme';
+
+  let { forecast, now }: { forecast: Forecast; now: number } = $props();
+
+  const STATE_LABELS = { done: 'Done', in_progress: 'In progress', not_started: 'Not started' } as const;
+  const pct = (done: number, total: number) => (total ? Math.round((done / total) * 100) : 0);
+</script>
+
+<p class="progress-basis" id="progress-basis">
+  {#if forecast.pace}
+    Estimates are based on the last {forecast.pace.basedOn} completed tasks: about {formatMinutes(forecast.pace.likely)} each
+    ({formatMinutesRange(forecast.pace.low, forecast.pace.high)}). Phases are worked in order, like
+    <code>/atm:loop-tasks</code>.
+  {:else}
+    Not enough history to estimate yet: estimates need at least 3 completed tasks with timestamps.
+  {/if}
+</p>
+
+<table class="phase-table" id="phase-table">
+  <thead>
+    <tr>
+      <th>Phase</th>
+      <th>Done</th>
+      <th class="phase-table-progress">Progress</th>
+      <th>Remaining</th>
+      <th>State</th>
+      <th>Estimate</th>
+    </tr>
+  </thead>
+  <tbody>
+    {#each forecast.phases as row (row.phase)}
+      {@const color = phaseColor(row.phase)}
+      <tr data-phase={row.phase} data-state={row.state}>
+        <td><span class="phase-badge" style="background:{color}20;color:{color}">Phase {row.phase}</span></td>
+        <td class="num">{row.done}/{row.total}</td>
+        <td class="phase-table-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style:width="{pct(row.done, row.total)}%" style:background={color}></div>
+          </div>
+        </td>
+        <td class="num">
+          {row.remaining}{#if row.blocked}<span
+              class="phase-blocked"
+              title="Blocked tasks are not included in the estimate">{row.blocked} blocked</span
+            >{/if}
+        </td>
+        <td>{STATE_LABELS[row.state]}</td>
+        <td class="phase-estimate">
+          {#if row.state === 'done'}
+            Done{#if row.completedAt}&nbsp;{formatWhen(row.completedAt, now)}{/if}
+          {:else if row.estimate}
+            <div class="estimate-main">
+              ≈ {formatMinutes(row.estimate.minutes.likely)} of agent work
+              <span class="estimate-range"
+                >({formatMinutesRange(row.estimate.minutes.low, row.estimate.minutes.high)})</span
+              >
+            </div>
+            <div class="estimate-calendar">
+              If the loop keeps running: {formatWhen(row.estimate.finishAt.likely, now)}
+            </div>
+          {:else if row.remaining === 0 && row.blocked}
+            Blocked
+          {:else}
+            <span class="estimate-none">Not enough history to estimate</span>
+          {/if}
+        </td>
+      </tr>
+    {/each}
+  </tbody>
+</table>

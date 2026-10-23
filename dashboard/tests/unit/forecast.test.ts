@@ -107,4 +107,12 @@ describe('forecastPhases', () => {
     const p1 = forecastPhases(blockedOnly, NOW).phases[1];
     expect([p1.state, p1.remaining, p1.blocked, p1.estimate]).toEqual(['not_started', 0, 1, undefined]);
   });
+
+  it('can measure the pace on other tasks than the ones it estimates', () => {
+    const phase2 = tasks.filter((x) => x.phase === 2);
+    expect(forecastPhases(phase2, NOW).pace).toBeNull();
+    const withHistory = forecastPhases(phase2, NOW, tasks);
+    expect(withHistory.pace?.likely).toBe(8.5);
+    expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
+  });
 });

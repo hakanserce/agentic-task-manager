@@ -3,6 +3,7 @@
   import { dashboard } from '../lib/state.svelte';
   import DepGraph from './DepGraph.svelte';
   import KanbanBoard from './KanbanBoard.svelte';
+  import ProgressTab from './ProgressTab.svelte';
 
   let view = $state<ViewId>(parseViewHash(location.hash));
   const tabs: Partial<Record<ViewId, HTMLButtonElement>> = {};
@@ -71,7 +72,7 @@
       aria-labelledby="tab-progress"
       hidden={view !== 'progress'}
     >
-      <div class="view-placeholder">Progress and estimates: coming soon</div>
+      <ProgressTab />
     </div>
   </div>
 </div>

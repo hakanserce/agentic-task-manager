@@ -10,6 +10,7 @@ import os
 from .claims import next_task, read_store
 from .core import out, to_json
 from .model import (
+    archive_hint,
     archive_path,
     archived_task,
     find_task,
@@ -250,6 +251,9 @@ def cmd_status(args):
         "archived": len(load_archive(paths)["tasks"]),
         "archive_bytes": os.path.getsize(archive_path(paths)) if os.path.isfile(archive_path(paths)) else 0,
     }
+    hint = archive_hint(paths, data)
+    if hint:
+        result["suggest"] = {"archive": hint}
     if args.json:
         out(to_json(result))
         return
@@ -272,3 +276,5 @@ def cmd_status(args):
     out(f"file: {result['file_bytes'] // 1024} KB" + (f"; largest tasks: {largest}" if largest else ""))
     if result["archived"]:
         out(f"archive: {result['archived']} tasks, {result['archive_bytes'] // 1024} KB")
+    if hint:
+        out(hint["text"])

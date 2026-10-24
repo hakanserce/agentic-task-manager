@@ -84,10 +84,12 @@ def locked_with_claims(paths):
 
 def read_store(paths):
     """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
-    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere)."""
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); and `hints`,
+    when each hint was last shown (so `done` repeats one at most once a day)."""
     data = read_json(claims_store_path(paths))
     data = data if isinstance(data, dict) else {}
-    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}}
+    hints = data.get("hints") if isinstance(data.get("hints"), dict) else {}
+    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}, "hints": hints}
 
 
 def write_store(paths, store):

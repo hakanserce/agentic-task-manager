@@ -8,6 +8,7 @@ import shutil
 from .claims import CLAIMS_SNAPSHOT, read_store, write_claims_snapshot
 from .core import DASHBOARD_FILE, PLUGIN_ROOT, AtmError, git, in_git, is_tracked, out, parse_version, rel, to_json
 from .merge import ensure_merge_driver
+from .model import archive_hint, load_tasks
 from .paths import find_paths
 
 TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
@@ -105,6 +106,12 @@ def migrate(paths):
         old = legacy_version
         action = "current" if parse_version(old) >= parse_version(new) else "updated"
     result["dashboard"] = {"action": action, "from": old, "to": new}
+    try:
+        hint = archive_hint(paths, load_tasks(paths))
+    except AtmError:
+        hint = None  # the command the skill runs next reports the problem
+    if hint:
+        result["suggest"] = {"archive": hint}
     return result
 
 
@@ -128,6 +135,8 @@ def describe_migration(r, paths):
         lines.append(f"Dashboard updated from v{d['from'] or '?'} to v{d['to']}.")
     if not lines:
         lines.append("Nothing to migrate.")
+    if r.get("suggest"):
+        lines.append(r["suggest"]["archive"]["text"])
     return lines
 
 

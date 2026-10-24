@@ -15,7 +15,7 @@ from .claims import (
 )
 from .core import now_iso, out, to_json, write_json_atomic
 from .lock import locked
-from .model import add_note, change_status, find_task, load_tasks, touch
+from .model import add_note, archive_hint, change_status, find_task, load_tasks, touch
 from .paths import find_paths
 from .query import describe_task, ready_tasks
 
@@ -53,10 +53,20 @@ def cmd_status_change(command):
                 store["completed"][task_id] = completion(paths, task_id, agent)
             unblocked = newly_ready(data, task_id) if command == "done" else []
             write_json_atomic(paths["tasks"], data)
+            # The archive hint after done, at most once a day per clone (CLI-5.2), so a loop doesn't repeat it
+            hint = archive_hint(paths, data) if command == "done" else None
+            today = now_iso()[:10]
+            if hint and store["hints"].get("archive") == today:
+                hint = None
+            if hint:
+                store["hints"]["archive"] = today
             write_store(paths, store)
         report_expired(expired)
         if args.json:
-            out(to_json({**task, "claim": claims.get(task_id), **({"unblocked": unblocked} if command == "done" else {})}))
+            extra = {"unblocked": unblocked} if command == "done" else {}
+            if hint:
+                extra["suggest"] = {"archive": hint}
+            out(to_json({**task, "claim": claims.get(task_id), **extra}))
             return
         # New lines only after the existing one (CLI-3.2)
         out(f"{task['id']}: {previous} -> {task['status']}")
@@ -64,6 +74,8 @@ def cmd_status_change(command):
             out(describe_task(data, task))
         if unblocked:
             out("Now ready: " + ", ".join(unblocked))
+        if hint:
+            out(hint["text"])
 
     return run
 

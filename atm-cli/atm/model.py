@@ -6,8 +6,9 @@ statuses in meta.statuses, each with one of the six kinds below.
 
 import os
 import re
+from datetime import timedelta
 
-from .core import AtmError, now_iso, read_json
+from .core import AtmError, now, now_iso, parse_iso, read_json
 
 KINDS = ("todo", "active", "review", "blocked", "done", "skipped")
 DEFAULT_STATUSES = [
@@ -157,6 +158,80 @@ def load_archive(paths):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{p} is not a valid archive (expected an object with a 'tasks' list)")
     return data
+
+
+ARCHIVE_DEFAULTS = {"threshold_kb": 1024, "threshold_tasks": 500, "keep_days": 14, "auto": True}
+
+
+def archive_settings(data):
+    """meta.archive, with the defaults for what it doesn't set (DM-2)."""
+    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    given = meta.get("archive") if isinstance(meta.get("archive"), dict) else {}
+    settings = dict(ARCHIVE_DEFAULTS)
+    for key, default in ARCHIVE_DEFAULTS.items():
+        value = given.get(key)
+        if isinstance(default, bool):
+            if isinstance(value, bool):
+                settings[key] = value
+        elif isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+            settings[key] = value
+    return settings
+
+
+def finished_at(task):
+    for key in ("completed_at", "updated_at"):
+        try:
+            return parse_iso(task[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return None
+
+
+def archivable(data, phases=None, before=None, keep=None):
+    """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days
+    (default meta.archive.keep_days), not in an open PR; only `phases` and those finished before `before`, if given."""
+    vocab = vocabulary(data)
+    recent = now() - timedelta(days=archive_settings(data)["keep_days"] if keep is None else keep)
+    result = []
+    for t in data["tasks"]:
+        if not isinstance(t, dict) or kind_of(vocab, t.get("status")) not in ("done", "skipped"):
+            continue
+        if phases and phase_of(t) not in phases:
+            continue
+        if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
+            continue  # still in an open PR
+        finished = finished_at(t)
+        if finished is not None and finished > recent:
+            continue
+        if before is not None and (finished is None or finished >= before):
+            continue
+        result.append(t)
+    return result
+
+
+def format_size(size):
+    return f"{size / 1048576:.1f} MB" if size >= 1048576 else f"{size // 1024} KB"
+
+
+def archive_hint(paths, data):
+    """The suggestion to archive (CLI-5.1), or None: when tasks.json is over meta.archive.threshold_kb, or has more
+    archivable tasks than threshold_tasks, and there is something to move."""
+    settings = archive_settings(data)
+    size = os.path.getsize(paths["tasks"]) if os.path.isfile(paths["tasks"]) else 0
+    movable = len(archivable(data))
+    if not movable or (size <= settings["threshold_kb"] * 1024 and movable <= settings["threshold_tasks"]):
+        return None
+    vocab = vocabulary(data)
+    finished = sum(
+        1 for t in data["tasks"] if isinstance(t, dict) and kind_of(vocab, t.get("status")) in ("done", "skipped")
+    )
+    return {
+        "bytes": size,
+        "finished": finished,
+        "archivable": movable,
+        "text": f"tasks.json is {format_size(size)} with {finished} finished tasks; `atm archive` would move "
+        f"{movable} of them to tasks-archive.json.",
+    }
 
 
 def archived_task(task_id):

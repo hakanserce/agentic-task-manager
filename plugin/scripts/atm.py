@@ -488,6 +488,80 @@ def load_archive(paths):
     return data
 
 
+ARCHIVE_DEFAULTS = {"threshold_kb": 1024, "threshold_tasks": 500, "keep_days": 14, "auto": True}
+
+
+def archive_settings(data):
+    """meta.archive, with the defaults for what it doesn't set (DM-2)."""
+    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    given = meta.get("archive") if isinstance(meta.get("archive"), dict) else {}
+    settings = dict(ARCHIVE_DEFAULTS)
+    for key, default in ARCHIVE_DEFAULTS.items():
+        value = given.get(key)
+        if isinstance(default, bool):
+            if isinstance(value, bool):
+                settings[key] = value
+        elif isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+            settings[key] = value
+    return settings
+
+
+def finished_at(task):
+    for key in ("completed_at", "updated_at"):
+        try:
+            return parse_iso(task[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return None
+
+
+def archivable(data, phases=None, before=None, keep=None):
+    """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days
+    (default meta.archive.keep_days), not in an open PR; only `phases` and those finished before `before`, if given."""
+    vocab = vocabulary(data)
+    recent = now() - timedelta(days=archive_settings(data)["keep_days"] if keep is None else keep)
+    result = []
+    for t in data["tasks"]:
+        if not isinstance(t, dict) or kind_of(vocab, t.get("status")) not in ("done", "skipped"):
+            continue
+        if phases and phase_of(t) not in phases:
+            continue
+        if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
+            continue  # still in an open PR
+        finished = finished_at(t)
+        if finished is not None and finished > recent:
+            continue
+        if before is not None and (finished is None or finished >= before):
+            continue
+        result.append(t)
+    return result
+
+
+def format_size(size):
+    return f"{size / 1048576:.1f} MB" if size >= 1048576 else f"{size // 1024} KB"
+
+
+def archive_hint(paths, data):
+    """The suggestion to archive (CLI-5.1), or None: when tasks.json is over meta.archive.threshold_kb, or has more
+    archivable tasks than threshold_tasks, and there is something to move."""
+    settings = archive_settings(data)
+    size = os.path.getsize(paths["tasks"]) if os.path.isfile(paths["tasks"]) else 0
+    movable = len(archivable(data))
+    if not movable or (size <= settings["threshold_kb"] * 1024 and movable <= settings["threshold_tasks"]):
+        return None
+    vocab = vocabulary(data)
+    finished = sum(
+        1 for t in data["tasks"] if isinstance(t, dict) and kind_of(vocab, t.get("status")) in ("done", "skipped")
+    )
+    return {
+        "bytes": size,
+        "finished": finished,
+        "archivable": movable,
+        "text": f"tasks.json is {format_size(size)} with {finished} finished tasks; `atm archive` would move "
+        f"{movable} of them to tasks-archive.json.",
+    }
+
+
 def archived_task(task_id):
     """The archived task with this ID, if the archive has it (the archive is read on the first lookup)."""
     if _archive["paths"] is None:
@@ -738,10 +812,12 @@ def locked_with_claims(paths):
 
 def read_store(paths):
     """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
-    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere)."""
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); and `hints`,
+    when each hint was last shown (so `done` repeats one at most once a day)."""
     data = read_json(claims_store_path(paths))
     data = data if isinstance(data, dict) else {}
-    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}}
+    hints = data.get("hints") if isinstance(data.get("hints"), dict) else {}
+    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}, "hints": hints}
 
 
 def write_store(paths, store):
@@ -1160,6 +1236,9 @@ def cmd_status(args):
         "archived": len(load_archive(paths)["tasks"]),
         "archive_bytes": os.path.getsize(archive_path(paths)) if os.path.isfile(archive_path(paths)) else 0,
     }
+    hint = archive_hint(paths, data)
+    if hint:
+        result["suggest"] = {"archive": hint}
     if args.json:
         out(to_json(result))
         return
@@ -1182,6 +1261,8 @@ def cmd_status(args):
     out(f"file: {result['file_bytes'] // 1024} KB" + (f"; largest tasks: {largest}" if largest else ""))
     if result["archived"]:
         out(f"archive: {result['archived']} tasks, {result['archive_bytes'] // 1024} KB")
+    if hint:
+        out(hint["text"])
 
 
 # ==== tasks.py ====
@@ -1220,10 +1301,20 @@ def cmd_status_change(command):
                 store["completed"][task_id] = completion(paths, task_id, agent)
             unblocked = newly_ready(data, task_id) if command == "done" else []
             write_json_atomic(paths["tasks"], data)
+            # The archive hint after done, at most once a day per clone (CLI-5.2), so a loop doesn't repeat it
+            hint = archive_hint(paths, data) if command == "done" else None
+            today = now_iso()[:10]
+            if hint and store["hints"].get("archive") == today:
+                hint = None
+            if hint:
+                store["hints"]["archive"] = today
             write_store(paths, store)
         report_expired(expired)
         if args.json:
-            out(to_json({**task, "claim": claims.get(task_id), **({"unblocked": unblocked} if command == "done" else {})}))
+            extra = {"unblocked": unblocked} if command == "done" else {}
+            if hint:
+                extra["suggest"] = {"archive": hint}
+            out(to_json({**task, "claim": claims.get(task_id), **extra}))
             return
         # New lines only after the existing one (CLI-3.2)
         out(f"{task['id']}: {previous} -> {task['status']}")
@@ -1231,6 +1322,8 @@ def cmd_status_change(command):
             out(describe_task(data, task))
         if unblocked:
             out("Now ready: " + ", ".join(unblocked))
+        if hint:
+            out(hint["text"])
 
     return run
 
@@ -1897,48 +1990,6 @@ def cmd_init(args):
 # archive's: an archive that crashed halfway simply hasn't happened, an unarchive that crashed halfway is complete, and
 # no task is ever lost.
 
-DEFAULT_KEEP_DAYS = 14
-
-
-def keep_days(data, override=None):
-    if override is not None:
-        return override
-    settings = data.get("meta", {}).get("archive") if isinstance(data.get("meta"), dict) else None
-    days = settings.get("keep_days") if isinstance(settings, dict) else None
-    return days if isinstance(days, (int, float)) and not isinstance(days, bool) and days >= 0 else DEFAULT_KEEP_DAYS
-
-
-def finished_at(task):
-    for key in ("completed_at", "updated_at"):
-        try:
-            return parse_iso(task[key])
-        except (KeyError, TypeError, ValueError):
-            continue
-    return None
-
-
-def archivable(data, phases=None, before=None, keep=None):
-    """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days,
-    not in an open PR; only `phases` and those finished before `before`, when given."""
-    vocab = vocabulary(data)
-    recent = now() - timedelta(days=keep_days(data, keep))
-    result = []
-    for t in data["tasks"]:
-        if kind_of(vocab, t.get("status")) not in ("done", "skipped"):
-            continue
-        if phases and phase_of(t) not in phases:
-            continue
-        if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
-            continue  # still in an open PR
-        finished = finished_at(t)
-        if finished is not None and finished > recent:
-            continue
-        if before is not None and (finished is None or finished >= before):
-            continue
-        result.append(t)
-    return result
-
-
 def drop_duplicates(data, archive):
     """Tasks in both files keep their tasks.json copy (see the module docstring). Returns the dropped IDs."""
     ids = {t.get("id") for t in data["tasks"]}
@@ -2125,6 +2176,12 @@ def migrate(paths):
         old = legacy_version
         action = "current" if parse_version(old) >= parse_version(new) else "updated"
     result["dashboard"] = {"action": action, "from": old, "to": new}
+    try:
+        hint = archive_hint(paths, load_tasks(paths))
+    except AtmError:
+        hint = None  # the command the skill runs next reports the problem
+    if hint:
+        result["suggest"] = {"archive": hint}
     return result
 
 
@@ -2148,6 +2205,8 @@ def describe_migration(r, paths):
         lines.append(f"Dashboard updated from v{d['from'] or '?'} to v{d['to']}.")
     if not lines:
         lines.append("Nothing to migrate.")
+    if r.get("suggest"):
+        lines.append(r["suggest"]["archive"]["text"])
     return lines
 
 

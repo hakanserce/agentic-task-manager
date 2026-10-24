@@ -12,5 +12,6 @@
     <a class="footer-link" id="footer-github" href={pluginInfo.repository} target="_blank" rel="noopener noreferrer"
       >GitHub</a
     >
+    <button class="footer-link" id="footer-about" onclick={() => dashboard.openDialog('about')}>About</button>
   </nav>
 </footer>

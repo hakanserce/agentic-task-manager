@@ -13,6 +13,7 @@ import {
   type FilterGroup,
   type Filters,
 } from './filters';
+import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
@@ -78,6 +79,8 @@ export class DashboardState {
   viewKey = $state<string | null>(null);
 
   whatsNewOpen = $state(false);
+  /** The open About or Help dialog; mirrored in the URL hash ("#about") so it can be linked */
+  dialog = $state<DialogId | null>(parseDialogHash(location.hash));
   /** "New" on the version until this version's release notes are opened once (FR-1.5). Without working storage
    * it could never be cleared, so it is not shown at all. */
   releaseNotesUnseen = $state(releaseNotesUnseen());
@@ -162,6 +165,17 @@ export class DashboardState {
 
   closeWhatsNew() {
     this.whatsNewOpen = false;
+  }
+
+  openDialog(id: DialogId) {
+    this.dialog = id;
+    location.hash = withDialogHash(location.hash, id);
+  }
+
+  /** Closes the dialog without a new history entry, so Back doesn't reopen it. */
+  closeDialog() {
+    this.dialog = null;
+    history.replaceState(null, '', withDialogHash(location.hash, null));
   }
 
   selectTab(tab: ViewId) {

@@ -22,12 +22,18 @@ const record = (root) => {
     return null;
   }
 };
+/** Running, and not a zombie (an exited process nobody reaped yet, as happens in containers without an init). */
 const alive = (pid) => {
   try {
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
+  }
+  try {
+    const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf8');
+    return stat.slice(stat.lastIndexOf(')') + 1).trim()[0] !== 'Z';
+  } catch {
+    return true; // no /proc (macOS): orphans are reaped right away
   }
 };
 const portOf = (stdout) => Number(/localhost:(\d+)\//.exec(stdout)?.[1]);

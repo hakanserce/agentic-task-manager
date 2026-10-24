@@ -509,6 +509,18 @@ def live_server(task_dir):
     return None
 
 
+def is_zombie(pid):
+    """A process that has exited but wasn't reaped yet (common in containers without an init process). Linux only;
+    elsewhere an orphaned process is reaped by the system right away."""
+    try:
+        with open(f"/proc/{pid}/stat", encoding="utf-8") as f:
+            stat = f.read()
+    except OSError:
+        return False
+    fields = stat[stat.rfind(")") + 1 :].split()
+    return bool(fields) and fields[0] == "Z"
+
+
 def pid_alive(pid):
     try:
         os.kill(pid, 0)
@@ -516,7 +528,7 @@ def pid_alive(pid):
         return False
     except PermissionError:
         return True
-    return True
+    return not is_zombie(pid)
 
 
 def open_browser(url):

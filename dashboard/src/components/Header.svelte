@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MODE_LABELS, MODE_PREFS } from '../lib/appearance';
+  import { MODE_LABELS, MODE_PREFS, THEMES } from '../lib/appearance';
   import { compareVersions } from '../lib/changelog';
   import { getPref, setPref, storageAvailable } from '../lib/prefs';
   import { dashboardVersion } from '../lib/release-notes';
@@ -32,6 +32,15 @@
       >v{version}{#if unseen}<span class="version-new">new</span>{/if}</button
     >
   {/if}
+  <select
+    class="theme-select"
+    id="theme-select"
+    aria-label="Theme"
+    value={dashboard.theme}
+    onchange={(e) => dashboard.setTheme(e.currentTarget.value)}
+  >
+    {#each THEMES as theme (theme.id)}<option value={theme.id}>{theme.name}</option>{/each}
+  </select>
   <div class="appearance" role="group" aria-label="Color mode" id="mode-control">
     {#each MODE_PREFS as pref (pref)}
       <button

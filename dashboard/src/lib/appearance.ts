@@ -13,7 +13,11 @@ export interface ThemeInfo {
 }
 
 /** Built-in themes, in picker order. Each has src/themes/<id>.css with light and dark token sets. */
-export const THEMES: ThemeInfo[] = [{ id: 'default', name: 'Default' }];
+export const THEMES: ThemeInfo[] = [
+  { id: 'default', name: 'Default' },
+  { id: 'nord', name: 'Nord' },
+  { id: 'solarized', name: 'Solarized' },
+];
 export const DEFAULT_THEME = 'default';
 
 export function isModePref(value: unknown): value is ModePref {

@@ -1,0 +1,80 @@
+/* Nord theme. Palette: https://www.nordtheme.com (Polar Night, Snow Storm, Frost, Aurora). Nord has no pink; #c8879f
+   sits between Aurora red and purple.
+   Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the background. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - red: #bf616a -> #d18d94 (label contrast)
+   - purple: #b48ead -> #b995b2 (label contrast)
+   - pink: #c8879f -> #cb8ea5 (label contrast)
+   - orange: #d08770 -> #d38e79 (label contrast)
+   - burndown series #4a8fdb/#d6633a: Frost/Aurora read as gray to the chart validator (chroma floor) */
+:root[data-theme='nord'] {
+  color-scheme: dark;
+  --bg: #2e3440;
+  --surface: #3b4252;
+  --surface2: #434c5e;
+  --border: #4c566a;
+  --text: #eceff4;
+  --text-muted: #d8dee9;
+  --accent: #88c0d0;
+  --green: #a3be8c;
+  --yellow: #ebcb8b;
+  --red: #d18d94;
+  --purple: #b995b2;
+  --pink: #cb8ea5;
+  --orange: #d38e79;
+  --cyan: #8fbcbb;
+  --on-accent: #2e3440;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #485251;
+  --node-bugfix: #524852;
+  --node-test: #4d4959;
+  --node-infra: #52484d;
+  --node-docs: #43525b;
+  --node-refactor: #585550;
+  --node-polish: #514856;
+  --series-remaining: #4a8fdb;
+  --series-scope: #d6633a;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - accent: #5e81ac -> #5879a2 (label contrast)
+   - green: #a3be8c -> #6c7d5c (label contrast)
+   - yellow: #ebcb8b -> #887651 (label contrast)
+   - red: #bf616a -> #b45b64 (label contrast)
+   - purple: #b48ead -> #8c6f87 (label contrast)
+   - pink: #c8879f -> #9c697c (label contrast)
+   - orange: #d08770 -> #a26957 (label contrast)
+   - cyan: #8fbcbb -> #5e7c7b (label contrast)
+   - on-accent: #eceff4 -> #040405 (text on accent)
+   - burndown series #3d6fb0/#c0582f: Frost/Aurora read as gray to the chart validator (chroma floor) */
+:root[data-theme='nord'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #eceff4;
+  --surface: #e5e9f0;
+  --surface2: #d8dee9;
+  --border: #c5cdd9;
+  --text: #2e3440;
+  --text-muted: #4c566a;
+  --accent: #5879a2;
+  --green: #6c7d5c;
+  --yellow: #887651;
+  --red: #b45b64;
+  --purple: #8c6f87;
+  --pink: #9c697c;
+  --orange: #a26957;
+  --cyan: #5e7c7b;
+  --on-accent: #040405;
+  --overlay: rgba(46, 52, 64, 0.4);
+  --node-feature: #d8dddc;
+  --node-bugfix: #e3d7dd;
+  --node-test: #dddbe3;
+  --node-infra: #e0dadb;
+  --node-docs: #d5dde1;
+  --node-refactor: #dcdcda;
+  --node-polish: #dfdae1;
+  --series-remaining: #3d6fb0;
+  --series-scope: #c0582f;
+}

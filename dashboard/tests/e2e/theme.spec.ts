@@ -55,3 +55,35 @@ test.describe('light and dark mode', () => {
     await expect(html(page)).toHaveAttribute('data-theme', 'default');
   });
 });
+
+test.describe('themes', () => {
+  const tokens = (page: Page) =>
+    page.evaluate(() => {
+      const s = getComputedStyle(document.documentElement);
+      return { bg: s.getPropertyValue('--bg').trim(), accent: s.getPropertyValue('--accent').trim() };
+    });
+
+  test('picking a theme changes the colours, per mode, and is remembered', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#theme-select option')).toHaveText(['Default', 'Nord', 'Solarized']);
+    const before = await tokens(page);
+    await page.locator('#theme-select').selectOption('nord');
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord');
+    expect(await tokens(page)).toEqual({ bg: '#2e3440', accent: '#88c0d0' });
+    expect(await tokens(page)).not.toEqual(before);
+    await page.locator('.mode-btn[data-mode="light"]').click();
+    expect((await tokens(page)).bg).toBe('#eceff4');
+    await page.reload();
+    await expect(page.locator('#theme-select')).toHaveValue('nord');
+    await expect(html(page)).toHaveAttribute('data-theme', 'nord');
+    await expect(html(page)).toHaveAttribute('data-mode', 'light');
+  });
+
+  test('an unknown stored theme falls back to Default', async ({ page, tasksServer }) => {
+    await page.addInitScript(() => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: 'vaporwave' })));
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#theme-select')).toHaveValue('default');
+    await expect(html(page)).toHaveAttribute('data-theme', 'default');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(DARK_BG);
+  });
+});

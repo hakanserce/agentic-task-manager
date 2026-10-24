@@ -236,9 +236,17 @@ h1 {
   margin: 0 8px;
 }
 
-/* Light/dark mode switch, at the right end of the title row */
-.appearance {
+/* Theme picker and light/dark mode switch, at the right end of the title row */
+.theme-select {
   margin-left: auto;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 3px 6px;
+}
+.appearance {
   display: inline-flex;
   border: 1px solid var(--border);
   border-radius: 8px;

@@ -2230,6 +2230,29 @@
       ],
       "created_at": "2026-10-23T16:41:18Z",
       "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-096",
+      "name": "atm helper: modules for development, one file for the plugin",
+      "phase": 12,
+      "type": "refactor",
+      "description": "plugin/scripts/atm.py is ~1,200 lines in one file (review feedback: fine for 0.11.0, but it must become manageable). Goal: develop it as several modules (paths/migrate, server, lock, tasks/claims, merge driver, CLI), ship ONE file in the plugin. 1) Write a short proposal in docs/ comparing: (a) source modules in a dev-only folder (e.g. helper/atm/*.py) concatenated by a small build script into a single readable plugin/scripts/atm.py (strip intra-package imports, keep module banners); (b) the stdlib zipapp (python3 -m zipapp → atm.pyz; one file but not readable as text, and users read what a plugin runs); (c) shipping the package directory itself (several files; rejected unless the single-file requirement is dropped). Recommend one (expected: a), and get it approved before step 2. 2) Implement: move the code into modules without behaviour changes (tests/scripts must pass unchanged), add the build (`npm run build:helper` or a Python script; also run by `npm run verify` and the pre-commit hook when helper sources change), keep plugin/scripts/atm.py a committed build artifact with a 'generated, don't edit' header, and add a CI freshness check like the dashboard's (rebuild, git diff --exit-code). Unit-test the modules directly where useful. Update CLAUDE.md.",
+      "requirements": [
+        "NFR-2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/helper-structure-proposal.md",
+        "helper/",
+        "plugin/scripts/atm.py",
+        ".githooks/pre-commit",
+        ".github/workflows/ci.yml",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-24T00:13:54Z",
+      "updated_at": "2026-10-24T00:13:54Z"
     }
   ]
 }

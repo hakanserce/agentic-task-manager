@@ -72,7 +72,7 @@ describe('merge driver (real git merges)', () => {
       );
       assert.equal(
         fs.readFileSync(path.join(root, '.agentic-task-manager/.gitattributes'), 'utf8'),
-        'tasks.json merge=atm\n',
+        "# 'atm' is defined in each clone's git config (merge.atm.driver), registered by the atm plugin on every run.\n# Without it, git merges tasks.json line by line as usual.\ntasks.json merge=atm\n",
       );
       assert.match(runAtm(['init'], root).stdout, /already set/);
     });

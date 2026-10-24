@@ -1023,6 +1023,13 @@ def cmd_claims(args):
 # Registered as a git merge driver (`tasks.json merge=atm`), so branches that changed tasks.json merge task by task
 # instead of line by line. Design: docs/parallel-agents-design.md, option E and layer L3.
 
+# What `atm` means is not in this file: git config can't be committed, so each clone registers the driver in its own
+# .git/config (merge.atm.driver), which the atm skills do on every run. A clone without it merges tasks.json normally.
+GITATTRIBUTES_LINES = (
+    "# 'atm' is defined in each clone's git config (merge.atm.driver), registered by the atm plugin on every run.\n"
+    "# Without it, git merges tasks.json line by line as usual.\n"
+    "tasks.json merge=atm\n"
+)
 PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure")
 STATUS_RANK = {"todo": 0, "in_progress": 1, "blocked": 1, "done": 2, "skipped": 2}
 MISSING = object()
@@ -1183,7 +1190,7 @@ def ensure_merge_driver(paths):
         return False
     os.makedirs(paths["dir"], exist_ok=True)
     with open(attributes, "w", encoding="utf-8") as f:
-        f.write(text + ("" if not text or text.endswith("\n") else "\n") + "tasks.json merge=atm\n")
+        f.write(text + ("" if not text or text.endswith("\n") else "\n") + GITATTRIBUTES_LINES)
     git(["add", "--", rel(root, attributes)], root)
     return True
 

@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { expect, openDashboard, test } from './helpers';
 
-// The version chip is masked: it shows the version (and a "new" marker) and would otherwise change every page
-// baseline on each release; whats-new.spec covers it. It also gets a fixed width for the screenshot, so a longer
-// version number (0.9.0 -> 0.10.0) doesn't move the mask's edge.
+// The version chip and the footer's version are masked: they show the version (and a "new" marker) and would
+// otherwise change every page baseline on each release; whats-new.spec and footer.spec cover them. They also get a
+// fixed width for the screenshot, so a longer version number (0.9.0 -> 0.10.0) doesn't move the mask's edge.
 // The auto-refresh interval box is masked too (when its menu is open): headless Chromium places the text inside a
 // number input at a slightly different sub-pixel position from run to run. refresh.spec covers its value.
 // Baselines are per platform (-darwin locally, -linux in CI). Regenerate deliberately after an intended UI change:
@@ -19,7 +19,7 @@ for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
     test('full page', async ({ page }) => {
       await expect(page).toHaveScreenshot(`${fixture}-page.png`, {
         fullPage: true,
-        mask: [page.locator('#version-chip'), page.locator('#auto-refresh-interval')],
+        mask: [page.locator('#version-chip'), page.locator('#footer-version'), page.locator('#auto-refresh-interval')],
         stylePath: path.join(import.meta.dirname, 'screenshot.css'),
       });
     });
@@ -103,7 +103,7 @@ test.describe('visual: light mode', () => {
     await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
     await expect(page).toHaveScreenshot('light-standard-page.png', {
       fullPage: true,
-      mask: [page.locator('#version-chip'), page.locator('#auto-refresh-interval')],
+      mask: [page.locator('#version-chip'), page.locator('#footer-version'), page.locator('#auto-refresh-interval')],
       stylePath: path.join(import.meta.dirname, 'screenshot.css'),
     });
   });

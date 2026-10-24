@@ -2357,24 +2357,28 @@
       "phase": 13,
       "type": "feature",
       "priority": "P0",
-      "description": "See docs/v4-requirements.md (FR-4.5). A src/lib/vocab.ts that resolves the effective vocabularies from meta (FR-4.2 defaults, in_review included) and exposes kind lookups. Labels, filter values and Kanban columns follow the vocabularies in order; colours and icons come from the kind (add the review kind's colour and icon to every theme). Phase names show where phases are labelled. Unit tests for vocab.ts and the Kanban columns with a custom vocabulary.",
+      "description": "See docs/v4-requirements.md (FR-4.5). A src/lib/vocab.ts that resolves the effective vocabularies from meta (FR-4.2 defaults, in_review included) and exposes kind lookups. Labels, filter values and Kanban columns follow the vocabularies in order; colours and icons come from the kind (add the review kind's colour and icon to every theme). Phase names show where phases are labelled. Unit tests for vocab.ts and the Kanban columns with a custom vocabulary. Add the About dialog's vocabularies section (FR-2.2): statuses with kinds, phases, types, priorities.",
       "requirements": [
         "FR-4.1",
         "FR-4.2",
         "FR-4.5",
         "FR-5.4",
-        "NFR-3"
+        "NFR-3",
+        "FR-2.2"
       ],
       "use_cases": [],
       "status": "todo",
-      "dependencies": [],
+      "dependencies": [
+        "T-106"
+      ],
       "files": [
         "dashboard/src/lib/types.ts",
         "dashboard/src/lib/vocab.ts",
         "dashboard/src/lib/theme.ts",
         "dashboard/src/lib/kanban.ts",
         "dashboard/src/lib/filters.ts",
-        "dashboard/tests/unit/"
+        "dashboard/tests/unit/",
+        "dashboard/src/components/AboutDialog.svelte"
       ],
       "created_at": "2026-10-24T07:23:07Z",
       "updated_at": "2026-10-24T07:23:07Z"
@@ -2469,7 +2473,7 @@
         "FR-1.3"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Footer.svelte",
@@ -2479,7 +2483,10 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T07:23:07Z"
+      "updated_at": "2026-10-24T07:42:32Z",
+      "started_at": "2026-10-24T07:33:20Z",
+      "agent": "claude:8860b42b",
+      "completed_at": "2026-10-24T07:42:32Z"
     },
     {
       "id": "T-105",
@@ -2513,7 +2520,7 @@
       "phase": 13,
       "type": "feature",
       "priority": "P1",
-      "description": "See docs/v4-requirements.md (FR-2.2, FR-2.3). Name, description, version, author, licence, repository link (from plugin.json at build time), and this project's vocabularies (statuses with kinds, phases, types, priorities) from vocab.ts. Same dialog behaviour as Help; #about opens it. Component tests.",
+      "description": "See docs/v4-requirements.md (FR-2.2, FR-2.3). Name, description, version, author, licence, repository link (from plugin.json at build time). The project's vocabularies are added by T-100. Same dialog behaviour as Help; #about opens it. Component tests.",
       "requirements": [
         "FR-2.2",
         "FR-2.3"
@@ -2521,8 +2528,7 @@
       "use_cases": [],
       "status": "todo",
       "dependencies": [
-        "T-104",
-        "T-100"
+        "T-104"
       ],
       "files": [
         "dashboard/src/components/AboutDialog.svelte",

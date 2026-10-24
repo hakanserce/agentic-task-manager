@@ -49,13 +49,16 @@ test.describe('graph sizing', () => {
     await expect(minimap(page)).toBeVisible();
   });
 
-  test('the graph fills the window below the top bar', async ({ page, tasksServer }) => {
+  test('the graph fills the window between the top bar and the footer', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     const box = (await page.locator('#graph-container').boundingBox())!;
+    const footer = (await page.locator('#site-footer').boundingBox())!;
     const viewport = page.viewportSize()!;
-    // The panel ends at the bottom of the window, less the page padding (24px) and the panel border
-    expect(box.y + box.height).toBeGreaterThan(viewport.height - 30);
-    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+    // The footer ends at the bottom of the window; the panel ends above the footer, less its margin (16px) and the
+    // panel border
+    expect(footer.y + footer.height).toBeCloseTo(viewport.height, 0);
+    expect(box.y + box.height).toBeGreaterThan(footer.y - 20);
+    expect(box.y + box.height).toBeLessThanOrEqual(footer.y);
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(viewport.height);
   });
 

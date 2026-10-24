@@ -1,6 +1,8 @@
 import { loadClaims, type ClaimMap } from './claims';
 import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks } from './load';
-import { getPref, setPref } from './prefs';
+import { compareVersions } from './changelog';
+import { getPref, setPref, storageAvailable } from './prefs';
+import { dashboardVersion } from './release-notes';
 import { isModePref, knownTheme, resolveMode, type Mode, type ModePref } from './appearance';
 import {
   emptyFilters,
@@ -18,6 +20,12 @@ import type { Task } from './types';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
+
+function releaseNotesUnseen(): boolean {
+  const version = dashboardVersion();
+  const lastSeen = getPref('lastSeenVersion', '');
+  return !!version && storageAvailable() && (lastSeen === '' || compareVersions(version, lastSeen) > 0);
+}
 
 export class DashboardState {
   tasks = $state.raw<Task[]>([]);
@@ -70,6 +78,9 @@ export class DashboardState {
   viewKey = $state<string | null>(null);
 
   whatsNewOpen = $state(false);
+  /** "New" on the version until this version's release notes are opened once (FR-1.5). Without working storage
+   * it could never be cleared, so it is not shown at all. */
+  releaseNotesUnseen = $state(releaseNotesUnseen());
 
   // Light/dark mode and theme, per browser (FR-2.3, FR-3.2). "System" follows the OS setting, live.
   modePref = $state<ModePref>(
@@ -144,6 +155,9 @@ export class DashboardState {
 
   openWhatsNew() {
     this.whatsNewOpen = true;
+    const version = dashboardVersion();
+    if (version) setPref('lastSeenVersion', version);
+    this.releaseNotesUnseen = false;
   }
 
   closeWhatsNew() {

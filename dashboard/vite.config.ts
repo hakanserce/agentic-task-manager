@@ -5,6 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { changelogModule } from './build/changelog.ts';
 import { devData } from './build/dev-data.ts';
 import { injectVersion } from './build/inject-version.ts';
+import { pluginInfoModule } from './build/plugin-info.ts';
 import { renameHtmlOutput } from './build/rename-output.ts';
 
 const pluginJson = fileURLToPath(new URL('../plugin/.claude-plugin/plugin.json', import.meta.url));
@@ -17,6 +18,7 @@ export default defineConfig({
     // shared dashboard state; a reload restores everything from storage anyway.
     svelte({ compilerOptions: { hmr: false } }),
     changelogModule(changelog),
+    pluginInfoModule(pluginJson, changelog),
     devData(ownTasks),
     viteSingleFile(),
     injectVersion(pluginJson),

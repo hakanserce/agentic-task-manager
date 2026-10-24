@@ -7,6 +7,7 @@
   import LoadError from './components/LoadError.svelte';
   import DetailPanel from './components/DetailPanel.svelte';
   import WhatsNew from './components/WhatsNew.svelte';
+  import Footer from './components/Footer.svelte';
 
   onMount(() => {
     dashboard.load();
@@ -25,6 +26,7 @@
 
 <Header />
 <ViewPanel />
+<Footer />
 <LoadError />
 <DetailPanel />
 <WhatsNew />

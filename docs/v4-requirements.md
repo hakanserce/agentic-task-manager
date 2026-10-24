@@ -41,7 +41,7 @@ Priorities: **P1** must ship in this round; **P2** if cheap, otherwise later.
 
 | ID | P | Requirement |
 |---|---|---|
-| FR-1.1 | P1 | Every view of the dashboard ends with a footer: `© <year> Hakan Serce · MIT License`, the version (opens What's new, like the version chip), and links to **GitHub** (`https://github.com/hakanserce/agentic-task-manager`, new tab), **Help** and **About**. The author, licence and repository URL come from `plugin/.claude-plugin/plugin.json` at build time; the year is the build year. |
+| FR-1.1 | P1 | Every view of the dashboard ends with a footer: `© <year> Hakan Serce · MIT License`, the version (opens What's new, like the version chip), and links to **GitHub** (`https://github.com/hakanserce/agentic-task-manager`, new tab), **Help** and **About**. The author, licence and repository URL come from `plugin/.claude-plugin/plugin.json` at build time; the year is the year of the newest release in the changelog, so rebuilding the same sources gives the same file. The footer stays pinned at the bottom of the window while the page scrolls. |
 | FR-1.2 | P1 | The footer uses theme tokens and works in every theme and mode, at narrow widths too (links wrap; no horizontal scroll). |
 | FR-1.3 | P1 | The GitHub link is the dashboard's only link off `localhost`, and it is never fetched: e2e tests keep failing on any non-localhost request. |
 

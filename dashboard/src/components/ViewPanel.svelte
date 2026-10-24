@@ -52,8 +52,10 @@
         >
       {/each}
     </div>
-    <span class="phase-badge" style="background:var(--accent)20;color:var(--accent)" id="graph-badge"
-      >{dashboard.loaded ? dashboard.filtered.length + ' tasks' : 'interactive'}</span
+    <span
+      class="phase-badge"
+      style="background:color-mix(in srgb, var(--accent) 12.5%, transparent);color:var(--accent)"
+      id="graph-badge">{dashboard.loaded ? dashboard.filtered.length + ' tasks' : 'interactive'}</span
     >
   </div>
   <div class="view-panels" style:display={dashboard.graphCollapsed ? 'none' : undefined}>

@@ -37,8 +37,11 @@
     {#each lanes as lane (lane.phase)}
       <div class="kanban-lane" data-phase={lane.phase}>
         <div class="kanban-lane-header">
-          <span class="phase-badge" style="background:{phaseColor(lane.phase)}20;color:{phaseColor(lane.phase)}"
-            >Phase {lane.phase}</span
+          <span
+            class="phase-badge"
+            style="background:color-mix(in srgb, {phaseColor(lane.phase)} 12.5%, transparent);color:{phaseColor(
+              lane.phase,
+            )}">Phase {lane.phase}</span
           >
           <span class="kanban-lane-progress">{lane.done}/{lane.total} done</span>
         </div>

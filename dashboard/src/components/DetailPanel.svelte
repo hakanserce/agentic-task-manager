@@ -29,7 +29,9 @@
       <div class="task-meta" style="margin-bottom:16px">
         <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
         <span class="badge" style="background:{ss.bg};color:{ss.color}">{statusLabel(task.status)}</span>
-        <span class="phase-badge" style="background:{pc}20;color:{pc}">Phase {task.phase}</span>
+        <span class="phase-badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
+          >Phase {task.phase}</span
+        >
       </div>
       <div class="detail-section">
         <div class="label">Description</div>

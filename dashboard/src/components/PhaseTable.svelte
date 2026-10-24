@@ -55,7 +55,11 @@
         onclick={() => onselect?.(row.phase)}
         onkeydown={(e) => onRowKeydown(e, row.phase)}
       >
-        <td><span class="phase-badge" style="background:{color}20;color:{color}">Phase {row.phase}</span></td>
+        <td
+          ><span class="phase-badge" style="background:color-mix(in srgb, {color} 12.5%, transparent);color:{color}"
+            >Phase {row.phase}</span
+          ></td
+        >
         <td class="num">{row.done}/{row.total}</td>
         <td class="phase-table-progress">
           <div class="progress-bar">

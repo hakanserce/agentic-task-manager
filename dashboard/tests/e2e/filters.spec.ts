@@ -12,7 +12,8 @@ test.describe('filters', () => {
     expect(await labels('phase')).toEqual(['All', '0', '1', '2']);
     expect(await labels('type')).toEqual(['All', 'Feature', 'Bugfix', 'Test', 'Infra', 'Docs', 'Refactor', 'Polish']);
     expect(await labels('status')).toEqual(['All', 'To Do', 'In Progress', 'Blocked', 'Done', 'Skipped']);
-    await expect(page.locator('.filter-btn.active')).toHaveCount(3);
+    expect(await labels('priority')).toEqual(['All', 'P2 Medium']);
+    await expect(page.locator('.filter-btn.active')).toHaveCount(4);
   });
 
   test('selecting a value filters cards and updates the count', async ({ page }) => {
@@ -146,11 +147,11 @@ test.describe('compact filter line', () => {
     const toggle = page.locator('#filters-toggle');
     await expect(page.locator('#filter-panel')).toHaveCount(0);
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('#active-filters')).toHaveText('All phases, types and statuses');
+    await expect(page.locator('#active-filters')).toHaveText('No filters');
 
     await openFilters(page);
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.filter-group')).toHaveText([/^Phase/, /^Type/, /^Status/]);
+    await expect(page.locator('.filter-group')).toHaveText([/^Phase/, /^Type/, /^Status/, /^Priority/]);
     await filterButton(page, 'phase', '1').click();
     await filterButton(page, 'phase', '2').click();
     await filterButton(page, 'type', 'test').click();

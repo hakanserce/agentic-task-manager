@@ -105,7 +105,7 @@ test.describe('saved view', () => {
     await page.locator('#task-search').fill('editor');
     await page.locator('#tab-kanban').click();
     await page.locator('#reset-view').click();
-    await expect(page.locator('.filter-btn.active')).toHaveCount(3);
+    await expect(page.locator('.filter-btn.active')).toHaveCount(4);
     await expect(page.locator('#task-search')).toHaveValue('');
     await expect(page.locator('#tab-graph')).toHaveAttribute('aria-selected', 'true');
     await page.goto('tasks-dashboard.html');

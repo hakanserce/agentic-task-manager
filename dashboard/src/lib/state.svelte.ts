@@ -12,6 +12,7 @@ import {
   toggleFilter,
   type FilterGroup,
   type Filters,
+  type ListSort,
 } from './filters';
 import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
@@ -35,6 +36,10 @@ export class DashboardState {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   taskMap = $state.raw<ReadonlyMap<string, Task>>(new Map());
   projectName = $state(DEFAULT_PROJECT_NAME);
+  /** tasks.json's meta, as loaded */
+  meta = $state.raw<LoadedTasks['meta']>(undefined);
+  /** The project's vocabularies (statuses with kinds, types, priorities, phase names), defaults where meta has none */
+  vocab = $state.raw<Vocabulary>(DEFAULT_VOCABULARY);
   /** Live claims by task ID (who works on what), from the optional claims.json; empty without it. */
   // Replaced on every (re)load, never mutated (like taskMap)
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -52,7 +57,7 @@ export class DashboardState {
   query = $state('');
   /** Tasks matching the search, before the phase/type/status filters (the filter counts are based on these) */
   searched = $derived(searchTasks(this.tasks, this.query));
-  filtered = $derived(filterTasks(this.searched, this.filters));
+  filtered = $derived(filterTasks(this.searched, this.filters, this.vocab));
 
   /** Task shown in the detail panel; the panel keeps its last content while closed. */
   detailId = $state<string | null>(null);
@@ -64,6 +69,8 @@ export class DashboardState {
   kanbanShowSkipped = $state(false);
   /** The Kanban done column shows every card, not just the most recent */
   kanbanShowAllDone = $state(false);
+  /** The List tab's order: as in the file, or by priority */
+  listSort = $state<ListSort>('file');
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
@@ -187,7 +194,12 @@ export class DashboardState {
   /** The current view, as saved per project. */
   currentView(): SavedView {
     return {
-      filters: { phase: [...this.filters.phase], type: [...this.filters.type], status: [...this.filters.status] },
+      filters: {
+        phase: [...this.filters.phase],
+        type: [...this.filters.type],
+        status: [...this.filters.status],
+        priority: [...this.filters.priority],
+      },
       query: this.query,
       tab: this.tab,
       kanban: {
@@ -195,6 +207,7 @@ export class DashboardState {
         showSkipped: this.kanbanShowSkipped,
         showAllDone: this.kanbanShowAllDone,
       },
+      listSort: this.listSort,
       progressPhase: this.progressPhase,
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
@@ -218,7 +231,7 @@ export class DashboardState {
   /** After the first load: bring back this project's view. A #view= in the URL wins over the saved tab. */
   private restoreView() {
     this.viewKey = projectKey(this.meta);
-    this.applyView(sanitizeView(readView(this.viewKey), this.tasks), !hasViewHash(location.hash));
+    this.applyView(sanitizeView(readView(this.viewKey), this.tasks, this.vocab), !hasViewHash(location.hash));
   }
 
   private applyView(view: SavedView, includeTab: boolean) {
@@ -227,6 +240,7 @@ export class DashboardState {
     this.kanbanGroupByPhase = view.kanban.groupByPhase;
     this.kanbanShowSkipped = view.kanban.showSkipped;
     this.kanbanShowAllDone = view.kanban.showAllDone;
+    this.listSort = view.listSort;
     this.progressPhase = view.progressPhase;
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
@@ -238,11 +252,6 @@ export class DashboardState {
       this.tab = view.tab;
     }
   }
-
-  /** tasks.json's meta, as loaded */
-  meta = $state.raw<LoadedTasks['meta']>(undefined);
-  /** The project's vocabularies (statuses with kinds, types, priorities, phase names), defaults where meta has none */
-  vocab = $state.raw<Vocabulary>(DEFAULT_VOCABULARY);
 
   private apply(loaded: LoadedTasks, claims: ClaimMap) {
     this.meta = loaded.meta;

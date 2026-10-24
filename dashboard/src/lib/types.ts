@@ -12,6 +12,8 @@ export interface Task {
   type: TaskType;
   description: string;
   status: Status;
+  /** A priority ID from the vocabulary ("P0"…"P3" by default); missing means the default priority */
+  priority?: string;
   dependencies?: string[];
   requirements?: string[];
   use_cases?: string[];

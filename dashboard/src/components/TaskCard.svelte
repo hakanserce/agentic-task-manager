@@ -5,6 +5,7 @@
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import type { Task } from '../lib/types';
   import { kindOf, phaseLabel, statusLabel, typeLabel } from '../lib/vocab';
+  import PriorityBadge from './PriorityBadge.svelte';
 
   let { task }: { task: Task } = $props();
 
@@ -31,6 +32,7 @@
         >{task.type}</span
       >
       <span class="badge" style="background:{ss.bg};color:{ss.color}">{statusLabel(dashboard.vocab, task.status)}</span>
+      <PriorityBadge {task} />
       {#if deps.length}
         <span class="deps-label">needs:</span>
         {#each deps as dep (dep)}

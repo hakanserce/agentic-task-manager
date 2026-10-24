@@ -122,7 +122,7 @@ export async function openMenu(page: Page, button: string) {
   if ((await b.getAttribute('aria-expanded')) !== 'true') await b.click();
 }
 
-export function filterButton(page: Page, group: 'phase' | 'type' | 'status', value: string) {
+export function filterButton(page: Page, group: 'phase' | 'type' | 'status' | 'priority', value: string) {
   return page.locator(`.filter-btn[data-filter="${group}"][data-value="${value}"]`);
 }
 

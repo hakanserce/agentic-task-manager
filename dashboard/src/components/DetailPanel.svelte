@@ -2,6 +2,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
+  import PriorityBadge from './PriorityBadge.svelte';
 
   const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
   const claim = $derived(
@@ -38,6 +39,7 @@
         <span class="phase-badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
           >{phaseLabel(dashboard.vocab, task.phase)}</span
         >
+        <PriorityBadge {task} />
       </div>
       <div class="detail-section">
         <div class="label">Description</div>

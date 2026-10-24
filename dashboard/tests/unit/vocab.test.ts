@@ -7,6 +7,9 @@ import {
   humanize,
   kindOf,
   phaseLabel,
+  priorityLabel,
+  priorityOf,
+  priorityRank,
   resolveVocabulary,
   statusLabel,
   statusRank,
@@ -104,6 +107,15 @@ describe('lookups', () => {
     expect(phaseLabel(v, 1)).toBe('Phase 1 · Foundations');
     expect(phaseLabel(v, 2)).toBe('Phase 2');
     expect(humanize('in_progress')).toBe('In progress');
+  });
+
+  it('resolves priorities: missing or unknown ones are the default, ranked like it', () => {
+    expect(priorityOf(v, { priority: 'must' })).toBe('must');
+    expect(priorityOf(v, {})).toBe('should');
+    expect(priorityOf(v, { priority: 'P0' })).toBe('should');
+    expect([priorityRank(v, 'must'), priorityRank(v, 'could'), priorityRank(v, 'nope')]).toEqual([0, 2, 1]);
+    expect(priorityLabel(v, 'could')).toBe('Could');
+    expect(priorityLabel(v, 'P0')).toBe('P0');
   });
 
   it("ranks statuses in the vocabulary's order, unknown ones last", () => {

@@ -2,12 +2,13 @@
 // Per project, not per browser: dashboards of different projects served from the same origin (localhost:8000)
 // share localStorage, so each project's view lives under its own key. Theme, mode, auto-refresh and the last-seen
 // version stay per browser (prefs.ts).
-import type { FilterGroup } from './filters';
+import type { FilterGroup, ListSort } from './filters';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
 import { VIEWS, type ViewId } from './tabs';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, priorityOf, type Vocabulary } from './vocab';
 
 export const VIEW_KEY_PREFIX = 'atm-dashboard:view:';
 
@@ -17,6 +18,8 @@ export interface SavedView {
   query: string;
   tab: ViewId;
   kanban: { groupByPhase: boolean; showSkipped: boolean; showAllDone: boolean };
+  /** The List tab's order */
+  listSort: ListSort;
   /** The phase the Progress tab focuses on, or null for all phases */
   progressPhase: number | null;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
@@ -45,11 +48,12 @@ export function projectKey(meta: ProjectMeta | undefined): string {
 
 export function defaultView(): SavedView {
   return {
-    filters: { phase: [], type: [], status: [] },
+    filters: { phase: [], type: [], status: [], priority: [] },
     query: '',
     tab: 'graph',
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
+    listSort: 'file',
     progressPhase: null,
     graphFiltered: 'hide',
     graph: null,
@@ -93,7 +97,12 @@ export function readView(key: string): SavedView {
   const filters = (stored.filters ?? {}) as Record<string, unknown>;
   const kanban = (stored.kanban ?? {}) as Record<string, unknown>;
   return {
-    filters: { phase: strings(filters.phase), type: strings(filters.type), status: strings(filters.status) },
+    filters: {
+      phase: strings(filters.phase),
+      type: strings(filters.type),
+      status: strings(filters.status),
+      priority: strings(filters.priority),
+    },
     query: typeof stored.query === 'string' ? stored.query : '',
     tab: (VIEWS as readonly unknown[]).includes(stored.tab) ? (stored.tab as ViewId) : view.tab,
     kanban: {
@@ -101,6 +110,7 @@ export function readView(key: string): SavedView {
       showSkipped: bool(kanban.showSkipped, view.kanban.showSkipped),
       showAllDone: bool(kanban.showAllDone, view.kanban.showAllDone),
     },
+    listSort: stored.listSort === 'priority' ? 'priority' : 'file',
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
@@ -118,17 +128,21 @@ export function clearView(key: string): void {
   writeStored(key, null);
 }
 
-/** Drop what the tasks no longer have: filter values for removed phases, types or statuses, a removed phase. */
-export function sanitizeView(view: SavedView, tasks: Task[]): SavedView {
+/**
+ * Drop what the tasks no longer have: filter values for removed phases, types, statuses or priorities, a removed
+ * phase.
+ */
+export function sanitizeView(view: SavedView, tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): SavedView {
   const present: Record<FilterGroup, Set<string>> = {
     phase: new Set(tasks.map((t) => String(t.phase))),
     type: new Set(tasks.map((t) => t.type)),
     status: new Set(tasks.map((t) => t.status)),
+    priority: new Set(tasks.map((t) => priorityOf(vocab, t))),
   };
   const keep = (group: FilterGroup) => view.filters[group].filter((v) => present[group].has(v));
   return {
     ...view,
-    filters: { phase: keep('phase'), type: keep('type'), status: keep('status') },
+    filters: { phase: keep('phase'), type: keep('type'), status: keep('status'), priority: keep('priority') },
     progressPhase:
       view.progressPhase !== null && present.phase.has(String(view.progressPhase)) ? view.progressPhase : null,
   };

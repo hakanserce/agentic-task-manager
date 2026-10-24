@@ -1,8 +1,17 @@
 import type { Task } from './types';
-import { DEFAULT_VOCABULARY, statusLabel, statusRank, typeLabel, type Vocabulary } from './vocab';
+import {
+  DEFAULT_VOCABULARY,
+  priorityLabel,
+  priorityOf,
+  priorityRank,
+  statusLabel,
+  statusRank,
+  typeLabel,
+  type Vocabulary,
+} from './vocab';
 
-export type FilterGroup = 'phase' | 'type' | 'status';
-export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status'];
+export type FilterGroup = 'phase' | 'type' | 'status' | 'priority';
+export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status', 'priority'];
 
 /** Selected values per group; an empty set means "All". */
 export type Filters = Record<FilterGroup, ReadonlySet<string>>;
@@ -13,12 +22,17 @@ export interface FilterOption {
 }
 
 export function emptyFilters(): Filters {
-  return { phase: new Set(), type: new Set(), status: new Set() };
+  return { phase: new Set(), type: new Set(), status: new Set(), priority: new Set() };
 }
 
 /** Filters from plain lists of values (as saved per project). */
 export function filtersFrom(values: Record<FilterGroup, string[]>): Filters {
-  return { phase: new Set(values.phase), type: new Set(values.type), status: new Set(values.status) };
+  return {
+    phase: new Set(values.phase),
+    type: new Set(values.type),
+    status: new Set(values.status),
+    priority: new Set(values.priority),
+  };
 }
 
 /** Position in a vocabulary list; values it doesn't list come after, alphabetically. */
@@ -27,9 +41,16 @@ function byVocabulary(ids: string[]) {
   return (a: string, b: string) => rank(a) - rank(b) || a.localeCompare(b);
 }
 
+/** The value a task has in each group. A task's priority is its effective one (missing or unknown: the default). */
+function valueOf(group: FilterGroup, t: Task, vocab: Vocabulary): string {
+  if (group === 'phase') return String(t.phase);
+  if (group === 'priority') return priorityOf(vocab, t);
+  return group === 'type' ? t.type : t.status;
+}
+
 /**
- * Filter buttons for the values in the data: phases numerically (with their names), types and statuses in the
- * vocabulary's order and with its labels.
+ * Filter buttons for the values in the data: phases numerically (with their names), types, statuses and priorities
+ * in the vocabulary's order and with its labels.
  */
 export function filterOptions(
   tasks: Task[],
@@ -40,6 +61,9 @@ export function filterOptions(
   const statuses = [...new Set(tasks.map((t) => t.status))].sort(
     (a, b) => statusRank(vocab, a) - statusRank(vocab, b) || a.localeCompare(b),
   );
+  const priorities = [...new Set(tasks.map((t) => priorityOf(vocab, t)))].sort(
+    (a, b) => priorityRank(vocab, a) - priorityRank(vocab, b),
+  );
   return {
     phase: phases.map((p) => {
       const name = vocab.phaseNames.get(p);
@@ -47,16 +71,14 @@ export function filterOptions(
     }),
     type: types.map((t) => ({ value: t, label: typeLabel(vocab, t) })),
     status: statuses.map((s) => ({ value: s, label: statusLabel(vocab, s) })),
+    priority: priorities.map((p) => ({ value: p, label: `${p} ${priorityLabel(vocab, p)}` })),
   };
 }
 
 /** OR within a group, AND across groups. */
-export function filterTasks(tasks: Task[], filters: Filters): Task[] {
-  return tasks.filter(
-    (t) =>
-      (filters.phase.size === 0 || filters.phase.has(String(t.phase))) &&
-      (filters.type.size === 0 || filters.type.has(t.type)) &&
-      (filters.status.size === 0 || filters.status.has(t.status)),
+export function filterTasks(tasks: Task[], filters: Filters, vocab: Vocabulary = DEFAULT_VOCABULARY): Task[] {
+  return tasks.filter((t) =>
+    FILTER_GROUPS.every((group) => filters[group].size === 0 || filters[group].has(valueOf(group, t, vocab))),
   );
 }
 
@@ -80,22 +102,23 @@ export interface FacetCounts {
   values: ReadonlyMap<string, number>;
 }
 
-const valueOf: Record<FilterGroup, (t: Task) => string> = {
-  phase: (t) => String(t.phase),
-  type: (t) => t.type,
-  status: (t) => t.status,
-};
-
 /**
  * Faceted counts for the filter buttons: for each group, how many tasks each value would show given the selections
  * in the other groups (the group's own selection is ignored, so a count says what clicking that value adds).
  */
-export function facetCounts(tasks: Task[], filters: Filters): Record<FilterGroup, FacetCounts> {
+export function facetCounts(
+  tasks: Task[],
+  filters: Filters,
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+): Record<FilterGroup, FacetCounts> {
   const result = {} as Record<FilterGroup, FacetCounts>;
   for (const group of FILTER_GROUPS) {
-    const others = filterTasks(tasks, { ...filters, [group]: new Set<string>() });
+    const others = filterTasks(tasks, { ...filters, [group]: new Set<string>() }, vocab);
     const values = new Map<string, number>();
-    for (const t of others) values.set(valueOf[group](t), (values.get(valueOf[group](t)) ?? 0) + 1);
+    for (const t of others) {
+      const v = valueOf(group, t, vocab);
+      values.set(v, (values.get(v) ?? 0) + 1);
+    }
     result[group] = { all: others.length, values };
   }
   return result;
@@ -112,4 +135,20 @@ export function searchTasks(tasks: Task[], query: string): Task[] {
     const text = `${t.id} ${t.name} ${t.description ?? ''} ${t.type}`.toLowerCase();
     return terms.every((term) => text.includes(term));
   });
+}
+
+export type ListSort = 'file' | 'priority';
+
+/**
+ * The List tab's order: as in the file, or by priority (most urgent first), then phase, then ID — the order agents
+ * pick tasks in within a phase.
+ */
+export function sortTasks(tasks: Task[], sort: ListSort, vocab: Vocabulary = DEFAULT_VOCABULARY): Task[] {
+  if (sort === 'file') return tasks;
+  return [...tasks].sort(
+    (a, b) =>
+      priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) ||
+      a.phase - b.phase ||
+      a.id.localeCompare(b.id, undefined, { numeric: true }),
+  );
 }

@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
   import { kindOf } from '../lib/vocab';
+  import PriorityBadge from './PriorityBadge.svelte';
 
   let { card }: { card: KanbanCard } = $props();
   const task = $derived(card.task);
@@ -35,6 +36,7 @@
       >Phase {task.phase}</span
     >
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
+    <PriorityBadge {task} />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>
   <div class="kanban-card-name">{task.name}</div>

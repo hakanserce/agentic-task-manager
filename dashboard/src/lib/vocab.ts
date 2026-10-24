@@ -131,6 +131,21 @@ export function phaseLabel(vocab: Vocabulary, phase: number): string {
   return name ? `Phase ${phase} · ${name}` : `Phase ${phase}`;
 }
 
+/** The task's priority ID: its own when the vocabulary has it; a missing or unknown priority is the default (DM-2). */
+export function priorityOf(vocab: Vocabulary, task: { priority?: string }): string {
+  return task.priority && vocab.priorities.some((p) => p.id === task.priority) ? task.priority : vocab.defaultPriority;
+}
+
+/** 0 for the most urgent priority */
+export function priorityRank(vocab: Vocabulary, id: string): number {
+  const i = vocab.priorities.findIndex((p) => p.id === id);
+  return i === -1 ? priorityRank(vocab, vocab.defaultPriority) : i;
+}
+
+export function priorityLabel(vocab: Vocabulary, id: string): string {
+  return vocab.priorities.find((p) => p.id === id)?.label ?? humanize(id);
+}
+
 /** Position in the vocabulary's status order; statuses it doesn't list come last. */
 export function statusRank(vocab: Vocabulary, status: string): number {
   const i = vocab.statuses.findIndex((s) => s.id === status);

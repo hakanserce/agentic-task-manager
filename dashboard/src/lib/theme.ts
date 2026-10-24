@@ -85,6 +85,17 @@ export function typeStyle(type: string): ColorStyle {
   return TYPE_COLORS[type] ?? FALLBACK_TYPE;
 }
 
+/** Priorities by rank, most urgent first: the two most urgent stand out, the rest are quiet. */
+export const PRIORITY_COLORS: ColorStyle[] = [
+  { color: 'var(--red)', bg: 'color-mix(in srgb, var(--red) 15%, transparent)' },
+  { color: 'var(--orange)', bg: 'color-mix(in srgb, var(--orange) 15%, transparent)' },
+  { color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)' },
+];
+
+export function priorityStyle(rank: number): ColorStyle {
+  return PRIORITY_COLORS[Math.min(rank, PRIORITY_COLORS.length - 1)];
+}
+
 /** A status nobody defines (no kind) is styled like todo. */
 export function kindStyle(kind: StatusKind | undefined): ColorStyle {
   return KIND_COLORS[kind ?? 'todo'];

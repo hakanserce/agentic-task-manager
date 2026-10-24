@@ -30,7 +30,7 @@ test.describe('task cards', () => {
     await expect(c).toHaveClass(/status-done/);
     await expect(c.locator('.task-id')).toHaveText('T-004');
     await expect(c.locator('.task-name')).toHaveText('User login');
-    await expect(c.locator('.task-meta .badge')).toHaveText(['Phase 1', 'feature', 'Done']);
+    await expect(c.locator('.task-meta .badge')).toHaveText(['Phase 1', 'feature', 'Done', 'P2']);
     await expect(c.locator('.deps-label')).toHaveText('needs:');
     await expect(c.locator('.dep-link')).toHaveText(['T-002', 'T-003']);
     await expect(c.locator('.dep-link').first()).toHaveAttribute('title', 'Write contributing guide');

@@ -28,6 +28,7 @@ describe('TaskCard', () => {
       'Phase 1',
       'feature',
       'Done',
+      'P2',
     ]);
     expect([...card.querySelectorAll('.uc-badge, .req-badge')].map((b) => b.textContent)).toEqual([
       'UC-001',
@@ -73,6 +74,16 @@ describe('TaskCard', () => {
     const card = container.querySelector('.task-card')!;
     expect(card).toHaveClass('kind-review');
     expect(card.querySelectorAll('.task-meta .badge')[2].textContent).toBe('Awaiting you');
+  });
+
+  it("shows the task's priority, or the default for a task without one", () => {
+    const { container } = render(TaskCard, { task: { ...task('T-001'), priority: 'P0' } });
+    const badge = container.querySelector('.priority-badge')!;
+    expect(badge).toHaveTextContent('P0');
+    expect(badge).toHaveAttribute('title', 'P0 Critical priority');
+    expect(badge).toHaveStyle({ color: 'var(--red)' });
+    const plain = render(TaskCard, { task: task('T-002') }).container.querySelector('.priority-badge')!;
+    expect(plain).toHaveAttribute('title', 'P2 Medium priority (the default)');
   });
 
   it('has no dependency label or tags when there are none', () => {

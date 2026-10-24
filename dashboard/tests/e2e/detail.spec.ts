@@ -24,7 +24,7 @@ test.describe('detail panel', () => {
 
   test('shows all task fields', async ({ page }) => {
     await openFromCard(page, 'T-004');
-    await expect(panel(page).locator('.task-meta > *')).toHaveText(['feature', 'Done', 'Phase 1']);
+    await expect(panel(page).locator('.task-meta > *')).toHaveText(['feature', 'Done', 'Phase 1', 'P2']);
     await expect(section(page, 'Description').locator('.value')).toHaveText('Description of T-004: User login.');
     await expect(section(page, 'Use Cases').locator('.uc-badge')).toHaveText(['UC-001']);
     await expect(section(page, 'Requirements').locator('.req-badge')).toHaveText(['FR-1.1', 'FR-1.2']);

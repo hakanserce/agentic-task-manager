@@ -4,10 +4,16 @@
   import Icon from './Icon.svelte';
 
   // Compact: a search box and what is selected, as chips. The ⌄ opens every filter, one group per line.
-  const LABELS: Record<FilterGroup, string> = { phase: 'Phase', type: 'Type', status: 'Status' };
+  const LABELS: Record<FilterGroup, string> = { phase: 'Phase', type: 'Type', status: 'Status', priority: 'Priority' };
+  const PLURALS: Record<FilterGroup, string> = {
+    phase: 'phases',
+    type: 'types',
+    status: 'statuses',
+    priority: 'priorities',
+  };
   const options = $derived(filterOptions(dashboard.tasks, dashboard.vocab));
   // How many tasks each button would show, given the search and the selections in the other groups
-  const counts = $derived(facetCounts(dashboard.searched, dashboard.filters));
+  const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab));
   let open = $state(false);
 
   const selected = $derived(
@@ -22,12 +28,7 @@
   }
 
   function ariaLabel(group: FilterGroup, value: string, label: string, n: number): string {
-    const name =
-      value === 'all'
-        ? `All ${group === 'status' ? 'statuses' : group + 's'}`
-        : group === 'phase'
-          ? `Phase ${label}`
-          : label;
+    const name = value === 'all' ? `All ${PLURALS[group]}` : group === 'phase' ? `Phase ${label}` : label;
     return `${name}, ${n} ${n === 1 ? 'task' : 'tasks'}`;
   }
 </script>
@@ -70,7 +71,7 @@
             ></span
           >
         {:else}
-          <span class="filter-none">All phases, types and statuses</span>
+          <span class="filter-none">No filters</span>
         {/each}
       </div>
       <span class="match-count" id="match-count" aria-live="polite"

@@ -30,10 +30,11 @@ describe('reading and writing', () => {
 
   it('round-trips a view', () => {
     const view: SavedView = {
-      filters: { phase: ['1'], type: ['feature', 'test'], status: [] },
+      filters: { phase: ['1'], type: ['feature', 'test'], status: [], priority: ['P0'] },
       query: 'login',
       tab: 'agents',
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
+      listSort: 'priority',
       progressPhase: 2,
       graphFiltered: 'dim',
       graph: { k: 1.5, x: -120, y: 40 },
@@ -58,7 +59,7 @@ describe('reading and writing', () => {
       key,
       JSON.stringify({ tab: 'nope', filters: { phase: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
     );
-    expect(readView(key)).toEqual({ ...defaultView(), filters: { phase: ['2'], type: [], status: [] } });
+    expect(readView(key)).toEqual({ ...defaultView(), filters: { phase: ['2'], type: [], status: [], priority: [] } });
   });
 
   it('a malformed graph position is ignored', () => {
@@ -97,18 +98,23 @@ describe('sanitizeView', () => {
   it('drops filter values and a focused phase the tasks no longer have', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['0', '5'], type: ['feature', 'docs'], status: ['todo', 'blocked'] },
+      filters: { phase: ['0', '5'], type: ['feature', 'docs'], status: ['todo', 'blocked'], priority: ['P2', 'P0'] },
       progressPhase: 5,
     };
+    // Neither task has a priority: both are the default, P2
     expect(sanitizeView(view, tasks)).toEqual({
       ...view,
-      filters: { phase: ['0'], type: ['feature'], status: ['todo'] },
+      filters: { phase: ['0'], type: ['feature'], status: ['todo'], priority: ['P2'] },
       progressPhase: null,
     });
   });
 
   it('keeps everything that still exists', () => {
-    const view: SavedView = { ...defaultView(), filters: { phase: ['1'], type: [], status: [] }, progressPhase: 0 };
+    const view: SavedView = {
+      ...defaultView(),
+      filters: { phase: ['1'], type: [], status: [], priority: [] },
+      progressPhase: 0,
+    };
     expect(sanitizeView(view, tasks)).toEqual(view);
   });
 });

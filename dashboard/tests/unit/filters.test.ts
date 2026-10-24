@@ -6,6 +6,7 @@ import {
   filterTasks,
   isActive,
   searchTasks,
+  sortTasks,
   toggleFilter,
   type Filters,
 } from '../../src/lib/filters';
@@ -20,6 +21,7 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
   phase: new Set(f.phase),
   type: new Set(f.type),
   status: new Set(f.status),
+  priority: new Set(f.priority),
 });
 
 describe('filterOptions', () => {
@@ -64,7 +66,47 @@ describe('filterOptions', () => {
   });
 
   it('is empty for no tasks', () => {
-    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [] });
+    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [], priority: [] });
+  });
+
+  it('offers the priorities in the data, most urgent first; a missing or unknown priority is the default', () => {
+    const tasks = [
+      { ...standard[0], priority: 'P3' },
+      { ...standard[1], priority: 'P0' },
+      { ...standard[2], priority: 'urgent!' },
+      standard[3],
+    ];
+    expect(filterOptions(tasks).priority).toEqual([
+      { value: 'P0', label: 'P0 Critical' },
+      { value: 'P2', label: 'P2 Medium' },
+      { value: 'P3', label: 'P3 Low' },
+    ]);
+    const p2 = filterTasks(tasks, filters({ priority: ['P2'] }));
+    expect(ids(p2)).toEqual([standard[2].id, standard[3].id]);
+    expect(facetCounts(tasks, filters({})).priority.values.get('P2')).toBe(2);
+  });
+});
+
+describe('sortTasks', () => {
+  const t = (id: string, phase: number, priority?: string): Task => ({
+    id,
+    name: id,
+    phase,
+    type: 'feature',
+    description: '',
+    status: 'todo',
+    ...(priority ? { priority } : {}),
+  });
+  const tasks = [t('T-10', 0, 'P1'), t('T-2', 1, 'P0'), t('T-3', 0), t('T-1', 0, 'P1'), t('T-4', 0, 'P0')];
+
+  it('keeps the file order, or sorts by priority, then phase, then ID', () => {
+    expect(ids(sortTasks(tasks, 'file'))).toEqual(['T-10', 'T-2', 'T-3', 'T-1', 'T-4']);
+    expect(ids(sortTasks(tasks, 'priority'))).toEqual(['T-4', 'T-2', 'T-1', 'T-10', 'T-3']);
+  });
+
+  it("uses the project's priorities", () => {
+    const vocab = resolveVocabulary({ priorities: [{ id: 'P1' }, { id: 'P0' }], default_priority: 'P0' });
+    expect(ids(sortTasks(tasks, 'priority', vocab))).toEqual(['T-1', 'T-10', 'T-3', 'T-4', 'T-2']);
   });
 });
 
@@ -124,12 +166,7 @@ describe('toggleFilter / isActive', () => {
 describe('facetCounts', () => {
   // standard.json: 12 tasks, 4 per phase. Phase 0: infra×2, docs, test (all done). Phase 1: feature (done),
   // feature (in_progress), bugfix (todo), refactor (blocked). Phase 2: polish, test, feature (todo), docs (skipped).
-  const counts = (filters: Partial<Record<keyof Filters, string[]>>) =>
-    facetCounts(standard, {
-      phase: new Set(filters.phase ?? []),
-      type: new Set(filters.type ?? []),
-      status: new Set(filters.status ?? []),
-    });
+  const counts = (f: Partial<Record<keyof Filters, string[]>>) => facetCounts(standard, filters(f));
   const asObject = (m: ReadonlyMap<string, number>) => Object.fromEntries([...m].sort());
 
   it('without selections: every value over all tasks', () => {

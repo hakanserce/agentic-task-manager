@@ -26,7 +26,7 @@ describe('Filters', () => {
     const toggle = container.querySelector('#filters-toggle')!;
     expect(container.querySelector('#filter-panel')).toBeNull();
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(container.querySelector('#active-filters')).toHaveTextContent('All phases, types and statuses');
+    expect(container.querySelector('#active-filters')).toHaveTextContent('No filters');
     expect(container.querySelector('#match-count')).toHaveTextContent('12 of 12 tasks');
 
     await openPanel(container);
@@ -35,6 +35,7 @@ describe('Filters', () => {
       'phase',
       'type',
       'status',
+      'priority',
     ]);
   });
 
@@ -47,9 +48,13 @@ describe('Filters', () => {
       );
     expect(values('phase')).toEqual(['all', '0', '1', '2']);
     expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'blocked', 'done', 'skipped']);
-    expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(3);
+    expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(4);
     expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 3 tasks');
     expect(button(container, 'phase', 'all')).toHaveAttribute('aria-label', 'All phases, 12 tasks');
+    // standard.json has no priorities: every task has the default
+    expect(values('priority')).toEqual(['all', 'P2']);
+    expect(button(container, 'priority', 'all')).toHaveAttribute('aria-label', 'All priorities, 12 tasks');
+    expect(button(container, 'priority', 'P2')).toHaveAttribute('aria-label', 'P2 Medium, 12 tasks');
   });
 
   it('toggles filters, shows them as chips, and clears them from the chip', async () => {

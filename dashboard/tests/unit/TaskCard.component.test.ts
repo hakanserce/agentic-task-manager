@@ -24,7 +24,7 @@ describe('TaskCard', () => {
     expect(card).toHaveAttribute('data-id', 'T-004');
     expect(card).toHaveClass('status-done');
     expect([...card.querySelectorAll('.task-meta .badge')].map((b) => b.textContent)).toEqual([
-      'P1',
+      'Phase 1',
       'feature',
       'done',
     ]);

@@ -110,6 +110,12 @@ def kind_of(vocab, status):
     return None
 
 
+def priority_rank(vocab, priority):
+    """0 for the most urgent priority. A missing or unknown priority ranks as the default priority."""
+    ids = [p["id"] for p in vocab["priorities"]]
+    return ids.index(priority) if priority in ids else ids.index(vocab["default_priority"])
+
+
 def statuses_of(vocab, kind):
     return [s["id"] for s in vocab["statuses"] if s["kind"] == kind]
 

@@ -439,6 +439,12 @@ def kind_of(vocab, status):
     return None
 
 
+def priority_rank(vocab, priority):
+    """0 for the most urgent priority. A missing or unknown priority ranks as the default priority."""
+    ids = [p["id"] for p in vocab["priorities"]]
+    return ids.index(priority) if priority in ids else ids.index(vocab["default_priority"])
+
+
 def statuses_of(vocab, kind):
     return [s["id"] for s in vocab["statuses"] if s["kind"] == kind]
 
@@ -668,8 +674,8 @@ def report_expired(expired):
 
 def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
-    in another worktree, matching the filters; lowest phase first, then lowest ID. Returns (task, reason) where reason
-    explains an empty result."""
+    in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
+    Returns (task, reason) where reason explains an empty result."""
     claims, completed = store["claims"], store["completed"]
     vocab = vocabulary(data)
     candidates = [
@@ -682,7 +688,8 @@ def next_task(data, store, phase=None, task_type=None):
     taken = set(claims) | set(completed)
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
-        return min(ready, key=lambda t: (phase_of(t), natural_key(t.get("id")))), None
+        order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+        return min(ready, key=order), None
     if not candidates:
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
@@ -1378,8 +1385,8 @@ commands:
                  put an in_progress task back to todo, recording why
   release <id>   put an in_progress task back to todo
   next [--phase N] [--type T] [--claim] [--json]
-                 the task /atm:loop-tasks works on next; --claim also starts and claims it,
-                 atomically (exit code 3 if there is none)
+                 the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
+                 lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease
   init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too)

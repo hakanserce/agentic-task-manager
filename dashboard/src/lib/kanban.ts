@@ -1,5 +1,5 @@
 import type { Task } from './types';
-import { DEFAULT_VOCABULARY, kindOf, type StatusKind, type Vocabulary } from './vocab';
+import { DEFAULT_VOCABULARY, kindOf, priorityOf, priorityRank, type StatusKind, type Vocabulary } from './vocab';
 
 /** A column per status of the vocabulary, plus "other" for statuses nobody defines. */
 export type ColumnId = string;
@@ -46,15 +46,21 @@ export function readiness(task: Task, taskMap: ReadonlyMap<string, Task>, vocab 
   return waitingOn.length ? { ready: false, waitingOn } : { ready: true };
 }
 
+/** The loop's order: lowest phase first, then the most urgent priority, then lowest ID (atm next) */
+const loopOrder = (vocab: Vocabulary) => (a: Task, b: Task) =>
+  a.phase - b.phase ||
+  priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) ||
+  byId(a, b);
+
 /**
- * The task /atm:loop-tasks picks next (its "FIND the next available task" rule): a todo-kind status, all dependencies
- * done, lowest phase first, then lowest task ID. Uses all tasks, not just the filtered ones.
+ * The task /atm:loop-tasks picks next (`atm next`): a todo-kind status, all dependencies done, in the loop's order.
+ * Uses all tasks, not just the filtered ones.
  */
 export function nextUp(allTasks: Task[], vocab = DEFAULT_VOCABULARY): Task | undefined {
   const taskMap = new Map(allTasks.map((t) => [t.id, t]));
   return allTasks
     .filter((t) => kindOf(vocab, t.status) === 'todo' && readiness(t, taskMap, vocab).ready)
-    .sort(byPhaseThenId)[0];
+    .sort(loopOrder(vocab))[0];
 }
 
 const ORDER: Partial<Record<StatusKind, (a: Task, b: Task) => number>> = {
@@ -96,7 +102,8 @@ export function buildBoard(
       ...(kind === 'todo' ? { readiness: readiness(task, taskMap, vocab) } : {}),
       nextUp: task.id === next,
     }));
-    const order = (kind && ORDER[kind]) ?? byPhaseThenId;
+    // To Do in the loop's order (ready first, see below), so the column reads like the loop works
+    const order = kind === 'todo' ? loopOrder(vocab) : ((kind && ORDER[kind]) ?? byPhaseThenId);
     cards.sort((a, b) => {
       if (kind === 'todo') {
         const ready = Number(b.readiness!.ready) - Number(a.readiness!.ready);

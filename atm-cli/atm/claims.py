@@ -30,6 +30,7 @@ from .model import (
     load_tasks,
     natural_key,
     phase_of,
+    priority_rank,
     status_for,
     unfinished_dependencies,
     vocabulary,
@@ -171,8 +172,8 @@ def report_expired(expired):
 
 def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
-    in another worktree, matching the filters; lowest phase first, then lowest ID. Returns (task, reason) where reason
-    explains an empty result."""
+    in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
+    Returns (task, reason) where reason explains an empty result."""
     claims, completed = store["claims"], store["completed"]
     vocab = vocabulary(data)
     candidates = [
@@ -185,7 +186,8 @@ def next_task(data, store, phase=None, task_type=None):
     taken = set(claims) | set(completed)
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
-        return min(ready, key=lambda t: (phase_of(t), natural_key(t.get("id")))), None
+        order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+        return min(ready, key=order), None
     if not candidates:
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]

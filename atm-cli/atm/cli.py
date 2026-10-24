@@ -32,8 +32,8 @@ commands:
                  put an in_progress task back to todo, recording why
   release <id>   put an in_progress task back to todo
   next [--phase N] [--type T] [--claim] [--json]
-                 the task /atm:loop-tasks works on next; --claim also starts and claims it,
-                 atomically (exit code 3 if there is none)
+                 the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
+                 lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease
   init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too)

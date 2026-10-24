@@ -3,6 +3,11 @@ declare module 'virtual:atm-changelog' {
   export default entries;
 }
 
+declare module 'virtual:atm-help' {
+  const blocks: import('./lib/markdown').Block[];
+  export default blocks;
+}
+
 declare module 'virtual:atm-plugin-info' {
   const info: import('./lib/plugin-info').PluginInfo;
   export default info;

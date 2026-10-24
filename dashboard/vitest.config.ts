@@ -3,13 +3,21 @@ import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { changelogModule } from './build/changelog.ts';
+import { helpModule } from './build/help.ts';
 import { pluginInfoModule } from './build/plugin-info.ts';
 
 const changelog = fileURLToPath(new URL('../plugin/CHANGELOG.md', import.meta.url));
+const help = fileURLToPath(new URL('../docs/help.md', import.meta.url));
 const pluginJson = fileURLToPath(new URL('../plugin/.claude-plugin/plugin.json', import.meta.url));
 
 export default defineConfig({
-  plugins: [svelte(), svelteTesting(), changelogModule(changelog), pluginInfoModule(pluginJson, changelog)],
+  plugins: [
+    svelte(),
+    svelteTesting(),
+    changelogModule(changelog),
+    helpModule(help),
+    pluginInfoModule(pluginJson, changelog),
+  ],
   test: {
     environment: 'jsdom',
     include: ['tests/unit/**/*.test.ts'],

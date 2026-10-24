@@ -4,12 +4,14 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { changelogModule } from './build/changelog.ts';
 import { devData } from './build/dev-data.ts';
+import { helpModule } from './build/help.ts';
 import { injectVersion } from './build/inject-version.ts';
 import { pluginInfoModule } from './build/plugin-info.ts';
 import { renameHtmlOutput } from './build/rename-output.ts';
 
 const pluginJson = fileURLToPath(new URL('../plugin/.claude-plugin/plugin.json', import.meta.url));
 const changelog = fileURLToPath(new URL('../plugin/CHANGELOG.md', import.meta.url));
+const help = fileURLToPath(new URL('../docs/help.md', import.meta.url));
 const ownTasks = fileURLToPath(new URL('../.agentic-task-manager', import.meta.url));
 
 export default defineConfig({
@@ -18,6 +20,7 @@ export default defineConfig({
     // shared dashboard state; a reload restores everything from storage anyway.
     svelte({ compilerOptions: { hmr: false } }),
     changelogModule(changelog),
+    helpModule(help),
     pluginInfoModule(pluginJson, changelog),
     devData(ownTasks),
     viteSingleFile(),

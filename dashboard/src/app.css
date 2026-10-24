@@ -140,6 +140,68 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
+/* Rendered Markdown (Markdown.svelte): Help, and later task descriptions */
+.markdown {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin: 20px 0 6px;
+  font-weight: 600;
+}
+.markdown h3 {
+  font-size: 16px;
+}
+.markdown h4 {
+  font-size: 14px;
+}
+.markdown h5,
+.markdown h6 {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown pre,
+.markdown blockquote {
+  margin: 6px 0;
+}
+.markdown ul,
+.markdown ol {
+  padding-left: 20px;
+}
+.markdown li {
+  margin-bottom: 3px;
+}
+.markdown code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.markdown pre {
+  background: var(--surface2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.markdown pre code {
+  padding: 0;
+  background: none;
+}
+.markdown blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 10px;
+  color: var(--text-muted);
+}
+.markdown a {
+  color: var(--accent);
+}
 .about .about-section-title {
   font-size: 13px;
   font-weight: 600;

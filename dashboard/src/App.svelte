@@ -9,6 +9,7 @@
   import WhatsNew from './components/WhatsNew.svelte';
   import Footer from './components/Footer.svelte';
   import AboutDialog from './components/AboutDialog.svelte';
+  import HelpDialog from './components/HelpDialog.svelte';
   import { parseDialogHash } from './lib/dialogs';
 
   onMount(() => {
@@ -33,5 +34,6 @@
 <DetailPanel />
 <WhatsNew />
 <AboutDialog />
+<HelpDialog />
 
 <svelte:window onhashchange={() => (dashboard.dialog = parseDialogHash(location.hash))} />

@@ -1,5 +1,6 @@
 // Colors and icons, lifted from the legacy dashboard (v0.4.0). Every color is a CSS token from app.css (or a tint of
 // one), so themes can change them.
+import type { StatusKind } from './vocab';
 
 export interface ColorStyle {
   color: string;
@@ -22,9 +23,11 @@ export const FALLBACK_TYPE: ColorStyle = {
   bg: 'color-mix(in srgb, var(--text-muted) 15%, transparent)',
 };
 
-export const STATUS_COLORS: Record<string, ColorStyle> = {
+/** Statuses are styled by kind, so a project's own status looks like the built-in status of its kind. */
+export const KIND_COLORS: Record<StatusKind, ColorStyle> = {
   todo: { color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 15%, transparent)' },
-  in_progress: { color: 'var(--accent)', bg: 'color-mix(in srgb, var(--accent) 15%, transparent)' },
+  active: { color: 'var(--accent)', bg: 'color-mix(in srgb, var(--accent) 15%, transparent)' },
+  review: { color: 'var(--yellow)', bg: 'color-mix(in srgb, var(--yellow) 15%, transparent)' },
   done: { color: 'var(--green)', bg: 'color-mix(in srgb, var(--green) 15%, transparent)' },
   blocked: { color: 'var(--red)', bg: 'color-mix(in srgb, var(--red) 15%, transparent)' },
   skipped: { color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' },
@@ -65,9 +68,10 @@ export const TYPE_EMOJI: Record<string, string> = {
   polish: '\u{2728}',
 };
 
-export const STATUS_EMOJI: Record<string, string> = {
+export const KIND_EMOJI: Record<StatusKind, string> = {
   todo: '\u{26AA}',
-  in_progress: '\u{1F535}',
+  active: '\u{1F535}',
+  review: '\u{1F440}',
   done: '\u{2705}',
   blocked: '\u{1F534}',
   skipped: '\u{23ED}',
@@ -81,16 +85,11 @@ export function typeStyle(type: string): ColorStyle {
   return TYPE_COLORS[type] ?? FALLBACK_TYPE;
 }
 
-/** Unknown statuses are styled like todo. */
-export function statusStyle(status: string): ColorStyle {
-  return STATUS_COLORS[status] ?? STATUS_COLORS.todo;
+/** A status nobody defines (no kind) is styled like todo. */
+export function kindStyle(kind: StatusKind | undefined): ColorStyle {
+  return KIND_COLORS[kind ?? 'todo'];
 }
 
 export function graphNodeBg(type: string): string {
   return GRAPH_NODE_BG[type] ?? FALLBACK_GRAPH_NODE_BG;
-}
-
-/** "in_progress" → "in progress" */
-export function statusLabel(status: string): string {
-  return status.replace(/_/g, ' ');
 }

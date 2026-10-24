@@ -1,4 +1,5 @@
-import { KNOWN_STATUSES, type Task } from './types';
+import type { Task } from './types';
+import { DEFAULT_VOCABULARY, statusLabel, statusRank, typeLabel, type Vocabulary } from './vocab';
 
 export type FilterGroup = 'phase' | 'type' | 'status';
 export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status'];
@@ -20,22 +21,32 @@ export function filtersFrom(values: Record<FilterGroup, string[]>): Filters {
   return { phase: new Set(values.phase), type: new Set(values.type), status: new Set(values.status) };
 }
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-function statusRank(status: string): number {
-  const i = (KNOWN_STATUSES as readonly string[]).indexOf(status);
-  return i === -1 ? 99 : i;
+/** Position in a vocabulary list; values it doesn't list come after, alphabetically. */
+function byVocabulary(ids: string[]) {
+  const rank = (v: string) => (ids.includes(v) ? ids.indexOf(v) : ids.length);
+  return (a: string, b: string) => rank(a) - rank(b) || a.localeCompare(b);
 }
 
-/** Filter buttons generated from the data: phases numerically, types alphabetically, statuses in workflow order. */
-export function filterOptions(tasks: Task[]): Record<FilterGroup, FilterOption[]> {
+/**
+ * Filter buttons for the values in the data: phases numerically (with their names), types and statuses in the
+ * vocabulary's order and with its labels.
+ */
+export function filterOptions(
+  tasks: Task[],
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+): Record<FilterGroup, FilterOption[]> {
   const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
-  const types = [...new Set(tasks.map((t) => t.type))].sort();
-  const statuses = [...new Set(tasks.map((t) => t.status))].sort((a, b) => statusRank(a) - statusRank(b));
+  const types = [...new Set(tasks.map((t) => t.type))].sort(byVocabulary(vocab.types.map((t) => t.id)));
+  const statuses = [...new Set(tasks.map((t) => t.status))].sort(
+    (a, b) => statusRank(vocab, a) - statusRank(vocab, b) || a.localeCompare(b),
+  );
   return {
-    phase: phases.map((p) => ({ value: String(p), label: String(p) })),
-    type: types.map((t) => ({ value: t, label: capitalize(t) })),
-    status: statuses.map((s) => ({ value: s, label: capitalize(s.replace(/_/g, ' ')) })),
+    phase: phases.map((p) => {
+      const name = vocab.phaseNames.get(p);
+      return { value: String(p), label: name ? `${p} · ${name}` : String(p) };
+    }),
+    type: types.map((t) => ({ value: t, label: typeLabel(vocab, t) })),
+    status: statuses.map((s) => ({ value: s, label: statusLabel(vocab, s) })),
   };
 }
 

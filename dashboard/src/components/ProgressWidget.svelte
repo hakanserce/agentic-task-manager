@@ -1,7 +1,8 @@
 <script lang="ts">
   import { progressBreakdown } from '../lib/insights';
   import { dashboard } from '../lib/state.svelte';
-  import { phaseColor, statusLabel, statusStyle, typeStyle } from '../lib/theme';
+  import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
+  import { kindOf, statusLabel as vocabStatusLabel } from '../lib/vocab';
   import Icon from './Icon.svelte';
   import Ring from './Ring.svelte';
 
@@ -11,6 +12,8 @@
   let open = $state(false);
   let root: HTMLElement;
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
+  const statusLabel = (status: string) => vocabStatusLabel(dashboard.vocab, status);
 </script>
 
 <svelte:window
@@ -68,8 +71,9 @@
           <ul class="status-legend">
             {#each p.byStatus as s (s.status)}
               <li>
-                <span class="legend-dot" style="background:{statusStyle(s.status).color}"></span>
-                {capitalize(statusLabel(s.status))}<strong>{s.count}</strong>
+                <span class="legend-dot" style="background:{statusStyle(s.status).color}"></span>{statusLabel(
+                  s.status,
+                )}<strong>{s.count}</strong>
               </li>
             {/each}
           </ul>

@@ -1,6 +1,5 @@
-/** Statuses the dashboard knows how to style. tasks.json may contain others; they render with fallbacks. */
-export const KNOWN_STATUSES = ['todo', 'in_progress', 'done', 'blocked', 'skipped'] as const;
-export type KnownStatus = (typeof KNOWN_STATUSES)[number];
+/** The default statuses; a project may define its own in meta.statuses (see vocab.ts). */
+export type KnownStatus = 'todo' | 'in_progress' | 'in_review' | 'blocked' | 'done' | 'skipped';
 export type Status = KnownStatus | (string & {});
 
 export type KnownTaskType = 'feature' | 'bugfix' | 'bug' | 'test' | 'infra' | 'docs' | 'refactor' | 'polish';
@@ -30,6 +29,19 @@ export interface Task {
 }
 
 export interface TasksFile {
-  meta?: { project?: string; id?: string; created?: string; description?: string; lease_minutes?: number };
+  meta?: {
+    project?: string;
+    id?: string;
+    created?: string;
+    description?: string;
+    lease_minutes?: number;
+    // Project vocabularies (docs/v4/data-model.md §2); validated by vocab.ts, so typed loosely here
+    statuses?: unknown;
+    phases?: unknown;
+    types?: unknown;
+    priorities?: unknown;
+    default_priority?: unknown;
+    workflow?: unknown;
+  };
   tasks?: Task[];
 }

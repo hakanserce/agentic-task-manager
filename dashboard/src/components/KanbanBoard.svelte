@@ -2,6 +2,7 @@
   import { buildBoard, buildLanes } from '../lib/kanban';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor } from '../lib/theme';
+  import { phaseLabel } from '../lib/vocab';
   import KanbanColumns from './KanbanColumns.svelte';
 
   const showAllDone = $derived(dashboard.kanbanShowAllDone);
@@ -9,7 +10,7 @@
   const groupByPhase = $derived(dashboard.kanbanGroupByPhase);
   const showSkipped = $derived(dashboard.kanbanShowSkipped);
 
-  const options = $derived({ showSkipped, statusFilter: dashboard.filters.status });
+  const options = $derived({ showSkipped, statusFilter: dashboard.filters.status, vocab: dashboard.vocab });
   const board = $derived(groupByPhase ? [] : buildBoard(dashboard.filtered, dashboard.tasks, options));
   const lanes = $derived(groupByPhase ? buildLanes(dashboard.filtered, dashboard.tasks, options) : []);
 </script>
@@ -41,7 +42,7 @@
             class="phase-badge"
             style="background:color-mix(in srgb, {phaseColor(lane.phase)} 12.5%, transparent);color:{phaseColor(
               lane.phase,
-            )}">Phase {lane.phase}</span
+            )}">{phaseLabel(dashboard.vocab, lane.phase)}</span
           >
           <span class="kanban-lane-progress">{lane.done}/{lane.total} done</span>
         </div>

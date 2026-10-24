@@ -140,6 +140,12 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
+.about .about-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 20px 0 8px;
+}
 .about .about-facts {
   display: grid;
   grid-template-columns: max-content 1fr;
@@ -1048,20 +1054,24 @@ button.menu-trigger:hover,
   border-color: var(--accent);
   background: var(--surface2);
 }
-.task-card.status-done {
+/* Styled by the status's kind (vocab.ts), so a project's own statuses look like the built-in one of their kind */
+.task-card.kind-done {
   opacity: 0.5;
   border-left: 3px solid var(--green);
 }
-.task-card.status-in_progress {
+.task-card.kind-active {
   border-left: 3px solid var(--accent);
 }
-.task-card.status-todo {
+.task-card.kind-review {
+  border-left: 3px solid var(--yellow);
+}
+.task-card.kind-todo {
   border-left: 3px solid var(--border);
 }
-.task-card.status-blocked {
+.task-card.kind-blocked {
   border-left: 3px solid var(--red);
 }
-.task-card.status-skipped {
+.task-card.kind-skipped {
   opacity: 0.4;
   border-left: 3px solid var(--text-muted);
 }
@@ -1589,8 +1599,8 @@ svg.graph-minimap.hidden {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.kanban-card.status-done,
-.kanban-card.status-skipped {
+.kanban-card.kind-done,
+.kanban-card.kind-skipped {
   opacity: 0.65;
 }
 .kanban-card.next-up {

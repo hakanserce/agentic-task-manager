@@ -46,7 +46,7 @@ describe('Filters', () => {
         (b) => (b as HTMLElement).dataset.value,
       );
     expect(values('phase')).toEqual(['all', '0', '1', '2']);
-    expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'done', 'blocked', 'skipped']);
+    expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'blocked', 'done', 'skipped']);
     expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(3);
     expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 3 tasks');
     expect(button(container, 'phase', 'all')).toHaveAttribute('aria-label', 'All phases, 12 tasks');

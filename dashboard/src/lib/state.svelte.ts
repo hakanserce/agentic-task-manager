@@ -18,6 +18,7 @@ import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, resolveVocabulary, type Vocabulary } from './vocab';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
@@ -238,10 +239,14 @@ export class DashboardState {
     }
   }
 
-  private meta: LoadedTasks['meta'] = undefined;
+  /** tasks.json's meta, as loaded */
+  meta = $state.raw<LoadedTasks['meta']>(undefined);
+  /** The project's vocabularies (statuses with kinds, types, priorities, phase names), defaults where meta has none */
+  vocab = $state.raw<Vocabulary>(DEFAULT_VOCABULARY);
 
   private apply(loaded: LoadedTasks, claims: ClaimMap) {
     this.meta = loaded.meta;
+    this.vocab = resolveVocabulary(loaded.meta);
     this.tasks = loaded.tasks;
     this.taskMap = loaded.taskMap;
     this.projectName = loaded.projectName;

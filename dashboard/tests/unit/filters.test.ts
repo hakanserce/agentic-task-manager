@@ -10,6 +10,7 @@ import {
   type Filters,
 } from '../../src/lib/filters';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import standardFile from '../fixtures/standard.json';
 import edgeFile from '../fixtures/edge-cases.json';
 
@@ -22,18 +23,34 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
 });
 
 describe('filterOptions', () => {
-  it('derives sorted options with labels', () => {
+  it("derives options in the vocabulary's order, with its labels", () => {
     const o = filterOptions(standard);
     expect(o.phase.map((x) => x.label)).toEqual(['0', '1', '2']);
-    expect(o.type.map((x) => x.value)).toEqual(['bugfix', 'docs', 'feature', 'infra', 'polish', 'refactor', 'test']);
-    expect(o.type[0].label).toBe('Bugfix');
+    expect(o.type.map((x) => x.value)).toEqual(['feature', 'bugfix', 'test', 'infra', 'docs', 'refactor', 'polish']);
+    expect(o.type[1].label).toBe('Bugfix');
     expect(o.status).toEqual([
-      { value: 'todo', label: 'Todo' },
-      { value: 'in_progress', label: 'In progress' },
-      { value: 'done', label: 'Done' },
+      { value: 'todo', label: 'To Do' },
+      { value: 'in_progress', label: 'In Progress' },
       { value: 'blocked', label: 'Blocked' },
+      { value: 'done', label: 'Done' },
       { value: 'skipped', label: 'Skipped' },
     ]);
+  });
+
+  it("uses a project's vocabulary: its order and labels, phase names; values it doesn't list come last", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'doing', label: 'Doing', kind: 'active' },
+        { id: 'todo', label: 'Backlog', kind: 'todo' },
+        { id: 'done', label: 'Shipped', kind: 'done' },
+      ],
+      types: [{ id: 'test', label: 'Tests' }],
+      phases: [{ id: 1, name: 'Core' }],
+    });
+    const o = filterOptions(standard, vocab);
+    expect(o.status.map((x) => x.label)).toEqual(['Backlog', 'Shipped', 'Blocked', 'In Progress', 'Skipped']);
+    expect(o.type.slice(0, 3).map((x) => x.label)).toEqual(['Tests', 'Bugfix', 'Docs']);
+    expect(o.phase.map((x) => x.label)).toEqual(['0', '1 · Core', '2']);
   });
 
   it('sorts phases numerically, not as strings', () => {

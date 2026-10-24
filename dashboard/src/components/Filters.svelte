@@ -5,7 +5,7 @@
 
   // Compact: a search box and what is selected, as chips. The ⌄ opens every filter, one group per line.
   const LABELS: Record<FilterGroup, string> = { phase: 'Phase', type: 'Type', status: 'Status' };
-  const options = $derived(filterOptions(dashboard.tasks));
+  const options = $derived(filterOptions(dashboard.tasks, dashboard.vocab));
   // How many tasks each button would show, given the search and the selections in the other groups
   const counts = $derived(facetCounts(dashboard.searched, dashboard.filters));
   let open = $state(false);

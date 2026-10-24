@@ -3,12 +3,14 @@
   import type { KanbanCard } from '../lib/kanban';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
+  import { kindOf } from '../lib/vocab';
 
   let { card }: { card: KanbanCard } = $props();
   const task = $derived(card.task);
   const pc = $derived(phaseColor(task.phase));
   const ts = $derived(typeStyle(task.type));
-  const claim = $derived(task.status === 'in_progress' ? dashboard.claims.get(task.id) : undefined);
+  const kind = $derived(kindOf(dashboard.vocab, task.status));
+  const claim = $derived(kind === 'active' ? dashboard.claims.get(task.id) : undefined);
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -19,7 +21,7 @@
 </script>
 
 <div
-  class="kanban-card status-{task.status}"
+  class="kanban-card status-{task.status} kind-{kind ?? 'none'}"
   class:next-up={card.nextUp}
   data-id={task.id}
   role="button"

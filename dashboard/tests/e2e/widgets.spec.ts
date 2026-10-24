@@ -24,7 +24,7 @@ test.describe('Progress widget', () => {
     await expect(progressPill(page)).toHaveAttribute('aria-expanded', 'true');
     const panel = page.locator('#progress-panel');
     await expect(panel.locator('.insights-title')).toHaveText('6 of 8 tasks done');
-    await expect(panel.locator('.status-legend li')).toHaveText(['Done6', 'In progress1', 'Todo1']);
+    await expect(panel.locator('.status-legend li')).toHaveText(['Done6', 'In Progress1', 'To Do1']);
     const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
     await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1']);
     await expect(section('By phase').locator('.ring-count')).toHaveText(['4/4', '2/4']);

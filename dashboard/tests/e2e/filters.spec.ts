@@ -6,12 +6,12 @@ test.describe('filters', () => {
     await openFilters(page);
   });
 
-  test('buttons are generated from the data', async ({ page }) => {
+  test("buttons are generated from the data, in the vocabulary's order and with its labels", async ({ page }) => {
     const labels = (group: string) =>
       page.locator(`.filter-btn[data-filter="${group}"] .filter-label`).allTextContents();
     expect(await labels('phase')).toEqual(['All', '0', '1', '2']);
-    expect(await labels('type')).toEqual(['All', 'Bugfix', 'Docs', 'Feature', 'Infra', 'Polish', 'Refactor', 'Test']);
-    expect(await labels('status')).toEqual(['All', 'Todo', 'In progress', 'Done', 'Blocked', 'Skipped']);
+    expect(await labels('type')).toEqual(['All', 'Feature', 'Bugfix', 'Test', 'Infra', 'Docs', 'Refactor', 'Polish']);
+    expect(await labels('status')).toEqual(['All', 'To Do', 'In Progress', 'Blocked', 'Done', 'Skipped']);
     await expect(page.locator('.filter-btn.active')).toHaveCount(3);
   });
 
@@ -81,7 +81,7 @@ test('unknown statuses sort after the known ones', async ({ page, tasksServer })
   await openDashboard(page, tasksServer, 'edge-cases');
   await openFilters(page);
   const labels = await page.locator('.filter-btn[data-filter="status"] .filter-label').allTextContents();
-  expect(labels).toEqual(['All', 'Todo', 'Done', 'Review']);
+  expect(labels).toEqual(['All', 'To Do', 'Done', 'Review']);
 });
 
 test.describe('filter counts', () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ColumnId, KanbanColumn } from '../lib/kanban';
-  import { statusStyle } from '../lib/theme';
+  import type { KanbanColumn } from '../lib/kanban';
+  import { kindStyle } from '../lib/theme';
   import KanbanCard from './KanbanCard.svelte';
 
   const DONE_LIMIT = 20;
@@ -11,15 +11,16 @@
     onshowall,
   }: { columns: KanbanColumn[]; showAllDone: boolean; onshowall: (all: boolean) => void } = $props();
 
-  const columnColor = (id: ColumnId) => (id === 'other' ? 'var(--text-muted)' : statusStyle(id).color);
+  const columnColor = (column: KanbanColumn) => (column.kind ? kindStyle(column.kind).color : 'var(--text-muted)');
 </script>
 
 <div class="kanban-board">
   {#each columns as column (column.id)}
-    {@const limited = column.id === 'done' && !showAllDone && column.cards.length > DONE_LIMIT}
+    {@const isDone = column.kind === 'done'}
+    {@const limited = isDone && !showAllDone && column.cards.length > DONE_LIMIT}
     <section class="kanban-column" data-status={column.id} aria-label="{column.label} ({column.cards.length})">
       <header class="kanban-column-header">
-        <span class="kanban-column-title" style:color={columnColor(column.id)}>{column.label}</span>
+        <span class="kanban-column-title" style:color={columnColor(column)}>{column.label}</span>
         <span class="kanban-count">{column.cards.length}</span>
       </header>
       <div class="kanban-cards">
@@ -30,7 +31,7 @@
         {/each}
         {#if limited}
           <button class="kanban-show-all" onclick={() => onshowall(true)}>Show all ({column.cards.length})</button>
-        {:else if column.id === 'done' && showAllDone && column.cards.length > DONE_LIMIT}
+        {:else if isDone && showAllDone && column.cards.length > DONE_LIMIT}
           <button class="kanban-show-all" id="kanban-show-fewer" onclick={() => onshowall(false)}
             >Show the latest {DONE_LIMIT}</button
           >

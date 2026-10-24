@@ -24,7 +24,7 @@ test.describe('detail panel', () => {
 
   test('shows all task fields', async ({ page }) => {
     await openFromCard(page, 'T-004');
-    await expect(panel(page).locator('.task-meta > *')).toHaveText(['feature', 'done', 'Phase 1']);
+    await expect(panel(page).locator('.task-meta > *')).toHaveText(['feature', 'Done', 'Phase 1']);
     await expect(section(page, 'Description').locator('.value')).toHaveText('Description of T-004: User login.');
     await expect(section(page, 'Use Cases').locator('.uc-badge')).toHaveText(['UC-001']);
     await expect(section(page, 'Requirements').locator('.req-badge')).toHaveText(['FR-1.1', 'FR-1.2']);
@@ -38,11 +38,11 @@ test.describe('detail panel', () => {
     const dependsOn = section(page, 'Depends On').locator('.detail-dep-item');
     await expect(dependsOn).toHaveCount(2);
     await expect(dependsOn.first()).toContainText('T-002 Write contributing guide');
-    await expect(dependsOn.first().locator('.badge')).toHaveText('done');
+    await expect(dependsOn.first().locator('.badge')).toHaveText('Done');
     const requiredBy = section(page, 'Required By').locator('.detail-dep-item');
     await expect(requiredBy).toHaveCount(2);
     await expect(requiredBy.nth(0)).toContainText('T-005 Post editor');
-    await expect(requiredBy.nth(0).locator('.badge')).toHaveText('in progress');
+    await expect(requiredBy.nth(0).locator('.badge')).toHaveText('In Progress');
     await expect(requiredBy.nth(1)).toContainText('T-006 Fix session timeout');
   });
 

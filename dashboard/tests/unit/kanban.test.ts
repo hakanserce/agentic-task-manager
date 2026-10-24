@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { buildBoard, nextUp, readiness } from '../../src/lib/kanban';
+import { buildBoard, buildLanes, nextUp, readiness } from '../../src/lib/kanban';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import standard from '../fixtures/standard.json';
 
 const t = (id: string, status: string, extra: Partial<Task> = {}): Task => ({
@@ -67,11 +68,12 @@ describe('nextUp', () => {
 });
 
 describe('buildBoard', () => {
-  it('has the four main columns by default, with counts', () => {
+  it("has the vocabulary's columns by default (Skipped hidden), with counts", () => {
     const board = buildBoard(standard.tasks as Task[], standard.tasks as Task[], all);
     expect(board.map((c) => [c.label, c.cards.length])).toEqual([
-      ['Todo', 4],
+      ['To Do', 4],
       ['In Progress', 1],
+      ['In Review', 0],
       ['Blocked', 1],
       ['Done', 5],
     ]);
@@ -79,7 +81,14 @@ describe('buildBoard', () => {
 
   it('shows Skipped on request and Other only for unknown statuses', () => {
     const tasks = [t('a', 'skipped'), t('b', 'review'), t('c', 'todo')];
-    expect(buildBoard(tasks, tasks, all).map((c) => c.id)).toEqual(['todo', 'in_progress', 'blocked', 'done', 'other']);
+    expect(buildBoard(tasks, tasks, all).map((c) => c.id)).toEqual([
+      'todo',
+      'in_progress',
+      'in_review',
+      'blocked',
+      'done',
+      'other',
+    ]);
     expect(buildBoard(tasks, tasks, { ...all, showSkipped: true }).map((c) => c.id)).toContain('skipped');
     expect(buildBoard([tasks[2]], tasks, all).map((c) => c.id)).not.toContain('other');
   });
@@ -132,6 +141,53 @@ describe('buildBoard', () => {
   });
 });
 
+describe('a custom vocabulary', () => {
+  const vocab = resolveVocabulary({
+    statuses: [
+      { id: 'backlog', label: 'Backlog', kind: 'todo' },
+      { id: 'doing', label: 'Doing', kind: 'active' },
+      { id: 'awaiting_user', label: 'Awaiting you', kind: 'review' },
+      { id: 'shipped', label: 'Shipped', kind: 'done' },
+      { id: 'dropped', label: 'Dropped', kind: 'skipped' },
+    ],
+  });
+  const tasks = [
+    t('T-1', 'shipped', { phase: 0 }),
+    t('T-2', 'backlog', { phase: 0, dependencies: ['T-1'] }),
+    t('T-3', 'backlog', { phase: 0, dependencies: ['T-4'] }),
+    t('T-4', 'awaiting_user', { phase: 0 }),
+    t('T-5', 'dropped', { phase: 0 }),
+    t('T-6', 'todo', { phase: 0 }),
+  ];
+  const options = { ...all, vocab };
+
+  it('makes its columns, in its order and with its labels; skipped-kind columns behind the toggle', () => {
+    const board = buildBoard(tasks, tasks, options);
+    expect(board.map((c) => [c.id, c.label, c.kind])).toEqual([
+      ['backlog', 'Backlog', 'todo'],
+      ['doing', 'Doing', 'active'],
+      ['awaiting_user', 'Awaiting you', 'review'],
+      ['shipped', 'Shipped', 'done'],
+      // `todo` isn't one of its statuses
+      ['other', 'Other', undefined],
+    ]);
+    expect(buildBoard(tasks, tasks, { ...options, showSkipped: true }).map((c) => c.id)).toContain('dropped');
+  });
+
+  it('judges readiness and next-up by kind: done-kind meets a dependency, review-kind does not', () => {
+    const backlog = buildBoard(tasks, tasks, options)[0];
+    expect(backlog.cards.map((c) => [c.task.id, c.readiness, c.nextUp])).toEqual([
+      ['T-2', { ready: true }, true],
+      ['T-3', { ready: false, waitingOn: ['T-4'] }, false],
+    ]);
+    expect(nextUp(tasks, vocab)?.id).toBe('T-2');
+  });
+
+  it('counts done-kind tasks as done in lanes', () => {
+    expect(buildLanes(tasks, tasks, options)[0].done).toBe(1);
+  });
+});
+
 describe('buildLanes', () => {
   it('makes one lane per phase with progress, all with the same columns', async () => {
     const { buildLanes } = await import('../../src/lib/kanban');
@@ -148,7 +204,7 @@ describe('buildLanes', () => {
     ]);
     // "Other" exists because of phase 1; phase 0 gets it too (empty) so lanes line up
     for (const lane of lanes)
-      expect(lane.columns.map((c) => c.id)).toEqual(['todo', 'in_progress', 'blocked', 'done', 'other']);
+      expect(lane.columns.map((c) => c.id)).toEqual(['todo', 'in_progress', 'in_review', 'blocked', 'done', 'other']);
     expect(lanes[0].columns.find((c) => c.id === 'other')!.cards).toEqual([]);
     expect(ids(lanes[1].columns.find((c) => c.id === 'other')!.cards)).toEqual(['c']);
   });

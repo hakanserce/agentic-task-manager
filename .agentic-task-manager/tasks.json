@@ -2378,7 +2378,7 @@
         "DM-6.1"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-106"
       ],
@@ -2392,7 +2392,10 @@
         "dashboard/src/components/AboutDialog.svelte"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T07:23:07Z"
+      "updated_at": "2026-10-24T22:11:15Z",
+      "started_at": "2026-10-24T22:01:14Z",
+      "agent": "claude:e5ea9db0",
+      "completed_at": "2026-10-24T22:11:15Z"
     },
     {
       "id": "T-101",
@@ -3427,6 +3430,48 @@
       ],
       "created_at": "2026-10-24T21:48:53Z",
       "updated_at": "2026-10-24T21:48:53Z"
+    },
+    {
+      "id": "T-142",
+      "name": "Dashboard: Markdown in task descriptions",
+      "phase": 14,
+      "type": "feature",
+      "priority": "P2",
+      "description": "Render the description field as Markdown wherever it is shown: at least the detail panel, possibly the cards (decide whether cards show a plain-text excerpt instead). No new library, like the changelog and Help: reuse the Markdown renderer T-105 builds for Help (move it to src/lib if it only exists at build time, since descriptions are rendered in the browser). HTML in descriptions must stay escaped (the edge-cases fixture's HTML-in-description test must keep passing). Unit tests for the renderer on descriptions (headings, lists, code, links opening in a new tab), component test for the detail panel, screenshot update.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-105"
+      ],
+      "files": [
+        "dashboard/src/lib/markdown.ts",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/TaskCard.svelte",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-24T22:03:56Z",
+      "updated_at": "2026-10-24T22:03:56Z"
+    },
+    {
+      "id": "T-143",
+      "name": "Progress panel: rings as separate items",
+      "phase": 14,
+      "type": "polish",
+      "priority": "P3",
+      "description": "In the Progress panel's deep dive, give each ring under \"By Phase\" and \"By Type\" a border or a light background (theme tokens only, no hard-coded colours), so each ring reads as a separate item, like the Activity charts' cards. Check every theme and both modes; update the screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProgressWidget.svelte",
+        "dashboard/src/components/Ring.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-24T22:03:56Z",
+      "updated_at": "2026-10-24T22:03:56Z"
     }
   ]
 }

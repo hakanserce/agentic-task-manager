@@ -24,9 +24,16 @@ test.describe('Kanban board', () => {
     const columns = await page
       .locator('.kanban-column')
       .evaluateAll((cols) => cols.map((c) => (c as HTMLElement).dataset.status));
-    expect(columns).toEqual(['todo', 'in_progress', 'blocked', 'done', 'other']);
-    await expect(page.locator('.kanban-column-title')).toHaveText(['Todo', 'In Progress', 'Blocked', 'Done', 'Other']);
-    await expect(page.locator('.kanban-count')).toHaveText(['6', '3', '2', '24', '1']);
+    expect(columns).toEqual(['todo', 'in_progress', 'in_review', 'blocked', 'done', 'other']);
+    await expect(page.locator('.kanban-column-title')).toHaveText([
+      'To Do',
+      'In Progress',
+      'In Review',
+      'Blocked',
+      'Done',
+      'Other',
+    ]);
+    await expect(page.locator('.kanban-count')).toHaveText(['6', '3', '0', '2', '24', '1']);
   });
 
   test('cards are ordered like the loop works', async ({ page, tasksServer }) => {
@@ -60,6 +67,31 @@ test.describe('Kanban board', () => {
     await page.locator('#reload-btn').click();
     await expect(card(page, 'T-028')).toHaveClass(/next-up/);
     await expect(page.locator('.kanban-card.next-up')).toHaveCount(1);
+  });
+
+  test("a project's own statuses make the columns, by kind", async ({ page, tasksServer }) => {
+    const data = loadFixture('kanban');
+    data.meta = {
+      ...data.meta,
+      statuses: [
+        { id: 'todo', label: 'Backlog', kind: 'todo' },
+        { id: 'in_progress', label: 'Doing', kind: 'active' },
+        { id: 'awaiting_user', label: 'Awaiting you', kind: 'review' },
+        { id: 'done', label: 'Shipped', kind: 'done' },
+      ],
+    };
+    data.tasks.find((t) => t.id === 'T-025')!.status = 'awaiting_user';
+    await openKanban(page, tasksServer, data);
+    await expect(page.locator('.kanban-column-title')).toHaveText([
+      'Backlog',
+      'Doing',
+      'Awaiting you',
+      'Shipped',
+      'Other',
+    ]);
+    expect(await cardIds(page, 'awaiting_user')).toEqual(['T-025']);
+    // blocked is no longer one of its statuses: those tasks show under Other
+    expect(await cardIds(page, 'other')).toContain('T-035');
   });
 
   test('Next up for the standard fixture', async ({ page, tasksServer }) => {
@@ -98,7 +130,7 @@ test.describe('Kanban board', () => {
     await openKanban(page, tasksServer, 'kanban');
     await openFilters(page);
     await filterButton(page, 'phase', '2').click();
-    await expect(page.locator('.kanban-count')).toHaveText(['3', '1', '1', '0', '1']);
+    await expect(page.locator('.kanban-count')).toHaveText(['3', '1', '0', '1', '0', '1']);
     await expect(column(page, 'done').locator('.kanban-empty')).toHaveText('No tasks');
     await filterButton(page, 'phase', 'all').click();
     await filterButton(page, 'status', 'done').click();
@@ -124,8 +156,9 @@ test.describe('Kanban: group by phase', () => {
     ]);
     for (const lane of await lanes(page).all()) {
       await expect(lane.locator('.kanban-column-title')).toHaveText([
-        'Todo',
+        'To Do',
         'In Progress',
+        'In Review',
         'Blocked',
         'Done',
         'Other',

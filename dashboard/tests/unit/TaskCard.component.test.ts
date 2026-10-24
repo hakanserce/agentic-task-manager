@@ -23,10 +23,11 @@ describe('TaskCard', () => {
     expect(card).toHaveAttribute('id', 'task-T-004');
     expect(card).toHaveAttribute('data-id', 'T-004');
     expect(card).toHaveClass('status-done');
+    expect(card).toHaveClass('kind-done');
     expect([...card.querySelectorAll('.task-meta .badge')].map((b) => b.textContent)).toEqual([
       'Phase 1',
       'feature',
-      'done',
+      'Done',
     ]);
     expect([...card.querySelectorAll('.uc-badge, .req-badge')].map((b) => b.textContent)).toEqual([
       'UC-001',
@@ -54,6 +55,24 @@ describe('TaskCard', () => {
     const { container } = render(TaskCard, { task: t });
     expect(container.querySelector('.task-name')!.textContent).toBe('<b>Bold</b>');
     expect(container.querySelector('.task-name b')).toBeNull();
+  });
+
+  it("labels and styles the status from the project's vocabulary, by kind", () => {
+    loadIntoDashboard({
+      ...standard,
+      meta: {
+        statuses: [
+          { id: 'todo', label: 'Backlog', kind: 'todo' },
+          { id: 'in_progress', label: 'Doing', kind: 'active' },
+          { id: 'done', label: 'Shipped', kind: 'done' },
+          { id: 'awaiting_user', label: 'Awaiting you', kind: 'review' },
+        ],
+      },
+    });
+    const { container } = render(TaskCard, { task: { ...task('T-001'), status: 'awaiting_user' } });
+    const card = container.querySelector('.task-card')!;
+    expect(card).toHaveClass('kind-review');
+    expect(card.querySelectorAll('.task-meta .badge')[2].textContent).toBe('Awaiting you');
   });
 
   it('has no dependency label or tags when there are none', () => {

@@ -2,6 +2,16 @@
   import { pluginInfo } from '../lib/plugin-info';
   import { dashboard } from '../lib/state.svelte';
   import Dialog from './Dialog.svelte';
+
+  // The project's vocabularies, so a user can see what the agents will use (D-1.4)
+  const vocab = $derived(dashboard.vocab);
+  const phases = $derived([...vocab.phaseNames].sort(([a], [b]) => a - b));
+  const workflow = $derived.by(() => {
+    const w = dashboard.meta?.workflow;
+    return typeof w === 'object' && w !== null && typeof (w as { type?: unknown }).type === 'string'
+      ? (w as { type: string }).type
+      : null;
+  });
 </script>
 
 <Dialog id="about" title="About" open={dashboard.dialog === 'about'} onclose={() => dashboard.closeDialog()}>
@@ -16,5 +26,24 @@
     <dd>{pluginInfo.license}</dd>
     <dt>Source</dt>
     <dd><a href={pluginInfo.repository} target="_blank" rel="noopener noreferrer">{pluginInfo.repository}</a></dd>
+  </dl>
+  <h3 class="about-section-title">This project</h3>
+  <dl class="about-facts" id="about-vocab">
+    <dt>Statuses</dt>
+    <dd>{vocab.statuses.map((s) => `${s.label} (${s.kind})`).join(' · ')}</dd>
+    <dt>Phases</dt>
+    <dd>{phases.length ? phases.map(([id, name]) => `${id} ${name}`).join(' · ') : 'Numbered, without names'}</dd>
+    <dt>Types</dt>
+    <dd>{vocab.types.map((t) => t.label).join(' · ')}</dd>
+    <dt>Priorities</dt>
+    <dd>
+      {vocab.priorities
+        .map((p) => `${p.id} ${p.label}${p.id === vocab.defaultPriority ? ' (default)' : ''}`)
+        .join(' · ')}
+    </dd>
+    {#if workflow}
+      <dt>Workflow</dt>
+      <dd>{workflow}</dd>
+    {/if}
   </dl>
 </Dialog>

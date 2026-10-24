@@ -1,9 +1,13 @@
 <script lang="ts">
   import { dashboard } from '../lib/state.svelte';
-  import { phaseColor, statusLabel, statusStyle, typeStyle } from '../lib/theme';
+  import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
+  import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
 
   const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
-  const claim = $derived(task?.status === 'in_progress' ? dashboard.claims.get(task.id) : undefined);
+  const claim = $derived(
+    task && kindOf(dashboard.vocab, task.status) === 'active' ? dashboard.claims.get(task.id) : undefined,
+  );
+  const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
 
   function onOverlayClick(e: MouseEvent) {
@@ -28,9 +32,11 @@
       <h3><span style="color:var(--text-muted)">{task.id}</span> {task.name}</h3>
       <div class="task-meta" style="margin-bottom:16px">
         <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
-        <span class="badge" style="background:{ss.bg};color:{ss.color}">{statusLabel(task.status)}</span>
+        <span class="badge" style="background:{ss.bg};color:{ss.color}"
+          >{statusLabel(dashboard.vocab, task.status)}</span
+        >
         <span class="phase-badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
-          >Phase {task.phase}</span
+          >{phaseLabel(dashboard.vocab, task.phase)}</span
         >
       </div>
       <div class="detail-section">
@@ -113,7 +119,9 @@
     {name}
     {#if status !== undefined}
       {@const ds = statusStyle(status)}
-      <span class="badge" style="background:{ds.bg};color:{ds.color};margin-left:auto">{statusLabel(status)}</span>
+      <span class="badge" style="background:{ds.bg};color:{ds.color};margin-left:auto"
+        >{statusLabel(dashboard.vocab, status)}</span
+      >
     {/if}
   </div>
 {/snippet}

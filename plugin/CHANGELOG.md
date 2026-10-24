@@ -24,6 +24,10 @@ To get a new dashboard into a project, update the plugin and run `/atm:update-da
 - The skills commit only the files a task changed plus `tasks.json`, instead of everything in the working tree.
 - A failed task records why in `last_failure`.
 
+### Fixed
+- `/atm:serve stop` no longer waits several seconds in containers (dev containers, CI images) before reporting the
+  server stopped.
+
 ## [0.10.0] - 2026-10-23
 
 ### Added

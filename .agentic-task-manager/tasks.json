@@ -2990,7 +2990,7 @@
       "description": "See docs/v4/atm-cli.md §4.6. `atm serve [start|stop|status] --dir <path>` acts on the project at <path> instead of the current directory, so another project's server can be stopped without a cd. Tests in tests/scripts (servers need *.test.mjs). Mention it in /atm:serve's skill.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-111"
       ],
@@ -3001,7 +3001,10 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T21:48:53Z"
+      "updated_at": "2026-10-24T23:41:51Z",
+      "started_at": "2026-10-24T23:39:44Z",
+      "agent": "claude:e5ea9db0",
+      "completed_at": "2026-10-24T23:41:51Z"
     },
     {
       "id": "T-122",

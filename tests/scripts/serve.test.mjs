@@ -155,6 +155,23 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
+  test('--dir acts on another project: start, status and stop from elsewhere', async () => {
+    const root = project();
+    const elsewhere = makeProject({});
+    cleanups.push(() => removeDir(elsewhere));
+    const port = ports();
+    const started = atm(['serve', '--dir', root, '--port', String(port)], elsewhere);
+    assert.equal(started.code, 0, started.stderr);
+    assert.equal(portOf(started.stdout), port);
+    assert.equal(record(root)?.port, port);
+    assert.equal(record(elsewhere), null, 'nothing started for the current directory');
+    assert.match(atm(['serve', 'status', '--dir', root], elsewhere).stdout, new RegExp(`localhost:${port}/`));
+    const stopped = atm(['serve', 'stop', '--dir', root], elsewhere);
+    assert.match(stopped.stdout, /Dashboard server stopped/);
+    assert.equal(record(root), null);
+    assert.equal(atm(['serve', 'status', '--dir', path.join(root, 'nope')], elsewhere).code, 2);
+  });
+
   test('without a task file: an error, nothing started', () => {
     const root = makeProject({ git: true });
     cleanups.push(() => removeDir(root));

@@ -27,8 +27,8 @@ commands:
   migrate [--json]
                  move tasks.json from docs/ or the root into .agentic-task-manager/,
                  and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--port N]
-                 run the dashboard server for this project in the background
+  serve [start|stop|status] [--open] [--port N] [--dir PATH]
+                 run the dashboard server for this project (or the one at PATH) in the background
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked]
@@ -126,6 +126,7 @@ def build_parser():
     serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
     serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
     serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
+    serve.add_argument("--dir", metavar="PATH", help="the project to act on (default: the current directory's)")
 
     for name, description in (
         ("start", "mark a task in_progress and claim it (its dependencies must be done)"),

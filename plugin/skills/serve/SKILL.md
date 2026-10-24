@@ -21,13 +21,14 @@ The plugin's `atm` helper does the work; you run it and relay what it prints.
 | `status` | Say whether it runs, and where |
 | `--open` | With `start`: also open the dashboard in the default browser |
 | `--port N` | With `start`: try port N first (default 8000; the next free port is used if it's busy) |
+| `--dir PATH` | Act on the project at PATH instead of the current one (e.g. stop another project's server) |
 
 ## Step 2: Run the helper
 
 From the project root, run:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" serve <action> [--open] [--port N]
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" serve <action> [--open] [--port N] [--dir PATH]
 ```
 
 The helper:

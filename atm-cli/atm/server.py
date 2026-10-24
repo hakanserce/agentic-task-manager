@@ -133,7 +133,11 @@ def serve_status(paths, as_json):
 
 
 def cmd_serve(args):
-    paths = find_paths(os.getcwd())
+    # --dir acts on another project's server without a cd (which permission rules can't check)
+    cwd = os.path.abspath(args.dir) if args.dir else os.getcwd()
+    if not os.path.isdir(cwd):
+        raise AtmError(f"--dir {args.dir}: not a directory", 2)
+    paths = find_paths(cwd)
     if args.action == "start":
         record = serve_start(paths, args.port)
         if args.open:

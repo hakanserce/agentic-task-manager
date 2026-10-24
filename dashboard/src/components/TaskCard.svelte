@@ -5,6 +5,7 @@
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import type { Task } from '../lib/types';
   import { kindOf, phaseLabel, statusLabel, typeLabel } from '../lib/vocab';
+  import { reviewSummary, reviewWait } from '../lib/waiting';
   import PriorityBadge from './PriorityBadge.svelte';
 
   let { task }: { task: Task } = $props();
@@ -15,6 +16,7 @@
   const ss = $derived(kindStyle(kind));
   const deps = $derived(task.dependencies ?? []);
   const claim = $derived(kind === 'active' ? dashboard.claims.get(task.id) : undefined);
+  const review = $derived(reviewWait(task, dashboard.loadedAt, dashboard.vocab));
 </script>
 
 <div class="task-card status-{task.status} kind-{kind ?? 'none'}" id="task-{task.id}" data-id={task.id}>
@@ -44,6 +46,9 @@
     </div>
     {#if claim}
       <div class="task-claim" title="Claimed by {claim.agent}">{claimSummary(claim, dashboard.loadedAt)}</div>
+    {/if}
+    {#if review}
+      <div class="task-waiting review-wait" title={review.note?.text}>{reviewSummary(review)}</div>
     {/if}
   </div>
   <div class="task-tags">

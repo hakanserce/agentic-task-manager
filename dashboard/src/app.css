@@ -1655,6 +1655,22 @@ svg.graph-minimap.hidden {
 .kanban-claim::before {
   content: '● ';
 }
+/* Waiting on someone rather than on agent work (waiting.ts) */
+.task-waiting,
+.kanban-waiting {
+  margin-top: 6px;
+  font-size: 11px;
+}
+.review-wait {
+  color: var(--yellow);
+}
+.review-wait::before {
+  content: '◷ ';
+}
+.review-note {
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
 .kanban-empty {
   font-size: 12px;
   color: var(--text-muted);

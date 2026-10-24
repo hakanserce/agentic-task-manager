@@ -94,6 +94,28 @@ test.describe('Kanban board', () => {
     expect(await cardIds(page, 'other')).toContain('T-035');
   });
 
+  test('In Review: its own column; cards and the detail panel say how long it has waited', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.clock.setFixedTime(new Date('2026-04-03T13:30:00Z'));
+    const data = loadFixture('kanban');
+    Object.assign(
+      data.tasks.find((t) => t.id === 'T-025')!,
+      {
+        status: 'in_review',
+        review_requested_at: '2026-04-03T11:00:00Z',
+        notes: [{ at: '2026-04-03T11:00:00Z', kind: 'review', text: 'Check the column order' }],
+      },
+    );
+    await openKanban(page, tasksServer, data);
+    expect(await cardIds(page, 'in_review')).toEqual(['T-025']);
+    await expect(card(page, 'T-025').locator('.review-wait')).toHaveText('Waiting for review · 2 h 30 m');
+    await card(page, 'T-025').click();
+    await expect(page.locator('#detail-review')).toContainText('Waiting for review · 2 h 30 m');
+    await expect(page.locator('#detail-review .review-note')).toHaveText('Check the column order');
+  });
+
   test('Next up for the standard fixture', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'standard');
     await expect(page.locator('.kanban-card.next-up')).toHaveAttribute('data-id', 'T-006');

@@ -2,6 +2,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
+  import { reviewSummary, reviewWait } from '../lib/waiting';
   import PriorityBadge from './PriorityBadge.svelte';
 
   const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
@@ -9,6 +10,7 @@
     task && kindOf(dashboard.vocab, task.status) === 'active' ? dashboard.claims.get(task.id) : undefined,
   );
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
+  const review = $derived(task ? reviewWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
 
   function onOverlayClick(e: MouseEvent) {
@@ -65,6 +67,16 @@
             {#each requiredBy as dep (dep.id)}
               {@render depItem('→', dep.id, dep.name, dep.status)}
             {/each}
+          </div>
+        </div>
+      {/if}
+      {#if review}
+        <div class="detail-section" id="detail-review">
+          <div class="label">In review</div>
+          <div class="value" style="font-size:13px">
+            <div><strong>{reviewSummary(review)}</strong></div>
+            <div style="color:var(--text-muted)">Since {new Date(review.since).toLocaleString()}</div>
+            {#if review.note}<div class="review-note">{review.note.text}</div>{/if}
           </div>
         </div>
       {/if}

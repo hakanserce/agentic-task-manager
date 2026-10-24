@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
   import { kindOf } from '../lib/vocab';
+  import { reviewSummary, reviewWait } from '../lib/waiting';
   import PriorityBadge from './PriorityBadge.svelte';
 
   let { card }: { card: KanbanCard } = $props();
@@ -12,6 +13,7 @@
   const ts = $derived(typeStyle(task.type));
   const kind = $derived(kindOf(dashboard.vocab, task.status));
   const claim = $derived(kind === 'active' ? dashboard.claims.get(task.id) : undefined);
+  const review = $derived(reviewWait(task, dashboard.loadedAt, dashboard.vocab));
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -42,6 +44,9 @@
   <div class="kanban-card-name">{task.name}</div>
   {#if claim}
     <div class="kanban-claim" title="Claimed by {claim.agent}">{claimSummary(claim, dashboard.loadedAt)}</div>
+  {/if}
+  {#if review}
+    <div class="kanban-waiting review-wait" title={review.note?.text}>{reviewSummary(review)}</div>
   {/if}
   {#if card.readiness}
     {#if card.readiness.ready}

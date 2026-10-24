@@ -30,6 +30,18 @@ export interface Task {
   agent?: string;
   /** ISO 8601 UTC; when the task asked for a review (`atm review`). Its work ended here; review time isn't work */
   review_requested_at?: string;
+  /** Handoffs, outcomes, review requests, answers, rejections (docs/v4/data-model.md §4) */
+  notes?: Note[];
+}
+
+export interface Note {
+  /** ISO 8601 UTC */
+  at: string;
+  /** Who wrote it */
+  by?: string;
+  /** handoff, outcome, review, rejection, failure, answer or note */
+  kind: string;
+  text: string;
 }
 
 export interface TasksFile {

@@ -86,6 +86,21 @@ describe('TaskCard', () => {
     expect(plain).toHaveAttribute('title', 'P2 Medium priority (the default)');
   });
 
+  it('shows how long a task in review has waited, with the review note on hover', () => {
+    dashboard.loadedAt = Date.parse('2026-04-03T13:30:00Z');
+    const reviewed = {
+      ...task('T-005'),
+      status: 'in_review',
+      review_requested_at: '2026-04-03T11:00:00Z',
+      notes: [{ at: '2026-04-03T11:00:00Z', kind: 'review', text: 'Check the editor toolbar' }],
+    };
+    const { container } = render(TaskCard, { task: reviewed });
+    const line = container.querySelector('.review-wait')!;
+    expect(line).toHaveTextContent('Waiting for review · 2 h 30 m');
+    expect(line).toHaveAttribute('title', 'Check the editor toolbar');
+    expect(render(TaskCard, { task: task('T-005') }).container.querySelector('.review-wait')).toBeNull();
+  });
+
   it('has no dependency label or tags when there are none', () => {
     const { container } = render(TaskCard, { task: task('T-001') });
     expect(container.querySelector('.deps-label')).toBeNull();

@@ -3,6 +3,7 @@
 // share localStorage, so each project's view lives under its own key. Theme, mode, auto-refresh and the last-seen
 // version stay per browser (prefs.ts).
 import type { FilterGroup } from './filters';
+import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
 import { VIEWS, type ViewId } from './tabs';
 import type { ViewWindow } from './time-window';
@@ -24,6 +25,10 @@ export interface SavedView {
   graph: { k: number; x: number; y: number } | null;
   /** The Agents tab's zoomed time range, or null to show everything */
   agents: ViewWindow | null;
+  /** The Agents timeline runs up to now and moves with time */
+  agentsLive: boolean;
+  /** The period the Activity panel shows */
+  activity: ActivityRange;
 }
 
 export interface ProjectMeta {
@@ -49,6 +54,8 @@ export function defaultView(): SavedView {
     graphFiltered: 'hide',
     graph: null,
     agents: null,
+    agentsLive: false,
+    activity: { preset: 'all' },
   };
 }
 
@@ -67,6 +74,16 @@ function agentsWindow(value: unknown): SavedView['agents'] {
   return w && finite(w.start) && finite(w.end) && w.end > w.start
     ? { start: w.start, end: w.end, followEnd: w.followEnd === true }
     : null;
+}
+
+function activityRange(value: unknown): ActivityRange {
+  const r = value as Record<string, unknown> | null;
+  const preset = (ACTIVITY_PRESETS as readonly unknown[]).includes(r?.preset)
+    ? (r!.preset as ActivityRange['preset'])
+    : 'all';
+  if (preset !== 'custom')
+    return finite(r?.offset) && r.offset < 0 ? { preset, offset: Math.round(r.offset) } : { preset };
+  return finite(r!.from) && finite(r!.to) && r!.to > r!.from ? { preset, from: r!.from, to: r!.to } : { preset: 'all' };
 }
 
 /** The stored view for `key`, with every missing or malformed field replaced by its default. */
@@ -88,6 +105,8 @@ export function readView(key: string): SavedView {
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
     agents: agentsWindow(stored.agents),
+    agentsLive: stored.agentsLive === true,
+    activity: activityRange(stored.activity),
   };
 }
 

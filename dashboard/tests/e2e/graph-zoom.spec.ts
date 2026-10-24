@@ -47,8 +47,16 @@ test.describe('graph sizing', () => {
     const svgCenter = await center(page);
     expect(Math.abs(nodeCenter.x - svgCenter.x)).toBeLessThan(2);
     await expect(minimap(page)).toBeVisible();
-    // Wide but only 4 rows tall: the panel fits the graph's height at 100% (+ padding and border), below the 560px cap
-    await expect(page.locator('#graph-container')).toHaveCSS('height', `${contentSize('large-90').h + 50}px`);
+  });
+
+  test('the graph fills the window below the top bar', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    const box = (await page.locator('#graph-container').boundingBox())!;
+    const viewport = page.viewportSize()!;
+    // The panel ends at the bottom of the window, less the page padding (24px) and the panel border
+    expect(box.y + box.height).toBeGreaterThan(viewport.height - 30);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(viewport.height);
   });
 
   test('a small graph opens at 100%, centered, without a minimap', async ({ page, tasksServer }) => {
@@ -71,8 +79,6 @@ test.describe('graph sizing', () => {
     expect(v.x + w * v.k).toBeLessThanOrEqual(v.vw + 0.5);
     expect(v.y + h * v.k).toBeLessThanOrEqual(v.vh + 0.5);
     await expect(minimap(page)).toBeHidden();
-    // Tall enough for the graph at 100%: content + 2 × 24px padding + 2px border
-    await expect(page.locator('#graph-container')).toHaveCSS('height', `${h + 50}px`);
   });
 });
 

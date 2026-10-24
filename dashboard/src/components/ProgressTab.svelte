@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import BurndownChart from './BurndownChart.svelte';
   import PhaseTable from './PhaseTable.svelte';
+  import UtilizationPanel from './UtilizationPanel.svelte';
 
   // Recomputed whenever tasks or filters change (auto-refresh reloads keep it current)
   const now = $derived.by(() => (dashboard.tasks, dashboard.filtered, Date.now()));
@@ -29,5 +30,6 @@
     </div>
     <BurndownChart data={chart} {now} />
     <PhaseTable {forecast} {now} selected={focus} onselect={toggle} />
+    <UtilizationPanel {now} />
   {/if}
 </div>

@@ -37,12 +37,16 @@
   box-sizing: border-box;
 }
 
+/* A column filling the window: the top bar, then the views, which take the rest of the height */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   padding: 24px;
   line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Title and version chip share a row; the row carries the title's bottom margin */
@@ -421,7 +425,7 @@ h1 {
 
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
 }
 .kpi {
@@ -495,8 +499,9 @@ h1 {
 }
 .deep-dive-tooltip {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 40px;
+  z-index: 3;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 45%, transparent);
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -505,10 +510,6 @@ h1 {
   color: var(--text-muted);
   pointer-events: none;
   max-width: 260px;
-}
-.deep-dive-tooltip.left {
-  right: auto;
-  left: 34px;
 }
 .deep-dive-tooltip strong {
   color: var(--text);
@@ -1187,41 +1188,81 @@ button.menu-trigger:hover,
   margin-bottom: 2px;
 }
 
-/* Dependency graph */
+/* The views: a strip of tabs on a panel that fills the rest of the window */
 .graph-section {
-  margin-bottom: 32px;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
-.graph-section h2 {
-  font-size: 18px;
-  margin-bottom: 12px;
-}
-
 .view-tabs {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  padding-left: 8px;
 }
 .view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  position: relative;
   background: none;
   border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 4px 12px;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 14px 9px;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.view-tab .icon {
+  opacity: 0.8;
 }
 .view-tab:hover {
   color: var(--text);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
+/* The selected tab is part of the panel: same background, and it covers the panel's top border */
 .view-tab[aria-selected='true'] {
   color: var(--text);
-  background: var(--surface2);
+  background: var(--surface);
   border-color: var(--border);
+  margin-bottom: -1px;
+  z-index: 1;
+}
+.view-tab[aria-selected='true'] .icon {
+  opacity: 1;
+  color: var(--accent);
 }
 .view-tab:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline-offset: -2px;
+}
+.view-panels {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-height: 420px;
+}
+.view-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-width: 0;
+}
+.view-panel > * {
+  flex: 1;
+}
+#panel-graph {
+  padding: 0;
 }
 .view-panel[hidden] {
   display: none;
@@ -1237,10 +1278,10 @@ button.menu-trigger:hover,
 
 .graph-container {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  height: 220px;
+  border-radius: 10px;
+  /* Takes exactly the panel's height (basis 0), so the SVG's size never pushes the page longer */
+  flex: 1 1 0;
+  min-height: 400px;
   overflow: hidden;
 }
 .graph-container:focus-visible {
@@ -1558,10 +1599,7 @@ svg.graph-minimap.hidden {
 
 /* Progress tab */
 .progress-view {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px 20px;
+  padding: 0 4px;
 }
 .progress-basis {
   font-size: 13px;
@@ -2046,4 +2084,285 @@ svg.graph-minimap.hidden {
 .agents-hint {
   font-size: 11px;
   color: var(--text-muted);
+}
+.agents-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px 0 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+}
+.agents-live input {
+  margin: 0;
+  accent-color: var(--green);
+}
+.agents-live .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.agents-live:has(input:checked) {
+  color: var(--text);
+  font-weight: 600;
+}
+.agents-live:has(input:checked) .live-dot {
+  background: var(--green);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 25%, transparent);
+  }
+}
+.overview-bar.graph-dimmed {
+  opacity: 0.2;
+}
+
+/* Progress tab: agent utilisation */
+.utilization {
+  margin-top: 28px;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.util-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.util-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.util-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.util-label {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.util-label span {
+  display: block;
+  font-size: 11px;
+}
+.util-card .util-pct {
+  display: none;
+}
+.util-card .util-meter {
+  grid-column: 1 / -1;
+  max-width: none;
+}
+.util-meter {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.util-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  background: var(--accent);
+}
+/* Over 100% (agents in parallel): full, with stripes */
+.util-fill.over {
+  background: repeating-linear-gradient(-45deg, var(--accent) 0 5px, var(--green) 5px 10px);
+}
+.util-cell {
+  white-space: nowrap;
+}
+.util-cell .util-meter {
+  width: 120px;
+  margin-right: 8px;
+}
+.util-pct {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Activity panel: the period picker */
+.activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.activity-range {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--surface2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.activity-range button {
+  background: none;
+  border: none;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.activity-range button:hover {
+  color: var(--text);
+}
+.activity-range button.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 15%, transparent);
+}
+.activity-custom {
+  display: flex;
+  gap: 14px;
+  margin: -4px 0 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.activity-custom input {
+  margin-left: 6px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 6px;
+  color-scheme: light dark;
+}
+
+/* Activity deep dive: one titled chart per question */
+/* Each chart is its own card, so they read as separate items */
+.dive-chart {
+  background: color-mix(in srgb, var(--surface2) 60%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px 8px;
+}
+.dive-chart + .dive-chart {
+  margin-top: 10px;
+}
+.dive-chart header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 4px;
+}
+.dive-chart h4 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.dive-chart h4 span {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.dive-chart .type-legend {
+  margin: 0;
+}
+.dive-chart svg {
+  display: block;
+  overflow: visible;
+}
+.chart-hover {
+  fill: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.chart-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.dive-axis {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 34px;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.tooltip-section {
+  margin-top: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+/* Activity panel: ‹ Yesterday › */
+.activity-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.period-label {
+  min-width: 96px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.period-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.period-step:hover:not(:disabled) {
+  background: var(--surface2);
+  color: var(--text);
+}
+.period-step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Activity: stretches with no agent working */
+.idle-band {
+  fill: color-mix(in srgb, var(--yellow) 12%, transparent);
+  stroke: color-mix(in srgb, var(--yellow) 45%, transparent);
+  stroke-dasharray: 3 3;
+}
+.idle-label {
+  font-size: 10px;
+  fill: var(--text-muted);
+}
+/* Text stays in text colours (yellow on light backgrounds is hard to read); a yellow edge marks it */
+.kpi-warn {
+  box-shadow: inset 3px 0 0 var(--yellow);
 }

@@ -14,15 +14,39 @@
     ['1d', 1440],
   ];
 
+  // Live: the timeline runs up to now and moves with time, between data reloads too
+  const LIVE_TICK_MS = 5_000;
+  let clock = $state(Date.now());
+  $effect(() => {
+    if (!dashboard.agentsLive) return;
+    clock = Date.now();
+    const timer = setInterval(() => (clock = Date.now()), LIVE_TICK_MS);
+    return () => clearInterval(timer);
+  });
+  const now = $derived(dashboard.agentsLive ? Math.max(clock, dashboard.loadedAt) : dashboard.loadedAt);
+
   // One lane per agent: each task a bar from start to completion (or to now while in progress), in its type colour.
-  const timeline = $derived(agentTimeline(dashboard.filtered, dashboard.claims, dashboard.loadedAt));
+  // Tasks outside the search and filters stay, greyed out.
+  const narrowed = $derived(dashboard.filtered.length < dashboard.tasks.length);
+  const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
+  const timeline = $derived(agentTimeline(dashboard.tasks, dashboard.claims, now, narrowed ? matching : undefined));
   const bounds = $derived<TimeWindow>(
-    timeline ? { start: timeline.start, end: Math.max(timeline.end, timeline.start + 1) } : { start: 0, end: 1 },
+    timeline
+      ? {
+          start: timeline.start,
+          end: Math.max(timeline.end, timeline.start + 1, dashboard.agentsLive ? now : 0),
+        }
+      : { start: 0, end: 1 },
   );
 
   // The visible time range: null shows everything; a zoomed window pinned to the end follows live work.
   // Saved with the project's view.
-  const kept = $derived(dashboard.agentsWindow);
+  // Live keeps a zoomed window at the newest end.
+  const kept = $derived(
+    dashboard.agentsLive && dashboard.agentsWindow
+      ? { ...dashboard.agentsWindow, followEnd: true }
+      : dashboard.agentsWindow,
+  );
   const win = $derived(resolveWindow(kept, bounds));
   const span = $derived(win.end - win.start);
   const zoomed = $derived(kept !== null);
@@ -32,8 +56,9 @@
   const overviewPos = (t: number) => ((t - bounds.start) / fullSpan) * 100;
   const ticks = $derived(timeline ? timeTicks(win.start, win.end) : []);
   const types = $derived([...new Set(timeline?.lanes.flatMap((l) => l.bars.map((b) => b.task.type)) ?? [])].sort());
-  const live = $derived(!!timeline && timeline.lanes.some((l) => l.current.length > 0));
-  const nowInRange = $derived(live && dashboard.loadedAt <= win.end);
+  const working = $derived(!!timeline && timeline.lanes.some((l) => l.current.length > 0));
+  const atNow = $derived((working || dashboard.agentsLive) && win.end >= bounds.end);
+  const nowInRange = $derived((working || dashboard.agentsLive) && now <= win.end);
 
   /** A bar's visible part as left/width percentages, or null when it is outside the window */
   function segment(start: number, end: number) {
@@ -42,8 +67,14 @@
     return { left, width: Math.min(100, pos(end)) - left };
   }
 
-  const setWindow = (w: TimeWindow) => (dashboard.agentsWindow = keepWindow(w, bounds));
-  const zoomBy = (factor: number, anchor = 0.5) => setWindow(zoomWindow(win, bounds, factor, anchor));
+  // Moving the window into the past ends Live; zooming keeps it (anchored at now)
+  function setWindow(w: TimeWindow) {
+    const next = keepWindow(w, bounds);
+    if (next && !next.followEnd) dashboard.agentsLive = false;
+    dashboard.agentsWindow = next;
+  }
+  const zoomBy = (factor: number, anchor = 0.5) =>
+    setWindow(zoomWindow(win, bounds, factor, dashboard.agentsLive ? 1 : anchor));
   const showLast = (minutes: number) => setWindow({ start: bounds.end - minutes * 60_000, end: bounds.end });
 
   // The tracks' left edge and width, measured from the axis row they share a column with
@@ -185,10 +216,11 @@
       </div>
       <div class="graph-controls agents-controls" id="agents-controls">
         <span class="agents-range" id="agents-range">
-          {formatWhen(win.start, dashboard.loadedAt)} – {live && win.end >= bounds.end
-            ? 'now'
-            : formatWhen(win.end, dashboard.loadedAt)}
+          {formatWhen(win.start, now)} – {atNow ? 'now' : formatWhen(win.end, now)}
         </span>
+        <label class="agents-live" title="Keep the timeline at the current time, moving with it">
+          <input type="checkbox" id="agents-live" bind:checked={dashboard.agentsLive} /><span class="live-dot"></span> Live
+        </label>
         <span class="agents-presets" role="group" aria-label="Show the last">
           {#each PRESETS as [label, minutes] (label)}
             {#if minutes * 60_000 < fullSpan}
@@ -237,13 +269,13 @@
           <span
             class="agents-tick"
             style="left:{pos(t)}%;transform:translateX(-{pos(t) < 4 ? 0 : pos(t) > 96 ? 100 : 50}%)"
-            >{formatWhen(t, dashboard.loadedAt)}</span
+            >{formatWhen(t, now)}</span
           >
         {/each}
       </div>
 
       {#each timeline.lanes as lane (lane.agent)}
-        <div class="agent-info" data-agent={lane.agent}>
+        <div class="agent-info" class:graph-dimmed={!lane.matches} data-agent={lane.agent}>
           <div class="agent-name" title={lane.agent || 'Tasks started before agents were recorded'}>
             <span class="agent-dot" class:active={lane.current.length > 0}></span>
             {lane.agent === UNATTRIBUTED ? 'Unattributed' : shortAgent(lane.agent)}
@@ -265,19 +297,20 @@
               <button
                 class="agent-bar"
                 class:live={bar.live}
+                class:graph-dimmed={narrowed && !matching.has(bar.task.id)}
                 class:cut-start={bar.start < win.start}
                 class:cut-end={bar.end > win.end}
                 data-id={bar.task.id}
                 style="left:{seg.left}%;width:max(4px, {seg.width}%);--bar:{typeStyle(bar.task.type).color}"
-                title="{bar.task.id} {bar.task.name}&#10;{formatWhen(bar.start, dashboard.loadedAt)} → {bar.live
+                title="{bar.task.id} {bar.task.name}&#10;{formatWhen(bar.start, now)} → {bar.live
                   ? 'now'
-                  : formatWhen(bar.end, dashboard.loadedAt)} ({formatMinutes((bar.end - bar.start) / 60_000)})"
+                  : formatWhen(bar.end, now)} ({formatMinutes((bar.end - bar.start) / 60_000)})"
                 onclick={() => dashboard.showDetail(bar.task.id)}
                 ><span class="agent-bar-label">{bar.task.id}</span></button
               >
             {/if}
           {/each}
-          {#if nowInRange}<span class="agents-now" style="left:{pos(dashboard.loadedAt)}%"></span>{/if}
+          {#if nowInRange}<span class="agents-now" style="left:{pos(now)}%"></span>{/if}
         </div>
       {/each}
 
@@ -292,7 +325,7 @@
         aria-valuemin={bounds.start}
         aria-valuemax={bounds.end}
         aria-valuenow={win.start}
-        aria-valuetext="{formatWhen(win.start, dashboard.loadedAt)} to {formatWhen(win.end, dashboard.loadedAt)}"
+        aria-valuetext="{formatWhen(win.start, now)} to {formatWhen(win.end, now)}"
         onpointerdown={onBrushDown}
         onpointermove={onBrushMove}
         onpointerup={onBrushUp}
@@ -302,6 +335,7 @@
           {#each lane.bars as bar (bar.task.id)}
             <span
               class="overview-bar"
+              class:graph-dimmed={narrowed && !matching.has(bar.task.id)}
               style="left:{overviewPos(bar.start)}%;width:max(2px, {overviewPos(bar.end) -
                 overviewPos(bar.start)}%);top:{4 + i * (26 / timeline.lanes.length)}px;height:{Math.max(
                 2,

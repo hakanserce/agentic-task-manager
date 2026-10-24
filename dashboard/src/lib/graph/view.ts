@@ -19,9 +19,6 @@ export const AUTO_FIT_MIN_K = 0.6;
 export const PAD = 24;
 /** Pan limit: at least this much of the graph stays on screen. */
 export const KEEP_VISIBLE = 60;
-const MIN_CONTAINER_H = 220;
-const MAX_CONTAINER_H = 560;
-const BORDER = 2;
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -75,11 +72,6 @@ export function isFullyVisible(v: View, content: Size, viewport: Size): boolean 
 /** The SVG viewBox (in content coordinates) that shows `v` in a viewport of this size. */
 export function toViewBox(v: View, viewport: Size): string {
   return `${-v.x / v.k} ${-v.y / v.k} ${viewport.w / v.k} ${viewport.h / v.k}`;
-}
-
-/** Graph panel height: the graph at 100% plus padding and border, within sensible bounds. */
-export function containerHeight(contentH: number): number {
-  return clamp(contentH + PAD * 2 + BORDER, MIN_CONTAINER_H, MAX_CONTAINER_H);
 }
 
 /** True if at least one node rectangle (content coordinates, top-left x/y) overlaps the viewport. */

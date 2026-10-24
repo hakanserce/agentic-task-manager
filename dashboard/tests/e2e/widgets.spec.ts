@@ -54,31 +54,94 @@ test.describe('Activity widget', () => {
     await expect(activityPill(page).locator('svg.sparkline path')).toHaveCount(1);
   });
 
-  test('the deep dive: key numbers, types, and a tooltip per period', async ({ page }) => {
+  test('the deep dive: key numbers, and charts by type, by agent and per task', async ({ page }) => {
     await activityPill(page).click();
     const panel = page.locator('#activity-panel');
-    await expect(panel.locator('.panel-heading')).toHaveText('Activity per 1 hour');
+    await expect(panel.locator('.activity-heading')).toContainText('Activity per 1 hour');
+    // 6 done in 4 h (08:00–12:00); 1.4 agents busy on average; idle 11:00–11:30 (see fixtures/agents.md)
     await expect(panel.locator('.kpi')).toHaveText([
-      '6completed',
-      '3best 1 hour',
-      '55 mmedian cycle time',
-      '1in progress',
+      '6tasks completed',
+      '1.5 / hourcompletion rate',
+      '55 mtypical time per task',
+      '1.4agents busy on average · 1 now',
+      '30 midle (no agent working)',
     ]);
-    await expect(panel.locator('.type-legend .type-chip')).toHaveText([
+    await expect(panel.locator('#dive-completed .type-chip')).toHaveText([
       'feature2',
       'bugfix1',
       'docs1',
       'infra1',
       'test1',
     ]);
+    await expect(panel.locator('#dive-agents .type-chip')).toHaveText([
+      'claude:alice001',
+      'claude:bob00002',
+      'Unattributed',
+    ]);
+    await expect(panel.locator('#dive-cycle circle')).toHaveCount(6);
+    await expect(panel.locator('#dive-agents .idle-label')).toHaveText(['idle 30 m']);
+    await expect(panel.locator('.idle-band')).toHaveCount(3); // the same stretch in all three charts
 
-    const chart = panel.locator('.deep-dive-chart');
-    const box = (await chart.boundingBox())!;
-    await page.mouse.move(box.x + box.width * 0.2, box.y + box.height / 2);
+    // Hovering a period reads it across the charts: 09:00–10:00
+    const chart = (await panel.locator('#dive-agents svg').boundingBox())!;
+    const plot = { x: chart.x + (34 / 640) * chart.width, w: ((640 - 42) / 640) * chart.width };
+    await page.mouse.move(plot.x + plot.w * 0.375, chart.y + chart.height / 2);
     const tooltip = panel.locator('.deep-dive-tooltip');
-    await expect(tooltip).toBeVisible();
-    await expect(tooltip.locator('.tooltip-title')).toHaveText(/^Apr 1 08:00 AM – Apr 1 09:00 AM$/);
-    await expect(tooltip.locator('.tooltip-task')).toHaveText(['T-001 Set up repository']);
+    await expect(tooltip.locator('.tooltip-title')).toHaveText('Apr 1 09:00 AM – Apr 1 10:00 AM');
+    await expect(tooltip).toContainText('3 completed');
+    // alice 09:00–09:40 (40 m), bob 09:10–10:00 (50 m), unattributed 09:00–09:20 (20 m)
+    await expect(tooltip.locator('.tooltip-type').filter({ hasText: 'alice' })).toHaveText('claude:alice001 67%');
+    await expect(tooltip.locator('.tooltip-type').filter({ hasText: 'bob' })).toHaveText('claude:bob00002 83%');
+    await expect(tooltip.locator('.tooltip-task')).toHaveText([
+      'T-002 Login form',
+      'T-004 Old task',
+      'T-003 Login tests',
+    ]);
+  });
+
+  test('the period: a unit and ‹ › to step back and forth, remembered', async ({ page }) => {
+    await activityPill(page).click();
+    const label = page.locator('#activity-period');
+    await expect(label).toHaveText('All time');
+    await expect(page.locator('#activity-prev')).toHaveCount(0);
+
+    await page.locator('[data-range="day"]').click();
+    await expect(label).toHaveText('Today');
+    await expect(page.locator('#activity-next')).toBeDisabled();
+    await expect(page.locator('.kpi').first()).toHaveText('6tasks completed');
+    await page.locator('#activity-prev').click();
+    await expect(label).toHaveText('Yesterday');
+    await expect(page.locator('.kpi').first()).toHaveText('0tasks completed');
+    await page.locator('#activity-prev').click();
+    await expect(label).toHaveText('Mon, Mar 30');
+    await page.locator('#activity-next').click();
+    await page.locator('#activity-next').click();
+    await expect(label).toHaveText('Today');
+
+    await page.locator('[data-range="hour"]').click();
+    await expect(page.locator('.activity-heading')).toContainText('per 5 minutes');
+    await page.locator('[data-range="week"]').click();
+    await page.locator('#activity-prev').click();
+    await expect(label).toHaveText('Last week');
+    await page.locator('[data-range="month"]').click();
+    await page.locator('#activity-prev').click();
+    await expect(label).toHaveText('Last month');
+    await page.locator('#activity-prev').click();
+    await expect(label).toHaveText('February 2026');
+
+    await page.reload();
+    await activityPill(page).click();
+    await expect(label).toHaveText('February 2026');
+  });
+
+  test('a custom period', async ({ page }) => {
+    await activityPill(page).click();
+    await page.locator('[data-range="custom"]').click();
+    await page.locator('#activity-from').fill('2026-04-01T09:00');
+    await page.locator('#activity-from').dispatchEvent('change');
+    await page.locator('#activity-to').fill('2026-04-01T10:00');
+    await page.locator('#activity-to').dispatchEvent('change');
+    await expect(page.locator('.kpi').first()).toHaveText('3tasks completed');
   });
 
   test('is left out when nothing has been completed yet', async ({ page, tasksServer }) => {

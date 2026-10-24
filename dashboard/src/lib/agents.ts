@@ -18,6 +18,8 @@ export interface AgentLane {
   /** The agent's identity, or UNATTRIBUTED for tasks from before agents were recorded */
   agent: string;
   bars: AgentBar[];
+  /** Whether any of its tasks matches the search and filters */
+  matches: boolean;
   done: number;
   medianMinutes: number | null;
   /** Tasks the agent is working on now */
@@ -37,7 +39,16 @@ const ms = (iso: string | undefined) => {
   return Number.isNaN(t) ? null : t;
 };
 
-export function agentTimeline(tasks: Task[], claims: ClaimMap, now: number): AgentTimeline | null {
+/**
+ * The timeline of all `tasks`. With `matching`, the tasks outside it stay on the timeline (to be greyed out) but the
+ * lane stats count only matching tasks.
+ */
+export function agentTimeline(
+  tasks: Task[],
+  claims: ClaimMap,
+  now: number,
+  matching?: ReadonlySet<string>,
+): AgentTimeline | null {
   const byAgent = new Map<string, AgentBar[]>();
   for (const task of tasks) {
     const start = ms(task.started_at);
@@ -49,15 +60,17 @@ export function agentTimeline(tasks: Task[], claims: ClaimMap, now: number): Age
   }
   if (byAgent.size === 0) return null;
 
-  const lanes: AgentLane[] = [...byAgent].map(([agent, bars]) => {
+  const lanes: AgentLane[] = [...byAgent].map(([agent, all]) => {
+    const bars = matching ? all.filter((b) => matching.has(b.task.id)) : all;
     const finished = bars.filter((b) => !b.live);
     return {
       agent,
-      bars: bars.sort((a, b) => a.start - b.start),
+      bars: all.sort((a, b) => a.start - b.start),
+      matches: bars.length > 0,
       done: finished.length,
       medianMinutes: median(finished.map((b) => (b.end - b.start) / 60_000)),
       current: bars.filter((b) => b.live).map((b) => b.task),
-      lastActive: Math.max(...bars.map((b) => b.end)),
+      lastActive: Math.max(...all.map((b) => b.end)),
     };
   });
   // Most recently active first; tasks without an agent last

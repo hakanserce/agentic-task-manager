@@ -134,6 +134,8 @@ describe('DashboardState saved view', () => {
     s.graphFiltered = 'dim';
     s.graphView = { k: 2, x: 10, y: 20 };
     s.agentsWindow = { start: 1000, end: 400_000, followEnd: true };
+    s.agentsLive = true;
+    s.activityRange = { preset: 'week' };
     s.saveView();
     return s;
   }

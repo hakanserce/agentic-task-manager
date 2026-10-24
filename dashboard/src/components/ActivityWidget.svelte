@@ -1,12 +1,56 @@
 <script lang="ts">
-  import { activitySeries } from '../lib/insights';
+  import {
+    ACTIVITY_PRESET_LABELS,
+    ACTIVITY_PRESETS,
+    activitySeries,
+    rangeLabel,
+    rangeWindow,
+    STEPPED_PRESETS,
+    type ActivityPreset,
+  } from '../lib/insights';
   import { dashboard } from '../lib/state.svelte';
   import ActivityDeepDive from './ActivityDeepDive.svelte';
   import Icon from './Icon.svelte';
 
   // Compact: completions per period (bars) with their rolling average (line, same scale). Click: the deep dive.
-  const series = $derived(activitySeries(dashboard.tasks));
+  const series = $derived(activitySeries(dashboard.tasks, null, dashboard.loadedAt));
   let open = $state(false);
+
+  // The panel shows the chosen period (saved with the view); the pill always shows all time
+  const range = $derived(dashboard.activityRange);
+  const period = $derived(rangeWindow(range, dashboard.loadedAt));
+  const detail = $derived(
+    range.preset === 'all' ? series : activitySeries(dashboard.tasks, period, dashboard.loadedAt),
+  );
+
+  // <input type="datetime-local"> works in local time without seconds
+  const toInput = (t: number) => {
+    const d = new Date(t - new Date(t).getTimezoneOffset() * 60_000);
+    return d.toISOString().slice(0, 16);
+  };
+  const fromInput = (v: string) => (v ? new Date(v).getTime() : NaN);
+
+  const stepped = $derived(STEPPED_PRESETS.includes(range.preset));
+  const offset = $derived(range.offset ?? 0);
+  // ‹ › move a whole hour/day/week/month back or forward, never past now
+  const stepPeriod = (by: number) =>
+    (dashboard.activityRange = { preset: range.preset, offset: Math.min(0, offset + by) });
+
+  function choose(preset: ActivityPreset) {
+    if (preset !== 'custom') return (dashboard.activityRange = { preset });
+    // Start a custom range from what is shown now
+    const shown =
+      period ?? (detail?.buckets.length ? { start: detail.buckets[0].start, end: dashboard.loadedAt } : null);
+    const end = shown?.end ?? dashboard.loadedAt;
+    dashboard.activityRange = { preset, from: shown?.start ?? end - 24 * 3_600_000, to: end };
+  }
+
+  function setCustom(which: 'from' | 'to', value: string) {
+    const t = fromInput(value);
+    if (Number.isNaN(t) || range.preset !== 'custom') return;
+    const next = { ...range, [which]: t };
+    if (next.from! < next.to!) dashboard.activityRange = next;
+  }
   let root = $state<HTMLElement>();
 
   const W = 120;
@@ -57,8 +101,66 @@
     </button>
     {#if open}
       <div class="insights-panel wide" id="activity-panel" role="dialog" aria-label="Activity details">
-        <div class="panel-heading">Activity <span>per {series.unitLabel}</span></div>
-        <ActivityDeepDive {series} />
+        <div class="panel-heading activity-heading">
+          <span>Activity <span>per {detail?.unitLabel ?? series.unitLabel}</span></span>
+          <span class="activity-period">
+            {#if stepped}
+              <button
+                class="period-step"
+                aria-label="Earlier"
+                title="Earlier"
+                id="activity-prev"
+                onclick={() => stepPeriod(-1)}><Icon name="chevron-left" size={14} /></button
+              >
+            {/if}
+            <span class="period-label" id="activity-period" aria-live="polite"
+              >{rangeLabel(range, dashboard.loadedAt)}</span
+            >
+            {#if stepped}
+              <button
+                class="period-step"
+                aria-label="Later"
+                title="Later"
+                id="activity-next"
+                disabled={offset >= 0}
+                onclick={() => stepPeriod(1)}><Icon name="chevron-right" size={14} /></button
+              >
+            {/if}
+          </span>
+          <span class="activity-range" role="group" aria-label="Period">
+            {#each ACTIVITY_PRESETS as preset (preset)}
+              <button
+                class:active={range.preset === preset}
+                aria-pressed={range.preset === preset}
+                data-range={preset}
+                onclick={() => choose(preset)}>{ACTIVITY_PRESET_LABELS[preset]}</button
+              >
+            {/each}
+          </span>
+        </div>
+        {#if range.preset === 'custom' && range.from !== undefined && range.to !== undefined}
+          <div class="activity-custom">
+            <label
+              >From <input
+                type="datetime-local"
+                id="activity-from"
+                value={toInput(range.from)}
+                onchange={(e) => setCustom('from', e.currentTarget.value)}
+              /></label
+            >
+            <label
+              >To <input
+                type="datetime-local"
+                id="activity-to"
+                value={toInput(range.to)}
+                onchange={(e) => setCustom('to', e.currentTarget.value)}
+              /></label
+            >
+          </div>
+        {/if}
+        {#if detail}
+          <ActivityDeepDive series={detail} />
+        {/if}
       </div>
     {/if}
   </div>

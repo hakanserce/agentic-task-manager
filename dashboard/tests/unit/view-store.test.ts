@@ -38,6 +38,8 @@ describe('reading and writing', () => {
       graphFiltered: 'dim',
       graph: { k: 1.5, x: -120, y: 40 },
       agents: { start: 1000, end: 61_000, followEnd: true },
+      agentsLive: true,
+      activity: { preset: 'custom', from: 1000, to: 5000 },
     };
     writeView(key, view);
     expect(readView(key)).toEqual(view);

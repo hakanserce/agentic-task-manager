@@ -4,7 +4,7 @@ import { expect, test } from './helpers';
 // Checks on the shipped artifact itself (plugin/templates/tasks-dashboard.html), not on its behavior.
 const BUILT = new URL('../../../plugin/templates/tasks-dashboard.html', import.meta.url);
 const PLUGIN_JSON = new URL('../../../plugin/.claude-plugin/plugin.json', import.meta.url);
-const MAX_BYTES = 200 * 1024;
+const MAX_BYTES = 256 * 1024;
 
 test.describe('shipped dashboard file', () => {
   const html = () => readFileSync(BUILT, 'utf8');

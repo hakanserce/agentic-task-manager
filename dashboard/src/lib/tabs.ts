@@ -7,11 +7,19 @@ export const DEFAULT_VIEW: ViewId = 'graph';
 
 export const VIEW_LABELS: Record<ViewId, string> = {
   graph: 'Dependency Graph',
-  kanban: 'Kanban',
-  list: 'List',
+  kanban: 'Kanban Board',
+  list: 'Task List',
   agents: 'Agents',
   progress: 'Progress',
 };
+
+export const VIEW_ICONS = {
+  graph: 'network',
+  kanban: 'square-kanban',
+  list: 'list-todo',
+  agents: 'bot',
+  progress: 'trending-up',
+} as const satisfies Record<ViewId, string>;
 
 function isView(value: string | null): value is ViewId {
   return (VIEWS as readonly string[]).includes(value ?? '');

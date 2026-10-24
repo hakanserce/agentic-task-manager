@@ -12,6 +12,7 @@ import {
   type Filters,
 } from './filters';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
+import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
@@ -61,6 +62,10 @@ export class DashboardState {
   graphView = $state.raw<{ k: number; x: number; y: number } | null>(null);
   /** The Agents tab's zoomed time range; null shows everything */
   agentsWindow = $state.raw<ViewWindow | null>(null);
+  /** The Agents timeline runs up to now and moves with time */
+  agentsLive = $state(false);
+  /** The period the Activity panel shows */
+  activityRange = $state.raw<ActivityRange>({ preset: 'all' });
   /** Where this project's view is saved; set once the first load says which project this is */
   viewKey = $state<string | null>(null);
 
@@ -165,6 +170,8 @@ export class DashboardState {
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
       agents: this.agentsWindow,
+      agentsLive: this.agentsLive,
+      activity: this.activityRange,
     };
   }
 
@@ -195,6 +202,8 @@ export class DashboardState {
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
     this.agentsWindow = view.agents;
+    this.agentsLive = view.agentsLive;
+    this.activityRange = view.activity;
     if (includeTab && view.tab !== this.tab) {
       history.replaceState(null, '', withViewHash(location.hash, view.tab));
       this.tab = view.tab;

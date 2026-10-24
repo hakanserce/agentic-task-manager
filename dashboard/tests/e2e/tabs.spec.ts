@@ -20,7 +20,13 @@ test.describe('view tabs', () => {
   test('a tablist with the dependency graph selected by default', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.getByRole('tablist')).toBeVisible();
-    await expect(page.getByRole('tab')).toHaveText(['Dependency Graph', 'Kanban', 'List', 'Agents', 'Progress']);
+    await expect(page.getByRole('tab')).toHaveText([
+      'Dependency Graph',
+      'Kanban Board',
+      'Task List',
+      'Agents',
+      'Progress',
+    ]);
     await expectSelected(page, 'graph');
     await expect(panel(page, 'graph')).toHaveAttribute('role', 'tabpanel');
     await expect(panel(page, 'graph')).toHaveAttribute('aria-labelledby', 'tab-graph');

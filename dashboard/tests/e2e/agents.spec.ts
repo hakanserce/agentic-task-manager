@@ -64,14 +64,19 @@ test.describe('Agents tab', () => {
     await expect(lane(page, 'claude:bob00002').locator('.agent-now')).toHaveText('Now: T-007');
   });
 
-  test('the search and filters apply', async ({ page, tasksServer }) => {
+  test('tasks outside the search and filters are greyed out, not hidden', async ({ page, tasksServer }) => {
     await openAgents(page, tasksServer);
     await openFilters(page);
     await filterButton(page, 'type', 'feature').click();
-    await expect(page.locator('.agent-bar')).toHaveCount(3);
-    await expect(page.locator('.agent-name')).toHaveText(['claude:alice001', 'claude:bob00002', 'Unattributed']);
+    await expect(page.locator('.agent-bar')).toHaveCount(7);
+    await expect(page.locator('.agent-bar:not(.graph-dimmed)')).toHaveCount(3);
+    await expect(bar(page, 'T-001')).toHaveClass(/graph-dimmed/);
+    // Lane stats count only the matching tasks
+    await expect(lane(page, 'claude:alice001').locator('.agent-stats')).toHaveText('0 done');
     await page.locator('#task-search').fill('login');
-    await expect(page.locator('.agent-name')).toHaveText(['claude:bob00002']);
+    await expect(lane(page, 'claude:bob00002')).not.toHaveClass(/graph-dimmed/);
+    await expect(lane(page, 'claude:alice001')).toHaveClass(/graph-dimmed/);
+    await expect(lane(page, '')).toHaveClass(/graph-dimmed/);
   });
 
   test('explains itself when no task has been started', async ({ page, tasksServer }) => {
@@ -155,6 +160,31 @@ test.describe('Agents tab: time range', () => {
     await page.mouse.move(at(0.375), ov.y + ov.height / 2, { steps: 5 });
     await page.mouse.up();
     await expect(range(page)).toHaveText('09:00 AM – 10:00 AM');
+  });
+
+  test('Live keeps the window at now and moves it with time', async ({ page, tasksServer }) => {
+    const data = loadFixture('agents');
+    for (const t of data.tasks) if (t.status === 'in_progress') t.status = 'todo'; // nobody working
+    await openAgents(page, tasksServer, data);
+    await expect(range(page)).toHaveText('08:00 AM – 11:00 AM'); // the last work ended at 11:00
+    await page.locator('#agents-live').check();
+    await expect(range(page)).toHaveText('08:00 AM – now'); // Live runs up to now even with nobody working
+    await page.locator('[data-preset="1h"]').click();
+    await expect(range(page)).toHaveText('11:00 AM – now');
+    // Zooming keeps Live, anchored at now
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    await expect(range(page)).toHaveText('11:20 AM – now');
+    await expect(page.locator('#agents-live')).toBeChecked();
+    // Time passes: the window moves along
+    await page.clock.setFixedTime(new Date('2026-04-01T12:10:00Z'));
+    await page.clock.runFor(5_000);
+    await expect(range(page)).toHaveText('11:30 AM – now');
+    // Moving into the past ends Live
+    await grid(page).focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('#agents-live')).not.toBeChecked();
+    await page.reload();
+    await expect(page.locator('#agents-live')).not.toBeChecked();
   });
 
   test('the range is remembered and keeps following live work', async ({ page, tasksServer }) => {

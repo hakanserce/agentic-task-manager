@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { adjacentView, parseViewHash, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
+  import { adjacentView, parseViewHash, VIEW_ICONS, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
   import { dashboard } from '../lib/state.svelte';
   import AgentsTab from './AgentsTab.svelte';
   import DepGraph from './DepGraph.svelte';
+  import Icon from './Icon.svelte';
   import KanbanBoard from './KanbanBoard.svelte';
   import ProgressTab from './ProgressTab.svelte';
   import TaskGrid from './TaskGrid.svelte';
@@ -27,7 +28,7 @@
 <svelte:window onhashchange={() => (dashboard.tab = parseViewHash(location.hash))} />
 
 <div class="graph-section" id="graph-section">
-  <div class="phase-header view-header">
+  <div class="view-header">
     <div class="view-tabs" role="tablist" aria-label="Views">
       {#each VIEWS as id (id)}
         <button
@@ -39,7 +40,7 @@
           aria-controls="panel-{id}"
           tabindex={view === id ? 0 : -1}
           onclick={() => select(id)}
-          onkeydown={onTabKeydown}>{VIEW_LABELS[id]}</button
+          onkeydown={onTabKeydown}><Icon name={VIEW_ICONS[id]} size={15} />{VIEW_LABELS[id]}</button
         >
       {/each}
     </div>

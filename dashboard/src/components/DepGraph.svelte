@@ -5,7 +5,6 @@
     anyNodeVisible,
     autoFitView,
     clampView,
-    containerHeight,
     fitView,
     isFullyVisible,
     panToContent,
@@ -18,7 +17,6 @@
   import GraphControls from './GraphControls.svelte';
   import Minimap from './Minimap.svelte';
 
-  const EMPTY_HEIGHT = 100;
   const DRAG_THRESHOLD = 4;
   const KEY_PAN = 60;
   const ZOOM_STEP = 1.25;
@@ -167,7 +165,6 @@
   tabindex="0"
   role="application"
   aria-label="Dependency graph"
-  style:height={dashboard.loaded ? (empty ? EMPTY_HEIGHT : containerHeight(layout.height)) + 'px' : undefined}
   bind:clientWidth={vw}
   bind:clientHeight={vh}
   onkeydown={onKeydown}

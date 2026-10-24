@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MODE_LABELS, MODE_PREFS } from '../lib/appearance';
   import { compareVersions } from '../lib/changelog';
   import { getPref, setPref, storageAvailable } from '../lib/prefs';
   import { dashboardVersion } from '../lib/release-notes';
@@ -31,6 +32,17 @@
       >v{version}{#if unseen}<span class="version-new">new</span>{/if}</button
     >
   {/if}
+  <div class="appearance" role="group" aria-label="Color mode" id="mode-control">
+    {#each MODE_PREFS as pref (pref)}
+      <button
+        class="mode-btn"
+        class:active={dashboard.modePref === pref}
+        data-mode={pref}
+        aria-pressed={dashboard.modePref === pref}
+        onclick={() => dashboard.setModePref(pref)}>{MODE_LABELS[pref]}</button
+      >
+    {/each}
+  </div>
 </div>
 <p class="subtitle" id="subtitle">
   {#if dashboard.loaded}

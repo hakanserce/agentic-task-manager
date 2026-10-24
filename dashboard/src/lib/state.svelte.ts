@@ -1,6 +1,7 @@
 import { loadClaims, type ClaimMap } from './claims';
 import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks } from './load';
 import { getPref, setPref } from './prefs';
+import { isModePref, knownTheme, resolveMode, type Mode, type ModePref } from './appearance';
 import { emptyFilters, filtersFrom, filterTasks, toggleFilter, type FilterGroup, type Filters } from './filters';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
 import type { Task } from './types';
@@ -47,6 +48,14 @@ export class DashboardState {
 
   whatsNewOpen = $state(false);
 
+  // Light/dark mode and theme, per browser (FR-2.3, FR-3.2). "System" follows the OS setting, live.
+  modePref = $state<ModePref>(
+    isModePref(getPref('mode', 'system')) ? (getPref('mode', 'system') as ModePref) : 'system',
+  );
+  theme = $state(knownTheme(getPref('theme', 'default')));
+  systemPrefersLight = $state(prefersLight());
+  mode = $derived<Mode>(resolveMode(this.modePref, this.systemPrefersLight));
+
   // On by default (FR-6.1); the user's choice is remembered per browser (FR-6.2)
   autoRefresh = $state(getPref('autoRefresh', true));
   autoRefreshSeconds = $state(getPref('autoRefreshSeconds', 5));
@@ -79,6 +88,16 @@ export class DashboardState {
   setAutoRefresh(on: boolean) {
     this.autoRefresh = on;
     setPref('autoRefresh', on);
+  }
+
+  setModePref(pref: ModePref) {
+    this.modePref = pref;
+    setPref('mode', pref);
+  }
+
+  setTheme(id: string) {
+    this.theme = knownTheme(id);
+    setPref('theme', this.theme);
   }
 
   setAutoRefreshSeconds(seconds: number) {
@@ -165,6 +184,10 @@ export class DashboardState {
     this.claims = claims;
     this.loadedAt = Date.now();
   }
+}
+
+function prefersLight(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches;
 }
 
 export const dashboard = new DashboardState();

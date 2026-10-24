@@ -9,6 +9,10 @@ export interface Prefs {
   /** Last dashboard version whose release notes were opened */
   lastSeenVersion: string;
   kanbanGroupByPhase: boolean;
+  /** 'system', 'light' or 'dark' (see appearance.ts) */
+  mode: string;
+  /** Theme id (see appearance.ts) */
+  theme: string;
 }
 
 function storage(): Storage | null {

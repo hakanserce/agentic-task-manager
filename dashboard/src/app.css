@@ -16,6 +16,7 @@
   --pink: #f778ba;
   --orange: #d18616;
   --cyan: #39d2c0;
+  color-scheme: dark;
   /* Text and marks on an accent-coloured background (active filter buttons) */
   --on-accent: #000;
   /* Behind the detail and What's new panels */
@@ -233,6 +234,34 @@ h1 {
   height: 24px;
   background: var(--border);
   margin: 0 8px;
+}
+
+/* Light/dark mode switch, at the right end of the title row */
+.appearance {
+  margin-left: auto;
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mode-btn {
+  background: var(--surface);
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.mode-btn + .mode-btn {
+  border-left: 1px solid var(--border);
+}
+.mode-btn:hover {
+  color: var(--text);
+}
+.mode-btn.active {
+  background: var(--surface2);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .reset-view-btn {
@@ -1079,7 +1108,8 @@ svg.graph-minimap.hidden {
   color: var(--text-muted);
 }
 
-/* Burndown chart. Series colors are validated for the dark surface (dataviz validator: blue/orange slots). */
+/* Burndown chart. Series colors are validated for the dark surface (dataviz validator: blue/orange slots); themes
+   override them per mode (src/themes/). */
 :root {
   --series-remaining: #3987e5;
   --series-scope: #d95926;

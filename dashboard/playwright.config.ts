@@ -15,6 +15,8 @@ export default defineConfig({
   use: {
     ...devices['Desktop Chrome'],
     viewport: { width: 1280, height: 900 },
+    // The dashboard follows the OS color scheme; tests run in dark (the original look) unless they switch it
+    colorScheme: 'dark',
     // Dates are rendered with toLocale*String: pin them so text and screenshots are stable
     locale: 'en-US',
     timezoneId: 'UTC',

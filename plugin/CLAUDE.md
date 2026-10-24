@@ -22,6 +22,8 @@ requirements (array), use_cases (array), files (array of file paths),
 created_at (ISO 8601 UTC, optional), updated_at (ISO 8601 UTC, optional),
 started_at (ISO 8601 UTC, optional; set when moving to in_progress),
 completed_at (ISO 8601 UTC, optional; set when moving to done). Both are removed if a task returns to todo.
+agent (optional; the agent that started the task, written by `atm start`/`atm next --claim`; removed if it returns
+to todo).
 
 ## Conventions
 - Task IDs follow the pattern: T-001, T-002, etc. (or T-P0-01 for phased projects)

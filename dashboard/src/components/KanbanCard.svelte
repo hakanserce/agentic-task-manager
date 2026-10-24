@@ -29,7 +29,9 @@
 >
   <div class="kanban-card-top">
     <span class="kanban-card-id">{task.id}</span>
-    <span class="badge" style="background:{pc}20;color:{pc}">P{task.phase}</span>
+    <span class="badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
+      >Phase {task.phase}</span
+    >
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>

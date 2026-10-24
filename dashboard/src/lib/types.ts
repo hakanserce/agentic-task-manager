@@ -25,9 +25,11 @@ export interface Task {
   started_at?: string;
   /** ISO 8601 UTC; set when the task moves to done */
   completed_at?: string;
+  /** The agent that started the task (written by `atm start`; kept when it is done) */
+  agent?: string;
 }
 
 export interface TasksFile {
-  meta?: { project?: string; created?: string; description?: string };
+  meta?: { project?: string; id?: string; created?: string; description?: string; lease_minutes?: number };
   tasks?: Task[];
 }

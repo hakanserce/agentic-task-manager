@@ -1,0 +1,73 @@
+/* Catppuccin theme. Palette: https://catppuccin.com/palette (Mocha for dark, Latte for light).
+   Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the background. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - burndown series #3987e5/#d95926 (the Default dark pair): the pastel blue/peach are too light for the chart validator's lightness band */
+:root[data-theme='catppuccin'] {
+  color-scheme: dark;
+  --bg: #181825;
+  --surface: #1e1e2e;
+  --surface2: #313244;
+  --border: #45475a;
+  --text: #cdd6f4;
+  --text-muted: #a6adc8;
+  --accent: #89b4fa;
+  --green: #a6e3a1;
+  --yellow: #f9e2af;
+  --red: #f38ba8;
+  --purple: #cba6f7;
+  --pink: #f5c2e7;
+  --orange: #fab387;
+  --cyan: #94e2d5;
+  --on-accent: #1e1e2e;
+  --overlay: rgba(17, 17, 27, 0.7);
+  --node-feature: #374540;
+  --node-bugfix: #483142;
+  --node-test: #3f3753;
+  --node-infra: #4a3a3b;
+  --node-docs: #33444c;
+  --node-refactor: #4a4443;
+  --node-polish: #493d50;
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #6c6f85 -> #63667a (muted text contrast)
+   - green: #40a02b -> #368624 (label contrast)
+   - yellow: #df8e1d -> #a56915 (label contrast)
+   - pink: #ea76cb -> #ad5796 (label contrast)
+   - orange: #fe640b -> #cb5009 (label contrast)
+   - cyan: #179299 -> #15838a (label contrast)
+   - accent: #1e66f5 -> #1d62eb (text on accent)
+   - burndown series #1a5ad8/#e0580a: blue/peach darkened 12% for 3:1 against the surface */
+:root[data-theme='catppuccin'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #eff1f5;
+  --surface: #e6e9ef;
+  --surface2: #dce0e8;
+  --border: #ccd0da;
+  --text: #4c4f69;
+  --text-muted: #63667a;
+  --accent: #1d62eb;
+  --green: #368624;
+  --yellow: #a56915;
+  --red: #d20f39;
+  --purple: #8839ef;
+  --pink: #ad5796;
+  --orange: #cb5009;
+  --cyan: #15838a;
+  --on-accent: #eff1f5;
+  --overlay: rgba(76, 79, 105, 0.4);
+  --node-feature: #d1e0d4;
+  --node-bugfix: #eacdd7;
+  --node-test: #dfd4f4;
+  --node-infra: #e9d7cf;
+  --node-docs: #ccdfe4;
+  --node-refactor: #e3dbd1;
+  --node-polish: #e4d8e6;
+  --series-remaining: #1a5ad8;
+  --series-scope: #e0580a;
+}

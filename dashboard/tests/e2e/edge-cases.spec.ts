@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, openDashboard, statNumber, test } from './helpers';
+import { expect, filterButton, openDashboard, openFilters, test } from './helpers';
 
 const card = (page: Page, id: string) => page.locator(`.task-card[data-id="${id}"]`);
 const graphNode = (page: Page, id: string) => page.locator('#dep-graph g', { hasText: id });
@@ -8,14 +8,15 @@ const RED = 'rgb(248, 81, 73)';
 
 test.describe('edge cases', () => {
   test.beforeEach(async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'edge-cases');
+    await openDashboard(page, tasksServer, 'edge-cases', { tab: 'list' });
   });
 
   test('unknown type uses the fallback style', async ({ page }) => {
     const typeBadge = card(page, 'T-001').locator('.task-meta .badge').nth(1);
     await expect(typeBadge).toHaveText('spike');
     await expect(typeBadge).toHaveCSS('color', MUTED);
-    await expect(statNumber(page, 'spike')).toHaveText('1');
+    await openFilters(page);
+    await expect(filterButton(page, 'type', 'spike').locator('.filter-count')).toHaveText('1');
   });
 
   test('"bug" is styled like "bugfix"', async ({ page }) => {
@@ -27,7 +28,8 @@ test.describe('edge cases', () => {
     const statusBadge = card(page, 'T-002').locator('.task-meta .badge').nth(2);
     await expect(statusBadge).toHaveText('review');
     await expect(statusBadge).toHaveCSS('color', MUTED);
-    await expect(statNumber(page, 'Todo')).toHaveText('5');
+    await openFilters(page);
+    await expect(filterButton(page, 'status', 'todo').locator('.filter-count')).toHaveText('5');
   });
 
   test('a dependency on a missing task is shown but inert', async ({ page }) => {

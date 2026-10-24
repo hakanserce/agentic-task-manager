@@ -4,7 +4,6 @@ import {
   AUTO_FIT_MIN_K,
   autoFitView,
   clampView,
-  containerHeight,
   fitView,
   isFullyVisible,
   MAX_K,
@@ -97,14 +96,6 @@ describe('isFullyVisible', () => {
 describe('toViewBox', () => {
   it('maps a view onto an SVG viewBox in content coordinates', () => {
     expect(toViewBox({ k: 2, x: -100, y: 40 }, viewport)).toBe('50 -20 500 250');
-  });
-});
-
-describe('containerHeight', () => {
-  it('fits the graph at 100% plus padding and border, within 220–560px', () => {
-    expect(containerHeight(268)).toBe(318);
-    expect(containerHeight(10)).toBe(220);
-    expect(containerHeight(5000)).toBe(560);
   });
 });
 

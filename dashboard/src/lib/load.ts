@@ -6,6 +6,7 @@ export interface LoadedTasks {
   tasks: Task[];
   taskMap: Map<string, Task>;
   projectName: string;
+  meta: TasksFile['meta'];
 }
 
 export function parseTasksFile(data: TasksFile): LoadedTasks {
@@ -14,6 +15,7 @@ export function parseTasksFile(data: TasksFile): LoadedTasks {
     tasks,
     taskMap: new Map(tasks.map((t) => [t.id, t])),
     projectName: data.meta?.project || DEFAULT_PROJECT_NAME,
+    meta: data.meta,
   };
 }
 

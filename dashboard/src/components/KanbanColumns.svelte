@@ -5,8 +5,11 @@
 
   const DONE_LIMIT = 20;
 
-  let { columns, showAllDone, onshowall }: { columns: KanbanColumn[]; showAllDone: boolean; onshowall: () => void } =
-    $props();
+  let {
+    columns,
+    showAllDone,
+    onshowall,
+  }: { columns: KanbanColumn[]; showAllDone: boolean; onshowall: (all: boolean) => void } = $props();
 
   const columnColor = (id: ColumnId) => (id === 'other' ? 'var(--text-muted)' : statusStyle(id).color);
 </script>
@@ -26,7 +29,11 @@
           <div class="kanban-empty">No tasks</div>
         {/each}
         {#if limited}
-          <button class="kanban-show-all" onclick={onshowall}>Show all ({column.cards.length})</button>
+          <button class="kanban-show-all" onclick={() => onshowall(true)}>Show all ({column.cards.length})</button>
+        {:else if column.id === 'done' && showAllDone && column.cards.length > DONE_LIMIT}
+          <button class="kanban-show-all" id="kanban-show-fewer" onclick={() => onshowall(false)}
+            >Show the latest {DONE_LIMIT}</button
+          >
         {/if}
       </div>
     </section>

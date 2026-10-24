@@ -109,3 +109,80 @@ describe('DashboardState auto-refresh preference', () => {
     expect([next.autoRefresh, next.autoRefreshSeconds]).toEqual([false, 30]);
   });
 });
+
+describe('DashboardState saved view', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => ok(standard)),
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  async function changeEverything() {
+    const s = new DashboardState();
+    await s.load();
+    s.toggleFilter('type', 'feature');
+    s.query = 'login';
+    s.selectTab('agents');
+    s.kanbanGroupByPhase = true;
+    s.kanbanShowSkipped = true;
+    s.kanbanShowAllDone = true;
+    s.progressPhase = 1;
+    s.graphFiltered = 'dim';
+    s.graphView = { k: 2, x: 10, y: 20 };
+    s.agentsWindow = { start: 1000, end: 400_000, followEnd: true };
+    s.agentsLive = true;
+    s.activityRange = { preset: 'week' };
+    s.saveView();
+    return s;
+  }
+
+  it('brings back every selection on the next visit', async () => {
+    const first = await changeEverything();
+    history.replaceState(null, '', '/');
+    const next = new DashboardState();
+    await next.load();
+    expect(next.currentView()).toEqual(first.currentView());
+    expect(next.tab).toBe('agents');
+    expect([...next.filters.type]).toEqual(['feature']);
+  });
+
+  it('a tab in the URL wins over the saved one', async () => {
+    await changeEverything();
+    history.replaceState(null, '', '/#view=kanban');
+    const next = new DashboardState();
+    await next.load();
+    expect(next.tab).toBe('kanban');
+    expect(next.query).toBe('login');
+  });
+
+  it('reset forgets the saved view and goes back to the defaults', async () => {
+    const s = await changeEverything();
+    s.resetView();
+    expect(s.query).toBe('');
+    expect(s.filters.type.size).toBe(0);
+    expect(s.tab).toBe('graph');
+    expect([s.kanbanShowAllDone, s.agentsWindow, s.graphView, s.graphFiltered]).toEqual([false, null, null, 'hide']);
+    history.replaceState(null, '', '/');
+    const next = new DashboardState();
+    await next.load();
+    expect(next.tab).toBe('graph');
+  });
+});
+
+describe('DashboardState appearance', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('remembers mode and theme per browser; unknown themes fall back to Default', () => {
+    const first = new DashboardState();
+    first.setModePref('dark');
+    first.setTheme('nord');
+    const next = new DashboardState();
+    expect([next.modePref, next.mode, next.theme]).toEqual(['dark', 'dark', 'nord']);
+    next.setTheme('vaporwave');
+    expect(next.theme).toBe('default');
+  });
+});

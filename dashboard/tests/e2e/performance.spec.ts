@@ -34,6 +34,8 @@ test.describe('performance with 500 tasks', () => {
     const timings = {
       kanban: await timeAction(page, '#tab-kanban', "document.querySelector('#kanban .kanban-card')?.offsetParent"),
       progress: await timeAction(page, '#tab-progress', "document.querySelector('#burndown svg')?.isConnected"),
+      // Mounted when selected: the timeline is built from scratch
+      agents: await timeAction(page, '#tab-agents', "document.querySelector('#panel-agents .agents-grid')"),
       graph: await timeAction(page, '#tab-graph', "document.querySelector('#panel-graph:not([hidden]) #dep-graph')"),
     };
     console.log('tab switch (ms):', JSON.stringify(timings));

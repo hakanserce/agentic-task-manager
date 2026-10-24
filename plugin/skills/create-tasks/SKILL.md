@@ -80,6 +80,7 @@ Write the tasks file with this structure:
 {
   "meta": {
     "project": "<project name from README or directory name>",
+    "id": "<8 random hex characters, e.g. from `openssl rand -hex 4`; keep an existing one>",
     "created": "<today's date YYYY-MM-DD>",
     "description": "<brief project description>"
   },
@@ -115,8 +116,10 @@ Rules for task generation:
 Run the helper again, now that `tasks.json` exists:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate && "${CLAUDE_SKILL_DIR}/../../scripts/atm" init
 ```
+
+(`init` also adds `meta.id` if the file has none: the dashboard remembers each project's filters and tabs under it.)
 
 It writes `.agentic-task-manager/.gitignore` (the dashboard and runtime files aren't committed; `tasks.json` is),
 installs the plugin's current dashboard next to `tasks.json`, and in a git repository registers atm's merge driver

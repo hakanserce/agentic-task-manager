@@ -1,0 +1,33 @@
+/* Default theme (GitHub-like). Its dark mode is the base token set in app.css (:root), which also serves as the
+   fallback before any theme or mode is set. Light mode overrides every token.
+   Selectors: a theme's dark mode is :root[data-theme='x'], its light mode :root[data-theme='x'][data-mode='light'];
+   the Default theme's light mode is any :root[data-mode='light'] that no theme block of higher specificity claims.
+   The burndown series were validated for this surface with the dataviz palette validator (light: all checks pass). */
+:root[data-mode='light'] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface2: #eaeef2;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-muted: #59636e;
+  --accent: #0969da;
+  --green: #1a7f37;
+  --yellow: #9a6700;
+  --red: #cf222e;
+  --purple: #8250df;
+  --pink: #bf3989;
+  --orange: #bc4c00;
+  --cyan: #1b7c83;
+  --on-accent: #ffffff;
+  --overlay: rgba(31, 35, 40, 0.4);
+  --node-feature: #dafbe1;
+  --node-bugfix: #ffebe9;
+  --node-test: #fbefff;
+  --node-infra: #fff1e5;
+  --node-docs: #d8f6f7;
+  --node-refactor: #fff8c5;
+  --node-polish: #ffeff7;
+  --series-remaining: #0969da;
+  --series-scope: #bc4c00;
+}

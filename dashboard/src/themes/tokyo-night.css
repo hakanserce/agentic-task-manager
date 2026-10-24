@@ -1,0 +1,71 @@
+/* Tokyo Night theme. Palette: https://github.com/folke/tokyonight.nvim (Night for dark, Day for light).
+   Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the background. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - burndown series #6482c6/#cb7f54: blue/orange shifted 22% toward the background for the chart validator's lightness band */
+:root[data-theme='tokyo-night'] {
+  color-scheme: dark;
+  --bg: #16161e;
+  --surface: #1a1b26;
+  --surface2: #292e42;
+  --border: #3b4261;
+  --text: #c0caf5;
+  --text-muted: #a9b1d6;
+  --accent: #7aa2f7;
+  --green: #9ece6a;
+  --yellow: #e0af68;
+  --red: #f7768e;
+  --purple: #bb9af7;
+  --pink: #ff007c;
+  --orange: #ff9e64;
+  --cyan: #7dcfff;
+  --on-accent: #16161e;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #343e2f;
+  --node-bugfix: #482b37;
+  --node-test: #3a334e;
+  --node-infra: #49342d;
+  --node-docs: #2d3f50;
+  --node-refactor: #42382e;
+  --node-polish: #491133;
+  --series-remaining: #6482c6;
+  --series-scope: #cb7f54;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text: #3760bf -> #3256ac (text contrast)
+   - text-muted: #6172b0 -> #55649b (muted text contrast)
+   - accent: #2e7de9 -> #2b76db (label contrast)
+   - red: #f52a65 -> #dc265b (label contrast)
+   - purple: #9854f1 -> #9552ec (label contrast)
+   - on-accent: #e1e2e7 -> #03050a (text on accent) */
+:root[data-theme='tokyo-night'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #e1e2e7;
+  --surface: #e9e9ec;
+  --surface2: #d5d6db;
+  --border: #c4c8da;
+  --text: #3256ac;
+  --text-muted: #55649b;
+  --accent: #2b76db;
+  --green: #587539;
+  --yellow: #8c6c3e;
+  --red: #dc265b;
+  --purple: #9552ec;
+  --pink: #d20065;
+  --orange: #b15c00;
+  --cyan: #007197;
+  --on-accent: #03050a;
+  --overlay: rgba(55, 96, 191, 0.25);
+  --node-feature: #cbd1cb;
+  --node-bugfix: #e0c4d1;
+  --node-test: #d5cbe8;
+  --node-infra: #d9cdc2;
+  --node-docs: #bdd0da;
+  --node-refactor: #d3cfcc;
+  --node-polish: #dfbed2;
+  --series-remaining: #2e7de9;
+  --series-scope: #b15c00;
+}

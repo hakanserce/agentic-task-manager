@@ -1,0 +1,250 @@
+<script lang="ts">
+  import { shortAgent } from '../lib/claims';
+  import { formatMinutes } from '../lib/format';
+  import type { ActivitySeries } from '../lib/insights';
+  import { typeStyle } from '../lib/theme';
+  import { formatDate, formatDateTime } from '../lib/timeline';
+
+  // Three charts on one time axis, each answering one question: what got done (completions by type), who was
+  // working (agents busy, stacked per agent), and how long tasks took. One hover reads a period across all three.
+  let { series }: { series: ActivitySeries } = $props();
+
+  const W = 640;
+  const PAD_L = 34;
+  const PAD_R = 8;
+  const H = 72;
+  const plotW = W - PAD_L - PAD_R;
+  const b = $derived(series.buckets);
+  const n = $derived(b.length);
+  const slot = $derived(plotW / n);
+  const xt = (t: number) => PAD_L + ((t - b[0].start) / (b[n - 1].end - b[0].start)) * plotW;
+  const scale = (max: number) => (v: number) => H - 2 - (v / Math.max(1e-9, max)) * (H - 8);
+
+  // Agents are shades of the accent colour, so they never look like a task type (types own the other hues). The
+  // shade follows the (sorted) agent, not its rank.
+  const AGENT_SHADES = [100, 62, 32, 82, 47];
+  const agentColor = (agent: string) =>
+    agent
+      ? `color-mix(in srgb, var(--accent) ${AGENT_SHADES[series.agents.indexOf(agent) % AGENT_SHADES.length]}%, var(--surface))`
+      : 'var(--text-muted)';
+  const agentName = (agent: string) => (agent ? shortAgent(agent) : 'Unattributed');
+
+  const maxDone = $derived(Math.max(1, ...b.map((x) => x.completed.length)));
+  const yDone = $derived(scale(maxDone));
+  const busyTotal = (x: (typeof b)[number]) => Object.values(x.agentBusy).reduce((s, v) => s + v, 0);
+  const maxBusy = $derived(Math.max(1, Math.ceil(Math.max(0, ...b.map(busyTotal)))));
+  const yBusy = $derived(scale(maxBusy));
+  const maxCycle = $derived(Math.max(1, ...series.cycleTimes.map((c) => c.minutes)));
+  const yCycle = $derived(scale(maxCycle));
+
+  const short = $derived(series.bucketMs < 86_400_000);
+  const when = (t: number) => (short ? formatDateTime(t) : formatDate(t));
+  const periodHours = $derived((b[n - 1].end - b[0].start) / 3_600_000);
+  const perHour = $derived(series.totalCompleted / Math.max(1e-9, periodHours));
+  const rate = $derived(
+    perHour >= 1 || periodHours <= 24 ? `${perHour.toFixed(1)} / hour` : `${(perHour * 24).toFixed(1)} / day`,
+  );
+  const avgBusy = $derived(b.reduce((s, x) => s + busyTotal(x), 0) / n);
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+  let hover = $state<number | null>(null);
+  function onMove(e: PointerEvent) {
+    const r = (e.currentTarget as SVGElement).getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.floor((px - PAD_L) / slot);
+    hover = i >= 0 && i < n ? i : null;
+  }
+  const hb = $derived(hover === null ? null : b[hover]);
+</script>
+
+<div class="kpi-row">
+  <div class="kpi">
+    <span class="kpi-value">{series.totalCompleted}</span><span class="kpi-label">tasks completed</span>
+  </div>
+  <div class="kpi"><span class="kpi-value">{rate}</span><span class="kpi-label">completion rate</span></div>
+  <div class="kpi">
+    <span class="kpi-value">{series.medianCycleMinutes === null ? '–' : formatMinutes(series.medianCycleMinutes)}</span
+    ><span class="kpi-label">typical time per task</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-value">{avgBusy.toFixed(1)}</span><span class="kpi-label"
+      >agents busy on average · {series.workingNow} now</span
+    >
+  </div>
+  <div class="kpi" class:kpi-warn={series.idleMs > 0}>
+    <span class="kpi-value">{series.idleMs ? formatMinutes(series.idleMs / 60_000) : '–'}</span><span class="kpi-label"
+      >idle (no agent working)</span
+    >
+  </div>
+</div>
+
+{#snippet frame(max: string)}
+  <line x1={PAD_L} x2={W - PAD_R} y1={H - 2} y2={H - 2} class="chart-axis" />
+  <line x1={PAD_L} x2={W - PAD_R} y1="6" y2="6" class="chart-grid" />
+  <text x={PAD_L - 6} y="9" class="chart-tick" text-anchor="end">{max}</text>
+  <text x={PAD_L - 6} y={H} class="chart-tick" text-anchor="end">0</text>
+  {#if hover !== null}
+    <rect x={PAD_L + hover * slot} y="0" width={slot} height={H} class="chart-hover" />
+  {/if}
+{/snippet}
+
+<!-- Stretches with no agent at work, hatched behind the marks of every chart -->
+{#snippet idleBands(labelled: boolean)}
+  {#each series.idle as g (g.start)}
+    {@const x0 = Math.max(PAD_L, xt(g.start))}
+    {@const x1 = Math.min(W - PAD_R, xt(g.end))}
+    {#if x1 > x0}
+      <rect x={x0} y="4" width={x1 - x0} height={H - 6} class="idle-band"
+        ><title>Idle {formatMinutes((g.end - g.start) / 60_000)}: {when(g.start)} – {when(g.end)}</title></rect
+      >
+      {#if labelled && x1 - x0 > 46}
+        <text x={(x0 + x1) / 2} y={H / 2 + 4} class="idle-label" text-anchor="middle"
+          >idle {formatMinutes((g.end - g.start) / 60_000)}</text
+        >
+      {/if}
+    {/if}
+  {/each}
+{/snippet}
+
+<div class="deep-dive">
+  <section class="dive-chart" id="dive-completed">
+    <header>
+      <h4>Tasks completed per {series.unitLabel}, by type</h4>
+      <div class="type-legend">
+        {#each series.types as t (t.type)}
+          <span class="type-chip"
+            ><span class="legend-swatch" style="background:{typeStyle(t.type).color}"></span>{t.type}<strong
+              >{t.count}</strong
+            ></span
+          >
+        {/each}
+      </div>
+    </header>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
+      {@render frame(String(maxDone))}
+      {@render idleBands(false)}
+      <!-- Stacked by type, most completed type at the bottom; a 1px gap between segments -->
+      {#each b as bucket, i (bucket.start)}
+        {@const segments = series.types.filter((t) => bucket.byType[t.type])}
+        {#each segments as seg, j (seg.type)}
+          {@const below = segments.slice(0, j).reduce((sum, t) => sum + bucket.byType[t.type], 0)}
+          <rect
+            x={PAD_L + i * slot + 1}
+            y={yDone(below + bucket.byType[seg.type])}
+            width={Math.max(1, slot - 2)}
+            height={Math.max(1, yDone(below) - yDone(below + bucket.byType[seg.type]) - (j > 0 ? 1 : 0))}
+            rx="1.5"
+            fill={typeStyle(seg.type).color}
+          />
+        {/each}
+      {/each}
+    </svg>
+  </section>
+
+  <section class="dive-chart" id="dive-agents">
+    <header>
+      <h4>Agents working <span>(1 = one agent busy the whole {series.unitLabel})</span></h4>
+      <div class="type-legend">
+        {#each series.agents as a (a)}
+          <span class="type-chip"
+            ><span class="legend-swatch" style="background:{agentColor(a)}"></span>{agentName(a)}</span
+          >
+        {:else}
+          <span class="chart-empty">No task has a start time in this period</span>
+        {/each}
+      </div>
+    </header>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
+      {@render frame(String(maxBusy))}
+      {@render idleBands(true)}
+      {#each Array.from({ length: maxBusy - 1 }, (_, k) => k + 1) as level (level)}
+        <line x1={PAD_L} x2={W - PAD_R} y1={yBusy(level)} y2={yBusy(level)} class="chart-grid" />
+      {/each}
+      {#each b as bucket, i (bucket.start)}
+        {@const segments = series.agents.filter((a) => bucket.agentBusy[a])}
+        {#each segments as a, j (a)}
+          {@const below = segments.slice(0, j).reduce((sum, x) => sum + bucket.agentBusy[x], 0)}
+          <rect
+            x={PAD_L + i * slot + 1}
+            y={yBusy(below + bucket.agentBusy[a])}
+            width={Math.max(1, slot - 2)}
+            height={Math.max(0.5, yBusy(below) - yBusy(below + bucket.agentBusy[a]) - (j > 0 ? 1 : 0))}
+            rx="1.5"
+            fill={agentColor(a)}
+          />
+        {/each}
+      {/each}
+    </svg>
+  </section>
+
+  <section class="dive-chart" id="dive-cycle">
+    <header>
+      <h4>Time per task <span>(from start to done; one dot per task, at its completion)</span></h4>
+    </header>
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
+      {@render frame(formatMinutes(maxCycle))}
+      {@render idleBands(false)}
+      {#if series.medianCycleMinutes !== null}
+        <line
+          x1={PAD_L}
+          x2={W - PAD_R}
+          y1={yCycle(series.medianCycleMinutes)}
+          y2={yCycle(series.medianCycleMinutes)}
+          class="chart-median"
+        />
+        <text x={W - PAD_R} y={yCycle(series.medianCycleMinutes) - 4} class="chart-tick" text-anchor="end"
+          >typical {formatMinutes(series.medianCycleMinutes)}</text
+        >
+      {/if}
+      {#each series.cycleTimes as c (c.id)}
+        <circle
+          cx={xt(c.time)}
+          cy={yCycle(c.minutes)}
+          r="4"
+          fill={typeStyle(c.type).color}
+          stroke="var(--surface)"
+          stroke-width="1.5"><title>{c.id} {c.name}: {formatMinutes(c.minutes)}</title></circle
+        >
+      {:else}
+        <text x={PAD_L + plotW / 2} y={H / 2} class="chart-tick" text-anchor="middle"
+          >No task with both a start and a completion time in this period</text
+        >
+      {/each}
+    </svg>
+    <div class="dive-axis">
+      <span>{when(b[0].start)}</span><span>{when(b[n - 1].end)}</span>
+    </div>
+  </section>
+
+  {#if hb}
+    <!-- On the side away from the cursor, so it never hides the period being read -->
+    {@const at = ((PAD_L + (hover! + 0.5) * slot) / W) * 100}
+    <div
+      class="deep-dive-tooltip"
+      style={hover! >= n / 2 ? `right:calc(${100 - at}% + ${slot / 2 + 8}px)` : `left:calc(${at}% + ${slot / 2 + 8}px)`}
+    >
+      <div class="tooltip-title">{when(hb.start)} – {when(hb.end)}</div>
+      <div><strong>{hb.completed.length}</strong> completed</div>
+      {#each series.types.filter((t) => hb.byType[t.type]) as t (t.type)}
+        <div class="tooltip-type">
+          <span class="legend-dot" style="background:{typeStyle(t.type).color}"></span>{t.type}
+          <strong>{hb.byType[t.type]}</strong>
+        </div>
+      {/each}
+      {#if Object.keys(hb.agentBusy).length}
+        <div class="tooltip-section">Busy</div>
+        {#each series.agents.filter((a) => hb.agentBusy[a]) as a (a)}
+          <div class="tooltip-type">
+            <span class="legend-dot" style="background:{agentColor(a)}"></span>{agentName(a)}
+            <strong>{pct(hb.agentBusy[a])}</strong>
+          </div>
+        {/each}
+      {/if}
+      {#each hb.completed.slice(0, 5) as c (c.id)}<div class="tooltip-task">{c.id} {c.name}</div>{/each}
+      {#if hb.completed.length > 5}<div class="tooltip-task">+{hb.completed.length - 5} more</div>{/if}
+    </div>
+  {/if}
+</div>

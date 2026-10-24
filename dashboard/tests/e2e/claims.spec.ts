@@ -16,7 +16,7 @@ const claim = (task: string, overrides: Record<string, unknown> = {}) => ({
 test.describe('claims', () => {
   test('an in-progress task shows who works on it: card, Kanban card and details', async ({ page, tasksServer }) => {
     tasksServer.claims([claim('T-005')]);
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     await expect(page.locator('.task-card[data-id="T-005"] .task-claim')).toHaveText(
       'claude:e5ea9db0 · agent-2 · 12 m ago',
     );
@@ -27,6 +27,7 @@ test.describe('claims', () => {
       'claude:e5ea9db0 · agent-2 · 12 m ago',
     );
 
+    await page.locator('#tab-list').click();
     await page.locator('.task-card[data-id="T-005"] .task-name').click();
     await expect(page.locator('#detail-claim')).toContainText('claude:e5ea9db0 on agent-2');
     await expect(page.locator('#detail-claim')).toContainText('/work/proj-2');

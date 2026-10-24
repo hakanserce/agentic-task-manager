@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { layoutGraph } from '../../src/lib/graph/layout';
 import type { Task } from '../../src/lib/types';
-import { expect, filterButton, loadFixture, openDashboard, test } from './helpers';
+import { expect, filterButton, loadFixture, openDashboard, openFilters, test } from './helpers';
 
 const svg = (page: Page) => page.locator('#dep-graph');
 const zoomLabel = (page: Page) => page.locator('#graph-zoom-level');
@@ -47,8 +47,19 @@ test.describe('graph sizing', () => {
     const svgCenter = await center(page);
     expect(Math.abs(nodeCenter.x - svgCenter.x)).toBeLessThan(2);
     await expect(minimap(page)).toBeVisible();
-    // Wide but only 4 rows tall: the panel fits the graph's height at 100% (+ padding and border), below the 560px cap
-    await expect(page.locator('#graph-container')).toHaveCSS('height', `${contentSize('large-90').h + 50}px`);
+  });
+
+  test('the graph fills the window between the top bar and the footer', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    const box = (await page.locator('#graph-container').boundingBox())!;
+    const footer = (await page.locator('#site-footer').boundingBox())!;
+    const viewport = page.viewportSize()!;
+    // The footer ends at the bottom of the window; the panel ends above the footer, less its margin (16px) and the
+    // panel border
+    expect(footer.y + footer.height).toBeCloseTo(viewport.height, 0);
+    expect(box.y + box.height).toBeGreaterThan(footer.y - 20);
+    expect(box.y + box.height).toBeLessThanOrEqual(footer.y);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(viewport.height);
   });
 
   test('a small graph opens at 100%, centered, without a minimap', async ({ page, tasksServer }) => {
@@ -71,8 +82,6 @@ test.describe('graph sizing', () => {
     expect(v.x + w * v.k).toBeLessThanOrEqual(v.vw + 0.5);
     expect(v.y + h * v.k).toBeLessThanOrEqual(v.vh + 0.5);
     await expect(minimap(page)).toBeHidden();
-    // Tall enough for the graph at 100%: content + 2 × 24px padding + 2px border
-    await expect(page.locator('#graph-container')).toHaveCSS('height', `${h + 50}px`);
   });
 });
 
@@ -117,6 +126,7 @@ test.describe('pan and zoom', () => {
   });
 
   test('a plain wheel scrolls the page, not the graph', async ({ page }) => {
+    await page.addStyleTag({ content: 'body { min-height: 3000px }' }); // the graph alone may not make the page scroll
     const before = await view(page);
     await page.mouse.move(...(Object.values(await center(page)) as [number, number]));
     await page.mouse.wheel(0, 400);
@@ -190,6 +200,7 @@ test.describe('view persistence', () => {
     await page.locator('#graph-container').focus();
     await page.keyboard.press('+');
     await expect(zoomLabel(page)).toHaveText('75%');
+    await openFilters(page);
     await filterButton(page, 'phase', '1').click();
     await expect(zoomLabel(page)).toHaveText('75%');
     await filterButton(page, 'phase', 'all').click();
@@ -201,6 +212,7 @@ test.describe('view persistence', () => {
     await openDashboard(page, tasksServer, 'standard');
     const initial = await zoomLabel(page).textContent();
     expect(initial).not.toBe('100%');
+    await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(zoomLabel(page)).toHaveText(initial!);
     await expect(page.locator('#dep-graph g')).toHaveCount(4);
@@ -215,27 +227,60 @@ test.describe('view persistence', () => {
     // Look at the far right end of the 90-task graph, then show only phase 0 (the far left end)
     const mm = (await minimap(page).boundingBox())!;
     await page.mouse.click(mm.x + mm.width * 0.97, mm.y + mm.height / 2);
+    await openFilters(page);
     await filterButton(page, 'phase', '0').click();
     await expect(page.locator('#dep-graph g')).toHaveCount(14);
     await expect(zoomLabel(page)).toHaveText(zoom!);
     await expect.poll(() => visibleNodes(page)).toBeGreaterThan(0);
   });
 
-  test('collapsing and expanding keeps the view', async ({ page, tasksServer }) => {
+  test('switching tabs keeps the view', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'large-90');
     await expect(zoomLabel(page)).toHaveText('60%');
-    const header = page.locator('#graph-section .phase-header');
-    await header.click();
-    await header.click();
+    await page.locator('#tab-list').click();
+    await page.locator('#tab-graph').click();
     await expect(zoomLabel(page)).toHaveText('60%');
     await expect(minimap(page)).toBeVisible();
   });
 
   test('no minimap or controls state for an empty filter result', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
+    await openFilters(page);
     await filterButton(page, 'status', 'blocked').click();
     await filterButton(page, 'type', 'docs').click();
     await expect(svg(page)).toContainText('No tasks match current filters');
     await expect(minimap(page)).toBeHidden();
+  });
+});
+
+test.describe('graph position is remembered per project (FR-5.7)', () => {
+  test('zoom and pan come back after a reload', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'large-90');
+    await expect(zoomLabel(page)).toHaveText('60%');
+    await button(page, /zoom in/i).click();
+    const c = await center(page);
+    await page.mouse.move(c.x, c.y);
+    await page.mouse.down();
+    await page.mouse.move(c.x - 150, c.y - 40, { steps: 5 });
+    await page.mouse.up();
+    const before = await view(page);
+    await page.reload();
+    await expect(zoomLabel(page)).not.toHaveText('60%');
+    const after = await view(page);
+    expect(after.k).toBeCloseTo(before.k, 2);
+    expect(after.x).toBeCloseTo(before.x, 0);
+    expect(after.y).toBeCloseTo(before.y, 0);
+  });
+
+  test('a saved position showing no task falls back to the automatic view', async ({ page, tasksServer }) => {
+    await page.addInitScript(() =>
+      localStorage.setItem(
+        'atm-dashboard:view:project:Large Project',
+        JSON.stringify({ graph: { k: 1, x: 99999, y: 99999 } }),
+      ),
+    );
+    await openDashboard(page, tasksServer, 'large-90');
+    await expect(zoomLabel(page)).toHaveText('60%');
+    expect(await visibleNodes(page)).toBeGreaterThan(0);
   });
 });

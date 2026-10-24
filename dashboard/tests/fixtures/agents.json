@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "project": "Agents Project",
+    "id": "agents01",
+    "created": "2026-04-01",
+    "description": "Who did what, when"
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Set up repository",
+      "phase": 0,
+      "type": "infra",
+      "description": "Description of T-001: Set up repository.",
+      "status": "done",
+      "dependencies": [],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T08:30:00Z",
+      "started_at": "2026-04-01T08:00:00Z",
+      "completed_at": "2026-04-01T08:30:00Z",
+      "agent": "claude:alice001"
+    },
+    {
+      "id": "T-002",
+      "name": "Login form",
+      "phase": 0,
+      "type": "feature",
+      "description": "Description of T-002: Login form.",
+      "status": "done",
+      "dependencies": [],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T09:00:00Z",
+      "started_at": "2026-04-01T08:10:00Z",
+      "completed_at": "2026-04-01T09:00:00Z",
+      "agent": "claude:bob00002"
+    },
+    {
+      "id": "T-003",
+      "name": "Login tests",
+      "phase": 0,
+      "type": "test",
+      "description": "Description of T-003: Login tests.",
+      "status": "done",
+      "dependencies": ["T-002"],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T09:40:00Z",
+      "started_at": "2026-04-01T08:40:00Z",
+      "completed_at": "2026-04-01T09:40:00Z",
+      "agent": "claude:alice001"
+    },
+    {
+      "id": "T-004",
+      "name": "Old task",
+      "phase": 0,
+      "type": "feature",
+      "description": "Description of T-004: Old task.",
+      "status": "done",
+      "dependencies": [],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T09:20:00Z",
+      "started_at": "2026-04-01T09:00:00Z",
+      "completed_at": "2026-04-01T09:20:00Z"
+    },
+    {
+      "id": "T-005",
+      "name": "Fix session bug",
+      "phase": 1,
+      "type": "bugfix",
+      "description": "Description of T-005: Fix session bug.",
+      "status": "done",
+      "dependencies": [],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T10:30:00Z",
+      "started_at": "2026-04-01T09:10:00Z",
+      "completed_at": "2026-04-01T10:30:00Z",
+      "agent": "claude:bob00002"
+    },
+    {
+      "id": "T-006",
+      "name": "Write docs",
+      "phase": 1,
+      "type": "docs",
+      "description": "Description of T-006: Write docs.",
+      "status": "done",
+      "dependencies": [],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T11:00:00Z",
+      "started_at": "2026-04-01T10:00:00Z",
+      "completed_at": "2026-04-01T11:00:00Z",
+      "agent": "claude:alice001"
+    },
+    {
+      "id": "T-007",
+      "name": "Post editor",
+      "phase": 1,
+      "type": "feature",
+      "description": "Description of T-007: Post editor.",
+      "status": "in_progress",
+      "dependencies": [],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T11:30:00Z",
+      "started_at": "2026-04-01T11:30:00Z",
+      "agent": "claude:alice001"
+    },
+    {
+      "id": "T-008",
+      "name": "Editor tests",
+      "phase": 1,
+      "type": "test",
+      "description": "Description of T-008: Editor tests.",
+      "status": "todo",
+      "dependencies": ["T-007"],
+      "created_at": "2026-04-01T07:00:00Z",
+      "updated_at": "2026-04-01T07:00:00Z"
+    }
+  ]
+}

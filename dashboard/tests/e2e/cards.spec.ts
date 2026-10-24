@@ -1,10 +1,11 @@
-import { expect, loadFixture, openDashboard, test, visibleCardIds } from './helpers';
+import { expect, loadFixture, matchCount, openDashboard, test, visibleCardIds } from './helpers';
 
 const card = (page: import('@playwright/test').Page, id: string) => page.locator(`.task-card[data-id="${id}"]`);
 
+// The cards are the List tab
 test.describe('task cards', () => {
   test('one card per task, in file order', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     expect(await visibleCardIds(page)).toEqual([
       'T-001',
       'T-002',
@@ -19,17 +20,17 @@ test.describe('task cards', () => {
       'T-011',
       'T-012',
     ]);
-    await expect(page.locator('.phase-count')).toHaveText('12 of 12 shown');
+    await expect(matchCount(page)).toHaveText('12 of 12 tasks');
   });
 
   test('card content: id, name, badges, dependencies and tags', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     const c = card(page, 'T-004');
     await expect(c).toHaveAttribute('id', 'task-T-004');
     await expect(c).toHaveClass(/status-done/);
     await expect(c.locator('.task-id')).toHaveText('T-004');
     await expect(c.locator('.task-name')).toHaveText('User login');
-    await expect(c.locator('.task-meta .badge')).toHaveText(['P1', 'feature', 'done']);
+    await expect(c.locator('.task-meta .badge')).toHaveText(['Phase 1', 'feature', 'done']);
     await expect(c.locator('.deps-label')).toHaveText('needs:');
     await expect(c.locator('.dep-link')).toHaveText(['T-002', 'T-003']);
     await expect(c.locator('.dep-link').first()).toHaveAttribute('title', 'Write contributing guide');
@@ -38,7 +39,7 @@ test.describe('task cards', () => {
   });
 
   test('status classes and labels', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     const expected = { 'T-005': 'in_progress', 'T-006': 'todo', 'T-007': 'blocked', 'T-010': 'skipped' };
     for (const [id, status] of Object.entries(expected)) {
       await expect(card(page, id)).toHaveClass(new RegExp(`status-${status}`));
@@ -47,7 +48,7 @@ test.describe('task cards', () => {
   });
 
   test('tasks without dependencies have no "needs:" label', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     await expect(card(page, 'T-001').locator('.deps-label')).toHaveCount(0);
     await expect(card(page, 'T-001').locator('.task-tags')).toBeEmpty();
   });
@@ -56,7 +57,7 @@ test.describe('task cards', () => {
     // Make the last card depend on the first so the link has to scroll the page
     const data = loadFixture('large-90');
     data.tasks[89].dependencies = ['T-001'];
-    await openDashboard(page, tasksServer, data);
+    await openDashboard(page, tasksServer, data, { tab: 'list' });
 
     const target = card(page, 'T-001');
     await card(page, 'T-090').scrollIntoViewIfNeeded();

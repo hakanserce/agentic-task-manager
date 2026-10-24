@@ -32,7 +32,7 @@ const find = (data, taskId) => data.tasks.find((t) => t.id === taskId);
 function repo() {
   const root = makeProject({ commit: true, files: { [FILE]: BASE } });
   assert.equal(runAtm(['init'], root).code, 0);
-  git(['commit', '-q', '-m', 'atm init'], root);
+  git(['commit', '-q', '-am', 'atm init'], root);
   return root;
 }
 
@@ -75,6 +75,11 @@ describe('merge driver (real git merges)', () => {
         "# 'atm' is defined in each clone's git config (merge.atm.driver), registered by the atm plugin on every run.\n# Without it, git merges tasks.json line by line as usual.\ntasks.json merge=atm\n",
       );
       assert.match(runAtm(['init'], root).stdout, /already set/);
+      // init also gave the project an id (for the dashboard's saved view), and keeps it
+      const projectId = read(root).meta.id;
+      assert.match(projectId, /^[0-9a-f]{8}$/);
+      assert.doesNotMatch(runAtm(['init'], root).stdout, /Gave this project an id/);
+      assert.equal(read(root).meta.id, projectId);
     });
   });
 

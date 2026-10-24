@@ -1,0 +1,81 @@
+/* Solarized theme. Palette: https://ethanschoonover.com/solarized (base03-base3 and the eight accents).
+   Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the background. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text: #93a1a1 -> #a9b4b4 (text contrast)
+   - text-muted: #839496 -> #8d9d9e (muted text contrast)
+   - accent: #268bd2 -> #2f90d4 (label contrast)
+   - red: #dc322f -> #e25350 (label contrast)
+   - purple: #6c71c4 -> #7e82cb (label contrast)
+   - pink: #d33682 -> #d95293 (label contrast)
+   - orange: #cb4b16 -> #d26437 (label contrast)
+   - on-accent: #fdf6e3 -> #002630 (text on accent) */
+:root[data-theme='solarized'] {
+  color-scheme: dark;
+  --bg: #002b36;
+  --surface: #073642;
+  --surface2: #0d4150;
+  --border: #1f4f5c;
+  --text: #a9b4b4;
+  --text-muted: #8d9d9e;
+  --accent: #2f90d4;
+  --green: #859900;
+  --yellow: #b58900;
+  --red: #e25350;
+  --purple: #7e82cb;
+  --pink: #d95293;
+  --orange: #d26437;
+  --cyan: #2aa198;
+  --on-accent: #002630;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #1d432a;
+  --node-bugfix: #32343c;
+  --node-test: #1c3e57;
+  --node-infra: #2e3836;
+  --node-docs: #09454c;
+  --node-refactor: #28402a;
+  --node-polish: #30344a;
+  --series-remaining: #2f90d4;
+  --series-scope: #d26437;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text: #586e75 -> #4a5c62 (text contrast)
+   - text-muted: #657b83 -> #576a71 (muted text contrast)
+   - accent: #268bd2 -> #217ab9 (label contrast)
+   - green: #859900 -> #6d7d00 (label contrast)
+   - yellow: #b58900 -> #947000 (label contrast)
+   - purple: #6c71c4 -> #6a6fc0 (label contrast)
+   - pink: #d33682 -> #cf357f (label contrast)
+   - cyan: #2aa198 -> #22847d (label contrast)
+   - accent: #217ab9 -> #2075b2 (text on accent) */
+:root[data-theme='solarized'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #fdf6e3;
+  --surface: #eee8d5;
+  --surface2: #e4dcc5;
+  --border: #d6ceb8;
+  --text: #4a5c62;
+  --text-muted: #576a71;
+  --accent: #2075b2;
+  --green: #6d7d00;
+  --yellow: #947000;
+  --red: #dc322f;
+  --purple: #6a6fc0;
+  --pink: #cf357f;
+  --orange: #cb4b16;
+  --cyan: #22847d;
+  --on-accent: #fdf6e3;
+  --overlay: rgba(0, 43, 54, 0.35);
+  --node-feature: #e6e3bf;
+  --node-bugfix: #f8d7c6;
+  --node-test: #e5e0dd;
+  --node-infra: #f5dbc2;
+  --node-docs: #dae4d3;
+  --node-refactor: #ece1bf;
+  --node-polish: #f6d7d3;
+  --series-remaining: #2075b2;
+  --series-scope: #cb4b16;
+}

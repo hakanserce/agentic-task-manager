@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, filterButton, openDashboard, test, type TasksData } from './helpers';
+import { expect, filterButton, openDashboard, test, type TasksData, openFilters } from './helpers';
 
 // Expected numbers: tests/fixtures/progress.md (now = 2026-04-06 12:00 UTC; the tests run in UTC, en-US)
 const NOW = new Date('2026-04-06T12:00:00Z');
@@ -64,6 +64,7 @@ test.describe('Progress tab: phase table', () => {
 
   test('filters choose the rows, but the pace still uses all history', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
+    await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(1);
     await expect(page.locator('#progress-basis')).toContainText('last 8 completed tasks');
@@ -73,6 +74,7 @@ test.describe('Progress tab: phase table', () => {
 
   test('empty filter result', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
+    await openFilters(page);
     await filterButton(page, 'status', 'skipped').click();
     await filterButton(page, 'type', 'test').click();
     await expect(page.locator('#progress')).toContainText('No tasks match current filters');
@@ -161,7 +163,32 @@ test.describe('Progress tab: focus a phase', () => {
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
 
     await row(page, 2).click();
+    await openFilters(page);
     await filterButton(page, 'phase', '1').click();
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+  });
+});
+
+test.describe('Progress tab: agent utilisation', () => {
+  // fixtures/agents.md: 5 h 30 m of agent work (incl. T-007 running 30 m) between 08:00 and 12:00 on a Wednesday
+  test('work time against calendar and working time, overall and per agent', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(new Date('2026-04-01T12:00:00Z'));
+    await openDashboard(page, tasksServer, 'agents', { tab: 'progress' });
+    const section = page.locator('#utilization');
+    await expect(section.locator('.progress-basis')).toContainText('5 h 30 m of agent work over 4 h');
+    // 330 m / 240 m calendar; working time 4 h × 8/24 = 80 m
+    await expect(page.locator('#util-daily .util-value')).toHaveText('138%');
+    await expect(page.locator('#util-workday .util-value')).toHaveText('413%');
+    await expect(page.locator('#util-daily .util-fill')).toHaveClass(/over/);
+    await expect(section.locator('tbody tr')).toHaveText([
+      /claude:alice001\s*3 h\s*75%\s*225%/,
+      /claude:bob00002\s*2 h 10 m\s*54%\s*163%/,
+      /Unattributed\s*20 m\s*8%\s*25%/,
+    ]);
+  });
+
+  test('is left out before any task has started', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard', { tab: 'progress' });
+    await expect(page.locator('#utilization')).toHaveCount(0);
   });
 });

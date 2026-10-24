@@ -16,7 +16,7 @@ A **Claude Code plugin** that gives any project file-based task management with 
 
 3. **Loop through all tasks** — "Ralph Wiggum mode" 🫠 — the agent continuously picks up the next available task and works through the entire backlog while you watch.
 
-4. **Watch progress live** — A self-contained HTML dashboard reads `tasks.json` over HTTP and shows filterable task cards, stats, and an interactive dependency graph. It refreshes itself every few seconds, so you can watch tasks turn green as the agent works.
+4. **Watch progress live** — A self-contained HTML dashboard reads `tasks.json` over HTTP and shows progress, an interactive dependency graph, a Kanban board, task cards and a per-agent timeline, all searchable and filterable. It refreshes itself every few seconds, so you can watch tasks turn green as the agent works.
 
 ---
 
@@ -317,6 +317,7 @@ its own (`chore: move atm files to .agentic-task-manager/`) before its first tas
 | `updated_at` | string | ❌ | ISO 8601 UTC timestamp of last status change |
 | `started_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `in_progress` |
 | `completed_at` | string | ❌ | ISO 8601 UTC timestamp when the task moved to `done` |
+| `agent` | string | ❌ | The agent that started the task, e.g. `claude:e5ea9db0` (written by `atm`; removed if the task goes back to `todo`) |
 | `last_failure` | object | ❌ | `{at, reason}` when an attempt failed or its lease expired (written by `atm`) |
 
 `/atm:do-task` and `/atm:loop-tasks` maintain the timestamps (through the `atm` helper): `started_at` when a task starts, `completed_at` when it
@@ -353,16 +354,20 @@ The dashboard is a single self-contained HTML file with no external dependencies
 
 ### Features
 
-- **Stats bar** — Total, done, in-progress, todo counts with progress bar
-- **Activity timeline** — Mini bar chart showing task completion over time, with hover details
-- **Filters** — Filter by phase, type, and status (multi-select)
-- **Task cards** — Color-coded by status and type, with dependency links
+- **Top bar** — Stays in view while you scroll. A progress ring (click for completion overall, by phase and by type) and an activity sparkline (click for tasks completed by type, agents working, time per task and idle stretches, over a period you pick: hour, day, week, month, all time or custom, with ‹ › to step back); reload, auto-refresh, mode and theme menus on the right
+- **Search and filters** — Keyword search over ID, name, description and type, and filters by phase, type and status (multi-select) in one line that shows what's selected and how many tasks match. Every filter button shows how many tasks it would show given the other filters, and empty choices are dimmed
 - **Detail panel** — Click a task to see full description, deps, files, and timestamps
-- **Views** — Tabs for the Dependency Graph, a Kanban board and Progress; the selected tab is kept in the URL
-- **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Filtering and auto-refresh keep your zoom level
+- **Views** — Tabs for the Dependency Graph, Kanban Board, Task List, Agents and Progress; the view fills the rest of the window and the selected tab is kept in the URL
+- **Dependency graph** — Interactive SVG graph with topological layout. Tasks outside the search and filters are hidden or, if you choose, greyed out. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Filtering and auto-refresh keep your zoom level
 - **Kanban board** — Todo / In Progress / Blocked / Done columns; todo cards show whether they're ready or what they wait on, and **Next up** marks the task `/atm:loop-tasks` will pick next; optional swimlanes per phase
-- **Progress** — Burndown chart (remaining vs. scope, with a forecast) and per-phase completion estimates in agent working time; click a phase to focus the chart. Estimates are most accurate with `started_at`/`completed_at`, which `/atm:do-task` and `/atm:loop-tasks` write since 0.7.0
-- **Auto-refresh** — On by default every 5s; the toggle and interval are remembered per browser
+- **Task List** — Task cards, color-coded by status and type, with dependency links
+- **Agents** — A timeline with a lane per agent and a bar per task (start to completion, colored by type; work in progress runs to now). Zoom with the buttons, Ctrl/⌘ + scroll or "last hour" presets, drag to move in time, or pick a range on the overview; **Live** keeps it at the current time. Tasks outside the search and filters are greyed out. Agents are recorded by `atm` since 0.12.0; older tasks show as "Unattributed"
+- **Progress** — Burndown chart (remaining vs. scope, with a forecast) and per-phase completion estimates in agent working time; click a phase to focus the chart. Agent utilisation compares agent work time with calendar time (24/7) and working time (8 h, Monday to Friday), overall and per agent. Estimates are most accurate with `started_at`/`completed_at`, which `/atm:do-task` and `/atm:loop-tasks` write since 0.7.0
+- **Saved view per project** — Filters and search, the tab, each tab's options (Kanban, Progress focus, graph hide/grey out) and the zoom of the graph and the Agents timeline come back when you reopen the dashboard. Each project keeps its own (by `meta.id` in `tasks.json`, else the project name); **Reset view** clears it. A `#view=` link still opens that tab
+- **Light and dark mode** — Follows your system by default; switch between System, Light and Dark in the menu at the top right
+- **Themes** — Default, Nord, Solarized, Catppuccin, Tokyo Night and High contrast, each in light and dark, checked for readable contrast (see [docs/theme-validation.md](docs/theme-validation.md)). Theme and mode are remembered per browser
+- **Live claims** — In-progress tasks show which agent works on them, on which branch, and since when
+- **Auto-refresh** — On by default every 5s; the toggle and interval (in the menu next to the reload button) are remembered per browser
 - **What's new** — The version next to the title opens the release notes; a "new" marker appears after an upgrade
 - **Manual reload** — Click reload button for instant refresh
 

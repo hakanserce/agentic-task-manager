@@ -1,0 +1,342 @@
+// Numbers behind the Progress and Activity widgets in the top bar: completion shares (overall, per phase, per type)
+// and activity over time (completions, cumulative done vs scope, cycle time, work in progress).
+import { completedAt, completions, type Completion } from './timeline';
+import type { Task } from './types';
+
+export interface Share {
+  key: string;
+  label: string;
+  done: number;
+  total: number;
+  /** done / total, 0–1 (0 when there are no tasks) */
+  ratio: number;
+}
+
+export interface StatusCount {
+  status: string;
+  count: number;
+}
+
+export interface ProgressBreakdown {
+  overall: Share;
+  byStatus: StatusCount[];
+  byPhase: Share[];
+  byType: Share[];
+}
+
+const STATUS_ORDER = ['done', 'in_progress', 'todo', 'blocked', 'skipped'];
+
+function share(key: string, label: string, tasks: Task[]): Share {
+  const done = tasks.filter((t) => t.status === 'done').length;
+  return { key, label, done, total: tasks.length, ratio: tasks.length ? done / tasks.length : 0 };
+}
+
+function groupBy<K>(tasks: Task[], key: (t: Task) => K): Map<K, Task[]> {
+  const groups = new Map<K, Task[]>();
+  for (const t of tasks) groups.set(key(t), [...(groups.get(key(t)) ?? []), t]);
+  return groups;
+}
+
+export function progressBreakdown(tasks: Task[]): ProgressBreakdown {
+  const statusCounts = groupBy(tasks, (t) => t.status);
+  const rank = (s: string) => (STATUS_ORDER.includes(s) ? STATUS_ORDER.indexOf(s) : STATUS_ORDER.length);
+  return {
+    overall: share('all', 'All tasks', tasks),
+    byStatus: [...statusCounts]
+      .map(([status, list]) => ({ status, count: list.length }))
+      .sort((a, b) => rank(a.status) - rank(b.status) || a.status.localeCompare(b.status)),
+    byPhase: [...groupBy(tasks, (t) => t.phase)]
+      .sort(([a], [b]) => a - b)
+      .map(([phase, list]) => share(String(phase), `Phase ${phase}`, list)),
+    byType: [...groupBy(tasks, (t) => t.type)]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([type, list]) => share(type, type, list)),
+  };
+}
+
+// ---- activity over time ----
+
+export interface ActivityBucket {
+  start: number;
+  end: number;
+  completed: Completion[];
+  /** Completions per task type in this bucket */
+  byType: Record<string, number>;
+  /** Mean completions per bucket over this and the two before it */
+  average: number;
+  /** Tasks done by the end of the bucket */
+  cumulativeDone: number;
+  /** Tasks that existed by the end of the bucket (created_at, else always) */
+  scope: number;
+  /** Tasks in progress at the end of the bucket (from started_at to completed_at) */
+  wip: number;
+  /** How much of the bucket each agent spent working on tasks, 0–1 per agent (agent "" = unattributed) */
+  agentBusy: Record<string, number>;
+}
+
+export interface CycleTime {
+  id: string;
+  name: string;
+  type: string;
+  /** When it was completed (ms) */
+  time: number;
+  minutes: number;
+}
+
+export interface ActivitySeries {
+  /** Bucket length, e.g. "1 hour", "1 day" */
+  unitLabel: string;
+  bucketMs: number;
+  buckets: ActivityBucket[];
+  cycleTimes: CycleTime[];
+  medianCycleMinutes: number | null;
+  totalCompleted: number;
+  /** Task types that have completions, most completed first */
+  types: { type: string; count: number }[];
+  /** Agents that worked in the period, by name (unattributed last): the order their colours follow */
+  agents: string[];
+  /** Agents working on a task now */
+  workingNow: number;
+  /** Stretches of at least MIN_IDLE_MS when no agent worked on any task, between the first start and now */
+  idle: { start: number; end: number }[];
+  idleMs: number;
+}
+
+/** Idle stretches from the first work (or `from`, if later) to `to`, and their total. */
+function idleIn(work: { start: number; end: number }[], from: number, to: number) {
+  if (work.length === 0) return { idle: [], idleMs: 0 };
+  const begin = Math.max(from, Math.min(...work.map((w) => w.start)));
+  const idle = begin < to ? gaps(work, begin, to) : [];
+  return { idle, idleMs: idle.reduce((n, g) => n + g.end - g.start, 0) };
+}
+
+/** Shorter pauses (an agent picking up the next task) don't count as idle */
+export const MIN_IDLE_MS = 10 * 60_000;
+
+/** Gaps of at least `min` in the union of `intervals`, within [from, to]. */
+export function gaps(intervals: { start: number; end: number }[], from: number, to: number, min = MIN_IDLE_MS) {
+  const out: { start: number; end: number }[] = [];
+  let cursor = from;
+  for (const iv of [...intervals].sort((a, b) => a.start - b.start)) {
+    if (iv.end <= cursor) continue;
+    if (iv.start >= to) break;
+    if (iv.start - cursor >= min) out.push({ start: cursor, end: iv.start });
+    cursor = Math.max(cursor, iv.end);
+    if (cursor >= to) break;
+  }
+  if (to - cursor >= min) out.push({ start: cursor, end: to });
+  return out;
+}
+
+const MINUTE = 60_000;
+const HOUR = 3_600_000;
+const BUCKET_SIZES: [number, string][] = [
+  [5 * MINUTE, '5 minutes'],
+  [15 * MINUTE, '15 minutes'],
+  [30 * MINUTE, '30 minutes'],
+  [HOUR, '1 hour'],
+  [3 * HOUR, '3 hours'],
+  [6 * HOUR, '6 hours'],
+  [12 * HOUR, '12 hours'],
+  [24 * HOUR, '1 day'],
+  [2 * 24 * HOUR, '2 days'],
+  [7 * 24 * HOUR, '1 week'],
+  [30 * 24 * HOUR, '30 days'],
+];
+export const MAX_ACTIVITY_BUCKETS = 36;
+
+const ms = (iso: string | undefined) => {
+  const t = iso ? Date.parse(iso) : NaN;
+  return Number.isNaN(t) ? null : t;
+};
+
+export function median(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+// ---- the period the Activity panel looks at ----
+
+export const ACTIVITY_PRESETS = ['hour', 'day', 'week', 'month', 'all', 'custom'] as const;
+export type ActivityPreset = (typeof ACTIVITY_PRESETS)[number];
+export const ACTIVITY_PRESET_LABELS: Record<ActivityPreset, string> = {
+  hour: 'Hour',
+  day: 'Day',
+  week: 'Week',
+  month: 'Month',
+  all: 'All',
+  custom: 'Custom',
+};
+/** Presets that step back and forth in time (‹ ›) */
+export const STEPPED_PRESETS: readonly ActivityPreset[] = ['hour', 'day', 'week', 'month'];
+
+export interface ActivityRange {
+  preset: ActivityPreset;
+  /** For stepped presets: 0 = the current hour/day/week/month, -1 the one before, … */
+  offset?: number;
+  /** For "custom": the period, in ms */
+  from?: number;
+  to?: number;
+}
+
+/** Local calendar start of the day, week (Monday) or month containing `t`, moved by `offset` units. */
+function unitStart(preset: 'day' | 'week' | 'month', t: number, offset: number): number {
+  const d = new Date(t);
+  if (preset === 'day') return new Date(d.getFullYear(), d.getMonth(), d.getDate() + offset).getTime();
+  if (preset === 'week')
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7) + 7 * offset).getTime();
+  return new Date(d.getFullYear(), d.getMonth() + offset, 1).getTime();
+}
+
+/**
+ * The period a range stands for at `now`, or null for all time. The current hour is the last 60 minutes; the
+ * current day, week (from Monday) and month run up to now; earlier ones are whole (local calendar).
+ */
+export function rangeWindow(range: ActivityRange, now: number): { start: number; end: number } | null {
+  const offset = Math.min(0, range.offset ?? 0);
+  switch (range.preset) {
+    case 'hour':
+      return { start: now - HOUR + offset * HOUR, end: now + offset * HOUR };
+    case 'day':
+    case 'week':
+    case 'month': {
+      const start = unitStart(range.preset, now, offset);
+      return { start, end: offset === 0 ? now : unitStart(range.preset, now, offset + 1) };
+    }
+    case 'custom':
+      return range.from !== undefined && range.to !== undefined && range.to > range.from
+        ? { start: range.from, end: range.to }
+        : null;
+    default:
+      return null;
+  }
+}
+
+/** "Today", "Yesterday", "Wed, Oct 21", "Last week", "Week of Oct 5", "August 2026", … */
+export function rangeLabel(range: ActivityRange, now: number): string {
+  const offset = Math.min(0, range.offset ?? 0);
+  const w = rangeWindow(range, now);
+  const date = (t: number, o: Intl.DateTimeFormatOptions) => new Date(t).toLocaleDateString(undefined, o);
+  const time = (t: number) => new Date(t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  switch (range.preset) {
+    case 'hour':
+      return offset === 0 ? 'Last hour' : `${time(w!.start)} – ${time(w!.end)}`;
+    case 'day':
+      return offset === 0
+        ? 'Today'
+        : offset === -1
+          ? 'Yesterday'
+          : date(w!.start, { weekday: 'short', month: 'short', day: 'numeric' });
+    case 'week':
+      return offset === 0
+        ? 'This week'
+        : offset === -1
+          ? 'Last week'
+          : `Week of ${date(w!.start, { month: 'short', day: 'numeric' })}`;
+    case 'month':
+      return offset === 0
+        ? 'This month'
+        : offset === -1
+          ? 'Last month'
+          : date(w!.start, { month: 'long', year: 'numeric' });
+    case 'custom':
+      return 'Custom';
+    default:
+      return 'All time';
+  }
+}
+
+/**
+ * Activity bucketed by the smallest of a few natural lengths that fits the time span; null without completions.
+ * With `period`, only that period is shown (completions, cycle times and type counts inside it).
+ */
+export function activitySeries(
+  tasks: Task[],
+  period?: { start: number; end: number } | null,
+  now = Date.now(),
+): ActivitySeries | null {
+  const all = completions(tasks);
+  if (all.length === 0) return null;
+  const done = period ? all.filter((c) => c.time >= period.start && c.time < period.end) : all;
+  const starts = tasks.map((t) => ms(t.started_at)).filter((t): t is number => t !== null);
+  const first = period ? period.start : Math.min(all[0].time, ...starts);
+  const last = period ? period.end - 1 : Math.max(all[all.length - 1].time, ...starts);
+
+  const [bucketMs, unitLabel] =
+    // Buckets under an hour only for a chosen period (e.g. the last hour); all time starts at hours
+    BUCKET_SIZES.find(([size]) => (period || size >= HOUR) && (last - first) / size < MAX_ACTIVITY_BUCKETS) ??
+    BUCKET_SIZES[BUCKET_SIZES.length - 1];
+  // Align buckets to local time (midnight for days)
+  const offset = new Date(first).getTimezoneOffset() * 60_000;
+  const origin = Math.floor((first - offset) / bucketMs) * bucketMs + offset;
+  const count = Math.floor((last - origin) / bucketMs) + 1;
+
+  const typeOf = new Map(tasks.map((t) => [t.id, t.type]));
+  // Work intervals per agent: start to completion, or to now while in progress
+  const work = tasks.flatMap((t) => {
+    const s = ms(t.started_at);
+    if (s === null || (t.status !== 'done' && t.status !== 'in_progress')) return [];
+    const e = t.status === 'in_progress' ? now : ms(t.completed_at);
+    return e === null || e <= s ? [] : [{ agent: t.agent ?? '', start: s, end: e }];
+  });
+  const buckets: ActivityBucket[] = [];
+  for (let i = 0; i < count; i++) {
+    const start = origin + i * bucketMs;
+    const end = start + bucketMs;
+    const completed = done.filter((c) => c.time >= start && c.time < end);
+    const recent = [...buckets.slice(-2).map((b) => b.completed.length), completed.length];
+    const byType: Record<string, number> = {};
+    for (const c of completed) byType[typeOf.get(c.id) ?? '?'] = (byType[typeOf.get(c.id) ?? '?'] ?? 0) + 1;
+    const agentBusy: Record<string, number> = {};
+    for (const w of work) {
+      const overlap = Math.min(end, w.end) - Math.max(start, w.start);
+      if (overlap > 0) agentBusy[w.agent] = (agentBusy[w.agent] ?? 0) + overlap / bucketMs;
+    }
+    // An agent on two tasks at once is still one agent at work (Unattributed stands for many: not capped)
+    for (const a of Object.keys(agentBusy)) if (a) agentBusy[a] = Math.min(1, agentBusy[a]);
+    buckets.push({
+      start,
+      end,
+      agentBusy,
+      completed,
+      byType,
+      average: recent.reduce((a, b) => a + b, 0) / recent.length,
+      cumulativeDone: all.filter((c) => c.time < end).length,
+      scope: tasks.filter((t) => (ms(t.created_at) ?? -Infinity) < end).length,
+      wip: tasks.filter((t) => {
+        const s = ms(t.started_at);
+        if (s === null || s >= end) return false;
+        const c = t.status === 'done' ? ms(completedAt(t)) : null;
+        return c === null ? t.status === 'in_progress' : c >= end;
+      }).length,
+    });
+  }
+
+  const cycleTimes: CycleTime[] = tasks
+    .filter((t) => t.status === 'done')
+    .map((t) => ({ t, s: ms(t.started_at), c: ms(t.completed_at) }))
+    .filter(({ s, c }) => s !== null && c !== null && c >= s && (!period || (c >= period.start && c < period.end)))
+    .map(({ t, s, c }) => ({ id: t.id, name: t.name, type: t.type, time: c!, minutes: (c! - s!) / 60_000 }))
+    .sort((a, b) => a.time - b.time);
+
+  const typeTotals = new Map<string, number>();
+  for (const c of done) typeTotals.set(typeOf.get(c.id) ?? '?', (typeTotals.get(typeOf.get(c.id) ?? '?') ?? 0) + 1);
+  return {
+    types: [...typeTotals]
+      .map(([type, count]) => ({ type, count }))
+      .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type)),
+    agents: [...new Set(buckets.flatMap((b) => Object.keys(b.agentBusy)))].sort(
+      (a, b) => Number(a === '') - Number(b === '') || a.localeCompare(b),
+    ),
+    ...idleIn(work, first, period ? Math.min(period.end, now) : Math.max(last, now)),
+    workingNow: new Set(tasks.filter((t) => t.status === 'in_progress').map((t) => t.agent ?? '')).size,
+    unitLabel,
+    bucketMs,
+    buckets,
+    cycleTimes,
+    medianCycleMinutes: median(cycleTimes.map((c) => c.minutes)),
+    totalCompleted: done.length,
+  };
+}

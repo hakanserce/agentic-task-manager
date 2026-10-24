@@ -22,7 +22,8 @@ The pre-commit hook in `.githooks/` rebuilds and stages it when dashboard source
 The pre-port dashboard is frozen at `dashboard/tests/legacy/tasks-dashboard.v0.4.0.html` (see `docs/svelte-migration-plan.md`).
 
 Commands (run in `dashboard/`):
-- `npm run dev` — Vite dev server
+- `npm run dev` — Vite dev server; it serves this repo's `.agentic-task-manager/` data, or another folder's with
+  `ATM_DEV_DATA=<path to .agentic-task-manager> npm run dev` (`build/dev-data.ts`)
 - `npm run build` — single-file build
 - `npm test` / `npm run test:coverage` — Vitest unit tests (`tests/unit/`, 90% line threshold on `src/lib`)
 - `npm run test:e2e` — build, then the Playwright e2e suite

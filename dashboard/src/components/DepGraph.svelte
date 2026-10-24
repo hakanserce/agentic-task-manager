@@ -5,7 +5,6 @@
     anyNodeVisible,
     autoFitView,
     clampView,
-    containerHeight,
     fitView,
     isFullyVisible,
     panToContent,
@@ -18,17 +17,22 @@
   import GraphControls from './GraphControls.svelte';
   import Minimap from './Minimap.svelte';
 
-  const EMPTY_HEIGHT = 100;
   const DRAG_THRESHOLD = 4;
   const KEY_PAN = 60;
   const ZOOM_STEP = 1.25;
 
-  const layout = $derived(layoutGraph(dashboard.filtered));
-  const empty = $derived(dashboard.filtered.length === 0);
+  // "Dim": lay out every task and grey out the ones the search and filters exclude, so the shape stays put
+  const dim = $derived(dashboard.graphFiltered === 'dim');
+  const shown = $derived(dim ? dashboard.tasks : dashboard.filtered);
+  const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
+  const narrowed = $derived(dashboard.filtered.length < dashboard.tasks.length);
+  const layout = $derived(layoutGraph(shown));
+  const empty = $derived(shown.length === 0);
   const content = $derived({ w: layout.width, h: layout.height });
   // When the graph overflows, the initial view centers on the task in progress, else the next one to do
   const focus = $derived(
-    layout.nodes.find((n) => n.task.status === 'in_progress') ?? layout.nodes.find((n) => n.task.status === 'todo'),
+    layout.nodes.find((n) => matching.has(n.task.id) && n.task.status === 'in_progress') ??
+      layout.nodes.find((n) => matching.has(n.task.id) && n.task.status === 'todo'),
   );
 
   let svg: SVGSVGElement;
@@ -51,7 +55,14 @@
     if (!active) return;
     const current = untrack(() => view);
     if (!fitted) {
-      view = autoFitView(content, viewport, focus);
+      // A saved position (FR-5.7) is used if some task is still on screen there; otherwise the automatic view
+      const saved = dashboard.graphView ? clampView(dashboard.graphView, content, viewport) : null;
+      if (saved && anyNodeVisible(saved, layout.nodes, nodeSize, viewport)) {
+        view = saved;
+        autoFit = false;
+      } else {
+        view = autoFitView(content, viewport, focus);
+      }
       fitted = true;
     } else if (key !== shownKey) {
       autoFit = false;
@@ -67,6 +78,7 @@
   function setView(v: View) {
     view = clampView(v, content, viewport);
     autoFit = false;
+    dashboard.graphView = view; // saved with the project's view
   }
 
   const zoomBy = (factor: number) => setView(zoomAt(view, view.k * factor, vw / 2, vh / 2));
@@ -153,7 +165,6 @@
   tabindex="0"
   role="application"
   aria-label="Dependency graph"
-  style:height={dashboard.loaded ? (empty ? EMPTY_HEIGHT : containerHeight(layout.height)) + 'px' : undefined}
   bind:clientWidth={vw}
   bind:clientHeight={vh}
   onkeydown={onKeydown}
@@ -181,13 +192,26 @@
           ></defs
         >
         {#each layout.edges as edge (edge.from + '>' + edge.to)}
-          <path d={edge.d} fill="none" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow)" />
+          <path
+            d={edge.d}
+            fill="none"
+            stroke="var(--text-muted)"
+            stroke-width="1.5"
+            marker-end="url(#arrow)"
+            class:graph-dimmed={!matching.has(edge.from) || !matching.has(edge.to)}
+          />
         {/each}
         {#each layout.nodes as node (node.task.id)}
           {@const t = node.task}
           {@const ts = typeStyle(t.type)}
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-          <g onclick={() => dashboard.showDetail(t.id)} style="cursor:pointer">
+          <g
+            onclick={() => dashboard.showDetail(t.id)}
+            style="cursor:pointer"
+            class="graph-node"
+            class:graph-dimmed={!matching.has(t.id)}
+            data-id={t.id}
+          >
             <rect
               x={node.x}
               y={node.y}
@@ -210,7 +234,7 @@
     {/if}
   </svg>
   {#if dashboard.loaded && !empty}
-    <GraphControls k={view.k} onzoom={zoomBy} onfit={fitAll} onreset={resetZoom} />
+    <GraphControls k={view.k} onzoom={zoomBy} onfit={fitAll} onreset={resetZoom} {narrowed} />
     <Minimap
       nodes={layout.nodes}
       {nodeSize}

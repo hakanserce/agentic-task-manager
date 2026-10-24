@@ -29,7 +29,7 @@ describe('theme', () => {
   });
 
   it('has a graph fill for every type and a fallback', () => {
-    for (const type of Object.keys(TYPE_COLORS)) expect(graphNodeBg(type)).toMatch(/^#/);
+    for (const type of Object.keys(TYPE_COLORS)) expect(graphNodeBg(type)).toMatch(/^var\(--node-[a-z]+\)$/);
     expect(graphNodeBg('spike')).toBe('var(--surface2)');
   });
 

@@ -20,7 +20,9 @@
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="task-name" onclick={() => dashboard.showDetail(task.id)}>{task.name}</div>
     <div class="task-meta">
-      <span class="badge" style="background:{pc}20;color:{pc}">P{task.phase}</span>
+      <span class="badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
+        >Phase {task.phase}</span
+      >
       <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
       <span class="badge" style="background:{ss.bg};color:{ss.color}">{statusLabel(task.status)}</span>
       {#if deps.length}

@@ -13,6 +13,7 @@ export function loadIntoDashboard(data: TasksFile) {
     loaded: true,
     loadError: null,
     filters: emptyFilters(),
+    query: '',
     detailId: null,
     detailOpen: false,
     // Keep component tests free of background reloads (the real default is on)

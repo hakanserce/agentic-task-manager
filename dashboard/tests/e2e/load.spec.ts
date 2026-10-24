@@ -32,7 +32,7 @@ test.describe('loading tasks.json', () => {
   test('shows server instructions when tasks.json is missing', async ({ page, tasksServer }) => {
     tasksServer.fail(404);
     await page.goto('tasks-dashboard.html');
-    const error = page.locator('#phases');
+    const error = page.locator('#load-error');
     await expect(error).toContainText('Failed to load tasks.json');
     await expect(error).toContainText('HTTP 404');
     await expect(error).toContainText('python3 -m http.server 8000');
@@ -42,6 +42,6 @@ test.describe('loading tasks.json', () => {
   test('shows the error box for invalid JSON', async ({ page }) => {
     await page.route(/\/tasks\.json(\?.*)?$/, (route) => route.fulfill({ body: '{ not json' }));
     await page.goto('tasks-dashboard.html');
-    await expect(page.locator('#phases')).toContainText('Failed to load tasks.json');
+    await expect(page.locator('#load-error')).toContainText('Failed to load tasks.json');
   });
 });

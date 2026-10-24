@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { emptyFilters, filterOptions, filterTasks, isActive, toggleFilter, type Filters } from '../../src/lib/filters';
+import {
+  emptyFilters,
+  facetCounts,
+  filterOptions,
+  filterTasks,
+  isActive,
+  searchTasks,
+  toggleFilter,
+  type Filters,
+} from '../../src/lib/filters';
 import type { Task } from '../../src/lib/types';
 import standardFile from '../fixtures/standard.json';
 import edgeFile from '../fixtures/edge-cases.json';
@@ -92,5 +101,110 @@ describe('toggleFilter / isActive', () => {
     expect(isActive(f, 'status', 'all')).toBe(false);
     expect(isActive(f, 'status', 'done')).toBe(true);
     expect(isActive(f, 'phase', 'all')).toBe(true);
+  });
+});
+
+describe('facetCounts', () => {
+  // standard.json: 12 tasks, 4 per phase. Phase 0: infra×2, docs, test (all done). Phase 1: feature (done),
+  // feature (in_progress), bugfix (todo), refactor (blocked). Phase 2: polish, test, feature (todo), docs (skipped).
+  const counts = (filters: Partial<Record<keyof Filters, string[]>>) =>
+    facetCounts(standard, {
+      phase: new Set(filters.phase ?? []),
+      type: new Set(filters.type ?? []),
+      status: new Set(filters.status ?? []),
+    });
+  const asObject = (m: ReadonlyMap<string, number>) => Object.fromEntries([...m].sort());
+
+  it('without selections: every value over all tasks', () => {
+    const c = counts({});
+    expect(c.phase.all).toBe(12);
+    expect(asObject(c.phase.values)).toEqual({ 0: 4, 1: 4, 2: 4 });
+    expect(asObject(c.type.values)).toEqual({
+      bugfix: 1,
+      docs: 2,
+      feature: 3,
+      infra: 2,
+      polish: 1,
+      refactor: 1,
+      test: 2,
+    });
+    expect(asObject(c.status.values)).toEqual({ blocked: 1, done: 5, in_progress: 1, skipped: 1, todo: 4 });
+  });
+
+  it("a group's own selection doesn't change its counts; the other groups count within it", () => {
+    const c = counts({ phase: ['1'] });
+    expect(c.phase.all).toBe(12);
+    expect(asObject(c.phase.values)).toEqual({ 0: 4, 1: 4, 2: 4 });
+    expect(c.type.all).toBe(4);
+    expect(asObject(c.type.values)).toEqual({ bugfix: 1, feature: 2, refactor: 1 });
+    expect(asObject(c.status.values)).toEqual({ blocked: 1, done: 1, in_progress: 1, todo: 1 });
+  });
+
+  it('selections in two groups: each group counts under the other two', () => {
+    const c = counts({ phase: ['1'], type: ['feature'] });
+    expect(asObject(c.phase.values)).toEqual({ 1: 2, 2: 1 }); // features by phase
+    expect(asObject(c.type.values)).toEqual({ bugfix: 1, feature: 2, refactor: 1 }); // phase 1 by type
+    expect(c.status.all).toBe(2);
+    expect(asObject(c.status.values)).toEqual({ done: 1, in_progress: 1 });
+  });
+
+  it('several values in one group combine with OR', () => {
+    const c = counts({ phase: ['1', '2'] });
+    expect(c.type.all).toBe(8);
+    expect(c.type.values.get('feature')).toBe(3);
+    expect(c.type.values.get('infra')).toBeUndefined();
+  });
+
+  it('a selection that matches nothing leaves the other groups at zero', () => {
+    const c = counts({ status: ['nonexistent'] });
+    expect(c.phase.all).toBe(0);
+    expect(c.phase.values.size).toBe(0);
+    expect(c.status.all).toBe(12);
+  });
+
+  it("agrees with filterTasks: a value's count is what selecting only it would show", () => {
+    const c = counts({ type: ['feature', 'test'] });
+    for (const [phase, n] of c.phase.values) {
+      const shown = filterTasks(standard, {
+        ...emptyFilters(),
+        type: new Set(['feature', 'test']),
+        phase: new Set([phase]),
+      });
+      expect(shown.length).toBe(n);
+    }
+  });
+});
+
+describe('searchTasks', () => {
+  const task = (id: string, name: string, description?: string, type = 'feature'): Task => ({
+    id,
+    name,
+    phase: 0,
+    type,
+    description: description as string,
+    status: 'todo',
+  });
+  const tasks = [
+    task('T-001', 'Login form', 'Email and password'),
+    task('T-002', 'Logout button', undefined, 'bugfix'),
+    task('T-010', 'Docs', 'How to log in', 'docs'),
+  ];
+  const ids = (query: string) => searchTasks(tasks, query).map((t) => t.id);
+
+  it('an empty or blank query matches everything', () => {
+    expect(searchTasks(tasks, '')).toBe(tasks);
+    expect(ids('   ')).toEqual(['T-001', 'T-002', 'T-010']);
+  });
+
+  it('matches ID, name, description and type, ignoring case', () => {
+    expect(ids('t-01')).toEqual(['T-010']);
+    expect(ids('LOG')).toEqual(['T-001', 'T-002', 'T-010']);
+    expect(ids('password')).toEqual(['T-001']);
+    expect(ids('bugfix')).toEqual(['T-002']);
+  });
+
+  it('every word must match', () => {
+    expect(ids('log button')).toEqual(['T-002']);
+    expect(ids('log nothing')).toEqual([]);
   });
 });

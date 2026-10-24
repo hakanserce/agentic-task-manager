@@ -57,7 +57,9 @@
       <TaskGrid />
     </div>
     <div class="view-panel" id="panel-agents" role="tabpanel" aria-labelledby="tab-agents" hidden={view !== 'agents'}>
-      <AgentsTab />
+      <!-- Mounted only while selected: its ~2 elements per task would otherwise re-render on every reload, and its
+           state (zoom, Live) lives in the dashboard state anyway -->
+      {#if view === 'agents'}<AgentsTab />{/if}
     </div>
     <div
       class="view-panel"

@@ -56,3 +56,31 @@ export function toggleFilter(filters: Filters, group: FilterGroup, value: string
 export function isActive(filters: Filters, group: FilterGroup, value: string): boolean {
   return value === 'all' ? filters[group].size === 0 : filters[group].has(value);
 }
+
+export interface FacetCounts {
+  /** Tasks matching the other groups' selections: what "All" in this group would show. */
+  all: number;
+  /** Per value of this group, among those tasks. Values with no tasks are absent (count 0). */
+  values: ReadonlyMap<string, number>;
+}
+
+const valueOf: Record<FilterGroup, (t: Task) => string> = {
+  phase: (t) => String(t.phase),
+  type: (t) => t.type,
+  status: (t) => t.status,
+};
+
+/**
+ * Faceted counts for the filter buttons: for each group, how many tasks each value would show given the selections
+ * in the other groups (the group's own selection is ignored, so a count says what clicking that value adds).
+ */
+export function facetCounts(tasks: Task[], filters: Filters): Record<FilterGroup, FacetCounts> {
+  const result = {} as Record<FilterGroup, FacetCounts>;
+  for (const group of FILTER_GROUPS) {
+    const others = filterTasks(tasks, { ...filters, [group]: new Set<string>() });
+    const values = new Map<string, number>();
+    for (const t of others) values.set(valueOf[group](t), (values.get(valueOf[group](t)) ?? 0) + 1);
+    result[group] = { all: others.length, values };
+  }
+  return result;
+}

@@ -10,7 +10,7 @@ import sys
 
 from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, out, read_json, rel, to_json, write_json_atomic
 from .lock import locked
-from .model import load_tasks
+from .model import kind_of, load_tasks, vocabulary
 from .paths import find_paths
 
 # What `atm` means is not in this file: git config can't be committed, so each clone registers the driver in its own
@@ -21,8 +21,20 @@ GITATTRIBUTES_LINES = (
     "tasks.json merge=atm\n"
 )
 PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure", "agent")
-STATUS_RANK = {"todo": 0, "in_progress": 1, "blocked": 1, "done": 2, "skipped": 2}
+# How far along a status's kind is (DM-3.3); a status without a kind ranks like todo
+KIND_RANK = {"todo": 0, "active": 1, "blocked": 1, "review": 1, "done": 2, "skipped": 2}
 MISSING = object()
+
+
+def merge_vocabulary(*versions):
+    """The vocabulary to rank statuses by: this branch's, else the other's, else the defaults. A merge never fails
+    over a vocabulary; the next atm command reports it."""
+    for data in versions:
+        try:
+            return vocabulary(data)
+        except AtmError:
+            continue
+    return vocabulary({})
 
 
 def merge_value(base, ours, theirs):
@@ -36,15 +48,16 @@ def merge_value(base, ours, theirs):
     return ours, True
 
 
-def progress_winner(ours, theirs):
+def progress_winner(ours, theirs, vocab):
     """Both sides moved a task along: the one further along wins, then the newer update, then ours."""
-    rank_o, rank_t = STATUS_RANK.get(ours.get("status"), 0), STATUS_RANK.get(theirs.get("status"), 0)
+    rank = lambda task: KIND_RANK.get(kind_of(vocab, task.get("status")), 0)
+    rank_o, rank_t = rank(ours), rank(theirs)
     if rank_o != rank_t:
         return ours if rank_o > rank_t else theirs
     return theirs if str(theirs.get("updated_at", "")) > str(ours.get("updated_at", "")) else ours
 
 
-def merge_task(base, ours, theirs):
+def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
     if not changed(theirs):
@@ -52,7 +65,7 @@ def merge_task(base, ours, theirs):
     elif not changed(ours):
         progress = theirs
     else:
-        progress = progress_winner(ours, theirs)
+        progress = progress_winner(ours, theirs, vocab)
     keys = list(ours) + [k for k in theirs if k not in ours] + [k for k in base if k not in ours and k not in theirs]
     merged, conflicts = {}, []
     for key in keys:
@@ -82,6 +95,7 @@ def next_free_id(task_id, used):
 def merge_task_files(base, ours, theirs):
     """Merge three versions of tasks.json. Returns (merged data, list of conflict descriptions)."""
     by_id = lambda data: {t.get("id"): t for t in data.get("tasks", [])}
+    vocab = merge_vocabulary(ours, theirs)
     base_tasks, our_tasks, their_tasks = by_id(base), by_id(ours), by_id(theirs)
     used = set(base_tasks) | set(our_tasks) | set(their_tasks)
     conflicts, merged_tasks, renamed, theirs_new = [], [], {}, []
@@ -96,7 +110,7 @@ def merge_task_files(base, ours, theirs):
                 conflicts.append(f"{task_id}: changed on this branch, deleted on the other")
                 merged_tasks.append(task)
         else:
-            merged, fields = merge_task(b, task, t)
+            merged, fields = merge_task(b, task, t, vocab)
             merged_tasks.append(merged)
             if fields:
                 conflicts.append(f"{task_id}: both branches changed {', '.join(fields)}")

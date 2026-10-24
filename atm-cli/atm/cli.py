@@ -41,7 +41,8 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
-                 (start/done/fail/release/heartbeat take --agent NAME and --json)
+                 (start/done/fail/release/heartbeat take --agent NAME and --json; start/done/fail/release and
+                 next --claim take --status ID to pick a status when the project has several of that kind)
   help           show this help
 
 Every command takes --json, and `atm <command> --help` describes it.
@@ -79,6 +80,13 @@ def build_parser():
     def agent_option(sub):
         sub.add_argument("--agent", metavar="NAME", help="who you are (default: ATM_AGENT, else this session)")
 
+    def status_option(sub):
+        sub.add_argument(
+            "--status",
+            metavar="ID",
+            help="the status to move to when the project has several of that kind (default: the first listed)",
+        )
+
     command("version", cmd_version, "print the plugin version")
     command("help", cmd_help, "show the list of commands")
     command("paths", cmd_paths, "print where this project's task files are")
@@ -98,6 +106,7 @@ def build_parser():
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
         agent_option(sub)
+        status_option(sub)
         if name == "fail":
             sub.add_argument("--reason", metavar="TEXT", help="why it failed")
 
@@ -106,6 +115,7 @@ def build_parser():
     next_.add_argument("--type", help="only this task type")
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
+    status_option(next_)
 
     heartbeat = command("heartbeat", cmd_heartbeat, "extend your claim's lease")
     heartbeat.add_argument("id", help="the task ID")

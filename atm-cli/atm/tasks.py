@@ -29,7 +29,7 @@ def cmd_status_change(command):
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
             check_holder(claims, task_id, agent, command)
-            previous = change_status(task, data, command, getattr(args, "reason", None), agent)
+            previous = change_status(task, data, command, getattr(args, "reason", None), agent, args.status)
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose

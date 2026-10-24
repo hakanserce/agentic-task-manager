@@ -333,15 +333,127 @@ def cmd_lock_test(args):
 
 
 # ==== model.py ====
-# Loading tasks.json, looking tasks up, and the status transitions themselves.
+# Loading tasks.json, the project's vocabularies, looking tasks up, and the status transitions themselves.
+#
+# Every rule is written against a status's kind, never its name (docs/v4/data-model.md §3): a project may name its own
+# statuses in meta.statuses, each with one of the six kinds below.
 
+KINDS = ("todo", "active", "review", "blocked", "done", "skipped")
+DEFAULT_STATUSES = [
+    {"id": "todo", "label": "To Do", "kind": "todo"},
+    {"id": "in_progress", "label": "In Progress", "kind": "active"},
+    {"id": "in_review", "label": "In Review", "kind": "review"},
+    {"id": "blocked", "label": "Blocked", "kind": "blocked"},
+    {"id": "done", "label": "Done", "kind": "done"},
+    {"id": "skipped", "label": "Skipped", "kind": "skipped"},
+]
+DEFAULT_TYPES = [
+    {"id": t, "label": t.capitalize()} for t in ("feature", "bugfix", "test", "infra", "docs", "refactor", "polish")
+]
+DEFAULT_PRIORITIES = [
+    {"id": "P0", "label": "Critical"},
+    {"id": "P1", "label": "High"},
+    {"id": "P2", "label": "Medium"},
+    {"id": "P3", "label": "Low"},
+]
+DEFAULT_PRIORITY = "P2"
+WORKFLOW_TYPES = ("direct", "pull-request")
+
+# command: (kinds a task may be in, kind it moves to)
 STATUS_CHANGES = {
-    # command: (allowed current statuses, new status)
-    "start": (("todo",), "in_progress"),
-    "done": (("in_progress",), "done"),
-    "fail": (("in_progress",), "todo"),
-    "release": (("in_progress",), "todo"),
+    "start": (("todo",), "active"),
+    "done": (("active",), "done"),
+    "fail": (("active",), "todo"),
+    "release": (("active",), "todo"),
 }
+
+
+def _terms(meta, key, defaults, need_kind=False):
+    """meta[key] as a list of {id, label[, kind]}, or the defaults when absent. Raises AtmError naming the problem."""
+    if key not in meta:
+        return defaults
+    value = meta[key]
+    if not isinstance(value, list) or not value:
+        raise AtmError(f"meta.{key} must be a non-empty list")
+    seen, terms = set(), []
+    for item in value:
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"]:
+            raise AtmError(f"meta.{key}: every entry needs an \"id\" (a non-empty string)")
+        if item["id"] in seen:
+            raise AtmError(f"meta.{key}: \"{item['id']}\" is listed twice")
+        seen.add(item["id"])
+        term = {"id": item["id"], "label": item.get("label") or item["id"].replace("_", " ").capitalize()}
+        if need_kind:
+            if item.get("kind") not in KINDS:
+                raise AtmError(
+                    f"meta.{key}: \"{item['id']}\" has the kind {item.get('kind')!r}; use one of {', '.join(KINDS)}"
+                )
+            term["kind"] = item["kind"]
+        terms.append(term)
+    return terms
+
+
+def vocabulary(data):
+    """The project's vocabularies from meta, with the defaults for what it doesn't define (DM-2). Raises AtmError,
+    naming the problem, when meta defines something that can't work."""
+    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    statuses = _terms(meta, "statuses", DEFAULT_STATUSES, need_kind=True)
+    for kind in ("todo", "active", "done"):
+        if not any(s["kind"] == kind for s in statuses):
+            raise AtmError(f"meta.statuses needs at least one status of the kind {kind!r}")
+    priorities = _terms(meta, "priorities", DEFAULT_PRIORITIES)
+    ids = [p["id"] for p in priorities]
+    # Without a default: P2 if the project has it, else the middle priority (as the dashboard does)
+    default_priority = meta.get(
+        "default_priority", DEFAULT_PRIORITY if DEFAULT_PRIORITY in ids else ids[(len(ids) - 1) // 2]
+    )
+    if default_priority not in ids:
+        raise AtmError(f"meta.default_priority {default_priority!r} is not one of meta.priorities")
+    phases = meta.get("phases", [])
+    if not isinstance(phases, list) or any(
+        not isinstance(p, dict) or not isinstance(p.get("id"), (int, float)) or isinstance(p.get("id"), bool)
+        for p in phases
+    ):
+        raise AtmError('meta.phases must be a list of {"id": <number>, "name": "..."}')
+    workflow = meta.get("workflow")
+    if workflow is not None and (not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES):
+        raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
+    return {
+        "statuses": statuses,
+        "types": _terms(meta, "types", DEFAULT_TYPES),
+        "priorities": priorities,
+        "default_priority": default_priority,
+        "phases": phases,
+    }
+
+
+def kind_of(vocab, status):
+    """The status's kind. A status the project doesn't list keeps its default kind if it is a default status; any
+    other status has none (None)."""
+    for s in vocab["statuses"]:
+        if s["id"] == status:
+            return s["kind"]
+    for s in DEFAULT_STATUSES:
+        if s["id"] == status:
+            return s["kind"]
+    return None
+
+
+def statuses_of(vocab, kind):
+    return [s["id"] for s in vocab["statuses"] if s["kind"] == kind]
+
+
+def status_for(vocab, kind, chosen=None):
+    """The status a task moving to `kind` gets: `chosen` (--status), which must be of that kind, else the first status
+    of that kind the project lists."""
+    options = statuses_of(vocab, kind)
+    if chosen is None:
+        return options[0]
+    if chosen not in options:
+        known = kind_of(vocab, chosen)
+        what = f"its kind is {known}" if known else "the project has no such status"
+        raise AtmError(f"--status {chosen} is not one of the {kind} statuses ({what}); use {' or '.join(options)}", 2)
+    return chosen
 
 
 def load_tasks(paths):
@@ -350,6 +462,7 @@ def load_tasks(paths):
     data = read_json(paths["tasks"])
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
+    vocabulary(data)  # an unusable vocabulary stops every command before anything is written
     return data
 
 
@@ -361,8 +474,14 @@ def find_task(data, task_id):
 
 
 def unfinished_dependencies(data, task):
+    """Dependencies that don't have a done-kind status yet, with their status ("missing" for unknown IDs)."""
+    vocab = vocabulary(data)
     status = {t.get("id"): t.get("status") for t in data["tasks"]}
-    return [(dep, status.get(dep, "missing")) for dep in task.get("dependencies", []) if status.get(dep) != "done"]
+    return [
+        (dep, status.get(dep, "missing"))
+        for dep in task.get("dependencies", [])
+        if dep not in status or kind_of(vocab, status[dep]) != "done"
+    ]
 
 
 def natural_key(task_id):
@@ -374,13 +493,17 @@ def phase_of(task):
     return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
-def change_status(task, data, command, reason=None, agent=None):
-    """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `start`
-    records the agent in the task (kept when it is done, so the dashboard can show who did what)."""
-    allowed, new = STATUS_CHANGES[command]
+def change_status(task, data, command, reason=None, agent=None, status=None):
+    """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
+    picks the new status when its kind has several. `start` records the agent in the task (kept when it is done, so
+    the dashboard can show who did what)."""
+    vocab = vocabulary(data)
+    allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
-    if current not in allowed:
-        raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(allowed)}")
+    if kind_of(vocab, current) not in allowed:
+        expected = [s for kind in allowed for s in statuses_of(vocab, kind)]
+        raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(expected)}")
+    new = status_for(vocab, new_kind, status)
     if command == "start":
         blocking = unfinished_dependencies(data, task)
         if blocking:
@@ -486,6 +609,7 @@ def lease_until(data):
 def expire_claims(paths, data, claims):
     """Drop claims whose lease ran out; their tasks in this worktree go back to todo. Returns the expired claims."""
     current = now()
+    vocab = vocabulary(data)
     expired = []
     for task_id, claim in list(claims.items()):
         try:
@@ -496,9 +620,9 @@ def expire_claims(paths, data, claims):
             continue
         expired.append(claims.pop(task_id))
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
-        if task and task.get("status") == "in_progress":
+        if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            task["status"] = "todo"
+            task["status"] = status_for(vocab, "todo")
             task["updated_at"] = stamp
             task.pop("started_at", None)
             task.pop("completed_at", None)
@@ -547,10 +671,11 @@ def next_task(data, store, phase=None, task_type=None):
     in another worktree, matching the filters; lowest phase first, then lowest ID. Returns (task, reason) where reason
     explains an empty result."""
     claims, completed = store["claims"], store["completed"]
+    vocab = vocabulary(data)
     candidates = [
         t
         for t in data["tasks"]
-        if t.get("status") == "todo"
+        if kind_of(vocab, t.get("status")) == "todo"
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
@@ -580,7 +705,7 @@ def cmd_next(args):
         expired = expire_claims(paths, data, claims)
         task, reason = next_task(data, store, args.phase, args.type)
         if task and args.claim:
-            change_status(task, data, "start", agent=agent)
+            change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
         if expired or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
@@ -658,7 +783,7 @@ def cmd_status_change(command):
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
             check_holder(claims, task_id, agent, command)
-            previous = change_status(task, data, command, getattr(args, "reason", None), agent)
+            previous = change_status(task, data, command, getattr(args, "reason", None), agent, args.status)
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose
@@ -691,8 +816,20 @@ GITATTRIBUTES_LINES = (
     "tasks.json merge=atm\n"
 )
 PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure", "agent")
-STATUS_RANK = {"todo": 0, "in_progress": 1, "blocked": 1, "done": 2, "skipped": 2}
+# How far along a status's kind is (DM-3.3); a status without a kind ranks like todo
+KIND_RANK = {"todo": 0, "active": 1, "blocked": 1, "review": 1, "done": 2, "skipped": 2}
 MISSING = object()
+
+
+def merge_vocabulary(*versions):
+    """The vocabulary to rank statuses by: this branch's, else the other's, else the defaults. A merge never fails
+    over a vocabulary; the next atm command reports it."""
+    for data in versions:
+        try:
+            return vocabulary(data)
+        except AtmError:
+            continue
+    return vocabulary({})
 
 
 def merge_value(base, ours, theirs):
@@ -706,15 +843,16 @@ def merge_value(base, ours, theirs):
     return ours, True
 
 
-def progress_winner(ours, theirs):
+def progress_winner(ours, theirs, vocab):
     """Both sides moved a task along: the one further along wins, then the newer update, then ours."""
-    rank_o, rank_t = STATUS_RANK.get(ours.get("status"), 0), STATUS_RANK.get(theirs.get("status"), 0)
+    rank = lambda task: KIND_RANK.get(kind_of(vocab, task.get("status")), 0)
+    rank_o, rank_t = rank(ours), rank(theirs)
     if rank_o != rank_t:
         return ours if rank_o > rank_t else theirs
     return theirs if str(theirs.get("updated_at", "")) > str(ours.get("updated_at", "")) else ours
 
 
-def merge_task(base, ours, theirs):
+def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
     if not changed(theirs):
@@ -722,7 +860,7 @@ def merge_task(base, ours, theirs):
     elif not changed(ours):
         progress = theirs
     else:
-        progress = progress_winner(ours, theirs)
+        progress = progress_winner(ours, theirs, vocab)
     keys = list(ours) + [k for k in theirs if k not in ours] + [k for k in base if k not in ours and k not in theirs]
     merged, conflicts = {}, []
     for key in keys:
@@ -752,6 +890,7 @@ def next_free_id(task_id, used):
 def merge_task_files(base, ours, theirs):
     """Merge three versions of tasks.json. Returns (merged data, list of conflict descriptions)."""
     by_id = lambda data: {t.get("id"): t for t in data.get("tasks", [])}
+    vocab = merge_vocabulary(ours, theirs)
     base_tasks, our_tasks, their_tasks = by_id(base), by_id(ours), by_id(theirs)
     used = set(base_tasks) | set(our_tasks) | set(their_tasks)
     conflicts, merged_tasks, renamed, theirs_new = [], [], {}, []
@@ -766,7 +905,7 @@ def merge_task_files(base, ours, theirs):
                 conflicts.append(f"{task_id}: changed on this branch, deleted on the other")
                 merged_tasks.append(task)
         else:
-            merged, fields = merge_task(b, task, t)
+            merged, fields = merge_task(b, task, t, vocab)
             merged_tasks.append(merged)
             if fields:
                 conflicts.append(f"{task_id}: both branches changed {', '.join(fields)}")
@@ -1248,7 +1387,8 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
-                 (start/done/fail/release/heartbeat take --agent NAME and --json)
+                 (start/done/fail/release/heartbeat take --agent NAME and --json; start/done/fail/release and
+                 next --claim take --status ID to pick a status when the project has several of that kind)
   help           show this help
 
 Every command takes --json, and `atm <command> --help` describes it.
@@ -1286,6 +1426,13 @@ def build_parser():
     def agent_option(sub):
         sub.add_argument("--agent", metavar="NAME", help="who you are (default: ATM_AGENT, else this session)")
 
+    def status_option(sub):
+        sub.add_argument(
+            "--status",
+            metavar="ID",
+            help="the status to move to when the project has several of that kind (default: the first listed)",
+        )
+
     command("version", cmd_version, "print the plugin version")
     command("help", cmd_help, "show the list of commands")
     command("paths", cmd_paths, "print where this project's task files are")
@@ -1305,6 +1452,7 @@ def build_parser():
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
         agent_option(sub)
+        status_option(sub)
         if name == "fail":
             sub.add_argument("--reason", metavar="TEXT", help="why it failed")
 
@@ -1313,6 +1461,7 @@ def build_parser():
     next_.add_argument("--type", help="only this task type")
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
+    status_option(next_)
 
     heartbeat = command("heartbeat", cmd_heartbeat, "extend your claim's lease")
     heartbeat.add_argument("id", help="the task ID")

@@ -24,7 +24,16 @@ from .core import (
     write_json_atomic,
 )
 from .lock import locked
-from .model import change_status, load_tasks, natural_key, phase_of, unfinished_dependencies
+from .model import (
+    change_status,
+    kind_of,
+    load_tasks,
+    natural_key,
+    phase_of,
+    status_for,
+    unfinished_dependencies,
+    vocabulary,
+)
 from .paths import find_paths, project_root
 
 CLAIMS_STORE = "claims.json"  # in <git common dir>/atm/, shared by all worktrees of a clone
@@ -103,6 +112,7 @@ def lease_until(data):
 def expire_claims(paths, data, claims):
     """Drop claims whose lease ran out; their tasks in this worktree go back to todo. Returns the expired claims."""
     current = now()
+    vocab = vocabulary(data)
     expired = []
     for task_id, claim in list(claims.items()):
         try:
@@ -113,9 +123,9 @@ def expire_claims(paths, data, claims):
             continue
         expired.append(claims.pop(task_id))
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
-        if task and task.get("status") == "in_progress":
+        if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            task["status"] = "todo"
+            task["status"] = status_for(vocab, "todo")
             task["updated_at"] = stamp
             task.pop("started_at", None)
             task.pop("completed_at", None)
@@ -164,10 +174,11 @@ def next_task(data, store, phase=None, task_type=None):
     in another worktree, matching the filters; lowest phase first, then lowest ID. Returns (task, reason) where reason
     explains an empty result."""
     claims, completed = store["claims"], store["completed"]
+    vocab = vocabulary(data)
     candidates = [
         t
         for t in data["tasks"]
-        if t.get("status") == "todo"
+        if kind_of(vocab, t.get("status")) == "todo"
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
@@ -197,7 +208,7 @@ def cmd_next(args):
         expired = expire_claims(paths, data, claims)
         task, reason = next_task(data, store, args.phase, args.type)
         if task and args.claim:
-            change_status(task, data, "start", agent=agent)
+            change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
         if expired or (task and args.claim):
             write_json_atomic(paths["tasks"], data)

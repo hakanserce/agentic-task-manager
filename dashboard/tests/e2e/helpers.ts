@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test as base, expect, type Page } from '@playwright/test';
 import { PREFS_KEY } from '../../src/lib/prefs';
+import type { ViewId } from '../../src/lib/tabs';
 
 export { expect };
 
@@ -87,7 +88,7 @@ export async function openDashboard(
   page: Page,
   tasksServer: TasksServer,
   data: string | TasksData,
-  { autoRefresh = false }: { autoRefresh?: boolean } = {},
+  { autoRefresh = false, tab }: { autoRefresh?: boolean; tab?: ViewId } = {},
 ) {
   if (!autoRefresh) {
     await page.addInitScript((key) => {
@@ -100,15 +101,25 @@ export async function openDashboard(
     }, PREFS_KEY);
   }
   tasksServer.use(data);
-  await page.goto('tasks-dashboard.html');
+  await page.goto('tasks-dashboard.html' + (tab ? `#view=${tab}` : ''));
 }
 
-/** The number shown on the stat card with exactly this label (e.g. "Done", "feature"). */
-export function statNumber(page: Page, label: string) {
-  return page
-    .locator('#stats .stat-card')
-    .filter({ has: page.locator('.label', { hasText: new RegExp(`^${label}$`) }) })
-    .locator('.number');
+/** Open the filter panel (Phase, Type and Status buttons) under the search line, if it isn't open yet. */
+export async function openFilters(page: Page) {
+  const toggle = page.locator('#filters-toggle');
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+  await expect(page.locator('#filter-panel')).toBeVisible();
+}
+
+/** "N of M tasks": how many tasks the search and filters leave, next to the search box. */
+export function matchCount(page: Page) {
+  return page.locator('#match-count');
+}
+
+/** Open a menu in the top bar (refresh, appearance) unless it is open already. */
+export async function openMenu(page: Page, button: string) {
+  const b = page.locator(button);
+  if ((await b.getAttribute('aria-expanded')) !== 'true') await b.click();
 }
 
 export function filterButton(page: Page, group: 'phase' | 'type' | 'status', value: string) {

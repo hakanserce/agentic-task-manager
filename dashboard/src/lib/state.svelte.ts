@@ -2,8 +2,17 @@ import { loadClaims, type ClaimMap } from './claims';
 import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks } from './load';
 import { getPref, setPref } from './prefs';
 import { isModePref, knownTheme, resolveMode, type Mode, type ModePref } from './appearance';
-import { emptyFilters, filtersFrom, filterTasks, toggleFilter, type FilterGroup, type Filters } from './filters';
+import {
+  emptyFilters,
+  filtersFrom,
+  filterTasks,
+  searchTasks,
+  toggleFilter,
+  type FilterGroup,
+  type Filters,
+} from './filters';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
+import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
@@ -28,21 +37,30 @@ export class DashboardState {
   reloading = $state(false);
 
   filters = $state.raw<Filters>(emptyFilters());
-  filtered = $derived(filterTasks(this.tasks, this.filters));
+  /** Keyword search over ID, name, description and type; part of the saved view */
+  query = $state('');
+  /** Tasks matching the search, before the phase/type/status filters (the filter counts are based on these) */
+  searched = $derived(searchTasks(this.tasks, this.query));
+  filtered = $derived(filterTasks(this.searched, this.filters));
 
   /** Task shown in the detail panel; the panel keeps its last content while closed. */
   detailId = $state<string | null>(null);
   detailOpen = $state(false);
 
-  graphCollapsed = $state(false);
   /** The selected view tab; mirrored in the URL hash ("#view=kanban") */
   tab = $state<ViewId>(parseViewHash(location.hash));
   kanbanGroupByPhase = $state(false);
   kanbanShowSkipped = $state(false);
+  /** The Kanban done column shows every card, not just the most recent */
+  kanbanShowAllDone = $state(false);
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
+  /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
+  graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */
   graphView = $state.raw<{ k: number; x: number; y: number } | null>(null);
+  /** The Agents tab's zoomed time range; null shows everything */
+  agentsWindow = $state.raw<ViewWindow | null>(null);
   /** Where this project's view is saved; set once the first load says which project this is */
   viewKey = $state<string | null>(null);
 
@@ -136,11 +154,17 @@ export class DashboardState {
   currentView(): SavedView {
     return {
       filters: { phase: [...this.filters.phase], type: [...this.filters.type], status: [...this.filters.status] },
+      query: this.query,
       tab: this.tab,
-      graphCollapsed: this.graphCollapsed,
-      kanban: { groupByPhase: this.kanbanGroupByPhase, showSkipped: this.kanbanShowSkipped },
+      kanban: {
+        groupByPhase: this.kanbanGroupByPhase,
+        showSkipped: this.kanbanShowSkipped,
+        showAllDone: this.kanbanShowAllDone,
+      },
       progressPhase: this.progressPhase,
+      graphFiltered: this.graphFiltered,
       graph: this.graphView,
+      agents: this.agentsWindow,
     };
   }
 
@@ -163,11 +187,14 @@ export class DashboardState {
 
   private applyView(view: SavedView, includeTab: boolean) {
     this.filters = filtersFrom(view.filters);
-    this.graphCollapsed = view.graphCollapsed;
+    this.query = view.query;
     this.kanbanGroupByPhase = view.kanban.groupByPhase;
     this.kanbanShowSkipped = view.kanban.showSkipped;
+    this.kanbanShowAllDone = view.kanban.showAllDone;
     this.progressPhase = view.progressPhase;
+    this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
+    this.agentsWindow = view.agents;
     if (includeTab && view.tab !== this.tab) {
       history.replaceState(null, '', withViewHash(location.hash, view.tab));
       this.tab = view.tab;

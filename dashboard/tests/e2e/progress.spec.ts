@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, filterButton, openDashboard, test, type TasksData } from './helpers';
+import { expect, filterButton, openDashboard, test, type TasksData, openFilters } from './helpers';
 
 // Expected numbers: tests/fixtures/progress.md (now = 2026-04-06 12:00 UTC; the tests run in UTC, en-US)
 const NOW = new Date('2026-04-06T12:00:00Z');
@@ -64,6 +64,7 @@ test.describe('Progress tab: phase table', () => {
 
   test('filters choose the rows, but the pace still uses all history', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
+    await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(1);
     await expect(page.locator('#progress-basis')).toContainText('last 8 completed tasks');
@@ -73,6 +74,7 @@ test.describe('Progress tab: phase table', () => {
 
   test('empty filter result', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
+    await openFilters(page);
     await filterButton(page, 'status', 'skipped').click();
     await filterButton(page, 'type', 'test').click();
     await expect(page.locator('#progress')).toContainText('No tasks match current filters');
@@ -161,6 +163,7 @@ test.describe('Progress tab: focus a phase', () => {
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
 
     await row(page, 2).click();
+    await openFilters(page);
     await filterButton(page, 'phase', '1').click();
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
   });

@@ -4,7 +4,7 @@
   import { phaseColor } from '../lib/theme';
   import KanbanColumns from './KanbanColumns.svelte';
 
-  let showAllDone = $state(false);
+  const showAllDone = $derived(dashboard.kanbanShowAllDone);
   // Both options are part of the project's saved view (dashboard state)
   const groupByPhase = $derived(dashboard.kanbanGroupByPhase);
   const showSkipped = $derived(dashboard.kanbanShowSkipped);
@@ -45,10 +45,10 @@
           >
           <span class="kanban-lane-progress">{lane.done}/{lane.total} done</span>
         </div>
-        <KanbanColumns columns={lane.columns} {showAllDone} onshowall={() => (showAllDone = true)} />
+        <KanbanColumns columns={lane.columns} {showAllDone} onshowall={(all) => (dashboard.kanbanShowAllDone = all)} />
       </div>
     {/each}
   {:else}
-    <KanbanColumns columns={board} {showAllDone} onshowall={() => (showAllDone = true)} />
+    <KanbanColumns columns={board} {showAllDone} onshowall={(all) => (dashboard.kanbanShowAllDone = all)} />
   {/if}
 </div>

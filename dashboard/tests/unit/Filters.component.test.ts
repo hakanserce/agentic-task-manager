@@ -8,6 +8,10 @@ import { loadIntoDashboard } from './components.helpers';
 const button = (container: HTMLElement, group: string, value: string) =>
   container.querySelector(`.filter-btn[data-filter="${group}"][data-value="${value}"]`) as HTMLElement;
 
+async function openPanel(container: HTMLElement) {
+  await fireEvent.click(container.querySelector('#filters-toggle')!);
+}
+
 describe('Filters', () => {
   beforeEach(() => loadIntoDashboard(standard));
 
@@ -17,8 +21,26 @@ describe('Filters', () => {
     expect(container.querySelector('#filters')).toBeEmptyDOMElement();
   });
 
-  it('renders a button per option plus "All" for each group', () => {
+  it('is one compact line until the toggle opens the panel', async () => {
     const { container } = render(Filters);
+    const toggle = container.querySelector('#filters-toggle')!;
+    expect(container.querySelector('#filter-panel')).toBeNull();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(container.querySelector('#active-filters')).toHaveTextContent('All phases, types and statuses');
+    expect(container.querySelector('#match-count')).toHaveTextContent('12 of 12 tasks');
+
+    await openPanel(container);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect([...container.querySelectorAll('.filter-group')].map((g) => (g as HTMLElement).dataset.group)).toEqual([
+      'phase',
+      'type',
+      'status',
+    ]);
+  });
+
+  it('renders a button per option plus "All" for each group, with counts', async () => {
+    const { container } = render(Filters);
+    await openPanel(container);
     const values = (group: string) =>
       [...container.querySelectorAll(`.filter-btn[data-filter="${group}"]`)].map(
         (b) => (b as HTMLElement).dataset.value,
@@ -26,25 +48,47 @@ describe('Filters', () => {
     expect(values('phase')).toEqual(['all', '0', '1', '2']);
     expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'done', 'blocked', 'skipped']);
     expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(3);
+    expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 3 tasks');
+    expect(button(container, 'phase', 'all')).toHaveAttribute('aria-label', 'All phases, 12 tasks');
   });
 
-  it('toggles filters and active classes', async () => {
+  it('toggles filters, shows them as chips, and clears them from the chip', async () => {
     const { container } = render(Filters);
+    await openPanel(container);
     await fireEvent.click(button(container, 'type', 'feature'));
     expect([...dashboard.filters.type]).toEqual(['feature']);
     expect(button(container, 'type', 'feature')).toHaveClass('active');
     expect(button(container, 'type', 'all')).not.toHaveClass('active');
     expect(dashboard.filtered.map((t) => t.id)).toEqual(['T-004', 'T-005', 'T-011']);
+    expect(container.querySelector('.filter-chip[data-filter="type"]')).toHaveTextContent('Type: Feature');
+    expect(container.querySelector('#match-count')).toHaveTextContent('3 of 12 tasks');
 
+    await fireEvent.click(container.querySelector('.filter-chip[data-filter="type"] .chip-clear')!);
+    expect(dashboard.filters.type.size).toBe(0);
+    expect(container.querySelector('.filter-chip')).toBeNull();
+  });
+
+  it('"All" clears its group', async () => {
+    const { container } = render(Filters);
+    await openPanel(container);
+    await fireEvent.click(button(container, 'type', 'feature'));
     await fireEvent.click(button(container, 'type', 'all'));
     expect(dashboard.filters.type.size).toBe(0);
     expect(button(container, 'type', 'all')).toHaveClass('active');
   });
 
-  it('includes the refresh controls', () => {
+  it('the search narrows the tasks and the filter counts, and can be cleared', async () => {
     const { container } = render(Filters);
-    expect(container.querySelector('#reload-btn')).not.toBeNull();
-    expect(container.querySelector('#auto-refresh-check')).not.toBeChecked(); // loadIntoDashboard switches it off
-    expect(container.querySelector('#auto-refresh-interval')).toHaveValue(5);
+    const input = container.querySelector('#task-search') as HTMLInputElement;
+    await fireEvent.input(input, { target: { value: 'T-004' } });
+    expect(dashboard.query).toBe('T-004');
+    expect(dashboard.filtered.map((t) => t.id)).toEqual(['T-004']);
+    expect(container.querySelector('#match-count')).toHaveTextContent('1 of 12 tasks');
+    await openPanel(container);
+    expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 1 task');
+
+    await fireEvent.click(container.querySelector('.search-clear')!);
+    expect(dashboard.query).toBe('');
+    expect(container.querySelector('.search-clear')).toBeNull();
   });
 });

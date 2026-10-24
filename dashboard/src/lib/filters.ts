@@ -89,3 +89,16 @@ export function facetCounts(tasks: Task[], filters: Filters): Record<FilterGroup
   }
   return result;
 }
+
+/**
+ * Keyword search: every word of `query` must appear (case-insensitively) in the task's ID, name, description or type.
+ * An empty query matches everything.
+ */
+export function searchTasks(tasks: Task[], query: string): Task[] {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return tasks;
+  return tasks.filter((t) => {
+    const text = `${t.id} ${t.name} ${t.description ?? ''} ${t.type}`.toLowerCase();
+    return terms.every((term) => text.includes(term));
+  });
+}

@@ -11,7 +11,7 @@ const openFromCard = (page: Page, id: string) => page.locator(`.task-card[data-i
 
 test.describe('detail panel', () => {
   test.beforeEach(async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
   });
 
   test('is closed initially and opens from a card name', async ({ page }) => {
@@ -89,6 +89,7 @@ test.describe('detail panel', () => {
   });
 
   test('opens from a dependency graph node', async ({ page }) => {
+    await page.locator('#tab-graph').click();
     await page.locator('#dep-graph g', { hasText: 'T-007' }).click();
     await expect(overlay(page)).toBeVisible();
     await expect(panel(page).locator('h3')).toHaveText('T-007 Extract auth service');

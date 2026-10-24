@@ -4,8 +4,8 @@ import { expect, openDashboard, test } from './helpers';
 // The version chip is masked: it shows the version (and a "new" marker) and would otherwise change every page
 // baseline on each release; whats-new.spec covers it. It also gets a fixed width for the screenshot, so a longer
 // version number (0.9.0 -> 0.10.0) doesn't move the mask's edge.
-// The auto-refresh interval box is masked too: headless Chromium places the text inside a number input at a
-// slightly different sub-pixel position from run to run. refresh.spec covers its value and behaviour.
+// The auto-refresh interval box is masked too (when its menu is open): headless Chromium places the text inside a
+// number input at a slightly different sub-pixel position from run to run. refresh.spec covers its value.
 // Baselines are per platform (-darwin locally, -linux in CI). Regenerate deliberately after an intended UI change:
 //   npx playwright test visual --update-snapshots   (then delete the stale -linux.png files; CI regenerates them)
 
@@ -31,7 +31,7 @@ for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
 }
 
 test('visual: detail panel', async ({ page, tasksServer }) => {
-  await openDashboard(page, tasksServer, 'standard');
+  await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
   await page.locator('.task-card[data-id="T-004"] .task-name').click();
   await expect(page.locator('#detail-panel')).toHaveScreenshot('standard-detail.png');
 });
@@ -51,6 +51,47 @@ test('visual: progress tab', async ({ page, tasksServer }) => {
   await page.locator('#tab-progress').click();
   await expect(page.locator('#burndown svg')).toBeVisible();
   await expect(page.locator('#graph-section')).toHaveScreenshot('progress-progress.png');
+});
+
+test('visual: list tab', async ({ page, tasksServer }) => {
+  await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
+  await expect(page.locator('#graph-section')).toHaveScreenshot('standard-list.png');
+});
+
+// The Agents tab and the top-bar widgets depend on the time: fixtures/agents.md, with a fixed clock
+const AGENTS_NOW = new Date('2026-04-01T12:00:00Z');
+
+test('visual: agents tab', async ({ page, tasksServer }) => {
+  await page.clock.setFixedTime(AGENTS_NOW);
+  await openDashboard(page, tasksServer, 'agents', { tab: 'agents' });
+  await expect(page.locator('.agent-bar').first()).toBeVisible();
+  await expect(page.locator('#graph-section')).toHaveScreenshot('agents-agents.png');
+});
+
+test('visual: agents tab, zoomed in', async ({ page, tasksServer }) => {
+  await page.clock.setFixedTime(AGENTS_NOW);
+  await openDashboard(page, tasksServer, 'agents', { tab: 'agents' });
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await expect(page.locator('#graph-section')).toHaveScreenshot('agents-agents-zoomed.png');
+});
+
+test('visual: progress and activity details', async ({ page, tasksServer }) => {
+  await page.clock.setFixedTime(AGENTS_NOW);
+  await openDashboard(page, tasksServer, 'agents');
+  await page.locator('#progress-card').click();
+  await expect(page.locator('#progress-panel')).toHaveScreenshot('agents-progress-panel.png');
+  await page.locator('#activity-card').click();
+  await expect(page.locator('#activity-panel')).toHaveScreenshot('agents-activity-panel.png');
+});
+
+test('visual: top bar with the filter panel open', async ({ page, tasksServer }) => {
+  await openDashboard(page, tasksServer, 'standard');
+  await page.locator('#filters-toggle').click();
+  await page.locator('.filter-btn[data-filter="type"][data-value="feature"]').click();
+  await page.locator('#task-search').fill('user');
+  await expect(page.locator('header.topbar')).toHaveScreenshot('standard-topbar-filters.png', {
+    mask: [page.locator('#version-chip')],
+  });
 });
 
 // FR-2.6: the main views in light mode (the OS setting is light; Playwright emulates it).
@@ -87,8 +128,22 @@ test.describe('visual: light mode', () => {
     await expect(page.locator('#graph-section')).toHaveScreenshot('light-progress.png');
   });
 
+  test('agents tab', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(AGENTS_NOW);
+    await openDashboard(page, tasksServer, 'agents', { tab: 'agents' });
+    await expect(page.locator('.agent-bar').first()).toBeVisible();
+    await expect(page.locator('#graph-section')).toHaveScreenshot('light-agents.png');
+  });
+
+  test('activity details', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(AGENTS_NOW);
+    await openDashboard(page, tasksServer, 'agents');
+    await page.locator('#activity-card').click();
+    await expect(page.locator('#activity-panel')).toHaveScreenshot('light-agents-activity-panel.png');
+  });
+
   test('detail panel', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     await page.locator('.task-card[data-id="T-004"] .task-name').click();
     await expect(page.locator('#detail-panel')).toHaveScreenshot('light-standard-detail.png');
   });

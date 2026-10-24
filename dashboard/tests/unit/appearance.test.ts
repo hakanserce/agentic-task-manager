@@ -18,7 +18,9 @@ describe('appearance', () => {
     expect(knownTheme('default')).toBe('default');
     expect(knownTheme('vaporwave')).toBe('default');
     expect(knownTheme(undefined)).toBe('default');
-    expect(THEMES[0]).toEqual({ id: 'default', name: 'Default' });
+    expect(THEMES[0]).toMatchObject({ id: 'default', name: 'Default' });
+    // Each theme shows a preview in the menu: background, accent, green, red
+    for (const t of THEMES) expect(t.swatch).toHaveLength(4);
   });
 
   it('applies theme and mode as attributes on the root element', () => {

@@ -5,6 +5,7 @@ import {
   filterOptions,
   filterTasks,
   isActive,
+  searchTasks,
   toggleFilter,
   type Filters,
 } from '../../src/lib/filters';
@@ -171,5 +172,39 @@ describe('facetCounts', () => {
       });
       expect(shown.length).toBe(n);
     }
+  });
+});
+
+describe('searchTasks', () => {
+  const task = (id: string, name: string, description?: string, type = 'feature'): Task => ({
+    id,
+    name,
+    phase: 0,
+    type,
+    description: description as string,
+    status: 'todo',
+  });
+  const tasks = [
+    task('T-001', 'Login form', 'Email and password'),
+    task('T-002', 'Logout button', undefined, 'bugfix'),
+    task('T-010', 'Docs', 'How to log in', 'docs'),
+  ];
+  const ids = (query: string) => searchTasks(tasks, query).map((t) => t.id);
+
+  it('an empty or blank query matches everything', () => {
+    expect(searchTasks(tasks, '')).toBe(tasks);
+    expect(ids('   ')).toEqual(['T-001', 'T-002', 'T-010']);
+  });
+
+  it('matches ID, name, description and type, ignoring case', () => {
+    expect(ids('t-01')).toEqual(['T-010']);
+    expect(ids('LOG')).toEqual(['T-001', 'T-002', 'T-010']);
+    expect(ids('password')).toEqual(['T-001']);
+    expect(ids('bugfix')).toEqual(['T-002']);
+  });
+
+  it('every word must match', () => {
+    expect(ids('log button')).toEqual(['T-002']);
+    expect(ids('log nothing')).toEqual([]);
   });
 });

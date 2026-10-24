@@ -2,6 +2,8 @@
 // theme stylesheets (src/themes/*.css) pick them up. index.html applies the stored choice before the first paint
 // with the same rules; keep resolveMode() and that script in step.
 
+import { THEMES } from '../themes';
+
 export type Mode = 'light' | 'dark';
 export type ModePref = 'system' | Mode;
 export const MODE_PREFS: ModePref[] = ['system', 'light', 'dark'];
@@ -10,17 +12,11 @@ export const MODE_LABELS: Record<ModePref, string> = { system: 'System', light: 
 export interface ThemeInfo {
   id: string;
   name: string;
+  /** A few colours of the theme's dark variant, to preview it in the menu */
+  swatch: string[];
 }
 
-/** Built-in themes, in picker order. Each has src/themes/<id>.css with light and dark token sets. */
-export const THEMES: ThemeInfo[] = [
-  { id: 'default', name: 'Default' },
-  { id: 'nord', name: 'Nord' },
-  { id: 'solarized', name: 'Solarized' },
-  { id: 'catppuccin', name: 'Catppuccin' },
-  { id: 'tokyo-night', name: 'Tokyo Night' },
-  { id: 'high-contrast', name: 'High contrast' },
-];
+export { THEMES };
 export const DEFAULT_THEME = 'default';
 
 export function isModePref(value: unknown): value is ModePref {

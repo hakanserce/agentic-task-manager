@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { completedAt, completions, computeTimeline, formatDate, formatDateTime } from '../../src/lib/timeline';
+import { completedAt, completions, formatDate, formatDateTime } from '../../src/lib/timeline';
 import type { Task } from '../../src/lib/types';
-import standard from '../fixtures/standard.json';
-import large from '../fixtures/large-90.json';
 
 const done = (id: string, updated_at?: string): Task => ({
   id,
@@ -42,54 +40,6 @@ describe('completion time', () => {
   it('falls back to updated_at for older files', () => {
     expect(completedAt(done('a', '2026-04-03T00:00:00Z'))).toBe('2026-04-03T00:00:00Z');
     expect(completedAt({ ...done('b'), completed_at: '2026-04-04T00:00:00Z' })).toBe('2026-04-04T00:00:00Z');
-  });
-});
-
-describe('computeTimeline', () => {
-  it('buckets the standard fixture like the legacy dashboard', () => {
-    const t = computeTimeline(standard.tasks as Task[])!;
-    expect(t.minT).toBe(Date.parse('2026-04-01T09:00:00Z'));
-    expect(t.maxT).toBe(Date.parse('2026-04-03T11:00:00Z'));
-    expect(t.buckets.map((b) => b.completions.map((c) => c.id))).toEqual([
-      ['T-001', 'T-002'],
-      [],
-      ['T-003'],
-      ['T-012'],
-      ['T-004'],
-    ]);
-    expect(t.buckets.map((b) => b.height)).toEqual([40, 0, 20, 20, 20]);
-    expect(t.buckets[1].start).toBe(t.minT + 10 * 3600_000);
-  });
-
-  it('needs at least two completions', () => {
-    expect(computeTimeline([])).toBeNull();
-    expect(computeTimeline([done('a', '2026-04-01T00:00:00Z'), done('b')])).toBeNull();
-  });
-
-  it('uses at least 4 and at most 16 buckets', () => {
-    expect(
-      computeTimeline([done('a', '2026-04-01T00:00:00Z'), done('b', '2026-04-02T00:00:00Z')])!.buckets,
-    ).toHaveLength(4);
-    expect(computeTimeline(large.tasks as Task[])!.buckets).toHaveLength(16);
-  });
-
-  it('puts the latest completion in the last bucket', () => {
-    const t = computeTimeline([done('a', '2026-04-01T00:00:00Z'), done('b', '2026-04-05T00:00:00Z')])!;
-    expect(t.buckets.at(-1)!.completions.map((c) => c.id)).toEqual(['b']);
-  });
-
-  it('handles identical timestamps', () => {
-    const t = computeTimeline([done('a', '2026-04-01T00:00:00Z'), done('b', '2026-04-01T00:00:00Z')])!;
-    expect(t.buckets[0].completions).toHaveLength(2);
-    expect(t.buckets.slice(1).every((b) => b.height === 0)).toBe(true);
-  });
-
-  it('scales small buckets to at least 4px', () => {
-    const tasks = [done('x', '2026-04-05T00:00:00Z')];
-    for (let i = 0; i < 15; i++) tasks.push(done(`a${i}`, '2026-04-01T00:00:00Z'));
-    const heights = computeTimeline(tasks)!.buckets.map((b) => b.height);
-    expect(heights[0]).toBe(40);
-    expect(heights.at(-1)).toBe(4);
   });
 });
 

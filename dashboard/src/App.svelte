@@ -3,10 +3,8 @@
   import { applyAppearance } from './lib/appearance';
   import { dashboard } from './lib/state.svelte';
   import Header from './components/Header.svelte';
-  import Stats from './components/Stats.svelte';
-  import Filters from './components/Filters.svelte';
   import ViewPanel from './components/ViewPanel.svelte';
-  import TaskGrid from './components/TaskGrid.svelte';
+  import LoadError from './components/LoadError.svelte';
   import DetailPanel from './components/DetailPanel.svelte';
   import WhatsNew from './components/WhatsNew.svelte';
 
@@ -26,9 +24,7 @@
 </script>
 
 <Header />
-<Stats />
-<Filters />
 <ViewPanel />
-<TaskGrid />
+<LoadError />
 <DetailPanel />
 <WhatsNew />

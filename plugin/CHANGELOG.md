@@ -13,14 +13,29 @@ To get a new dashboard into a project, update the plugin and run `/atm:update-da
   light and a dark variant. All colours meet contrast targets for readable text (see docs/theme-validation.md in the
   repository).
 - Filter buttons show how many tasks each would show, given the other filters; values with no tasks are dimmed.
-- The dashboard remembers your view per project: filters, the selected tab, the collapsed graph panel, Kanban
-  options, the phase in focus on the Progress tab, and the graph's zoom and position. **Reset view** forgets it.
+- A new top bar that stays in view while you scroll: a progress ring and an activity sparkline next to the title.
+  Click the ring for completion overall, by phase and by type; click the sparkline for completions, cycle times and
+  work in progress over time, by task type. Reload, auto-refresh, mode and theme are compact menus in the top right.
+- Keyword search over task ID, name, description and type. The filters fold into one line under the title that shows
+  only what's selected, with the number of matching tasks; **Filters** opens Phase, Type and Status.
+- **Agents** tab: a timeline with a lane per agent and a bar per task, from start to completion, coloured by type;
+  work in progress runs up to now. Zoom with the buttons, Ctrl/⌘ + scroll or the "last hour" presets, drag to move
+  in time, or pick a range on the overview below the lanes.
+- `atm start` (and `atm next --claim`) record which agent took a task in its new `agent` field. It stays when the
+  task is done and is removed if the task goes back to todo. Tasks finished earlier show as "Unattributed".
+- **List** tab: the task cards, which used to sit below the views.
+- The dependency graph can hide tasks outside the search and filters (the default) or show them greyed out.
+- The dashboard remembers your view per project: filters and search, the selected tab, the options in each tab
+  (Kanban, Progress focus, graph hide/grey out), and the zoom of the graph and the Agents timeline. **Reset view**
+  forgets it.
 - `/atm:create-tasks` gives new task files a `meta.id`, and `atm init` adds one to existing files, so dashboards of
   different projects on the same port keep separate views.
 
 ### Changed
 - Kanban "Group by phase" is now remembered per project instead of per browser (your previous choice is kept as the
   starting point).
+- The count boxes and the small completion chart above the filters are replaced by the top-bar widgets, and the
+  views panel no longer collapses.
 
 ### Fixed
 - Phase badges have their tinted background again (lost in 0.5.0).

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, filterButton, openDashboard, test } from './helpers';
+import { expect, filterButton, openDashboard, openFilters, test } from './helpers';
 
 const nodes = (page: Page) => page.locator('#dep-graph g');
 const edges = (page: Page) => page.locator('#dep-graph path[marker-end]');
@@ -30,7 +30,6 @@ test.describe('dependency graph', () => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(nodes(page)).toHaveCount(12);
     await expect(edges(page)).toHaveCount(12);
-    await expect(page.locator('#graph-badge')).toHaveText('12 tasks');
   });
 
   test('lays tasks out in topological columns', async ({ page, tasksServer }) => {
@@ -61,20 +60,28 @@ test.describe('dependency graph', () => {
 
   test('hidden dependencies are ignored for layout and edges', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
+    await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(nodes(page)).toHaveCount(4);
     await expect(edges(page)).toHaveCount(2);
     expect(await columns(page)).toEqual([['T-008', 'T-010'], ['T-009'], ['T-011']]);
   });
 
-  test('header toggles the graph', async ({ page, tasksServer }) => {
+  test('tasks outside the filters can be hidden (the default) or greyed out', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    const header = page.locator('#graph-section .phase-header');
-    const container = page.locator('#graph-container');
-    await expect(container).toBeVisible();
-    await header.click();
-    await expect(container).toBeHidden();
-    await header.click();
-    await expect(container).toBeVisible();
+    const choice = page.locator('#graph-filtered');
+    await expect(choice).toHaveCount(0); // nothing is filtered out yet
+    await page.locator('#task-search').fill('editor');
+    await expect(nodes(page)).toHaveCount(3);
+    await expect(choice.locator('[data-mode="hide"]')).toHaveAttribute('aria-pressed', 'true');
+
+    await choice.locator('[data-mode="dim"]').click();
+    await expect(nodes(page)).toHaveCount(12);
+    await expect(page.locator('#dep-graph g.graph-dimmed')).toHaveCount(9);
+    await expect(nodes(page).filter({ hasText: 'T-005' })).not.toHaveClass(/graph-dimmed/);
+    await expect(page.locator('#dep-graph path.graph-dimmed').first()).toBeAttached();
+
+    await choice.locator('[data-mode="hide"]').click();
+    await expect(nodes(page)).toHaveCount(3);
   });
 });

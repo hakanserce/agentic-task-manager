@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, filterButton, loadFixture, openDashboard, test } from './helpers';
+import { expect, filterButton, loadFixture, openDashboard, openFilters, test } from './helpers';
 
 const column = (page: Page, status: string) => page.locator(`.kanban-column[data-status="${status}"]`);
 const cardIds = (page: Page, status: string) =>
@@ -90,10 +90,13 @@ test.describe('Kanban board', () => {
     await column(page, 'done').getByRole('button', { name: 'Show all (24)' }).click();
     await expect(column(page, 'done').locator('.kanban-card')).toHaveCount(24);
     await expect(column(page, 'done').getByRole('button', { name: /Show all/ })).toHaveCount(0);
+    await column(page, 'done').getByRole('button', { name: 'Show the latest 20' }).click();
+    await expect(column(page, 'done').locator('.kanban-card')).toHaveCount(20);
   });
 
   test('filters apply; a status filter limits the columns', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
+    await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(page.locator('.kanban-count')).toHaveText(['3', '1', '1', '0', '1']);
     await expect(column(page, 'done').locator('.kanban-empty')).toHaveText('No tasks');

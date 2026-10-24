@@ -1,13 +1,15 @@
 // The selected dashboard view lives in the URL hash ("#view=kanban") so it survives reloads and can be shared.
 // Other hash parameters are preserved.
 
-export const VIEWS = ['graph', 'kanban', 'progress'] as const;
+export const VIEWS = ['graph', 'kanban', 'list', 'agents', 'progress'] as const;
 export type ViewId = (typeof VIEWS)[number];
 export const DEFAULT_VIEW: ViewId = 'graph';
 
 export const VIEW_LABELS: Record<ViewId, string> = {
   graph: 'Dependency Graph',
   kanban: 'Kanban',
+  list: 'List',
+  agents: 'Agents',
   progress: 'Progress',
 };
 

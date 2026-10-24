@@ -5,19 +5,25 @@
 import type { FilterGroup } from './filters';
 import { getPref, readStored, writeStored } from './prefs';
 import { VIEWS, type ViewId } from './tabs';
+import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 
 export const VIEW_KEY_PREFIX = 'atm-dashboard:view:';
 
 export interface SavedView {
   filters: Record<FilterGroup, string[]>;
+  /** The keyword search */
+  query: string;
   tab: ViewId;
-  graphCollapsed: boolean;
-  kanban: { groupByPhase: boolean; showSkipped: boolean };
+  kanban: { groupByPhase: boolean; showSkipped: boolean; showAllDone: boolean };
   /** The phase the Progress tab focuses on, or null for all phases */
   progressPhase: number | null;
+  /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
+  graphFiltered: 'hide' | 'dim';
   /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
   graph: { k: number; x: number; y: number } | null;
+  /** The Agents tab's zoomed time range, or null to show everything */
+  agents: ViewWindow | null;
 }
 
 export interface ProjectMeta {
@@ -35,12 +41,14 @@ export function projectKey(meta: ProjectMeta | undefined): string {
 export function defaultView(): SavedView {
   return {
     filters: { phase: [], type: [], status: [] },
+    query: '',
     tab: 'graph',
-    graphCollapsed: false,
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
-    kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false },
+    kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     progressPhase: null,
+    graphFiltered: 'hide',
     graph: null,
+    agents: null,
   };
 }
 
@@ -54,6 +62,13 @@ function graphView(value: unknown): SavedView['graph'] {
   return g && finite(g.k) && g.k > 0 && finite(g.x) && finite(g.y) ? { k: g.k, x: g.x, y: g.y } : null;
 }
 
+function agentsWindow(value: unknown): SavedView['agents'] {
+  const w = value as Record<string, unknown> | null;
+  return w && finite(w.start) && finite(w.end) && w.end > w.start
+    ? { start: w.start, end: w.end, followEnd: w.followEnd === true }
+    : null;
+}
+
 /** The stored view for `key`, with every missing or malformed field replaced by its default. */
 export function readView(key: string): SavedView {
   const stored = readStored(key);
@@ -62,14 +77,17 @@ export function readView(key: string): SavedView {
   const kanban = (stored.kanban ?? {}) as Record<string, unknown>;
   return {
     filters: { phase: strings(filters.phase), type: strings(filters.type), status: strings(filters.status) },
+    query: typeof stored.query === 'string' ? stored.query : '',
     tab: (VIEWS as readonly unknown[]).includes(stored.tab) ? (stored.tab as ViewId) : view.tab,
-    graphCollapsed: bool(stored.graphCollapsed, view.graphCollapsed),
     kanban: {
       groupByPhase: bool(kanban.groupByPhase, view.kanban.groupByPhase),
       showSkipped: bool(kanban.showSkipped, view.kanban.showSkipped),
+      showAllDone: bool(kanban.showAllDone, view.kanban.showAllDone),
     },
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
+    graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
+    agents: agentsWindow(stored.agents),
   };
 }
 

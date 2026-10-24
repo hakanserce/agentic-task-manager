@@ -1,8 +1,9 @@
-import { expect, filterButton, openDashboard, test, visibleCardIds } from './helpers';
+import { expect, filterButton, matchCount, openDashboard, openFilters, test, visibleCardIds } from './helpers';
 
 test.describe('filters', () => {
   test.beforeEach(async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
+    await openFilters(page);
   });
 
   test('buttons are generated from the data', async ({ page }) => {
@@ -17,13 +18,13 @@ test.describe('filters', () => {
   test('selecting a value filters cards and updates the count', async ({ page }) => {
     await filterButton(page, 'phase', '1').click();
     expect(await visibleCardIds(page)).toEqual(['T-004', 'T-005', 'T-006', 'T-007']);
-    await expect(page.locator('.phase-count')).toHaveText('4 of 12 shown');
+    await expect(matchCount(page)).toHaveText('4 of 12 tasks');
   });
 
   test('values within a group are OR-ed', async ({ page }) => {
     await filterButton(page, 'phase', '1').click();
     await filterButton(page, 'phase', '2').click();
-    await expect(page.locator('.phase-count')).toHaveText('8 of 12 shown');
+    await expect(matchCount(page)).toHaveText('8 of 12 tasks');
   });
 
   test('groups are AND-ed', async ({ page }) => {
@@ -42,9 +43,9 @@ test.describe('filters', () => {
 
   test('clicking an active value deselects it', async ({ page }) => {
     await filterButton(page, 'status', 'done').click();
-    await expect(page.locator('.phase-count')).toHaveText('5 of 12 shown');
+    await expect(matchCount(page)).toHaveText('5 of 12 tasks');
     await filterButton(page, 'status', 'done').click();
-    await expect(page.locator('.phase-count')).toHaveText('12 of 12 shown');
+    await expect(matchCount(page)).toHaveText('12 of 12 tasks');
     await expect(filterButton(page, 'status', 'all')).toHaveClass(/active/);
   });
 
@@ -62,8 +63,8 @@ test.describe('filters', () => {
 
   test('filters also apply to the dependency graph', async ({ page }) => {
     await filterButton(page, 'phase', '0').click();
-    await expect(page.locator('#dep-graph g')).toHaveCount(4);
-    await expect(page.locator('#graph-badge')).toHaveText('4 tasks');
+    await page.locator('#tab-graph').click();
+    await expect(page.locator('#dep-graph g.graph-node')).toHaveCount(4);
   });
 
   test('no matches shows a message in the grid and the graph', async ({ page }) => {
@@ -71,14 +72,14 @@ test.describe('filters', () => {
     await filterButton(page, 'type', 'docs').click();
     await expect(page.locator('.task-card')).toHaveCount(0);
     await expect(page.locator('#phases')).toContainText('No tasks match current filters');
-    await expect(page.locator('.phase-count')).toHaveText('0 of 12 shown');
+    await expect(matchCount(page)).toHaveText('0 of 12 tasks');
     await expect(page.locator('#dep-graph')).toContainText('No tasks match current filters');
-    await expect(page.locator('#graph-badge')).toHaveText('0 tasks');
   });
 });
 
 test('unknown statuses sort after the known ones', async ({ page, tasksServer }) => {
   await openDashboard(page, tasksServer, 'edge-cases');
+  await openFilters(page);
   const labels = await page.locator('.filter-btn[data-filter="status"] .filter-label').allTextContents();
   expect(labels).toEqual(['All', 'Todo', 'Done', 'Review']);
 });
@@ -86,6 +87,7 @@ test('unknown statuses sort after the known ones', async ({ page, tasksServer })
 test.describe('filter counts', () => {
   test.beforeEach(async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
+    await openFilters(page);
   });
 
   const count = (page: import('@playwright/test').Page, group: 'phase' | 'type' | 'status', value: string) =>
@@ -114,7 +116,7 @@ test.describe('filter counts', () => {
     await feature.click();
     await expect(feature).toHaveClass(/\bactive\b/);
     await expect(feature).not.toHaveClass(/\bempty\b/);
-    await expect(page.locator('.phase-count')).toHaveText('0 of 12 shown');
+    await expect(matchCount(page)).toHaveText('0 of 12 tasks');
   });
 
   test('screen readers hear the count', async ({ page }) => {
@@ -132,5 +134,50 @@ test.describe('filter counts', () => {
     await page.locator('#reload-btn').click();
     await expect(count(page, 'type', 'feature')).toHaveText('4');
     await expect(count(page, 'phase', 'all')).toHaveText('13');
+  });
+});
+
+test.describe('compact filter line', () => {
+  test.beforeEach(async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
+  });
+
+  test('shows only what is selected; the toggle opens and closes the panel', async ({ page }) => {
+    const toggle = page.locator('#filters-toggle');
+    await expect(page.locator('#filter-panel')).toHaveCount(0);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#active-filters')).toHaveText('All phases, types and statuses');
+
+    await openFilters(page);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.filter-group')).toHaveText([/^Phase/, /^Type/, /^Status/]);
+    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'type', 'test').click();
+    await toggle.click();
+    await expect(page.locator('#filter-panel')).toHaveCount(0);
+
+    const chips = page.locator('.filter-chip');
+    await expect(chips).toHaveText(['Phase: 1, 2', 'Type: Test']);
+    await expect(matchCount(page)).toHaveText('1 of 12 tasks');
+    await chips.filter({ hasText: 'Phase' }).getByRole('button', { name: 'Clear Phase filter' }).click();
+    await expect(chips).toHaveText(['Type: Test']);
+    await expect(matchCount(page)).toHaveText('2 of 12 tasks');
+  });
+
+  test('the keyword search narrows every view and the filter counts', async ({ page }) => {
+    await page.locator('#task-search').fill('login');
+    expect(await visibleCardIds(page)).toEqual(['T-004']);
+    await expect(matchCount(page)).toHaveText('1 of 12 tasks');
+    await openFilters(page);
+    await expect(filterButton(page, 'type', 'feature').locator('.filter-count')).toHaveText('1');
+
+    // Every word has to match, in the ID, name, description or type
+    await page.locator('#task-search').fill('t-00 docs');
+    expect(await visibleCardIds(page)).toEqual(['T-002']);
+
+    await page.getByRole('button', { name: 'Clear search' }).click();
+    await expect(page.locator('#task-search')).toHaveValue('');
+    await expect(matchCount(page)).toHaveText('12 of 12 tasks');
   });
 });

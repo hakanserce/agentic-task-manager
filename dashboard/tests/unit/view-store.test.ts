@@ -31,11 +31,13 @@ describe('reading and writing', () => {
   it('round-trips a view', () => {
     const view: SavedView = {
       filters: { phase: ['1'], type: ['feature', 'test'], status: [] },
-      tab: 'kanban',
-      graphCollapsed: true,
-      kanban: { groupByPhase: true, showSkipped: true },
+      query: 'login',
+      tab: 'agents',
+      kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
       progressPhase: 2,
+      graphFiltered: 'dim',
       graph: { k: 1.5, x: -120, y: 40 },
+      agents: { start: 1000, end: 61_000, followEnd: true },
     };
     writeView(key, view);
     expect(readView(key)).toEqual(view);
@@ -64,6 +66,13 @@ describe('reading and writing', () => {
     }
   });
 
+  it('a malformed agents time range is ignored', () => {
+    for (const agents of [{ start: 5, end: 5 }, { start: 'a', end: 9 }, { start: 1 }, 'x']) {
+      localStorage.setItem(key, JSON.stringify({ agents }));
+      expect(readView(key).agents).toBeNull();
+    }
+  });
+
   it('clearView forgets the project', () => {
     writeView(key, { ...defaultView(), tab: 'kanban' });
     clearView(key);
@@ -74,7 +83,7 @@ describe('reading and writing', () => {
   it('the old per-browser "group by phase" choice seeds projects that have no saved view yet', () => {
     setPref('kanbanGroupByPhase', true);
     expect(readView(key).kanban.groupByPhase).toBe(true);
-    writeView(key, { ...defaultView(), kanban: { groupByPhase: false, showSkipped: false } });
+    writeView(key, { ...defaultView(), kanban: { groupByPhase: false, showSkipped: false, showAllDone: false } });
     expect(readView(key).kanban.groupByPhase).toBe(false);
     expect(JSON.parse(localStorage.getItem(PREFS_KEY)!).kanbanGroupByPhase).toBe(true);
   });

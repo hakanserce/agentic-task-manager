@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { layoutGraph } from '../../src/lib/graph/layout';
 import type { Task } from '../../src/lib/types';
-import { expect, filterButton, loadFixture, openDashboard, test } from './helpers';
+import { expect, filterButton, loadFixture, openDashboard, openFilters, test } from './helpers';
 
 const svg = (page: Page) => page.locator('#dep-graph');
 const zoomLabel = (page: Page) => page.locator('#graph-zoom-level');
@@ -117,6 +117,7 @@ test.describe('pan and zoom', () => {
   });
 
   test('a plain wheel scrolls the page, not the graph', async ({ page }) => {
+    await page.addStyleTag({ content: 'body { min-height: 3000px }' }); // the graph alone may not make the page scroll
     const before = await view(page);
     await page.mouse.move(...(Object.values(await center(page)) as [number, number]));
     await page.mouse.wheel(0, 400);
@@ -190,6 +191,7 @@ test.describe('view persistence', () => {
     await page.locator('#graph-container').focus();
     await page.keyboard.press('+');
     await expect(zoomLabel(page)).toHaveText('75%');
+    await openFilters(page);
     await filterButton(page, 'phase', '1').click();
     await expect(zoomLabel(page)).toHaveText('75%');
     await filterButton(page, 'phase', 'all').click();
@@ -201,6 +203,7 @@ test.describe('view persistence', () => {
     await openDashboard(page, tasksServer, 'standard');
     const initial = await zoomLabel(page).textContent();
     expect(initial).not.toBe('100%');
+    await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(zoomLabel(page)).toHaveText(initial!);
     await expect(page.locator('#dep-graph g')).toHaveCount(4);
@@ -215,24 +218,25 @@ test.describe('view persistence', () => {
     // Look at the far right end of the 90-task graph, then show only phase 0 (the far left end)
     const mm = (await minimap(page).boundingBox())!;
     await page.mouse.click(mm.x + mm.width * 0.97, mm.y + mm.height / 2);
+    await openFilters(page);
     await filterButton(page, 'phase', '0').click();
     await expect(page.locator('#dep-graph g')).toHaveCount(14);
     await expect(zoomLabel(page)).toHaveText(zoom!);
     await expect.poll(() => visibleNodes(page)).toBeGreaterThan(0);
   });
 
-  test('collapsing and expanding keeps the view', async ({ page, tasksServer }) => {
+  test('switching tabs keeps the view', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'large-90');
     await expect(zoomLabel(page)).toHaveText('60%');
-    const header = page.locator('#graph-section .phase-header');
-    await header.click();
-    await header.click();
+    await page.locator('#tab-list').click();
+    await page.locator('#tab-graph').click();
     await expect(zoomLabel(page)).toHaveText('60%');
     await expect(minimap(page)).toBeVisible();
   });
 
   test('no minimap or controls state for an empty filter result', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
+    await openFilters(page);
     await filterButton(page, 'status', 'blocked').click();
     await filterButton(page, 'type', 'docs').click();
     await expect(svg(page)).toContainText('No tasks match current filters');

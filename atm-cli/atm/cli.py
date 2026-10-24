@@ -14,6 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
+from .query import cmd_deps, cmd_list, cmd_show, cmd_status
 from .tasks import cmd_note, cmd_status_change
 
 USAGE = """usage: atm <command> [options]
@@ -26,12 +27,17 @@ commands:
                  and set up the folder (.gitignore, current dashboard)
   serve [start|stop|status] [--open] [--port N]
                  run the dashboard server for this project in the background
-  start <id>     mark a task in_progress and claim it (its dependencies must be done)
+  status         the overview: counts, what is in progress, in review or blocked, the next task
+  show <id>...   tasks in full (description, dependencies, files, notes)
+  list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked]
+                 one line per task: ID, status, phase, priority, labels, name
+  deps <id>      what a task waits for, and what waits for it
+  start <id>     mark a task in_progress and claim it (its dependencies must be done); prints the task
   review <id> [--note TEXT]
                  ask for a review of a finished task: in_review, and its claim is released
   done <id> [--note TEXT] [--commit SHA]
                  mark an in_progress or in_review task done and drop its claim; the note is a one-line
-                 outcome (for a task in review, done means the review passed)
+                 outcome (for a task in review, done means the review passed); prints the tasks now ready
   reject <id> --reason TEXT
                  send a task in review back to todo, with what needs to change
   fail <id> [--reason TEXT]
@@ -135,6 +141,25 @@ def build_parser():
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
     status_option(next_)
+
+    show = command("show", cmd_show, "tasks in full: what an agent needs to work on them")
+    show.add_argument("ids", nargs="+", metavar="id", help="task IDs")
+    list_ = command("list", cmd_list, "one line per task: ID, status, phase, priority, labels, name")
+    list_.add_argument("--status", action="append", metavar="ID", help="only these statuses (repeatable)")
+    list_.add_argument("--phase", type=float, help="only this phase")
+    list_.add_argument("--type", help="only this task type")
+    list_.add_argument("--priority", help="only this priority (a missing one counts as the default)")
+    list_.add_argument("--label", action="append", help="only tasks with this label (repeatable: all of them)")
+    list_.add_argument("--agent", metavar="NAME", help="only tasks started by this agent")
+    list_.add_argument("--ready", action="store_true", help="only to-do tasks whose dependencies are done")
+    list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
+    command(
+        "status",
+        cmd_status,
+        "the overview: counts, what is in progress, in review or blocked, the next task, the file's size",
+    )
+    deps = command("deps", cmd_deps, "what a task waits for, and what waits for it")
+    deps.add_argument("id", help="the task ID")
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

@@ -1,4 +1,4 @@
-"""The status commands (start, done, fail, release) and notes."""
+"""The status commands (start, review, done, fail, release, reject) and notes."""
 
 import os
 
@@ -17,6 +17,7 @@ from .core import now_iso, out, to_json, write_json_atomic
 from .lock import locked
 from .model import add_note, change_status, find_task, load_tasks, touch
 from .paths import find_paths
+from .query import describe_task, ready_tasks
 
 
 def cmd_status_change(command):
@@ -47,15 +48,27 @@ def cmd_status_change(command):
                 claims.pop(task_id, None)
             if command == "done":
                 store["completed"][task_id] = completion(paths, task_id, agent)
+            unblocked = newly_ready(data, task_id) if command == "done" else []
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
         report_expired(expired)
         if args.json:
-            out(to_json({**task, "claim": claims.get(task_id)}))
-        else:
-            out(f"{task['id']}: {previous} -> {task['status']}")
+            out(to_json({**task, "claim": claims.get(task_id), **({"unblocked": unblocked} if command == "done" else {})}))
+            return
+        # New lines only after the existing one (CLI-3.2)
+        out(f"{task['id']}: {previous} -> {task['status']}")
+        if command == "start":
+            out(describe_task(data, task))
+        if unblocked:
+            out("Now ready: " + ", ".join(unblocked))
 
     return run
+
+
+def newly_ready(data, task_id):
+    """The to-do tasks waiting on `task_id` whose dependencies are now all done."""
+    ready = {t.get("id") for t in ready_tasks(data)}
+    return [t.get("id") for t in data["tasks"] if task_id in (t.get("dependencies") or []) and t.get("id") in ready]
 
 
 def cmd_note(args):

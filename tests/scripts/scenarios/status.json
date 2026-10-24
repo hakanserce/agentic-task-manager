@@ -36,7 +36,7 @@
     },
     "args": ["start", "T-002"],
     "expect": {
-      "stdout": "T-002: todo -> in_progress\n",
+      "stdoutIncludes": ["T-002: todo -> in_progress\nT-002  Task T-002\n", "depends on: T-001 (done)"],
       "files": {
         ".agentic-task-manager/tasks.json": {
           "meta": {
@@ -187,7 +187,8 @@
         "updated_by": "alice",
         "completed_at": "2026-05-01T10:00:00Z",
         "completed_by": "alice",
-        "claim": null
+        "claim": null,
+        "unblocked": []
       }
     },
     "env": {

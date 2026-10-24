@@ -22,7 +22,7 @@
     },
     "args": ["start", "T-2"],
     "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
-    "expect": { "stdout": "T-2: backlog -> coding\n" }
+    "expect": { "stdoutIncludes": ["T-2: backlog -> coding\n", "depends on: T-1 (shipped)"] }
   },
   {
     "name": "--status picks one of the statuses of that kind",
@@ -43,7 +43,7 @@
     },
     "args": ["start", "T-1", "--status", "testing"],
     "env": { "ATM_AGENT": "alice" },
-    "expect": { "stdout": "T-1: backlog -> testing\n" }
+    "expect": { "stdoutIncludes": ["T-1: backlog -> testing\n"] }
   },
   {
     "name": "a --status of the wrong kind is a usage error, and nothing changes",

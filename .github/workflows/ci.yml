@@ -56,6 +56,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 --version && git --version
+      # The plugin ships the committed build of atm-cli/; it must match the modules (CI never commits it for you)
+      - name: Built atm-cli is up to date
+        run: python3 atm-cli/build.py --check
       # The test runner is Node (node:test); the helper under test is Python
       - uses: actions/setup-node@v4
         with:

@@ -1,0 +1,180 @@
+"""Constants, errors, output, git, time helpers and atomic writes."""
+
+import contextlib
+import json
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime, timezone
+
+# Where the built plugin/scripts/atm.py lives (only the built file is run, never these modules)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
+TASK_DIR = ".agentic-task-manager"
+TASKS_FILE = "tasks.json"
+DASHBOARD_FILE = "tasks-dashboard.html"
+
+
+class AtmError(Exception):
+    def __init__(self, message, code=1):
+        super().__init__(message)
+        self.code = code
+
+
+class AtmExit(Exception):
+    """End with an exit code after normal output (not an error)."""
+
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
+
+
+def out(text=""):
+    sys.stdout.write(text + "\n")
+
+
+def to_json(value):
+    return json.dumps(value, indent=2, ensure_ascii=False)
+
+
+def git(args, cwd):
+    """Run git; return stdout stripped, or None if git fails or isn't installed."""
+    try:
+        result = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True)
+    except OSError:
+        return None
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def rel(root, p):
+    return os.path.relpath(p, root)
+
+
+def is_tracked(root, p):
+    return git(["ls-files", "--error-unmatch", "--", rel(root, p)], root) is not None
+
+
+def in_git(root):
+    return git(["rev-parse", "--git-dir"], root) is not None
+
+
+def plugin_version():
+    with open(os.path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json"), encoding="utf-8") as f:
+        return json.load(f)["version"]
+
+
+def parse_version(text):
+    parts = []
+    for part in (text or "").split("."):
+        m = re.match(r"\d+", part)
+        parts.append(int(m.group()) if m else 0)
+    return parts
+
+
+def parse_options(args, flags=(), options=()):
+    """Split args into positionals, set flags and option values. Unknown --options are usage errors."""
+    positional, values = [], {}
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in flags:
+            values[a] = True
+        elif a in options:
+            if i + 1 >= len(args):
+                raise AtmError(f"{a} needs a value", 2)
+            values[a] = args[i + 1]
+            i += 1
+        elif a.startswith("--"):
+            raise AtmError(f"unknown option {a}", 2)
+        else:
+            positional.append(a)
+        i += 1
+    return positional, values
+
+
+def now():
+    """The current time; ATM_NOW (ISO 8601 UTC) overrides it, for tests."""
+    fixed = os.environ.get("ATM_NOW")
+    return parse_iso(fixed) if fixed else datetime.now(timezone.utc)
+
+
+def now_iso():
+    return now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def parse_iso(text):
+    return datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+
+def format_duration(seconds):
+    seconds = max(0, int(seconds))
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m"
+    return f"{seconds // 3600}h {seconds % 3600 // 60}m"
+
+
+def fsync_dir(directory):
+    """Make a rename in `directory` durable. Not every platform can open a directory; that's fine to skip."""
+    try:
+        fd = os.open(directory, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(fd)
+    except OSError:
+        pass
+    finally:
+        os.close(fd)
+
+
+def write_text_atomic(p, text):
+    """Replace a file so readers only ever see the complete old or the complete new content."""
+    tmp = f"{p}.{os.getpid()}.{os.urandom(4).hex()}.tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, p)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.remove(tmp)
+        raise
+    fsync_dir(os.path.dirname(os.path.abspath(p)))
+
+
+def write_json_atomic(p, value):
+    write_text_atomic(p, to_json(value) + "\n")
+
+
+def read_json(p):
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def is_zombie(pid):
+    """A process that has exited but wasn't reaped yet (common in containers without an init process). Linux only;
+    elsewhere an orphaned process is reaped by the system right away."""
+    try:
+        with open(f"/proc/{pid}/stat", encoding="utf-8") as f:
+            stat = f.read()
+    except OSError:
+        return False
+    fields = stat[stat.rfind(")") + 1 :].split()
+    return bool(fields) and fields[0] == "Z"
+
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return not is_zombie(pid)

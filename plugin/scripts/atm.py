@@ -1,3 +1,5 @@
+# Generated from atm-cli/atm/ by atm-cli/build.py. Don't edit this file: edit the modules and run
+# `npm run build:cli` in dashboard/ (the pre-commit hook does it too).
 """atm: the Agentic Task Manager helper that the skills run.
 
 Run through the `atm` launcher, which checks for Python 3.9+. Standard library only: the plugin is used as cloned,
@@ -17,59 +19,16 @@ import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+
+# ==== core.py ====
+# Constants, errors, output, git, time helpers and atomic writes.
+
+# Where the built plugin/scripts/atm.py lives (only the built file is run, never these modules)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PLUGIN_ROOT = os.path.dirname(SCRIPT_DIR)
 TASK_DIR = ".agentic-task-manager"
 TASKS_FILE = "tasks.json"
 DASHBOARD_FILE = "tasks-dashboard.html"
-LEGACY_DIRS = ["docs", "."]
-TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
-# Runtime files in the task folder that must not be committed (the dashboard is a copy of the plugin's template)
-IGNORED = ["tasks-dashboard.html", ".server.json", ".server.log", "claims.json", "claims-store.json", ".lock/"]
-VERSION_META = re.compile(r'<meta name="atm-dashboard-version" content="([^"]*)"')
-SERVER_RECORD = ".server.json"
-SERVER_LOG = ".server.log"
-DEFAULT_PORT = 8000
-PORT_TRIES = 100
-WHOAMI = "/__atm/whoami"
-LOCK_DIR = ".lock"
-LOCK_OWNER = "owner.json"
-LOCK_TIMEOUT = 10.0  # seconds a command waits for the lock (ATM_LOCK_TIMEOUT overrides)
-LOCK_STALE = 60.0  # a lock older than this is abandoned: commands hold it for milliseconds
-LOCK_POLL = 0.05
-CLAIMS_STORE = "claims.json"  # in <git common dir>/atm/, shared by all worktrees of a clone
-CLAIMS_STORE_NO_GIT = "claims-store.json"  # in the task folder, outside git
-CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the dashboard reads
-DEFAULT_LEASE_MINUTES = 30
-
-USAGE = """usage: atm <command> [options]
-
-commands:
-  version        print the plugin version
-  paths [--json] print where this project's task files are
-  migrate [--json]
-                 move tasks.json from docs/ or the root into .agentic-task-manager/,
-                 and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--port N]
-                 run the dashboard server for this project in the background
-  start <id>     mark a task in_progress and claim it (its dependencies must be done)
-  done <id>      mark an in_progress task done and drop its claim
-  fail <id> [--reason TEXT]
-                 put an in_progress task back to todo, recording why
-  release <id>   put an in_progress task back to todo
-  next [--phase N] [--type T] [--claim] [--json]
-                 the task /atm:loop-tasks works on next; --claim also starts and claims it,
-                 atomically (exit code 3 if there is none)
-  heartbeat <id> extend your claim's lease
-  init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
-                 clone (migrate registers the driver too)
-  merge-driver <base> <ours> <theirs>
-                 git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
-  claims [--json]
-                 list live claims, shared by all worktrees of this clone
-                 (start/done/fail/release/heartbeat take --agent NAME and --json)
-  help           show this help
-"""
 
 
 class AtmError(Exception):
@@ -84,9 +43,6 @@ class AtmExit(Exception):
     def __init__(self, code):
         super().__init__(code)
         self.code = code
-
-
-# ---- helpers ----
 
 
 def out(text=""):
@@ -106,9 +62,29 @@ def git(args, cwd):
     return result.stdout.strip() if result.returncode == 0 else None
 
 
+def rel(root, p):
+    return os.path.relpath(p, root)
+
+
+def is_tracked(root, p):
+    return git(["ls-files", "--error-unmatch", "--", rel(root, p)], root) is not None
+
+
+def in_git(root):
+    return git(["rev-parse", "--git-dir"], root) is not None
+
+
 def plugin_version():
     with open(os.path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json"), encoding="utf-8") as f:
         return json.load(f)["version"]
+
+
+def parse_version(text):
+    parts = []
+    for part in (text or "").split("."):
+        m = re.match(r"\d+", part)
+        parts.append(int(m.group()) if m else 0)
+    return parts
 
 
 def parse_options(args, flags=(), options=()):
@@ -197,12 +173,94 @@ def read_json(p):
         return None
 
 
-# ---- the lock ----
+def is_zombie(pid):
+    """A process that has exited but wasn't reaped yet (common in containers without an init process). Linux only;
+    elsewhere an orphaned process is reaped by the system right away."""
+    try:
+        with open(f"/proc/{pid}/stat", encoding="utf-8") as f:
+            stat = f.read()
+    except OSError:
+        return False
+    fields = stat[stat.rfind(")") + 1 :].split()
+    return bool(fields) and fields[0] == "Z"
+
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return not is_zombie(pid)
+
+
+# ==== paths.py ====
+# Where a project's task files are: the project root, the task folder, legacy locations.
+
+LEGACY_DIRS = ["docs", "."]
+
+
+def project_root(cwd):
+    """The git top level; outside git, the nearest directory with a task folder or docs/tasks.json, else cwd."""
+    top = git(["rev-parse", "--show-toplevel"], cwd)
+    if top:
+        return top
+    d = cwd
+    while True:
+        if os.path.isdir(os.path.join(d, TASK_DIR)) or os.path.isfile(os.path.join(d, "docs", TASKS_FILE)):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return cwd
+        d = parent
+
+
+def find_paths(cwd):
+    root = project_root(cwd)
+    task_dir = os.path.join(root, TASK_DIR)
+    legacy = None
+    for d in LEGACY_DIRS:
+        candidate = os.path.normpath(os.path.join(root, d, TASKS_FILE))
+        if os.path.isfile(candidate):
+            dashboard = os.path.join(os.path.dirname(candidate), DASHBOARD_FILE)
+            legacy = {"tasks": candidate, "dashboard": dashboard if os.path.isfile(dashboard) else None}
+            break
+    tasks = os.path.join(task_dir, TASKS_FILE)
+    return {
+        "root": root,
+        "dir": task_dir,
+        "tasks": tasks,
+        "tasks_exists": os.path.isfile(tasks),
+        "dashboard": os.path.join(task_dir, DASHBOARD_FILE),
+        "legacy": legacy,
+    }
+
+
+def cmd_paths(args):
+    paths = find_paths(os.getcwd())
+    if "--json" in args:
+        out(to_json(paths))
+        return
+    for key in ["root", "dir", "tasks", "dashboard"]:
+        out(f"{key}: {paths[key]}")
+    if paths["legacy"]:
+        out(f"legacy: {paths['legacy']['tasks']}")
+
+
+# ==== lock.py ====
+# The lock directory.
 #
 # A lock is a directory: mkdir succeeds for exactly one process, on every OS and file system. The holder writes
 # owner.json inside it and removes the directory when done. A crashed holder leaves the directory behind, so a waiter
 # breaks the lock when its owner is provably gone (same host, pid not running) or it is older than LOCK_STALE. See
 # docs/parallel-agents-design.md, section 4.
+
+LOCK_DIR = ".lock"
+LOCK_OWNER = "owner.json"
+LOCK_TIMEOUT = 10.0  # seconds a command waits for the lock (ATM_LOCK_TIMEOUT overrides)
+LOCK_STALE = 60.0  # a lock older than this is abandoned: commands hold it for milliseconds
+LOCK_POLL = 0.05
 
 
 def lock_timeout():
@@ -281,417 +339,21 @@ def locked(directory):
         signal.signal(signal.SIGTERM, previous)
 
 
-def rel(root, p):
-    return os.path.relpath(p, root)
+def cmd_lock_test(args):
+    """Test hook: hold the task folder's lock for `seconds`, logging to .lock-test.log, so tests can check exclusion."""
+    seconds = float(args[0]) if args else 0.0
+    task_dir = find_paths(os.getcwd())["dir"]
+    log = os.path.join(task_dir, ".lock-test.log")
+    with locked(task_dir):
+        with open(log, "a", encoding="utf-8") as f:
+            f.write(f"acquire {os.getpid()}\n")
+        time.sleep(seconds)
+        with open(log, "a", encoding="utf-8") as f:
+            f.write(f"release {os.getpid()}\n")
 
 
-def is_tracked(root, p):
-    return git(["ls-files", "--error-unmatch", "--", rel(root, p)], root) is not None
-
-
-def in_git(root):
-    return git(["rev-parse", "--git-dir"], root) is not None
-
-
-def parse_version(text):
-    parts = []
-    for part in (text or "").split("."):
-        m = re.match(r"\d+", part)
-        parts.append(int(m.group()) if m else 0)
-    return parts
-
-
-def dashboard_version(p):
-    try:
-        with open(p, encoding="utf-8") as f:
-            m = VERSION_META.search(f.read())
-    except OSError:
-        return None
-    return m.group(1) if m else ""
-
-
-def ensure_dashboard(dashboard):
-    """Copy the plugin's dashboard if the project's is missing or older. Returns (action, old, new)."""
-    new = dashboard_version(TEMPLATE)
-    old = dashboard_version(dashboard)
-    if old is not None and parse_version(old) >= parse_version(new):
-        return ("current", old, new)
-    os.makedirs(os.path.dirname(dashboard), exist_ok=True)
-    shutil.copyfile(TEMPLATE, dashboard)
-    return ("installed" if old is None else "updated", old, new)
-
-
-def ensure_gitignore(task_dir):
-    """Add any missing runtime entries to the folder's .gitignore, keeping the user's lines. Returns True if changed."""
-    p = os.path.join(task_dir, ".gitignore")
-    try:
-        with open(p, encoding="utf-8") as f:
-            text = f.read()
-    except OSError:
-        text = ""
-    lines = text.splitlines()
-    missing = [entry for entry in IGNORED if entry not in lines]
-    if not missing:
-        return False
-    if not text:
-        text = "# atm runtime files (managed by atm)\n"
-    elif not text.endswith("\n"):
-        text += "\n"
-    with open(p, "w", encoding="utf-8") as f:
-        f.write(text + "".join(entry + "\n" for entry in missing))
-    return True
-
-
-def project_root(cwd):
-    """The git top level; outside git, the nearest directory with a task folder or docs/tasks.json, else cwd."""
-    top = git(["rev-parse", "--show-toplevel"], cwd)
-    if top:
-        return top
-    d = cwd
-    while True:
-        if os.path.isdir(os.path.join(d, TASK_DIR)) or os.path.isfile(os.path.join(d, "docs", TASKS_FILE)):
-            return d
-        parent = os.path.dirname(d)
-        if parent == d:
-            return cwd
-        d = parent
-
-
-def find_paths(cwd):
-    root = project_root(cwd)
-    task_dir = os.path.join(root, TASK_DIR)
-    legacy = None
-    for d in LEGACY_DIRS:
-        candidate = os.path.normpath(os.path.join(root, d, TASKS_FILE))
-        if os.path.isfile(candidate):
-            dashboard = os.path.join(os.path.dirname(candidate), DASHBOARD_FILE)
-            legacy = {"tasks": candidate, "dashboard": dashboard if os.path.isfile(dashboard) else None}
-            break
-    tasks = os.path.join(task_dir, TASKS_FILE)
-    return {
-        "root": root,
-        "dir": task_dir,
-        "tasks": tasks,
-        "tasks_exists": os.path.isfile(tasks),
-        "dashboard": os.path.join(task_dir, DASHBOARD_FILE),
-        "legacy": legacy,
-    }
-
-
-# ---- commands ----
-
-
-def cmd_version(args):
-    out(plugin_version())
-
-
-def cmd_paths(args):
-    paths = find_paths(os.getcwd())
-    if "--json" in args:
-        out(to_json(paths))
-        return
-    for key in ["root", "dir", "tasks", "dashboard"]:
-        out(f"{key}: {paths[key]}")
-    if paths["legacy"]:
-        out(f"legacy: {paths['legacy']['tasks']}")
-
-
-def migrate(paths):
-    """Move a legacy tasks.json into the task folder and set the folder up. Never commits."""
-    root, task_dir, legacy = paths["root"], paths["dir"], paths["legacy"]
-    result = {
-        "moved": None,
-        "removed_dashboard": None,
-        "warning": None,
-        "gitignore_updated": False,
-        "merge_driver_updated": False,
-        "dashboard": None,
-    }
-    legacy_version = None
-    if legacy and paths["tasks_exists"]:
-        result["warning"] = (
-            f"both {rel(root, legacy['tasks'])} and {rel(root, paths['tasks'])} exist; "
-            f"using {rel(root, paths['tasks'])}. Remove the old file when you no longer need it."
-        )
-    elif legacy:
-        os.makedirs(task_dir, exist_ok=True)
-        tracked = is_tracked(root, legacy["tasks"])
-        if tracked:
-            if git(["mv", "--", rel(root, legacy["tasks"]), rel(root, paths["tasks"])], root) is None:
-                raise AtmError(f"git mv {rel(root, legacy['tasks'])} failed")
-        else:
-            os.rename(legacy["tasks"], paths["tasks"])
-        result["moved"] = {"from": rel(root, legacy["tasks"]), "to": rel(root, paths["tasks"]), "git": tracked}
-        if legacy["dashboard"]:
-            legacy_version = dashboard_version(legacy["dashboard"])
-            if is_tracked(root, legacy["dashboard"]):
-                git(["rm", "--cached", "-q", "--", rel(root, legacy["dashboard"])], root)
-            os.remove(legacy["dashboard"])
-            result["removed_dashboard"] = rel(root, legacy["dashboard"])
-    if not os.path.isfile(paths["tasks"]):
-        return result
-    if ensure_gitignore(task_dir):
-        result["gitignore_updated"] = True
-        if in_git(root):
-            git(["add", "--", rel(root, os.path.join(task_dir, ".gitignore"))], root)
-    result["merge_driver_updated"] = ensure_merge_driver(paths)
-    if not os.path.exists(os.path.join(task_dir, CLAIMS_SNAPSHOT)):
-        # So the dashboard finds the file from the start instead of logging a 404 on every refresh
-        write_claims_snapshot(paths, read_store(paths)["claims"])
-    action, old, new = ensure_dashboard(paths["dashboard"])
-    if action == "installed" and legacy_version is not None:
-        # Report against the dashboard the project had before the move
-        old = legacy_version
-        action = "current" if parse_version(old) >= parse_version(new) else "updated"
-    result["dashboard"] = {"action": action, "from": old, "to": new}
-    return result
-
-
-def describe_migration(r, paths):
-    lines = []
-    if r["warning"]:
-        lines.append("warning: " + r["warning"])
-    if r["moved"]:
-        line = f"Moved {r['moved']['from']} to {r['moved']['to']}"
-        if r["moved"]["git"]:
-            line += " (staged with git mv, not committed)"
-        if r["removed_dashboard"]:
-            line += f"; removed {r['removed_dashboard']} (a current copy now sits next to tasks.json, ignored by git)"
-        lines.append(line + ".")
-    elif not os.path.isfile(paths["tasks"]):
-        lines.append("No tasks.json found. Run /atm:create-tasks to create one.")
-    d = r["dashboard"]
-    if d and d["action"] == "installed":
-        lines.append(f"Dashboard v{d['to']} installed.")
-    elif d and d["action"] == "updated":
-        lines.append(f"Dashboard updated from v{d['from'] or '?'} to v{d['to']}.")
-    if not lines:
-        lines.append("Nothing to migrate.")
-    return lines
-
-
-def cmd_migrate(args):
-    paths = find_paths(os.getcwd())
-    r = migrate(paths)
-    if "--json" in args:
-        out(to_json(r))
-        return
-    for line in describe_migration(r, paths):
-        out(line)
-
-
-# ---- dashboard server ----
-
-
-def server_url(port):
-    return f"http://localhost:{port}/{DASHBOARD_FILE}"
-
-
-def whoami(port):
-    """Ask the server on this port who it is; None if nothing (or not an atm server) answers."""
-    try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}{WHOAMI}", timeout=1) as response:
-            info = json.loads(response.read().decode("utf-8"))
-    except (OSError, ValueError):
-        return None
-    return info if isinstance(info, dict) and info.get("atm") else None
-
-
-def live_server(task_dir):
-    """The record of this folder's running server, or None. A stale record is removed."""
-    record_path = os.path.join(task_dir, SERVER_RECORD)
-    record = read_json(record_path)
-    if record is None:
-        return None
-    info = whoami(record.get("port"))
-    if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):
-        return record
-    os.remove(record_path)
-    return None
-
-
-def is_zombie(pid):
-    """A process that has exited but wasn't reaped yet (common in containers without an init process). Linux only;
-    elsewhere an orphaned process is reaped by the system right away."""
-    try:
-        with open(f"/proc/{pid}/stat", encoding="utf-8") as f:
-            stat = f.read()
-    except OSError:
-        return False
-    fields = stat[stat.rfind(")") + 1 :].split()
-    return bool(fields) and fields[0] == "Z"
-
-
-def pid_alive(pid):
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    return not is_zombie(pid)
-
-
-def open_browser(url):
-    opener = "open" if sys.platform == "darwin" else "xdg-open"
-    try:
-        subprocess.Popen([opener, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except OSError:
-        out(f"Could not open a browser; open {url} yourself.")
-
-
-def serve_start(paths, values):
-    for line in describe_migration(migrate(paths), paths):
-        if line != "Nothing to migrate.":
-            out(line)
-    if not os.path.isfile(paths["tasks"]):
-        raise AtmError("no tasks.json to serve. Run /atm:create-tasks first.")
-    task_dir = paths["dir"]
-    record = live_server(task_dir)
-    if record:
-        out(f"Dashboard server already running: {server_url(record['port'])}")
-        return record
-    port = int(values.get("--port", DEFAULT_PORT))
-    with open(os.path.join(task_dir, SERVER_LOG), "ab") as log:
-        child = subprocess.Popen(
-            [sys.executable, os.path.abspath(__file__), "_serve-child", task_dir, str(port)],
-            cwd=task_dir,
-            stdin=subprocess.DEVNULL,
-            stdout=log,
-            stderr=log,
-            start_new_session=True,
-        )
-    deadline = time.time() + 10
-    while time.time() < deadline:
-        record = read_json(os.path.join(task_dir, SERVER_RECORD))
-        if record and record.get("pid") == child.pid and whoami(record["port"]):
-            out(f"Dashboard server started: {server_url(record['port'])}")
-            return record
-        if child.poll() is not None:
-            break
-        time.sleep(0.05)
-    raise AtmError(f"the dashboard server did not start; see {os.path.join(task_dir, SERVER_LOG)}")
-
-
-def serve_stop(paths):
-    task_dir = paths["dir"]
-    record_path = os.path.join(task_dir, SERVER_RECORD)
-    record = read_json(record_path)
-    if record is None:
-        out("Dashboard server is not running.")
-        return
-    info = whoami(record.get("port"))
-    if not (info and info.get("folder") == task_dir and info.get("pid") == record.get("pid")):
-        os.remove(record_path)
-        out(f"Dashboard server is not running (removed a stale record for pid {record.get('pid')}).")
-        return
-    pid = record["pid"]
-    os.kill(pid, signal.SIGTERM)
-    deadline = time.time() + 5
-    while time.time() < deadline and pid_alive(pid):
-        time.sleep(0.05)
-    if os.path.exists(record_path):
-        os.remove(record_path)
-    out(f"Dashboard server stopped (pid {pid}).")
-
-
-def serve_status(paths, values):
-    record = live_server(paths["dir"])
-    if "--json" in values:
-        out(to_json({"running": bool(record), **(record or {}), "url": server_url(record["port"]) if record else None}))
-        return
-    if not record:
-        out("Dashboard server is not running.")
-        return
-    up = format_duration((datetime.now(timezone.utc) - parse_iso(record["started_at"])).total_seconds())
-    out(f"Dashboard server running: {server_url(record['port'])} (pid {record['pid']}, up {up})")
-
-
-def cmd_serve(args):
-    positional, values = parse_options(args, flags=("--open", "--json"), options=("--port",))
-    action = positional[0] if positional else "start"
-    paths = find_paths(os.getcwd())
-    if action == "start":
-        record = serve_start(paths, values)
-        if "--open" in values:
-            open_browser(server_url(record["port"]))
-    elif action == "stop":
-        serve_stop(paths)
-    elif action == "status":
-        serve_status(paths, values)
-    else:
-        raise AtmError(f"unknown serve action '{action}' (use start, stop or status)", 2)
-
-
-def cmd_serve_child(args):
-    """The detached server process: serve task_dir on the first free port from `port`, record it, run until stopped."""
-    import http.server
-    import socketserver
-
-    task_dir, port = args[0], int(args[1])
-    record_path = os.path.join(task_dir, SERVER_RECORD)
-
-    class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *a, **kw):
-            super().__init__(*a, directory=task_dir, **kw)
-
-        def do_GET(self):
-            path = self.path.split("?", 1)[0]
-            if path == WHOAMI:
-                body = json.dumps({"atm": True, "folder": task_dir, "pid": os.getpid()}).encode()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-            elif path == "/":
-                self.send_response(302)
-                self.send_header("Location", "/" + DASHBOARD_FILE)
-                self.end_headers()
-            else:
-                super().do_GET()
-
-        def end_headers(self):
-            self.send_header("Cache-Control", "no-store")
-            super().end_headers()
-
-        def list_directory(self, path):
-            self.send_error(404)
-            return None
-
-    class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
-        daemon_threads = True
-        allow_reuse_address = False
-
-    server = None
-    for candidate in range(port, port + PORT_TRIES):
-        try:
-            server = Server(("127.0.0.1", candidate), Handler)
-            break
-        except OSError:
-            continue
-    if server is None:
-        sys.stderr.write(f"atm: no free port in {port}-{port + PORT_TRIES - 1}\n")
-        return
-    record = {
-        "pid": os.getpid(),
-        "port": server.server_address[1],
-        "folder": task_dir,
-        "started_at": now_iso(),
-    }
-    write_json_atomic(record_path, record)
-
-    def stop(signum, frame):
-        if (read_json(record_path) or {}).get("pid") == os.getpid():
-            os.remove(record_path)
-        os._exit(0)
-
-    signal.signal(signal.SIGTERM, stop)
-    signal.signal(signal.SIGINT, stop)
-    server.serve_forever()
-
-
-# ---- task status ----
+# ==== model.py ====
+# Loading tasks.json, looking tasks up, and the status transitions themselves.
 
 STATUS_CHANGES = {
     # command: (allowed current statuses, new status)
@@ -721,6 +383,15 @@ def find_task(data, task_id):
 def unfinished_dependencies(data, task):
     status = {t.get("id"): t.get("status") for t in data["tasks"]}
     return [(dep, status.get(dep, "missing")) for dep in task.get("dependencies", []) if status.get(dep) != "done"]
+
+
+def natural_key(task_id):
+    """Sort T-2 before T-10, like the dashboard's localeCompare(..., { numeric: true })."""
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(task_id))]
+
+
+def phase_of(task):
+    return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
 def change_status(task, data, command, reason=None, agent=None):
@@ -753,11 +424,16 @@ def change_status(task, data, command, reason=None, agent=None):
     return current
 
 
-# ---- claims ----
+# ==== claims.py ====
+# Claims: which agent works on which task, until when (the lease); and `next`.
 #
-# A claim says which agent works on a task, until when (the lease). Claims live in the git common directory, so all
-# worktrees of a clone see them; tasks.json itself is per worktree. Lock order: the task folder, then the claims
-# store, so two commands can never wait on each other.
+# Claims live in the git common directory, so all worktrees of a clone see them; tasks.json itself is per worktree.
+# Lock order: the task folder, then the claims store, so two commands can never wait on each other.
+
+CLAIMS_STORE = "claims.json"  # in <git common dir>/atm/, shared by all worktrees of a clone
+CLAIMS_STORE_NO_GIT = "claims-store.json"  # in the task folder, outside git
+CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the dashboard reads
+DEFAULT_LEASE_MINUTES = 30
 
 
 def agent_identity(values):
@@ -881,47 +557,9 @@ def check_holder(claims, task_id, agent, command):
         )
 
 
-def cmd_status_change(command):
-    def run(args):
-        positional, values = parse_options(args, flags=("--json",), options=("--reason", "--agent"))
-        if len(positional) != 1:
-            raise AtmError(f"usage: atm {command} <task id>", 2)
-        task_id, agent = positional[0], agent_identity(values)
-        paths = find_paths(os.getcwd())
-        with locked_with_claims(paths):
-            data = load_tasks(paths)
-            store = read_store(paths)
-            claims = store["claims"]
-            expired = expire_claims(paths, data, claims)
-            task = find_task(data, task_id)
-            check_holder(claims, task_id, agent, command)
-            previous = change_status(task, data, command, values.get("--reason"), agent)
-            if command == "start":
-                claims[task_id] = new_claim(paths, data, task_id, agent)
-                store["completed"].pop(task_id, None)  # starting a task again on purpose
-            else:
-                claims.pop(task_id, None)
-            if command == "done":
-                store["completed"][task_id] = completion(paths, task_id, agent)
-            write_json_atomic(paths["tasks"], data)
-            write_store(paths, store)
-        for claim in expired:
-            sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
-        if "--json" in values:
-            out(to_json({**task, "claim": claims.get(task_id)}))
-        else:
-            out(f"{task['id']}: {previous} -> {task['status']}")
-
-    return run
-
-
-def natural_key(task_id):
-    """Sort T-2 before T-10, like the dashboard's localeCompare(..., { numeric: true })."""
-    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(task_id))]
-
-
-def phase_of(task):
-    return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
+def report_expired(expired):
+    for claim in expired:
+        sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
 
 
 def next_task(data, store, phase=None, task_type=None):
@@ -972,8 +610,7 @@ def cmd_next(args):
         if expired or (task and "--claim" in values):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
-    for claim in expired:
-        sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
+    report_expired(expired)
     claim = claims.get(task["id"]) if task and "--claim" in values else None
     if "--json" in values:
         out(to_json({"task": task, "claim": claim, "reason": reason}))
@@ -1036,7 +673,44 @@ def cmd_claims(args):
         out(f"{c['task']}  {c.get('agent')}  {c.get('branch') or '-'}  {left} left  ({c.get('worktree')})")
 
 
-# ---- merging tasks.json ----
+# ==== tasks.py ====
+# The status commands: start, done, fail, release.
+
+def cmd_status_change(command):
+    def run(args):
+        positional, values = parse_options(args, flags=("--json",), options=("--reason", "--agent"))
+        if len(positional) != 1:
+            raise AtmError(f"usage: atm {command} <task id>", 2)
+        task_id, agent = positional[0], agent_identity(values)
+        paths = find_paths(os.getcwd())
+        with locked_with_claims(paths):
+            data = load_tasks(paths)
+            store = read_store(paths)
+            claims = store["claims"]
+            expired = expire_claims(paths, data, claims)
+            task = find_task(data, task_id)
+            check_holder(claims, task_id, agent, command)
+            previous = change_status(task, data, command, values.get("--reason"), agent)
+            if command == "start":
+                claims[task_id] = new_claim(paths, data, task_id, agent)
+                store["completed"].pop(task_id, None)  # starting a task again on purpose
+            else:
+                claims.pop(task_id, None)
+            if command == "done":
+                store["completed"][task_id] = completion(paths, task_id, agent)
+            write_json_atomic(paths["tasks"], data)
+            write_store(paths, store)
+        report_expired(expired)
+        if "--json" in values:
+            out(to_json({**task, "claim": claims.get(task_id)}))
+        else:
+            out(f"{task['id']}: {previous} -> {task['status']}")
+
+    return run
+
+
+# ==== merge.py ====
+# Merging tasks.json, and `atm init`.
 #
 # Registered as a git merge driver (`tasks.json merge=atm`), so branches that changed tasks.json merge task by task
 # instead of line by line. Design: docs/parallel-agents-design.md, option E and layer L3.
@@ -1245,17 +919,372 @@ def cmd_init(args):
     )
 
 
-def cmd_lock_test(args):
-    """Test hook: hold the task folder's lock for `seconds`, logging to .lock-test.log, so tests can check exclusion."""
-    seconds = float(args[0]) if args else 0.0
-    task_dir = find_paths(os.getcwd())["dir"]
-    log = os.path.join(task_dir, ".lock-test.log")
-    with locked(task_dir):
-        with open(log, "a", encoding="utf-8") as f:
-            f.write(f"acquire {os.getpid()}\n")
-        time.sleep(seconds)
-        with open(log, "a", encoding="utf-8") as f:
-            f.write(f"release {os.getpid()}\n")
+# ==== migrate.py ====
+# `atm migrate`: move a legacy tasks.json into the task folder and set the folder up (.gitignore, merge driver,
+# the current dashboard).
+
+TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
+# Runtime files in the task folder that must not be committed (the dashboard is a copy of the plugin's template)
+IGNORED = ["tasks-dashboard.html", ".server.json", ".server.log", "claims.json", "claims-store.json", ".lock/"]
+VERSION_META = re.compile(r'<meta name="atm-dashboard-version" content="([^"]*)"')
+
+
+def dashboard_version(p):
+    try:
+        with open(p, encoding="utf-8") as f:
+            m = VERSION_META.search(f.read())
+    except OSError:
+        return None
+    return m.group(1) if m else ""
+
+
+def ensure_dashboard(dashboard):
+    """Copy the plugin's dashboard if the project's is missing or older. Returns (action, old, new)."""
+    new = dashboard_version(TEMPLATE)
+    old = dashboard_version(dashboard)
+    if old is not None and parse_version(old) >= parse_version(new):
+        return ("current", old, new)
+    os.makedirs(os.path.dirname(dashboard), exist_ok=True)
+    shutil.copyfile(TEMPLATE, dashboard)
+    return ("installed" if old is None else "updated", old, new)
+
+
+def ensure_gitignore(task_dir):
+    """Add any missing runtime entries to the folder's .gitignore, keeping the user's lines. Returns True if changed."""
+    p = os.path.join(task_dir, ".gitignore")
+    try:
+        with open(p, encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        text = ""
+    lines = text.splitlines()
+    missing = [entry for entry in IGNORED if entry not in lines]
+    if not missing:
+        return False
+    if not text:
+        text = "# atm runtime files (managed by atm)\n"
+    elif not text.endswith("\n"):
+        text += "\n"
+    with open(p, "w", encoding="utf-8") as f:
+        f.write(text + "".join(entry + "\n" for entry in missing))
+    return True
+
+
+def migrate(paths):
+    """Move a legacy tasks.json into the task folder and set the folder up. Never commits."""
+    root, task_dir, legacy = paths["root"], paths["dir"], paths["legacy"]
+    result = {
+        "moved": None,
+        "removed_dashboard": None,
+        "warning": None,
+        "gitignore_updated": False,
+        "merge_driver_updated": False,
+        "dashboard": None,
+    }
+    legacy_version = None
+    if legacy and paths["tasks_exists"]:
+        result["warning"] = (
+            f"both {rel(root, legacy['tasks'])} and {rel(root, paths['tasks'])} exist; "
+            f"using {rel(root, paths['tasks'])}. Remove the old file when you no longer need it."
+        )
+    elif legacy:
+        os.makedirs(task_dir, exist_ok=True)
+        tracked = is_tracked(root, legacy["tasks"])
+        if tracked:
+            if git(["mv", "--", rel(root, legacy["tasks"]), rel(root, paths["tasks"])], root) is None:
+                raise AtmError(f"git mv {rel(root, legacy['tasks'])} failed")
+        else:
+            os.rename(legacy["tasks"], paths["tasks"])
+        result["moved"] = {"from": rel(root, legacy["tasks"]), "to": rel(root, paths["tasks"]), "git": tracked}
+        if legacy["dashboard"]:
+            legacy_version = dashboard_version(legacy["dashboard"])
+            if is_tracked(root, legacy["dashboard"]):
+                git(["rm", "--cached", "-q", "--", rel(root, legacy["dashboard"])], root)
+            os.remove(legacy["dashboard"])
+            result["removed_dashboard"] = rel(root, legacy["dashboard"])
+    if not os.path.isfile(paths["tasks"]):
+        return result
+    if ensure_gitignore(task_dir):
+        result["gitignore_updated"] = True
+        if in_git(root):
+            git(["add", "--", rel(root, os.path.join(task_dir, ".gitignore"))], root)
+    result["merge_driver_updated"] = ensure_merge_driver(paths)
+    if not os.path.exists(os.path.join(task_dir, CLAIMS_SNAPSHOT)):
+        # So the dashboard finds the file from the start instead of logging a 404 on every refresh
+        write_claims_snapshot(paths, read_store(paths)["claims"])
+    action, old, new = ensure_dashboard(paths["dashboard"])
+    if action == "installed" and legacy_version is not None:
+        # Report against the dashboard the project had before the move
+        old = legacy_version
+        action = "current" if parse_version(old) >= parse_version(new) else "updated"
+    result["dashboard"] = {"action": action, "from": old, "to": new}
+    return result
+
+
+def describe_migration(r, paths):
+    lines = []
+    if r["warning"]:
+        lines.append("warning: " + r["warning"])
+    if r["moved"]:
+        line = f"Moved {r['moved']['from']} to {r['moved']['to']}"
+        if r["moved"]["git"]:
+            line += " (staged with git mv, not committed)"
+        if r["removed_dashboard"]:
+            line += f"; removed {r['removed_dashboard']} (a current copy now sits next to tasks.json, ignored by git)"
+        lines.append(line + ".")
+    elif not os.path.isfile(paths["tasks"]):
+        lines.append("No tasks.json found. Run /atm:create-tasks to create one.")
+    d = r["dashboard"]
+    if d and d["action"] == "installed":
+        lines.append(f"Dashboard v{d['to']} installed.")
+    elif d and d["action"] == "updated":
+        lines.append(f"Dashboard updated from v{d['from'] or '?'} to v{d['to']}.")
+    if not lines:
+        lines.append("Nothing to migrate.")
+    return lines
+
+
+def cmd_migrate(args):
+    paths = find_paths(os.getcwd())
+    r = migrate(paths)
+    if "--json" in args:
+        out(to_json(r))
+        return
+    for line in describe_migration(r, paths):
+        out(line)
+
+
+# ==== server.py ====
+# `atm serve`: the dashboard server, a detached process per project.
+
+SERVER_RECORD = ".server.json"
+SERVER_LOG = ".server.log"
+DEFAULT_PORT = 8000
+PORT_TRIES = 100
+WHOAMI = "/__atm/whoami"
+
+
+def server_url(port):
+    return f"http://localhost:{port}/{DASHBOARD_FILE}"
+
+
+def whoami(port):
+    """Ask the server on this port who it is; None if nothing (or not an atm server) answers."""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}{WHOAMI}", timeout=1) as response:
+            info = json.loads(response.read().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+    return info if isinstance(info, dict) and info.get("atm") else None
+
+
+def live_server(task_dir):
+    """The record of this folder's running server, or None. A stale record is removed."""
+    record_path = os.path.join(task_dir, SERVER_RECORD)
+    record = read_json(record_path)
+    if record is None:
+        return None
+    info = whoami(record.get("port"))
+    if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):
+        return record
+    os.remove(record_path)
+    return None
+
+
+def open_browser(url):
+    opener = "open" if sys.platform == "darwin" else "xdg-open"
+    try:
+        subprocess.Popen([opener, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        out(f"Could not open a browser; open {url} yourself.")
+
+
+def serve_start(paths, values):
+    for line in describe_migration(migrate(paths), paths):
+        if line != "Nothing to migrate.":
+            out(line)
+    if not os.path.isfile(paths["tasks"]):
+        raise AtmError("no tasks.json to serve. Run /atm:create-tasks first.")
+    task_dir = paths["dir"]
+    record = live_server(task_dir)
+    if record:
+        out(f"Dashboard server already running: {server_url(record['port'])}")
+        return record
+    port = int(values.get("--port", DEFAULT_PORT))
+    with open(os.path.join(task_dir, SERVER_LOG), "ab") as log:
+        child = subprocess.Popen(
+            [sys.executable, os.path.abspath(__file__), "_serve-child", task_dir, str(port)],
+            cwd=task_dir,
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=log,
+            start_new_session=True,
+        )
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        record = read_json(os.path.join(task_dir, SERVER_RECORD))
+        if record and record.get("pid") == child.pid and whoami(record["port"]):
+            out(f"Dashboard server started: {server_url(record['port'])}")
+            return record
+        if child.poll() is not None:
+            break
+        time.sleep(0.05)
+    raise AtmError(f"the dashboard server did not start; see {os.path.join(task_dir, SERVER_LOG)}")
+
+
+def serve_stop(paths):
+    task_dir = paths["dir"]
+    record_path = os.path.join(task_dir, SERVER_RECORD)
+    record = read_json(record_path)
+    if record is None:
+        out("Dashboard server is not running.")
+        return
+    info = whoami(record.get("port"))
+    if not (info and info.get("folder") == task_dir and info.get("pid") == record.get("pid")):
+        os.remove(record_path)
+        out(f"Dashboard server is not running (removed a stale record for pid {record.get('pid')}).")
+        return
+    pid = record["pid"]
+    os.kill(pid, signal.SIGTERM)
+    deadline = time.time() + 5
+    while time.time() < deadline and pid_alive(pid):
+        time.sleep(0.05)
+    if os.path.exists(record_path):
+        os.remove(record_path)
+    out(f"Dashboard server stopped (pid {pid}).")
+
+
+def serve_status(paths, values):
+    record = live_server(paths["dir"])
+    if "--json" in values:
+        out(to_json({"running": bool(record), **(record or {}), "url": server_url(record["port"]) if record else None}))
+        return
+    if not record:
+        out("Dashboard server is not running.")
+        return
+    up = format_duration((datetime.now(timezone.utc) - parse_iso(record["started_at"])).total_seconds())
+    out(f"Dashboard server running: {server_url(record['port'])} (pid {record['pid']}, up {up})")
+
+
+def cmd_serve(args):
+    positional, values = parse_options(args, flags=("--open", "--json"), options=("--port",))
+    action = positional[0] if positional else "start"
+    paths = find_paths(os.getcwd())
+    if action == "start":
+        record = serve_start(paths, values)
+        if "--open" in values:
+            open_browser(server_url(record["port"]))
+    elif action == "stop":
+        serve_stop(paths)
+    elif action == "status":
+        serve_status(paths, values)
+    else:
+        raise AtmError(f"unknown serve action '{action}' (use start, stop or status)", 2)
+
+
+def cmd_serve_child(args):
+    """The detached server process: serve task_dir on the first free port from `port`, record it, run until stopped."""
+    import http.server
+    import socketserver
+
+    task_dir, port = args[0], int(args[1])
+    record_path = os.path.join(task_dir, SERVER_RECORD)
+
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, directory=task_dir, **kw)
+
+        def do_GET(self):
+            path = self.path.split("?", 1)[0]
+            if path == WHOAMI:
+                body = json.dumps({"atm": True, "folder": task_dir, "pid": os.getpid()}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            elif path == "/":
+                self.send_response(302)
+                self.send_header("Location", "/" + DASHBOARD_FILE)
+                self.end_headers()
+            else:
+                super().do_GET()
+
+        def end_headers(self):
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
+        def list_directory(self, path):
+            self.send_error(404)
+            return None
+
+    class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
+        daemon_threads = True
+        allow_reuse_address = False
+
+    server = None
+    for candidate in range(port, port + PORT_TRIES):
+        try:
+            server = Server(("127.0.0.1", candidate), Handler)
+            break
+        except OSError:
+            continue
+    if server is None:
+        sys.stderr.write(f"atm: no free port in {port}-{port + PORT_TRIES - 1}\n")
+        return
+    record = {
+        "pid": os.getpid(),
+        "port": server.server_address[1],
+        "folder": task_dir,
+        "started_at": now_iso(),
+    }
+    write_json_atomic(record_path, record)
+
+    def stop(signum, frame):
+        if (read_json(record_path) or {}).get("pid") == os.getpid():
+            os.remove(record_path)
+        os._exit(0)
+
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    server.serve_forever()
+
+
+# ==== cli.py ====
+# The command table and main().
+
+USAGE = """usage: atm <command> [options]
+
+commands:
+  version        print the plugin version
+  paths [--json] print where this project's task files are
+  migrate [--json]
+                 move tasks.json from docs/ or the root into .agentic-task-manager/,
+                 and set up the folder (.gitignore, current dashboard)
+  serve [start|stop|status] [--open] [--port N]
+                 run the dashboard server for this project in the background
+  start <id>     mark a task in_progress and claim it (its dependencies must be done)
+  done <id>      mark an in_progress task done and drop its claim
+  fail <id> [--reason TEXT]
+                 put an in_progress task back to todo, recording why
+  release <id>   put an in_progress task back to todo
+  next [--phase N] [--type T] [--claim] [--json]
+                 the task /atm:loop-tasks works on next; --claim also starts and claims it,
+                 atomically (exit code 3 if there is none)
+  heartbeat <id> extend your claim's lease
+  init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
+                 clone (migrate registers the driver too)
+  merge-driver <base> <ours> <theirs>
+                 git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
+  claims [--json]
+                 list live claims, shared by all worktrees of this clone
+                 (start/done/fail/release/heartbeat take --agent NAME and --json)
+  help           show this help
+"""
+
+
+def cmd_version(args):
+    out(plugin_version())
 
 
 def cmd_help(args):

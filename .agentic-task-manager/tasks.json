@@ -2269,7 +2269,7 @@
         "CLI-2.3"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/build.py",
@@ -2282,7 +2282,10 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-24T00:13:54Z",
-      "updated_at": "2026-10-24T21:48:53Z"
+      "updated_at": "2026-10-24T22:01:01Z",
+      "started_at": "2026-10-24T21:55:04Z",
+      "agent": "claude:e5ea9db0",
+      "completed_at": "2026-10-24T22:01:01Z"
     },
     {
       "id": "T-097",

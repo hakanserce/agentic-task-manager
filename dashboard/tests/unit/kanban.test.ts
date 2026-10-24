@@ -62,8 +62,8 @@ describe('nextUp', () => {
     // pick the same task for every fixture. If this fails, the skill stopped using atm next: re-check the parity.
     const skill = readFileSync(new URL('../../../plugin/skills/loop-tasks/SKILL.md', import.meta.url), 'utf8');
     expect(skill).toContain('`atm next --claim --json [--phase N] [--type T]`');
-    expect(skill).toContain('status todo, all dependencies done, not claimed by another');
-    expect(skill).toContain('lowest phase, then lowest task ID');
+    expect(skill).toContain('to do, all dependencies done, not claimed by another');
+    expect(skill).toContain('lowest phase, then the most urgent priority, then lowest task ID');
   });
 });
 

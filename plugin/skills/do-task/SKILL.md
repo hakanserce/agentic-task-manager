@@ -42,16 +42,26 @@ It locks the task file while it changes it, writes the timestamps, and records w
 **claim**), so other agents running at the same time won't take the same task. Never edit `status`, `started_at`,
 `completed_at` or `updated_at` in tasks.json yourself.
 
+**Statuses have kinds.** A project may name its own statuses (`meta.statuses` in tasks.json); each has one of six
+kinds: `todo`, `active` (in progress), `review`, `blocked`, `done` and `skipped`. atm works by kind, so below "to do",
+"in progress", "in review" and "done" mean any status of that kind. When a kind has several statuses (for example
+`awaiting_user` and `awaiting_agent`, both `review`), pass `--status <id>` with the one whose name or label fits;
+otherwise atm uses the first one listed.
+
 If `$ARGUMENTS` specifies a task ID (e.g., `T-005` or `T-P1-03`), run `atm start <id>`. It refuses, with a message,
-when the task isn't `todo`, when a dependency isn't done yet (it lists them), or when another agent has claimed it
+when the task isn't to do, when a dependency isn't done yet (it lists them), or when another agent has claimed it
 (exit code 4). Report the message and stop:
 > **Task $ID can't start:** (the message)
 >
 > Complete the blocking tasks first, or pick a different task.
 
-If no task ID is given, run `atm next --claim --json`. It picks the **next available task** (status todo, all
-dependencies done, not claimed by another agent; lowest phase first, then lowest task ID), starts it and claims it
-in one step. The JSON has the task under `"task"`.
+If no task ID is given, run `atm next --claim --json`. It picks the **next available task** (to do, all
+dependencies done, not claimed by another agent; lowest phase first, then the most urgent priority — `P0` before `P3`,
+a task without one counting as the default `P2` — then lowest task ID), starts it and claims it in one step. The JSON
+has the task under `"task"`.
+
+If the task has notes (`"notes"`), read them first: a `rejection` says what a reviewer wants changed, a `handoff` what
+the previous agent left unfinished, a `failure` why an earlier attempt failed.
 
 If it exits with code 3, no task is available; its `"reason"` says why. Report clearly:
 > **No tasks available.** (the reason)
@@ -96,14 +106,27 @@ If verification fails:
 - If still failing after 2 attempts, run `atm fail $TASK_ID --reason "<one line on what failed>"` (the task goes back
   to `todo` and the reason is recorded) and report the failure
 
-## Step 7: Mark as done
+## Step 7: Mark as done, or ask for a review
 
-If verification passes, run `atm done $TASK_ID`. It sets the status and `completed_at`, and drops your claim.
-If it says your lease expired and another agent holds the task, tell the user instead of committing.
+If verification passes, decide how the task ends:
+
+- **A review is asked for** — by the task's description, the project's instructions (e.g. its `CLAUDE.md`) or the
+  user, whether by the user or by another agent: run `atm review $TASK_ID --note "<what the reviewer should check>"`
+  (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
+  moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
+  Commit your work as usual (Step 7b) and report the task as **waiting for review**.
+- **Otherwise**: run `atm done $TASK_ID`. It sets the status and `completed_at`, and drops your claim.
+
+If either says your lease expired and another agent holds the task, tell the user instead of committing.
+
+**Reviewing a task** (when the user or another agent asks you to review one that is in review): read its `review`
+note and the commit, then either pass it with `atm done <id>`, or send it back with
+`atm reject <id> --reason "<what needs to change>"`. A rejected task returns to to do with the reason as a `rejection`
+note, for the next agent to address.
 
 ## Step 7b: Git commit
 
-After marking the task as done, commit the changes.
+After marking the task as done (or in review), commit the changes.
 If the helper moved files in Step 1 and you are going to commit, first commit the move on its own:
 `git commit -m "chore: move atm files to .agentic-task-manager/" -- <old tasks.json> .agentic-task-manager/tasks.json .agentic-task-manager/.gitignore`
 (add the old `tasks-dashboard.html` path too if it was removed). Then commit the task.
@@ -120,7 +143,7 @@ This is the default behavior. Do NOT push — only commit locally.
 
 Output a concise completion report:
 
-> **Completed: $TASK_ID — $TASK_NAME**
+> **Completed: $TASK_ID — $TASK_NAME** (or **Waiting for review: $TASK_ID — $TASK_NAME**, with who reviews it)
 >
 > **What was done:** (2-3 sentence summary)
 >
@@ -130,4 +153,4 @@ Output a concise completion report:
 >
 > **Verification:** ✅ Build passed, tests passed
 >
-> **Now unblocked:** (list task IDs that were waiting on this task, if any)
+> **Now unblocked:** (list task IDs that were waiting on this task, if any; none while it waits for review)

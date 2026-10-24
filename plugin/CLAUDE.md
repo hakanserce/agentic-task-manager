@@ -17,7 +17,8 @@ This plugin provides file-based task management for agentic development workflow
 
 ## Task Schema
 Each task has: id, name, phase, type (feature/bugfix/test/infra/docs/refactor/polish),
-description, dependencies (array of task IDs), status (todo/in_progress/done/blocked/skipped),
+description, dependencies (array of task IDs), status (todo/in_progress/in_review/done/blocked/skipped by default),
+priority (optional; P0–P3 by default),
 requirements (array), use_cases (array), files (array of file paths),
 created_at (ISO 8601 UTC, optional), updated_at (ISO 8601 UTC, optional),
 started_at (ISO 8601 UTC, optional; set when moving to in_progress),
@@ -27,8 +28,12 @@ to todo).
 
 ## Conventions
 - Task IDs follow the pattern: T-001, T-002, etc. (or T-P0-01 for phased projects)
-- Status transitions: todo → in_progress → done
-- Dependencies must be completed (status: done) before a task can start
+- Status transitions: todo → in_progress → done, or in_progress → in_review → done (`atm review`, then `atm done`
+  to pass or `atm reject --reason` to send it back to todo)
+- Statuses have kinds (`todo`, `active`, `review`, `blocked`, `done`, `skipped`); a project may name its own in
+  `meta.statuses`. atm and the skills act on the kind; `--status <id>` picks one when a kind has several
+- Dependencies must be completed (a done-kind status) before a task can start; a task in review is not done yet
+- Agents take tasks phase by phase, then by `priority` (`P0`…`P3`; none counts as the default, `P2`), then by ID
 - The dashboard auto-reloads from tasks.json via HTTP fetch
 - tasks.json must be served over HTTP for the dashboard to work (not file://)
 

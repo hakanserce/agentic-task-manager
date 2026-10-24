@@ -84,9 +84,14 @@ errors (the message says what).
 2. Get work only from `atm next --claim` (or `atm start <id>`).
 3. On long tasks, run `atm heartbeat <id>` every ten minutes or so (before long builds or test runs is a good
    moment), so your claim's lease (30 minutes by default) doesn't expire and the task go to someone else.
-4. Finish with `atm done <id>`; give up with `atm fail <id> --reason "..."`.
+4. Finish with `atm done <id>`, or with `atm review <id> --note "..."` when a review is asked for (step 5 below);
+   give up with `atm fail <id> --reason "..."`.
 5. Commit only the files you changed for the task, plus `.agentic-task-manager/tasks.json`. Never `git add -A`
    or `git add .`: another agent's unfinished work may be in the same working tree.
+6. **Statuses have kinds.** A project may name its own statuses; each has one of six kinds (`todo`, `active`,
+   `review`, `blocked`, `done`, `skipped`) and atm works by kind, so "to do", "in review" and "done" below mean any
+   status of that kind. When a kind has several statuses (e.g. `awaiting_user` and `awaiting_agent`, both `review`),
+   pass `--status <id>` with the one whose name or label fits; otherwise atm uses the first one listed.
 
 ## The Main Loop
 
@@ -99,9 +104,10 @@ while true:
 
     2. GET the next task:
        - Without --pause: `atm next --claim --json [--phase N] [--type T]`
-         This picks the next task by the loop's rule (status todo, all dependencies done, not claimed by another
-         agent; lowest phase, then lowest task ID) and starts and claims it in one step, so no other agent can
-         take it. The JSON has the task under "task".
+         This picks the next task by the loop's rule (to do, all dependencies done, not claimed by another
+         agent; lowest phase, then the most urgent priority, then lowest task ID; a task without a priority counts
+         as the default, P2) and starts and claims it in one step, so no other agent can take it. The JSON has the
+         task under "task".
        - With --pause: `atm next --json [--phase N] [--type T]` (looks without claiming), then show it and ask:
          "About to start $TASK_ID: $TASK_NAME. Proceed? (y/n/skip/quit)"
          - 'n' or 'quit' → EXIT the loop
@@ -111,7 +117,8 @@ while true:
 
     3. EXECUTE the task:
        - Read the task description carefully (re-read tasks.json if you need the other tasks: a human or another
-         agent may have changed it)
+         agent may have changed it), and its notes: a `rejection` says what a reviewer wants changed, a `handoff`
+         what the previous agent left unfinished
        - Implement what it describes (same approach as /atm:do-task Step 5)
        - Follow project conventions
        - Keep a list of the files you create, change or delete for this task
@@ -124,9 +131,14 @@ while true:
          - Log the failure
          - Continue to next iteration (the failed task is back in todo; skip it for the rest of this loop)
 
-    5. `atm done $TASK_ID`
+    5. FINISH the task:
+       - If a review is asked for (by the task's description, the project's instructions or the user; by the user
+         or by another agent): `atm review $TASK_ID --note "<what the reviewer should check>"` (with `--status`
+         when one of several review statuses fits). The claim is released and the tasks that depend on it keep
+         waiting; the loop goes on with other ready tasks. Count it as waiting for review, not completed.
+       - Otherwise: `atm done $TASK_ID`
 
-    6. completed_count += 1
+    6. completed_count += 1 (for done tasks)
 
     7. GIT OPERATIONS (default: commit after each task):
         - Unless --no-commit is set:
@@ -141,6 +153,7 @@ while true:
 
     8. BRIEF REPORT for this task:
         - "✅ $TASK_ID: $TASK_NAME — done ($completed_count completed so far)"
+        - or "👀 $TASK_ID: $TASK_NAME — waiting for review by <who>"
 
     9. Loop back to step 1
 ```
@@ -156,9 +169,12 @@ When the loop ends (no more tasks, max reached, or user quit), output a final su
 > - T-002: Task name
 > - ...
 >
-> **Remaining:** N tasks still todo
+> **Waiting for review:** N tasks (with who reviews each; their dependents wait until the review passes)
+> **Remaining:** N tasks still to do
 > **Blocked:** N tasks waiting on dependencies
 > **Failed:** N tasks that failed verification (if any)
+>
+> To pass a review: `atm done <id>`; to send it back: `atm reject <id> --reason "..."`.
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
 

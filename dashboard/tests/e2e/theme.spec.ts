@@ -65,7 +65,14 @@ test.describe('themes', () => {
 
   test('picking a theme changes the colours, per mode, and is remembered', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    await expect(page.locator('#theme-select option')).toHaveText(['Default', 'Nord', 'Solarized']);
+    await expect(page.locator('#theme-select option')).toHaveText([
+      'Default',
+      'Nord',
+      'Solarized',
+      'Catppuccin',
+      'Tokyo Night',
+      'High contrast',
+    ]);
     const before = await tokens(page);
     await page.locator('#theme-select').selectOption('nord');
     await expect(html(page)).toHaveAttribute('data-theme', 'nord');

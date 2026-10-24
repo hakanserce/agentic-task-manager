@@ -1,0 +1,66 @@
+/* High contrast theme. Designed for WCAG AAA text (7:1) in both modes; coloured labels reach at least 4.5:1.
+   Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the background. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - burndown series #3987e5/#d95926 (the Default dark pair): brighter lines fail the chart validator's lightness band */
+:root[data-theme='high-contrast'] {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface2: #1c1c1c;
+  --border: #bdbdbd;
+  --text: #ffffff;
+  --text-muted: #e6e6e6;
+  --accent: #66ccff;
+  --green: #5df07f;
+  --yellow: #ffd23f;
+  --red: #ff6b6b;
+  --purple: #d4a6ff;
+  --pink: #ff8fd0;
+  --orange: #ffa64d;
+  --cyan: #4ff2e0;
+  --on-accent: #000000;
+  --overlay: rgba(0, 0, 0, 0.85);
+  --node-feature: #14351c;
+  --node-bugfix: #381818;
+  --node-test: #2f2538;
+  --node-infra: #382511;
+  --node-docs: #113531;
+  --node-refactor: #382e0e;
+  --node-polish: #381f2e;
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - burndown series #064cad/#b24f06: lightened slightly for the chart validator's lightness band */
+:root[data-theme='high-contrast'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f0f0f0;
+  --border: #1f1f1f;
+  --text: #000000;
+  --text-muted: #262626;
+  --accent: #0047ab;
+  --green: #006b1b;
+  --yellow: #6b4e00;
+  --red: #b00020;
+  --purple: #5a1fb3;
+  --pink: #9c1462;
+  --orange: #8a3c00;
+  --cyan: #00575c;
+  --on-accent: #ffffff;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #d6e7db;
+  --node-bugfix: #f2d6db;
+  --node-test: #e5dbf3;
+  --node-infra: #ece0d6;
+  --node-docs: #d6e4e5;
+  --node-refactor: #e7e3d6;
+  --node-polish: #efd9e6;
+  --series-remaining: #064cad;
+  --series-scope: #b24f06;
+}

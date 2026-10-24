@@ -17,6 +17,9 @@ export const THEMES: ThemeInfo[] = [
   { id: 'default', name: 'Default' },
   { id: 'nord', name: 'Nord' },
   { id: 'solarized', name: 'Solarized' },
+  { id: 'catppuccin', name: 'Catppuccin' },
+  { id: 'tokyo-night', name: 'Tokyo Night' },
+  { id: 'high-contrast', name: 'High contrast' },
 ];
 export const DEFAULT_THEME = 'default';
 

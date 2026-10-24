@@ -36,6 +36,10 @@ In its JSON output:
   > **Dashboard installed** (v$VERSION). Start it with `/atm:serve`.
 
   with `dashboard.to` as $VERSION, and stop.
+- `dashboard.action` is `"rebuilt"` (the same version, but the plugin ships a newer build of it): report
+  > **Dashboard updated** (v$VERSION, a newer build of the same version). Refresh your browser to see it.
+
+  with `dashboard.to` as $VERSION, and stop: there are no new release notes for it.
 - `dashboard.action` is `"updated"`: $OLD_VERSION is `dashboard.from` (empty means the old dashboard had no version
   tag) and $NEW_VERSION is `dashboard.to`. Continue with Step 2.
 

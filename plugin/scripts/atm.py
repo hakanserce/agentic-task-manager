@@ -2085,26 +2085,44 @@ TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
 # Runtime files in the task folder that must not be committed (the dashboard is a copy of the plugin's template)
 IGNORED = ["tasks-dashboard.html", ".server.json", ".server.log", "claims.json", "claims-store.json", ".lock/"]
 VERSION_META = re.compile(r'<meta name="atm-dashboard-version" content="([^"]*)"')
+BUILD_META = re.compile(r'<meta name="atm-dashboard-build" content="([^"]*)"')
+# The tags sit at the top of the page; reading this much finds them without reading the whole (inlined) dashboard
+HEAD_BYTES = 16384
+
+
+def dashboard_head(p):
+    """(version, build ID) of a dashboard file, "" for a missing tag; None if there is no file."""
+    try:
+        with open(p, encoding="utf-8", errors="replace") as f:
+            head = f.read(HEAD_BYTES)
+    except OSError:
+        return None
+    version, build = VERSION_META.search(head), BUILD_META.search(head)
+    return (version.group(1) if version else "", build.group(1) if build else "")
 
 
 def dashboard_version(p):
-    try:
-        with open(p, encoding="utf-8") as f:
-            m = VERSION_META.search(f.read())
-    except OSError:
-        return None
-    return m.group(1) if m else ""
+    head = dashboard_head(p)
+    return None if head is None else head[0]
 
 
 def ensure_dashboard(dashboard):
-    """Copy the plugin's dashboard if the project's is missing or older. Returns (action, old, new)."""
-    new = dashboard_version(TEMPLATE)
-    old = dashboard_version(dashboard)
-    if old is not None and parse_version(old) >= parse_version(new):
-        return ("current", old, new)
+    """Copy the plugin's dashboard if the project's is missing, older, or the same version but another build (a fix
+    shipped without a new version number). Returns (action, old, new): action is installed, updated, rebuilt or
+    current."""
+    new, new_build = dashboard_head(TEMPLATE)
+    head = dashboard_head(dashboard)
+    old, old_build = head if head is not None else (None, None)
+    if old is not None:
+        if parse_version(old) > parse_version(new):
+            return ("current", old, new)  # a newer dashboard is left alone
+        if parse_version(old) == parse_version(new) and (not new_build or old_build == new_build):
+            return ("current", old, new)
     os.makedirs(os.path.dirname(dashboard), exist_ok=True)
     shutil.copyfile(TEMPLATE, dashboard)
-    return ("installed" if old is None else "updated", old, new)
+    if old is None:
+        return ("installed", old, new)
+    return ("rebuilt" if parse_version(old) == parse_version(new) else "updated", old, new)
 
 
 def ensure_gitignore(task_dir):
@@ -2203,6 +2221,8 @@ def describe_migration(r, paths):
         lines.append(f"Dashboard v{d['to']} installed.")
     elif d and d["action"] == "updated":
         lines.append(f"Dashboard updated from v{d['from'] or '?'} to v{d['to']}.")
+    elif d and d["action"] == "rebuilt":
+        lines.append(f"Dashboard updated (same version, v{d['to']}, new build).")
     if not lines:
         lines.append("Nothing to migrate.")
     if r.get("suggest"):

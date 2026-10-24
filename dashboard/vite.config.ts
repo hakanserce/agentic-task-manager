@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import { stampBuildId } from './build/build-id.ts';
 import { changelogModule } from './build/changelog.ts';
 import { devData } from './build/dev-data.ts';
 import { helpModule } from './build/help.ts';
@@ -25,6 +26,8 @@ export default defineConfig({
     devData(ownTasks),
     viteSingleFile(),
     injectVersion(pluginJson),
+    // After the page is complete, before it is renamed: plugins run their writeBundle hooks in this order
+    stampBuildId(),
     renameHtmlOutput('tasks-dashboard.html'),
   ],
   build: {

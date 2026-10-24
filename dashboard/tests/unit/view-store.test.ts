@@ -1,0 +1,95 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { PREFS_KEY, setPref } from '../../src/lib/prefs';
+import type { Task } from '../../src/lib/types';
+import {
+  clearView,
+  defaultView,
+  projectKey,
+  readView,
+  sanitizeView,
+  writeView,
+  type SavedView,
+} from '../../src/lib/view-store';
+
+const task = (phase: number, type: string, status: string) =>
+  ({ id: `T-${phase}${type}`, phase, type, status }) as Task;
+
+describe('projectKey', () => {
+  it('uses meta.id, else the project name, else a shared default', () => {
+    expect(projectKey({ id: 'a1b2c3d4', project: 'Shop' })).toBe('atm-dashboard:view:id:a1b2c3d4');
+    expect(projectKey({ project: 'Shop' })).toBe('atm-dashboard:view:project:Shop');
+    expect(projectKey({ id: '', project: '' })).toBe('atm-dashboard:view:default');
+    expect(projectKey({ id: 7 })).toBe('atm-dashboard:view:default');
+    expect(projectKey(undefined)).toBe('atm-dashboard:view:default');
+  });
+});
+
+describe('reading and writing', () => {
+  beforeEach(() => localStorage.clear());
+  const key = projectKey({ id: 'p1' });
+
+  it('round-trips a view', () => {
+    const view: SavedView = {
+      filters: { phase: ['1'], type: ['feature', 'test'], status: [] },
+      tab: 'kanban',
+      graphCollapsed: true,
+      kanban: { groupByPhase: true, showSkipped: true },
+      progressPhase: 2,
+    };
+    writeView(key, view);
+    expect(readView(key)).toEqual(view);
+  });
+
+  it('projects are kept apart', () => {
+    writeView(key, { ...defaultView(), tab: 'progress' });
+    expect(readView(projectKey({ id: 'p2' })).tab).toBe('graph');
+  });
+
+  it('nothing stored, or junk, gives the defaults', () => {
+    expect(readView(key)).toEqual(defaultView());
+    localStorage.setItem(key, '{not json');
+    expect(readView(key)).toEqual(defaultView());
+    localStorage.setItem(
+      key,
+      JSON.stringify({ tab: 'nope', filters: { phase: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
+    );
+    expect(readView(key)).toEqual({ ...defaultView(), filters: { phase: ['2'], type: [], status: [] } });
+  });
+
+  it('clearView forgets the project', () => {
+    writeView(key, { ...defaultView(), tab: 'kanban' });
+    clearView(key);
+    expect(localStorage.getItem(key)).toBeNull();
+    expect(readView(key).tab).toBe('graph');
+  });
+
+  it('the old per-browser "group by phase" choice seeds projects that have no saved view yet', () => {
+    setPref('kanbanGroupByPhase', true);
+    expect(readView(key).kanban.groupByPhase).toBe(true);
+    writeView(key, { ...defaultView(), kanban: { groupByPhase: false, showSkipped: false } });
+    expect(readView(key).kanban.groupByPhase).toBe(false);
+    expect(JSON.parse(localStorage.getItem(PREFS_KEY)!).kanbanGroupByPhase).toBe(true);
+  });
+});
+
+describe('sanitizeView', () => {
+  const tasks = [task(0, 'feature', 'done'), task(1, 'test', 'todo')];
+
+  it('drops filter values and a focused phase the tasks no longer have', () => {
+    const view: SavedView = {
+      ...defaultView(),
+      filters: { phase: ['0', '5'], type: ['feature', 'docs'], status: ['todo', 'blocked'] },
+      progressPhase: 5,
+    };
+    expect(sanitizeView(view, tasks)).toEqual({
+      ...view,
+      filters: { phase: ['0'], type: ['feature'], status: ['todo'] },
+      progressPhase: null,
+    });
+  });
+
+  it('keeps everything that still exists', () => {
+    const view: SavedView = { ...defaultView(), filters: { phase: ['1'], type: [], status: [] }, progressPhase: 0 };
+    expect(sanitizeView(view, tasks)).toEqual(view);
+  });
+});

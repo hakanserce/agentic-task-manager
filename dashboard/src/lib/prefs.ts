@@ -34,14 +34,29 @@ export function storageAvailable(): boolean {
   }
 }
 
-function readAll(): Partial<Prefs> {
+/** The JSON object stored under `key`, or {} when it is missing, unreadable or not an object. */
+export function readStored(key: string): Record<string, unknown> {
   try {
-    const raw = storage()?.getItem(PREFS_KEY);
+    const raw = storage()?.getItem(key);
     const value: unknown = raw ? JSON.parse(raw) : {};
-    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
   } catch {
     return {};
   }
+}
+
+/** Stores `value` as JSON under `key`, or removes the key for null; silently does nothing without storage. */
+export function writeStored(key: string, value: object | null): void {
+  try {
+    if (value === null) storage()?.removeItem(key);
+    else storage()?.setItem(key, JSON.stringify(value));
+  } catch {
+    // Quota exceeded or storage blocked: preferences are a convenience, not state we must keep.
+  }
+}
+
+function readAll(): Partial<Prefs> {
+  return readStored(PREFS_KEY) as Partial<Prefs>;
 }
 
 /** The stored value, or `fallback` when it is missing, unreadable or of the wrong type. */
@@ -52,9 +67,5 @@ export function getPref<K extends keyof Prefs>(key: K, fallback: Prefs[K]): Pref
 
 /** Stores the value; silently does nothing when storage is unavailable. */
 export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]): void {
-  try {
-    storage()?.setItem(PREFS_KEY, JSON.stringify({ ...readAll(), [key]: value }));
-  } catch {
-    // Quota exceeded or storage blocked: preferences are a convenience, not state we must keep.
-  }
+  writeStored(PREFS_KEY, { ...readAll(), [key]: value });
 }

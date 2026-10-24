@@ -1,13 +1,14 @@
-"""Adding tasks: atm add (one task, or many from a JSON file). IDs come from meta.next_id under the lock, so two
-agents adding at once never get the same one (docs/v4/data-model.md DM-2.3)."""
+"""Adding and changing tasks: atm add (one task, or many from a JSON file), atm edit, and atm check. IDs come from
+meta.next_id under the lock, so two agents adding at once never get the same one (docs/v4/data-model.md DM-2.3).
+Status and timestamps are not edited here: they change only through the status commands."""
 
 import os
 import re
 
 from .claims import agent_identity
-from .core import AtmError, now_iso, out, read_json, to_json, write_json_atomic
+from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
-from .model import load_tasks, status_for, vocabulary
+from .model import find_task, kind_of, load_tasks, status_for, touch, vocabulary
 from .paths import find_paths
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -200,3 +201,152 @@ def cmd_add(args):
     else:
         for task in tasks:
             out(f"Added {task['id']} {task['name']}")
+
+
+def edit_task(data, task, args):
+    """Apply atm edit's options to `task`; returns the names of the fields that changed. Raises AtmError (nothing
+    changed yet in the file) when a value is invalid."""
+    vocab = vocabulary(data)
+    changed = []
+
+    def set_field(key, value):
+        if task.get(key) != value:
+            task[key] = value
+            changed.append(key)
+
+    def edit_list(key, add, remove):
+        current = list(task.get(key) or [])
+        updated = [v for v in current if v not in remove] + [v for v in add if v not in current]
+        if updated != current:
+            task[key] = updated
+            changed.append(key)
+
+    if args.name is not None:
+        set_field("name", args.name)
+    description = args.description
+    if args.description_file:
+        with open(args.description_file, encoding="utf-8") as f:
+            description = f.read()
+    if description is not None:
+        set_field("description", description)
+    if args.phase is not None:
+        set_field("phase", number(args.phase, "phase"))
+    if args.type is not None:
+        types = [t["id"] for t in vocab["types"]]
+        if args.type not in types:
+            raise AtmError(f"unknown type {args.type!r}; use one of {', '.join(types)}", 2)
+        set_field("type", args.type)
+    if args.priority is not None:
+        priorities = [p["id"] for p in vocab["priorities"]]
+        if args.priority not in priorities:
+            raise AtmError(f"unknown priority {args.priority!r}; use one of {', '.join(priorities)}", 2)
+        set_field("priority", args.priority)
+    edit_list("files", args.add_file, args.remove_file)
+    edit_list("labels", check_labels(args.add_label), args.remove_label)
+    ids = {t.get("id") for t in data["tasks"]}
+    missing = [d for d in args.add_dep if d not in ids]
+    if missing:
+        raise AtmError(f"{task['id']} can't depend on {', '.join(missing)}, which doesn't exist", 2)
+    if task["id"] in args.add_dep:
+        raise AtmError(f"{task['id']} can't depend on itself", 2)
+    edit_list("dependencies", args.add_dep, args.remove_dep)
+    cycle = find_cycle(data["tasks"])
+    if cycle:
+        raise AtmError("these dependencies would make a cycle: " + " -> ".join(cycle), 2)
+    return changed
+
+
+def cmd_edit(args):
+    actor = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        task = find_task(data, args.id)
+        changed = edit_task(data, task, args)
+        if changed:
+            touch(task, actor, now_iso())
+            write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json(task))
+    elif changed:
+        out(f"{task['id']}: changed {', '.join(changed)}")
+    else:
+        out(f"{task['id']}: nothing changed")
+
+
+def check_data(data, root, files=False):
+    """Problems in a task file: (errors, warnings), each a list of messages. With `files`, also a warning for each file
+    a finished task lists that doesn't exist (often just history: files get renamed and deleted later)."""
+    errors, warnings = [], []
+    try:
+        vocab = vocabulary(data)
+    except AtmError as e:
+        errors.append(str(e))
+        vocab = vocabulary({})
+    tasks = data.get("tasks", [])
+    ids = [t.get("id") for t in tasks if isinstance(t, dict)]
+    for task_id in sorted({i for i in ids if ids.count(i) > 1}, key=str):
+        errors.append(f"{task_id}: the ID is used by {ids.count(task_id)} tasks")
+    known_ids = set(ids)
+    statuses = {s["id"] for s in vocab["statuses"]}
+    types = {t["id"] for t in vocab["types"]}
+    priorities = {p["id"] for p in vocab["priorities"]}
+    for i, task in enumerate(tasks):
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str) or not task["id"]:
+            errors.append(f"task #{i + 1}: needs an \"id\" (a non-empty string)")
+            continue
+        task_id = task["id"]
+        for key, kind in (("name", str), ("type", str), ("status", str)):
+            if not isinstance(task.get(key), kind):
+                errors.append(f"{task_id}: needs a {key!r} (a string)")
+        phase = task.get("phase")
+        if isinstance(phase, bool) or not isinstance(phase, (int, float)):
+            errors.append(f"{task_id}: needs a \"phase\" (a number)")
+        if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
+            errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
+        if isinstance(task.get("type"), str) and task["type"] not in types:
+            warnings.append(f"{task_id}: the type {task['type']!r} is not one of the project's types")
+        if "priority" in task and task["priority"] not in priorities:
+            warnings.append(f"{task_id}: the priority {task['priority']!r} is not one of the project's priorities")
+        for key in ("dependencies", "files", "labels", "requirements", "use_cases"):
+            if key in task and not (isinstance(task[key], list) and all(isinstance(v, str) for v in task[key])):
+                errors.append(f"{task_id}: {key!r} must be a list of strings")
+        for dep in task.get("dependencies") or []:
+            if isinstance(dep, str) and dep not in known_ids:
+                errors.append(f"{task_id}: depends on {dep}, which doesn't exist")
+        for label in task.get("labels") or []:
+            if isinstance(label, str) and not LABEL.match(label):
+                errors.append(f"{task_id}: the label {label!r} isn't lowercase letters, digits, - and _")
+        # Tasks list the files they will create, so only a finished task's missing files are worth a word
+        if files and kind_of(vocab, task.get("status")) == "done":
+            for f in task.get("files") or []:
+                if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
+                    warnings.append(f"{task_id}: the file {f} doesn't exist")
+    well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
+    cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
+    if cycle:
+        errors.append("dependency cycle: " + " -> ".join(str(c) for c in cycle))
+    return errors, warnings
+
+
+def cmd_check(args):
+    paths = find_paths(os.getcwd())
+    if not os.path.isfile(paths["tasks"]):
+        raise AtmError(f"no tasks.json in {paths['dir']}. Run /atm:create-tasks first.")
+    data = read_json(paths["tasks"])
+    if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
+        errors, warnings = ["tasks.json is not a task file (expected an object with a 'tasks' list)"], []
+    else:
+        errors, warnings = check_data(data, paths["root"], files=args.files)
+    if args.json:
+        out(to_json({"errors": errors, "warnings": warnings}))
+    else:
+        for e in errors:
+            out(f"error: {e}")
+        for w in warnings:
+            out(f"warning: {w}")
+        if not errors:
+            count = len(data["tasks"])
+            out(f"tasks.json is fine ({count} tasks" + (f", {len(warnings)} warnings)" if warnings else ")"))
+    if errors:
+        raise AtmExit(1)

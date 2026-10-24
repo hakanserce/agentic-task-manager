@@ -111,7 +111,7 @@ Existing commands are marked *(exists)*.
 | `atm add --name … --phase N --type T [--priority P] [--label L]... [--description T \| --description-file F] [--dep ID]... [--file F]...` | adds one task with the next ID; prints it |
 | `atm add --json-file F` | adds many (what `/atm:create-tasks` uses); IDs in the file are placeholders (`new-1`, …) that dependencies can refer to, and are replaced by real IDs |
 | `atm edit <id> [--name] [--description \| --description-file] [--add-file/--remove-file] [--add-dep/--remove-dep] [--phase] [--type] [--priority] [--add-label/--remove-label]` | changes a task; refuses a dependency that is missing or would make a cycle |
-| `atm check` | the schema, `meta` (DM-2.2), missing and circular dependencies, IDs in both files; `files` that don't exist as warnings (tasks list files they create); exit code 1 on errors |
+| `atm check [--files]` | the schema, `meta` (DM-2.2), missing and circular dependencies, IDs in both files; unknown types and priorities as warnings; with `--files`, files listed by finished tasks that don't exist as warnings (off by default: files get renamed and deleted later, and to-do tasks list files they will create); exit code 1 on errors |
 
 ### 4.4 Archive
 

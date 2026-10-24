@@ -14,7 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
-from .edit import cmd_add
+from .edit import cmd_add, cmd_check, cmd_edit
 from .query import cmd_deps, cmd_list, cmd_show, cmd_status
 from .tasks import cmd_note, cmd_status_change
 
@@ -48,6 +48,10 @@ commands:
   note <id> TEXT add a note to a task (at most 500 characters)
   add --name N --phase P --type T [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
                  add a task with the next ID; add --json-file F adds many (see atm add --help)
+  edit <id> [--name] [--description] [--phase] [--type] [--priority] [--add-dep/--remove-dep ID]
+            [--add-file/--remove-file F] [--add-label/--remove-label L]
+                 change a task's definition (its status changes only through the status commands)
+  check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -183,6 +187,27 @@ def build_parser():
         '"dependencies" can use, replaced by the real ID',
     )
     agent_option(add)
+
+    edit = command("edit", cmd_edit, "change a task's definition (not its status: use the status commands)")
+    edit.add_argument("id", help="the task ID")
+    edit.add_argument("--name")
+    edit_description = edit.add_mutually_exclusive_group()
+    edit_description.add_argument("--description")
+    edit_description.add_argument("--description-file", metavar="FILE")
+    edit.add_argument("--phase", type=float)
+    edit.add_argument("--type")
+    edit.add_argument("--priority")
+    for option, help_text in (
+        ("file", "a file it creates or changes"),
+        ("dep", "a task it depends on"),
+        ("label", "a label"),
+    ):
+        edit.add_argument(f"--add-{option}", action="append", default=[], metavar="VALUE", help=f"add {help_text}")
+        edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
+    agent_option(edit)
+
+    check = command("check", cmd_check, "check tasks.json: the schema, the vocabularies, dependencies; exit 1 on errors")
+    check.add_argument("--files", action="store_true", help="also warn about missing files listed by finished tasks")
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

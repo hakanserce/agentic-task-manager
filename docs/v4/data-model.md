@@ -148,16 +148,23 @@ of tasks (spikes, areas) instead of writing them into names.
 
 ## 5. Size and the archive
 
-Measured in this repository: 110 tasks, 119 KB, about 1.1 KB per task. With the new fields a finished task is about
-1.8 KB (estimate, to be confirmed by the benchmark in the [atm-cli](atm-cli.md#7-benchmark)).
+This repository: 110 tasks, 119 KB, about 1.1 KB per task. Measured with the benchmark
+([atm-cli](atm-cli.md#7-benchmark), `npm run bench`) on generated files with every v4 field (priority, labels,
+actors, notes, commit; 90% done), on a developer's Mac (Python 3.14, Playwright's Chromium):
 
 | | 1k tasks | 10k tasks |
 |---|---|---|
-| `tasks.json` without archiving | ~1.8 MB | ~18 MB |
-| Each `atm` write (the whole file, under the lock) | ~0.1 s | ~1–1.5 s |
-| Dashboard, every 5 s | fine | refetches and parses ~18 MB, renders 10k tasks |
-| Git, per commit | ~200 KB compressed blob | ~2 MB compressed blob until `gc` packs it |
+| `tasks.json` without archiving | 1.4 MB | 14.3 MB |
+| Each `atm` write (the whole file, under the lock; including Python's start) | 0.23 s | 0.31 s |
+| The merge driver (three versions) | 0.19 s | 0.41 s |
+| Dashboard: first load (Kanban) | 0.17 s | 3.5 s |
+| Dashboard: a reload that changes a task (every 5 s while agents work) | 0.08 s | 3.2 s |
+| Git, per commit | ~200 KB compressed blob (estimate) | ~2 MB compressed blob until `gc` packs it (estimate) |
 | GitHub | fine | "Large diff not rendered"; hard to edit by hand |
+
+atm-cli copes with 10k tasks; the dashboard is what doesn't: at 10k tasks it spends most of every 5 seconds
+reloading. Conditional fetch (D-5.1) removes the reloads where nothing changed; the archive keeps the working file
+small enough that the rest stays fast.
 
 Most of a large project is finished tasks that never change again; a format change doesn't stop that (one task per
 line saves only the indentation, about 15%). Moving them out of the working file does.

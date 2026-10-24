@@ -64,6 +64,9 @@ jobs:
         with:
           node-version: 24
       - run: node tests/scripts/run.mjs
+      # Large task files (1k and 10k tasks): fails only far over generous limits (tests/scripts/bench.mjs)
+      - name: Benchmark atm-cli
+        run: node tests/scripts/bench.mjs --cli --check
 
   e2e:
     name: Playwright regression suite
@@ -104,6 +107,9 @@ jobs:
       - name: Run e2e tests
         if: steps.baselines.outputs.generate == 'false'
         run: npx playwright test
+      - name: Benchmark the dashboard
+        if: steps.baselines.outputs.generate == 'false'
+        run: npm run bench -- --dashboard --check
       - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:

@@ -170,10 +170,48 @@ def phase_of(task):
     return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
-def change_status(task, data, command, reason=None, agent=None, status=None):
+MAX_NOTE = 500
+
+
+def check_note(text):
+    """Notes stay short; anything longer belongs in a file in the repository."""
+    if len(text) > MAX_NOTE:
+        raise AtmError(
+            f"a note is at most {MAX_NOTE} characters (this one has {len(text)}); "
+            "put longer text in a file in the repository and mention it in the note",
+            2,
+        )
+    return text
+
+
+def add_note(task, kind, text, by, stamp):
+    """Append a note (DM-4): handoff, outcome, review, rejection, failure, answer or note."""
+    note = {"at": stamp, "kind": kind, "text": check_note(text)}
+    if by:
+        note["by"] = by
+    task.setdefault("notes", []).append(note)
+
+
+def touch(task, actor, stamp):
+    """Every change records when and by whom (CLI-3.5)."""
+    task["updated_at"] = stamp
+    if actor:
+        task["updated_by"] = actor
+
+
+def back_to_todo(task, vocab, actor, stamp):
+    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
+    task["status"] = status_for(vocab, "todo")
+    touch(task, actor, stamp)
+    for field in ("started_at", "completed_at", "started_by", "completed_by", "agent", "commit"):
+        task.pop(field, None)
+
+
+def change_status(task, data, command, reason=None, agent=None, status=None, note=None, commit=None):
     """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
-    picks the new status when its kind has several. `start` records the agent in the task (kept when it is done, so
-    the dashboard can show who did what)."""
+    picks the new status when its kind has several; `agent` is who runs it. `start` records them as started_by,
+    `done` as completed_by (both kept when it is done, so the dashboard can show who did what); `note` and `reason`
+    become notes, `commit` the task's commit."""
     vocab = vocabulary(data)
     allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
@@ -185,20 +223,31 @@ def change_status(task, data, command, reason=None, agent=None, status=None):
         blocking = unfinished_dependencies(data, task)
         if blocking:
             raise AtmError(f"can't start {task['id']}: waiting on " + ", ".join(f"{d} ({s})" for d, s in blocking))
+    if note is not None:
+        check_note(note)
     stamp = now_iso()
+    if new_kind == "todo":
+        back_to_todo(task, vocab, agent, stamp)
+        if command == "fail":
+            add_note(task, "failure", reason or "verification failed", agent, stamp)
+        elif note:
+            add_note(task, "handoff", note, agent, stamp)
+        return current
     task["status"] = new
-    task["updated_at"] = stamp
+    touch(task, agent, stamp)
     if command == "start":
         task["started_at"] = stamp
         task.pop("completed_at", None)
+        task.pop("completed_by", None)
+        task.pop("agent", None)  # the old name of started_by
         if agent:
-            task["agent"] = agent
+            task["started_by"] = agent
     elif command == "done":
         task["completed_at"] = stamp
-    else:
-        task.pop("started_at", None)
-        task.pop("completed_at", None)
-        task.pop("agent", None)
-        if command == "fail":
-            task["last_failure"] = {"at": stamp, "reason": reason or "verification failed"}
+        if agent:
+            task["completed_by"] = agent
+        if commit:
+            task["commit"] = commit
+        if note:
+            add_note(task, "outcome", note, agent, stamp)
     return current

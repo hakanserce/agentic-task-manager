@@ -25,13 +25,14 @@ from .core import (
 )
 from .lock import locked
 from .model import (
+    add_note,
+    back_to_todo,
     change_status,
     kind_of,
     load_tasks,
     natural_key,
     phase_of,
     priority_rank,
-    status_for,
     unfinished_dependencies,
     vocabulary,
 )
@@ -44,15 +45,19 @@ DEFAULT_LEASE_MINUTES = 30
 
 
 def agent_identity(agent=None):
-    """--agent, else ATM_AGENT, else this Claude Code session, else user@host:worktree (stable across commands)."""
+    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session, else the git
+    user's name (a person in a terminal), else user@host."""
     if agent:
         return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
         return "claude:" + os.environ["CLAUDE_CODE_SESSION_ID"][:8]
+    name = git(["config", "user.name"], project_root(os.getcwd()))
+    if name:
+        return name
     user = os.environ.get("USER") or os.environ.get("USERNAME") or "user"
-    return f"{user}@{socket.gethostname()}:{project_root(os.getcwd())}"
+    return f"{user}@{socket.gethostname()}"
 
 
 def claims_dir(paths):
@@ -126,12 +131,8 @@ def expire_claims(paths, data, claims):
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
         if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            task["status"] = status_for(vocab, "todo")
-            task["updated_at"] = stamp
-            task.pop("started_at", None)
-            task.pop("completed_at", None)
-            task.pop("agent", None)
-            task["last_failure"] = {"at": stamp, "reason": f"lease expired ({claim.get('agent')})"}
+            back_to_todo(task, vocab, None, stamp)
+            add_note(task, "failure", f"lease expired ({claim.get('agent')})", None, stamp)
     return expired
 
 

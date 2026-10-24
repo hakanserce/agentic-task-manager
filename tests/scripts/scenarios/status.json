@@ -63,8 +63,9 @@
               "dependencies": ["T-001"],
               "updated_at": "2026-05-01T10:00:00Z",
               "extra": "kept",
+              "updated_by": "alice",
               "started_at": "2026-05-01T10:00:00Z",
-              "agent": "alice"
+              "started_by": "alice"
             }
           ]
         }
@@ -183,7 +184,9 @@
         "dependencies": [],
         "updated_at": "2026-05-01T10:00:00Z",
         "started_at": "2026-05-01T09:00:00Z",
+        "updated_by": "alice",
         "completed_at": "2026-05-01T10:00:00Z",
+        "completed_by": "alice",
         "claim": null
       }
     },
@@ -234,10 +237,15 @@
               "status": "todo",
               "dependencies": [],
               "updated_at": "2026-05-01T10:00:00Z",
-              "last_failure": {
-                "at": "2026-05-01T10:00:00Z",
-                "reason": "tests failed twice"
-              }
+              "updated_by": "alice",
+              "notes": [
+                {
+                  "at": "2026-05-01T10:00:00Z",
+                  "kind": "failure",
+                  "text": "tests failed twice",
+                  "by": "alice"
+                }
+              ]
             }
           ]
         }
@@ -282,10 +290,15 @@
         "status": "todo",
         "dependencies": [],
         "updated_at": "2026-05-01T10:00:00Z",
-        "last_failure": {
-          "at": "2026-05-01T10:00:00Z",
-          "reason": "verification failed"
-        },
+        "updated_by": "alice",
+        "notes": [
+          {
+            "at": "2026-05-01T10:00:00Z",
+            "kind": "failure",
+            "text": "verification failed",
+            "by": "alice"
+          }
+        ],
         "claim": null
       }
     },
@@ -335,7 +348,8 @@
               "description": "d",
               "status": "todo",
               "dependencies": [],
-              "updated_at": "2026-05-01T10:00:00Z"
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice"
             }
           ]
         }
@@ -658,12 +672,12 @@
     "args": ["start", "T-002"],
     "expect": {
       "files": {
-        ".agentic-task-manager/tasks.json": "{\n  \"meta\": {\n    \"project\": \"Ünïcode ✓\"\n  },\n  \"tasks\": [\n    {\n      \"id\": \"T-001\",\n      \"status\": \"done\",\n      \"name\": \"Erste Aufgabe — fertig\",\n      \"dependencies\": []\n    },\n    {\n      \"status\": \"in_progress\",\n      \"id\": \"T-002\",\n      \"dependencies\": [\n        \"T-001\"\n      ],\n      \"updated_at\": \"2026-05-01T10:00:00Z\",\n      \"started_at\": \"2026-05-01T10:00:00Z\",\n      \"agent\": \"alice\"\n    }\n  ]\n}\n"
+        ".agentic-task-manager/tasks.json": "{\n  \"meta\": {\n    \"project\": \"Ünïcode ✓\"\n  },\n  \"tasks\": [\n    {\n      \"id\": \"T-001\",\n      \"status\": \"done\",\n      \"name\": \"Erste Aufgabe — fertig\",\n      \"dependencies\": []\n    },\n    {\n      \"status\": \"in_progress\",\n      \"id\": \"T-002\",\n      \"dependencies\": [\n        \"T-001\"\n      ],\n      \"updated_at\": \"2026-05-01T10:00:00Z\",\n      \"updated_by\": \"alice\",\n      \"started_at\": \"2026-05-01T10:00:00Z\",\n      \"started_by\": \"alice\"\n    }\n  ]\n}\n"
       }
     }
   },
   {
-    "name": "done keeps the agent who did the task",
+    "name": "done keeps who started the task (an older file's agent too) and records who finished it",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -710,7 +724,9 @@
               "updated_at": "2026-05-01T10:00:00Z",
               "started_at": "2026-05-01T09:00:00Z",
               "agent": "alice",
-              "completed_at": "2026-05-01T10:00:00Z"
+              "updated_by": "alice",
+              "completed_at": "2026-05-01T10:00:00Z",
+              "completed_by": "alice"
             }
           ]
         }
@@ -718,7 +734,7 @@
     }
   },
   {
-    "name": "release forgets the agent",
+    "name": "release forgets who started it (an older file's agent too)",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -762,7 +778,8 @@
               "description": "d",
               "dependencies": [],
               "status": "todo",
-              "updated_at": "2026-05-01T10:00:00Z"
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice"
             }
           ]
         }

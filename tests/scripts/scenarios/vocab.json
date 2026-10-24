@@ -172,7 +172,7 @@
       }
     },
     "args": ["fail", "T-2", "--reason", "broken"],
-    "env": { "ATM_NOW": "2026-05-01T10:00:00Z" },
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
     "expect": {
       "stdout": "T-2: in_progress -> backlog\n",
       "files": {
@@ -189,7 +189,8 @@
               "id": "T-2",
               "status": "backlog",
               "updated_at": "2026-05-01T10:00:00Z",
-              "last_failure": { "at": "2026-05-01T10:00:00Z", "reason": "broken" }
+              "updated_by": "alice",
+              "notes": [{ "at": "2026-05-01T10:00:00Z", "kind": "failure", "text": "broken", "by": "alice" }]
             }
           ]
         }

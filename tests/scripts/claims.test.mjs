@@ -95,7 +95,8 @@ describe('claims', () => {
       const t = statusOf(root, 'T-001');
       assert.equal(t.status, 'todo');
       assert.equal(t.started_at, undefined);
-      assert.deepEqual(t.last_failure, { at: at(31), reason: 'lease expired (alice)' });
+      assert.equal(t.started_by, undefined);
+      assert.deepEqual(t.notes, [{ at: at(31), kind: 'failure', text: 'lease expired (alice)' }]);
       // Now bob can take it; alice's late heartbeat is told what happened
       assert.equal(runAtm(['start', 'T-001'], root, as('bob', 32)).code, 0);
       const late = runAtm(['heartbeat', 'T-001'], root, as('alice', 33));
@@ -169,17 +170,26 @@ describe('claims', () => {
     }
   });
 
-  test('the default identity is this Claude Code session, else user@host:worktree', () => {
+  test('the default identity is this Claude Code session, else the git user, else user@host', () => {
     const root = repo();
+    const outside = makeProject({ files: { '.agentic-task-manager/tasks.json': TASKS } });
     try {
       const session = JSON.parse(
         runAtm(['start', 'T-001', '--json'], root, { CLAUDE_CODE_SESSION_ID: 'abcdef1234567890' }).stdout,
       );
       assert.equal(session.claim.agent, 'claude:abcdef12');
-      const plain = JSON.parse(runAtm(['start', 'T-002', '--json'], root).stdout);
-      assert.match(plain.claim.agent, new RegExp(`@.+:${root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+      assert.equal(session.started_by, 'claude:abcdef12');
+      // A person in a terminal: their git name (the test repository's is "atm test")
+      const person = JSON.parse(runAtm(['start', 'T-002', '--json'], root).stdout);
+      assert.equal(person.claim.agent, 'atm test');
+      assert.equal(person.started_by, 'atm test');
+      // Outside git (and with no global git name in the test environment's HOME), user@host
+      const env = { HOME: outside, GIT_CONFIG_NOSYSTEM: '1', XDG_CONFIG_HOME: outside };
+      const plain = JSON.parse(runAtm(['start', 'T-002', '--json'], outside, env).stdout);
+      assert.match(plain.claim.agent, /^[^@:]+@[^:]+$/);
     } finally {
       removeDir(root);
+      removeDir(outside);
     }
   });
 });

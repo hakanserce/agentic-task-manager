@@ -5,7 +5,7 @@ import type { ClaimMap } from './claims';
 import type { Task } from './types';
 import { UNATTRIBUTED } from './agents';
 import { DEFAULT_VOCABULARY, type Vocabulary } from './vocab';
-import { ms, workSpan } from './work';
+import { ms, startedBy, workSpan } from './work';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -71,7 +71,7 @@ export function utilization(
   for (const t of tasks) {
     const span = workSpan(t, now, vocab);
     if (!span || span.end <= span.start) continue;
-    const agent = (span.live ? claims.get(t.id)?.agent : undefined) ?? t.agent ?? UNATTRIBUTED;
+    const agent = (span.live ? claims.get(t.id)?.agent : undefined) ?? startedBy(t) ?? UNATTRIBUTED;
     byAgent.set(agent, (byAgent.get(agent) ?? 0) + (span.end - span.start));
   }
 

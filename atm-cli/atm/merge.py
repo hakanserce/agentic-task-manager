@@ -20,7 +20,19 @@ GITATTRIBUTES_LINES = (
     "# Without it, git merges tasks.json line by line as usual.\n"
     "tasks.json merge=atm\n"
 )
-PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure", "agent")
+# Fields that move with the status: they come from the side whose progress wins
+PROGRESS_FIELDS = (
+    "status",
+    "updated_at",
+    "started_at",
+    "completed_at",
+    "last_failure",
+    "agent",
+    "started_by",
+    "completed_by",
+    "updated_by",
+    "commit",
+)
 # How far along a status's kind is (DM-3.3); a status without a kind ranks like todo
 KIND_RANK = {"todo": 0, "active": 1, "blocked": 1, "review": 1, "done": 2, "skipped": 2}
 MISSING = object()
@@ -57,6 +69,12 @@ def progress_winner(ours, theirs, vocab):
     return theirs if str(theirs.get("updated_at", "")) > str(ours.get("updated_at", "")) else ours
 
 
+def merge_notes(ours, theirs):
+    """Notes only grow: both sides' notes, each once, oldest first."""
+    merged = list(ours) + [n for n in theirs if n not in ours]
+    return sorted(merged, key=lambda n: str(n.get("at", "")) if isinstance(n, dict) else "")
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -71,6 +89,8 @@ def merge_task(base, ours, theirs, vocab):
     for key in keys:
         if key in PROGRESS_FIELDS:
             value = progress.get(key, MISSING)
+        elif key == "notes":
+            value = merge_notes(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict:

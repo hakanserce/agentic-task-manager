@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
-import { isDone, workSpan } from '../../src/lib/work';
+import { isDone, startedBy, workSpan } from '../../src/lib/work';
 
 const H = 3_600_000;
 const T0 = Date.parse('2026-04-01T08:00:00Z');
@@ -17,6 +17,14 @@ const task = (status: string, fields: Partial<Task> = {}): Task => ({
   ...fields,
 });
 const NOW = T0 + 10 * H;
+
+describe('startedBy', () => {
+  it('is started_by, or agent in files written before v4', () => {
+    expect(startedBy(task('done', { started_by: 'alice', agent: 'old' }))).toBe('alice');
+    expect(startedBy(task('done', { agent: 'old' }))).toBe('old');
+    expect(startedBy(task('done'))).toBeUndefined();
+  });
+});
 
 describe('workSpan', () => {
   it('runs from start to completion for a done task, and to now while active', () => {

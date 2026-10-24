@@ -499,10 +499,48 @@ def phase_of(task):
     return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
-def change_status(task, data, command, reason=None, agent=None, status=None):
+MAX_NOTE = 500
+
+
+def check_note(text):
+    """Notes stay short; anything longer belongs in a file in the repository."""
+    if len(text) > MAX_NOTE:
+        raise AtmError(
+            f"a note is at most {MAX_NOTE} characters (this one has {len(text)}); "
+            "put longer text in a file in the repository and mention it in the note",
+            2,
+        )
+    return text
+
+
+def add_note(task, kind, text, by, stamp):
+    """Append a note (DM-4): handoff, outcome, review, rejection, failure, answer or note."""
+    note = {"at": stamp, "kind": kind, "text": check_note(text)}
+    if by:
+        note["by"] = by
+    task.setdefault("notes", []).append(note)
+
+
+def touch(task, actor, stamp):
+    """Every change records when and by whom (CLI-3.5)."""
+    task["updated_at"] = stamp
+    if actor:
+        task["updated_by"] = actor
+
+
+def back_to_todo(task, vocab, actor, stamp):
+    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
+    task["status"] = status_for(vocab, "todo")
+    touch(task, actor, stamp)
+    for field in ("started_at", "completed_at", "started_by", "completed_by", "agent", "commit"):
+        task.pop(field, None)
+
+
+def change_status(task, data, command, reason=None, agent=None, status=None, note=None, commit=None):
     """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
-    picks the new status when its kind has several. `start` records the agent in the task (kept when it is done, so
-    the dashboard can show who did what)."""
+    picks the new status when its kind has several; `agent` is who runs it. `start` records them as started_by,
+    `done` as completed_by (both kept when it is done, so the dashboard can show who did what); `note` and `reason`
+    become notes, `commit` the task's commit."""
     vocab = vocabulary(data)
     allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
@@ -514,22 +552,33 @@ def change_status(task, data, command, reason=None, agent=None, status=None):
         blocking = unfinished_dependencies(data, task)
         if blocking:
             raise AtmError(f"can't start {task['id']}: waiting on " + ", ".join(f"{d} ({s})" for d, s in blocking))
+    if note is not None:
+        check_note(note)
     stamp = now_iso()
+    if new_kind == "todo":
+        back_to_todo(task, vocab, agent, stamp)
+        if command == "fail":
+            add_note(task, "failure", reason or "verification failed", agent, stamp)
+        elif note:
+            add_note(task, "handoff", note, agent, stamp)
+        return current
     task["status"] = new
-    task["updated_at"] = stamp
+    touch(task, agent, stamp)
     if command == "start":
         task["started_at"] = stamp
         task.pop("completed_at", None)
+        task.pop("completed_by", None)
+        task.pop("agent", None)  # the old name of started_by
         if agent:
-            task["agent"] = agent
+            task["started_by"] = agent
     elif command == "done":
         task["completed_at"] = stamp
-    else:
-        task.pop("started_at", None)
-        task.pop("completed_at", None)
-        task.pop("agent", None)
-        if command == "fail":
-            task["last_failure"] = {"at": stamp, "reason": reason or "verification failed"}
+        if agent:
+            task["completed_by"] = agent
+        if commit:
+            task["commit"] = commit
+        if note:
+            add_note(task, "outcome", note, agent, stamp)
     return current
 
 
@@ -546,15 +595,19 @@ DEFAULT_LEASE_MINUTES = 30
 
 
 def agent_identity(agent=None):
-    """--agent, else ATM_AGENT, else this Claude Code session, else user@host:worktree (stable across commands)."""
+    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session, else the git
+    user's name (a person in a terminal), else user@host."""
     if agent:
         return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
         return "claude:" + os.environ["CLAUDE_CODE_SESSION_ID"][:8]
+    name = git(["config", "user.name"], project_root(os.getcwd()))
+    if name:
+        return name
     user = os.environ.get("USER") or os.environ.get("USERNAME") or "user"
-    return f"{user}@{socket.gethostname()}:{project_root(os.getcwd())}"
+    return f"{user}@{socket.gethostname()}"
 
 
 def claims_dir(paths):
@@ -628,12 +681,8 @@ def expire_claims(paths, data, claims):
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
         if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            task["status"] = status_for(vocab, "todo")
-            task["updated_at"] = stamp
-            task.pop("started_at", None)
-            task.pop("completed_at", None)
-            task.pop("agent", None)
-            task["last_failure"] = {"at": stamp, "reason": f"lease expired ({claim.get('agent')})"}
+            back_to_todo(task, vocab, None, stamp)
+            add_note(task, "failure", f"lease expired ({claim.get('agent')})", None, stamp)
     return expired
 
 
@@ -777,7 +826,7 @@ def cmd_claims(args):
 
 
 # ==== tasks.py ====
-# The status commands: start, done, fail, release.
+# The status commands (start, done, fail, release) and notes.
 
 def cmd_status_change(command):
     def run(args):
@@ -790,7 +839,16 @@ def cmd_status_change(command):
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
             check_holder(claims, task_id, agent, command)
-            previous = change_status(task, data, command, getattr(args, "reason", None), agent, args.status)
+            previous = change_status(
+                task,
+                data,
+                command,
+                reason=getattr(args, "reason", None),
+                agent=agent,
+                status=args.status,
+                note=getattr(args, "note", None),
+                commit=getattr(args, "commit", None),
+            )
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose
@@ -809,6 +867,23 @@ def cmd_status_change(command):
     return run
 
 
+def cmd_note(args):
+    """Add a note to a task, whatever its status (DM-4)."""
+    agent = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        task = find_task(data, args.id)
+        stamp = now_iso()
+        add_note(task, "note", args.text, agent, stamp)
+        touch(task, agent, stamp)
+        write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json(task["notes"][-1]))
+    else:
+        out(f"{task['id']}: note added ({len(task['notes'])} in all)")
+
+
 # ==== merge.py ====
 # Merging tasks.json, and `atm init`.
 #
@@ -822,7 +897,19 @@ GITATTRIBUTES_LINES = (
     "# Without it, git merges tasks.json line by line as usual.\n"
     "tasks.json merge=atm\n"
 )
-PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure", "agent")
+# Fields that move with the status: they come from the side whose progress wins
+PROGRESS_FIELDS = (
+    "status",
+    "updated_at",
+    "started_at",
+    "completed_at",
+    "last_failure",
+    "agent",
+    "started_by",
+    "completed_by",
+    "updated_by",
+    "commit",
+)
 # How far along a status's kind is (DM-3.3); a status without a kind ranks like todo
 KIND_RANK = {"todo": 0, "active": 1, "blocked": 1, "review": 1, "done": 2, "skipped": 2}
 MISSING = object()
@@ -859,6 +946,12 @@ def progress_winner(ours, theirs, vocab):
     return theirs if str(theirs.get("updated_at", "")) > str(ours.get("updated_at", "")) else ours
 
 
+def merge_notes(ours, theirs):
+    """Notes only grow: both sides' notes, each once, oldest first."""
+    merged = list(ours) + [n for n in theirs if n not in ours]
+    return sorted(merged, key=lambda n: str(n.get("at", "")) if isinstance(n, dict) else "")
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -873,6 +966,8 @@ def merge_task(base, ours, theirs, vocab):
     for key in keys:
         if key in PROGRESS_FIELDS:
             value = progress.get(key, MISSING)
+        elif key == "notes":
+            value = merge_notes(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict:
@@ -1380,10 +1475,13 @@ commands:
   serve [start|stop|status] [--open] [--port N]
                  run the dashboard server for this project in the background
   start <id>     mark a task in_progress and claim it (its dependencies must be done)
-  done <id>      mark an in_progress task done and drop its claim
+  done <id> [--note TEXT] [--commit SHA]
+                 mark an in_progress task done and drop its claim; the note is a one-line outcome
   fail <id> [--reason TEXT]
-                 put an in_progress task back to todo, recording why
-  release <id>   put an in_progress task back to todo
+                 put an in_progress task back to todo, recording why (a failure note)
+  release <id> [--note TEXT]
+                 put an in_progress task back to todo; the note is a handoff for the next agent
+  note <id> TEXT add a note to a task (at most 500 characters)
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -1461,7 +1559,12 @@ def build_parser():
         agent_option(sub)
         status_option(sub)
         if name == "fail":
-            sub.add_argument("--reason", metavar="TEXT", help="why it failed")
+            sub.add_argument("--reason", metavar="TEXT", help="why it failed (kept as a failure note)")
+        if name == "release":
+            sub.add_argument("--note", metavar="TEXT", help="a handoff for whoever picks it up next")
+        if name == "done":
+            sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
+            sub.add_argument("--commit", metavar="SHA", help="the task's commit")
 
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--phase", type=float, help="only this phase")
@@ -1469,6 +1572,11 @@ def build_parser():
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
     status_option(next_)
+
+    note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
+    note.add_argument("id", help="the task ID")
+    note.add_argument("text", help="the note")
+    agent_option(note)
 
     heartbeat = command("heartbeat", cmd_heartbeat, "extend your claim's lease")
     heartbeat.add_argument("id", help="the task ID")

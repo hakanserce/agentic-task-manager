@@ -14,7 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
-from .tasks import cmd_status_change
+from .tasks import cmd_note, cmd_status_change
 
 USAGE = """usage: atm <command> [options]
 
@@ -27,10 +27,13 @@ commands:
   serve [start|stop|status] [--open] [--port N]
                  run the dashboard server for this project in the background
   start <id>     mark a task in_progress and claim it (its dependencies must be done)
-  done <id>      mark an in_progress task done and drop its claim
+  done <id> [--note TEXT] [--commit SHA]
+                 mark an in_progress task done and drop its claim; the note is a one-line outcome
   fail <id> [--reason TEXT]
-                 put an in_progress task back to todo, recording why
-  release <id>   put an in_progress task back to todo
+                 put an in_progress task back to todo, recording why (a failure note)
+  release <id> [--note TEXT]
+                 put an in_progress task back to todo; the note is a handoff for the next agent
+  note <id> TEXT add a note to a task (at most 500 characters)
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -108,7 +111,12 @@ def build_parser():
         agent_option(sub)
         status_option(sub)
         if name == "fail":
-            sub.add_argument("--reason", metavar="TEXT", help="why it failed")
+            sub.add_argument("--reason", metavar="TEXT", help="why it failed (kept as a failure note)")
+        if name == "release":
+            sub.add_argument("--note", metavar="TEXT", help="a handoff for whoever picks it up next")
+        if name == "done":
+            sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
+            sub.add_argument("--commit", metavar="SHA", help="the task's commit")
 
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--phase", type=float, help="only this phase")
@@ -116,6 +124,11 @@ def build_parser():
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
     status_option(next_)
+
+    note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
+    note.add_argument("id", help="the task ID")
+    note.add_argument("text", help="the note")
+    agent_option(note)
 
     heartbeat = command("heartbeat", cmd_heartbeat, "extend your claim's lease")
     heartbeat.add_argument("id", help="the task ID")

@@ -16,6 +16,11 @@ export const ms = (iso: string | undefined): number | null => {
   return Number.isNaN(t) ? null : t;
 };
 
+/** Who started (and so worked on) the task: started_by, or `agent` in files written before v4 (DM-4.4). */
+export function startedBy(task: Task): string | undefined {
+  return task.started_by ?? task.agent;
+}
+
 export function isDone(task: Task, vocab: Vocabulary = DEFAULT_VOCABULARY): boolean {
   return kindOf(vocab, task.status) === 'done';
 }

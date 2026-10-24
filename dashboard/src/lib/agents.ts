@@ -5,7 +5,7 @@ import type { ClaimMap } from './claims';
 import { median } from './insights';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, type Vocabulary } from './vocab';
-import { workSpan } from './work';
+import { startedBy, workSpan } from './work';
 
 export const UNATTRIBUTED = '';
 
@@ -52,7 +52,7 @@ export function agentTimeline(
   for (const task of tasks) {
     const span = workSpan(task, now, vocab);
     if (!span) continue;
-    const agent = (span.live ? claims.get(task.id)?.agent : undefined) ?? task.agent ?? UNATTRIBUTED;
+    const agent = (span.live ? claims.get(task.id)?.agent : undefined) ?? startedBy(task) ?? UNATTRIBUTED;
     byAgent.set(agent, [...(byAgent.get(agent) ?? []), { task, ...span }]);
   }
   if (byAgent.size === 0) return null;

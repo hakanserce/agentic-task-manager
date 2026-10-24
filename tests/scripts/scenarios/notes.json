@@ -1,0 +1,196 @@
+[
+  {
+    "name": "release --note leaves a handoff for whoever picks it up next",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "in_progress", "started_at": "2026-05-01T09:00:00Z", "started_by": "alice" }
+          ]
+        }
+      }
+    },
+    "args": ["release", "T-1", "--note", "Linux baselines still to regenerate; src/a.ts is uncommitted"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdout": "T-1: in_progress -> todo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice",
+              "notes": [
+                {
+                  "at": "2026-05-01T10:00:00Z",
+                  "kind": "handoff",
+                  "text": "Linux baselines still to regenerate; src/a.ts is uncommitted",
+                  "by": "alice"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "done --note records the outcome, --commit the task's commit",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "in_progress", "started_at": "2026-05-01T09:00:00Z", "started_by": "alice" }
+          ]
+        }
+      }
+    },
+    "args": ["done", "T-1", "--note", "Added the footer; 3 new tests", "--commit", "abc1234"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "bob" },
+    "expect": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "started_at": "2026-05-01T09:00:00Z",
+              "started_by": "alice",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "bob",
+              "completed_at": "2026-05-01T10:00:00Z",
+              "completed_by": "bob",
+              "commit": "abc1234",
+              "notes": [
+                {
+                  "at": "2026-05-01T10:00:00Z",
+                  "kind": "outcome",
+                  "text": "Added the footer; 3 new tests",
+                  "by": "bob"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "atm note adds a note to a task in any status",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "notes": [{ "at": "2026-04-01T00:00:00Z", "kind": "outcome", "text": "first" }]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["note", "T-1", "Follow-up in T-9", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "carol" },
+    "expect": {
+      "json": { "at": "2026-05-01T10:00:00Z", "kind": "note", "text": "Follow-up in T-9", "by": "carol" },
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "notes": [
+                { "at": "2026-04-01T00:00:00Z", "kind": "outcome", "text": "first" },
+                { "at": "2026-05-01T10:00:00Z", "kind": "note", "text": "Follow-up in T-9", "by": "carol" }
+              ],
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "carol"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "start replaces an older file's agent by started_by",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo", "agent": "someone-before" }] }
+      }
+    },
+    "args": ["start", "T-1"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "in_progress",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice",
+              "started_at": "2026-05-01T10:00:00Z",
+              "started_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "the merge driver keeps the notes of both branches, once each, oldest first",
+    "setup": {
+      "files": {
+        "base.json": {
+          "tasks": [{ "id": "T-1", "status": "todo", "notes": [{ "at": "1", "kind": "note", "text": "a" }] }]
+        },
+        "ours.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "notes": [
+                { "at": "1", "kind": "note", "text": "a" },
+                { "at": "3", "kind": "note", "text": "ours" }
+              ]
+            }
+          ]
+        },
+        "theirs.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "notes": [
+                { "at": "1", "kind": "note", "text": "a" },
+                { "at": "2", "kind": "handoff", "text": "theirs" }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["merge-driver", "base.json", "ours.json", "theirs.json"],
+    "expect": {
+      "exit": 0,
+      "files": {
+        "ours.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "notes": [
+                { "at": "1", "kind": "note", "text": "a" },
+                { "at": "2", "kind": "handoff", "text": "theirs" },
+                { "at": "3", "kind": "note", "text": "ours" }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

@@ -3,7 +3,7 @@
 import { completions, type Completion } from './timeline';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, type StatusKind, type Vocabulary } from './vocab';
-import { workSpan } from './work';
+import { startedBy, workSpan } from './work';
 
 export interface Share {
   key: string;
@@ -285,7 +285,7 @@ export function activitySeries(
   // Work intervals per agent (work.ts): start to completion or review request, or to now while active
   const work = tasks.flatMap((t) => {
     const span = workSpan(t, now, vocab);
-    return !span || span.end <= span.start ? [] : [{ agent: t.agent ?? '', start: span.start, end: span.end }];
+    return !span || span.end <= span.start ? [] : [{ agent: startedBy(t) ?? '', start: span.start, end: span.end }];
   });
   const buckets: ActivityBucket[] = [];
   for (let i = 0; i < count; i++) {
@@ -340,7 +340,7 @@ export function activitySeries(
       (a, b) => Number(a === '') - Number(b === '') || a.localeCompare(b),
     ),
     ...idleIn(work, first, period ? Math.min(period.end, now) : Math.max(last, now)),
-    workingNow: new Set(tasks.filter((t) => kind(t) === 'active').map((t) => t.agent ?? '')).size,
+    workingNow: new Set(tasks.filter((t) => kind(t) === 'active').map((t) => startedBy(t) ?? '')).size,
     unitLabel,
     bucketMs,
     buckets,

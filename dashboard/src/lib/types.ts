@@ -26,8 +26,15 @@ export interface Task {
   started_at?: string;
   /** ISO 8601 UTC; set when the task moves to done */
   completed_at?: string;
-  /** The agent that started the task (written by `atm start`; kept when it is done) */
+  /** Before v4: the agent that started the task. Now started_by (read both: work.ts startedBy) */
   agent?: string;
+  /** Who created, last changed, started and completed the task (docs/v4/data-model.md §4.1) */
+  created_by?: string;
+  updated_by?: string;
+  started_by?: string;
+  completed_by?: string;
+  /** The SHA of the task's commit */
+  commit?: string;
   /** ISO 8601 UTC; when the task asked for a review (`atm review`). Its work ended here; review time isn't work */
   review_requested_at?: string;
   /** Handoffs, outcomes, review requests, answers, rejections (docs/v4/data-model.md §4) */

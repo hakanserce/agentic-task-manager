@@ -51,7 +51,14 @@
     if (!active) return;
     const current = untrack(() => view);
     if (!fitted) {
-      view = autoFitView(content, viewport, focus);
+      // A saved position (FR-5.7) is used if some task is still on screen there; otherwise the automatic view
+      const saved = dashboard.graphView ? clampView(dashboard.graphView, content, viewport) : null;
+      if (saved && anyNodeVisible(saved, layout.nodes, nodeSize, viewport)) {
+        view = saved;
+        autoFit = false;
+      } else {
+        view = autoFitView(content, viewport, focus);
+      }
       fitted = true;
     } else if (key !== shownKey) {
       autoFit = false;
@@ -67,6 +74,7 @@
   function setView(v: View) {
     view = clampView(v, content, viewport);
     autoFit = false;
+    dashboard.graphView = view; // saved with the project's view
   }
 
   const zoomBy = (factor: number) => setView(zoomAt(view, view.k * factor, vw / 2, vh / 2));

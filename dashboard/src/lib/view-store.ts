@@ -16,6 +16,8 @@ export interface SavedView {
   kanban: { groupByPhase: boolean; showSkipped: boolean };
   /** The phase the Progress tab focuses on, or null for all phases */
   progressPhase: number | null;
+  /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
+  graph: { k: number; x: number; y: number } | null;
 }
 
 export interface ProjectMeta {
@@ -38,12 +40,19 @@ export function defaultView(): SavedView {
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false },
     progressPhase: null,
+    graph: null,
   };
 }
 
 const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 const bool = (value: unknown, fallback: boolean) => (typeof value === 'boolean' ? value : fallback);
+const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+function graphView(value: unknown): SavedView['graph'] {
+  const g = value as Record<string, unknown> | null;
+  return g && finite(g.k) && g.k > 0 && finite(g.x) && finite(g.y) ? { k: g.k, x: g.x, y: g.y } : null;
+}
 
 /** The stored view for `key`, with every missing or malformed field replaced by its default. */
 export function readView(key: string): SavedView {
@@ -60,6 +69,7 @@ export function readView(key: string): SavedView {
       showSkipped: bool(kanban.showSkipped, view.kanban.showSkipped),
     },
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
+    graph: graphView(stored.graph),
   };
 }
 

@@ -239,3 +239,35 @@ test.describe('view persistence', () => {
     await expect(minimap(page)).toBeHidden();
   });
 });
+
+test.describe('graph position is remembered per project (FR-5.7)', () => {
+  test('zoom and pan come back after a reload', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'large-90');
+    await expect(zoomLabel(page)).toHaveText('60%');
+    await button(page, /zoom in/i).click();
+    const c = await center(page);
+    await page.mouse.move(c.x, c.y);
+    await page.mouse.down();
+    await page.mouse.move(c.x - 150, c.y - 40, { steps: 5 });
+    await page.mouse.up();
+    const before = await view(page);
+    await page.reload();
+    await expect(zoomLabel(page)).not.toHaveText('60%');
+    const after = await view(page);
+    expect(after.k).toBeCloseTo(before.k, 2);
+    expect(after.x).toBeCloseTo(before.x, 0);
+    expect(after.y).toBeCloseTo(before.y, 0);
+  });
+
+  test('a saved position showing no task falls back to the automatic view', async ({ page, tasksServer }) => {
+    await page.addInitScript(() =>
+      localStorage.setItem(
+        'atm-dashboard:view:project:Large Project',
+        JSON.stringify({ graph: { k: 1, x: 99999, y: 99999 } }),
+      ),
+    );
+    await openDashboard(page, tasksServer, 'large-90');
+    await expect(zoomLabel(page)).toHaveText('60%');
+    expect(await visibleNodes(page)).toBeGreaterThan(0);
+  });
+});

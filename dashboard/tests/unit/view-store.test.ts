@@ -35,6 +35,7 @@ describe('reading and writing', () => {
       graphCollapsed: true,
       kanban: { groupByPhase: true, showSkipped: true },
       progressPhase: 2,
+      graph: { k: 1.5, x: -120, y: 40 },
     };
     writeView(key, view);
     expect(readView(key)).toEqual(view);
@@ -54,6 +55,13 @@ describe('reading and writing', () => {
       JSON.stringify({ tab: 'nope', filters: { phase: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
     );
     expect(readView(key)).toEqual({ ...defaultView(), filters: { phase: ['2'], type: [], status: [] } });
+  });
+
+  it('a malformed graph position is ignored', () => {
+    for (const graph of [{ k: 0, x: 0, y: 0 }, { k: 1, x: 'a', y: 0 }, { k: 1, x: 0 }, 'x']) {
+      localStorage.setItem(key, JSON.stringify({ graph }));
+      expect(readView(key).graph).toBeNull();
+    }
   });
 
   it('clearView forgets the project', () => {

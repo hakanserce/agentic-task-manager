@@ -40,6 +40,8 @@ export class DashboardState {
   kanbanShowSkipped = $state(false);
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
+  /** The graph's zoom and position once the user moved it; null while it is the automatic view */
+  graphView = $state.raw<{ k: number; x: number; y: number } | null>(null);
   /** Where this project's view is saved; set once the first load says which project this is */
   viewKey = $state<string | null>(null);
 
@@ -119,6 +121,7 @@ export class DashboardState {
       graphCollapsed: this.graphCollapsed,
       kanban: { groupByPhase: this.kanbanGroupByPhase, showSkipped: this.kanbanShowSkipped },
       progressPhase: this.progressPhase,
+      graph: this.graphView,
     };
   }
 
@@ -145,6 +148,7 @@ export class DashboardState {
     this.kanbanGroupByPhase = view.kanban.groupByPhase;
     this.kanbanShowSkipped = view.kanban.showSkipped;
     this.progressPhase = view.progressPhase;
+    this.graphView = view.graph;
     if (includeTab && view.tab !== this.tab) {
       history.replaceState(null, '', withViewHash(location.hash, view.tab));
       this.tab = view.tab;

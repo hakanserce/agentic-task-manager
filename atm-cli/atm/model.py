@@ -70,6 +70,42 @@ def _terms(meta, key, defaults, need_kind=False):
     return terms
 
 
+WORKFLOW_DEFAULTS = {"verify": True, "max_rounds": 3, "commit_template": "feat({id}): {name}"}
+
+
+def check_workflow(workflow):
+    """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
+    if workflow is None:
+        return
+    if not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES:
+        raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
+    checks = (
+        ("base", lambda v: isinstance(v, str) and v, "a branch name"),
+        ("verify", lambda v: isinstance(v, bool), "true or false"),
+        ("max_rounds", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0, "a positive whole number"),
+        ("commit_template", lambda v: isinstance(v, str) and v, "a message template like \"feat({id}): {name}\""),
+        (
+            "trailers",
+            lambda v: v == "forbid"
+            or (isinstance(v, dict) and isinstance(v.get("require"), list) and all(isinstance(x, str) for x in v["require"])),
+            '"forbid" or {"require": ["Co-Authored-By: ..."]}',
+        ),
+    )
+    for key, valid, expected in checks:
+        if key in workflow and not valid(workflow[key]):
+            raise AtmError(f"meta.workflow.{key} must be {expected}")
+
+
+def workflow_of(data):
+    """The project's workflow with its defaults filled in, or None when it has none."""
+    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    workflow = meta.get("workflow")
+    if workflow is None:
+        return None
+    check_workflow(workflow)
+    return {**WORKFLOW_DEFAULTS, **workflow}
+
+
 def vocabulary(data):
     """The project's vocabularies from meta, with the defaults for what it doesn't define (DM-2). Raises AtmError,
     naming the problem, when meta defines something that can't work."""
@@ -92,9 +128,7 @@ def vocabulary(data):
         for p in phases
     ):
         raise AtmError('meta.phases must be a list of {"id": <number>, "name": "..."}')
-    workflow = meta.get("workflow")
-    if workflow is not None and (not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES):
-        raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
+    check_workflow(meta.get("workflow"))
     return {
         "statuses": statuses,
         "types": _terms(meta, "types", DEFAULT_TYPES),

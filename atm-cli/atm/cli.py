@@ -16,6 +16,7 @@ from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
+from .git_ops import cmd_workflow
 from .query import cmd_deps, cmd_list, cmd_show, cmd_status
 from .tasks import cmd_note, cmd_status_change
 
@@ -61,6 +62,8 @@ commands:
                  move finished tasks to tasks-archive.json, to keep tasks.json small
   unarchive <id>...
                  bring archived tasks back into tasks.json
+  workflow [set direct|pull-request] [--base B] [--verify true|false] [--max-rounds N] ...
+                 print the project's workflow (meta.workflow), or set it
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -237,6 +240,20 @@ def build_parser():
     archive.add_argument("--dry-run", action="store_true", help="only say what would move")
     unarchive = command("unarchive", cmd_unarchive, "bring archived tasks back into tasks.json")
     unarchive.add_argument("ids", nargs="+", metavar="id", help="task IDs")
+
+    workflow = command("workflow", cmd_workflow, "print the project's workflow, or set it (atm workflow set TYPE)")
+    workflow.add_argument("action", nargs="?", choices=["set"], help="set: change the workflow")
+    workflow.add_argument("type", nargs="?", help="direct or pull-request")
+    workflow.add_argument("--base", help="the branch PRs target, or that direct pushes to")
+    workflow.add_argument("--verify", choices=["true", "false"], help="run the project's verify before pushing")
+    workflow.add_argument("--max-rounds", type=int, help="CI fix rounds before /atm:push stops")
+    workflow.add_argument("--commit-template", metavar="TEXT", help='commit messages, e.g. "feat({id}): {name}"')
+    workflow.add_argument(
+        "--trailers",
+        choices=["forbid", "require", "none"],
+        help="forbid Co-Authored-By lines, require the --trailer lines, or leave it to the agent",
+    )
+    workflow.add_argument("--trailer", action="append", default=[], metavar="LINE", help="a required trailer line")
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

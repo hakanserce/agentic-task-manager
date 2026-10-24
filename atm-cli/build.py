@@ -31,6 +31,7 @@ MODULES = [
     "edit",
     "merge",
     "archive",
+    "git_ops",
     "migrate",
     "server",
     "cli",

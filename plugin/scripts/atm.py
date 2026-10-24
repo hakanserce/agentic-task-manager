@@ -398,6 +398,42 @@ def _terms(meta, key, defaults, need_kind=False):
     return terms
 
 
+WORKFLOW_DEFAULTS = {"verify": True, "max_rounds": 3, "commit_template": "feat({id}): {name}"}
+
+
+def check_workflow(workflow):
+    """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
+    if workflow is None:
+        return
+    if not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES:
+        raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
+    checks = (
+        ("base", lambda v: isinstance(v, str) and v, "a branch name"),
+        ("verify", lambda v: isinstance(v, bool), "true or false"),
+        ("max_rounds", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0, "a positive whole number"),
+        ("commit_template", lambda v: isinstance(v, str) and v, "a message template like \"feat({id}): {name}\""),
+        (
+            "trailers",
+            lambda v: v == "forbid"
+            or (isinstance(v, dict) and isinstance(v.get("require"), list) and all(isinstance(x, str) for x in v["require"])),
+            '"forbid" or {"require": ["Co-Authored-By: ..."]}',
+        ),
+    )
+    for key, valid, expected in checks:
+        if key in workflow and not valid(workflow[key]):
+            raise AtmError(f"meta.workflow.{key} must be {expected}")
+
+
+def workflow_of(data):
+    """The project's workflow with its defaults filled in, or None when it has none."""
+    meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+    workflow = meta.get("workflow")
+    if workflow is None:
+        return None
+    check_workflow(workflow)
+    return {**WORKFLOW_DEFAULTS, **workflow}
+
+
 def vocabulary(data):
     """The project's vocabularies from meta, with the defaults for what it doesn't define (DM-2). Raises AtmError,
     naming the problem, when meta defines something that can't work."""
@@ -420,9 +456,7 @@ def vocabulary(data):
         for p in phases
     ):
         raise AtmError('meta.phases must be a list of {"id": <number>, "name": "..."}')
-    workflow = meta.get("workflow")
-    if workflow is not None and (not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES):
-        raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
+    check_workflow(meta.get("workflow"))
     return {
         "statuses": statuses,
         "types": _terms(meta, "types", DEFAULT_TYPES),
@@ -2077,6 +2111,73 @@ def cmd_unarchive(args):
         out(f"Brought back {', '.join(args.ids)} from the archive.")
 
 
+# ==== git_ops.py ====
+# The project's workflow (meta.workflow: direct or pull-request, docs/v4/skills-and-workflows.md §1) and the git
+# side of tasks: atm workflow.
+
+def default_base(root):
+    """The remote's default branch (origin/HEAD), else main."""
+    ref = git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], root)
+    return ref.split("/", 1)[1] if ref and "/" in ref else "main"
+
+
+def describe_workflow(workflow, root):
+    if workflow is None:
+        return "No workflow set: /atm:push asks for one, or run `atm workflow set direct|pull-request`."
+    trailers = workflow.get("trailers")
+    lines = [
+        f"workflow: {workflow['type']}",
+        "  base: " + (workflow["base"] if workflow.get("base") else f"{default_base(root)} (the remote's default branch)"),
+        f"  verify before pushing: {'yes' if workflow['verify'] else 'no'}",
+        f"  CI fix rounds: {workflow['max_rounds']}",
+        f"  commit message: {workflow['commit_template']}",
+        "  trailers: "
+        + (
+            "none (Co-Authored-By lines are removed)"
+            if trailers == "forbid"
+            else ("required: " + "; ".join(trailers["require"]) if isinstance(trailers, dict) else "as the agent writes them")
+        ),
+    ]
+    return "\n".join(lines)
+
+
+def cmd_workflow(args):
+    paths = find_paths(os.getcwd())
+    if args.action is None:
+        workflow = workflow_of(load_tasks(paths))
+        out(to_json(workflow or {"type": None}) if args.json else describe_workflow(workflow, paths["root"]))
+        return
+    if args.type not in WORKFLOW_TYPES:
+        raise AtmError(f"atm workflow set needs a type: {' or '.join(WORKFLOW_TYPES)}", 2)
+    changes = {"type": args.type}
+    if args.base is not None:
+        changes["base"] = args.base
+    if args.verify is not None:
+        changes["verify"] = args.verify == "true"
+    if args.max_rounds is not None:
+        changes["max_rounds"] = args.max_rounds
+    if args.commit_template is not None:
+        changes["commit_template"] = args.commit_template
+    if args.trailers == "forbid":
+        changes["trailers"] = "forbid"
+    elif args.trailers == "require":
+        if not args.trailer:
+            raise AtmError("--trailers require needs at least one --trailer LINE", 2)
+        changes["trailers"] = {"require": args.trailer}
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        if not isinstance(data.get("meta"), dict):
+            data["meta"] = {}
+        current = data["meta"].get("workflow") if isinstance(data["meta"].get("workflow"), dict) else {}
+        workflow = {**current, **changes}
+        if args.trailers == "none":
+            workflow.pop("trailers", None)
+        data["meta"]["workflow"] = workflow
+        effective = workflow_of(data)  # validates before anything is written
+        write_json_atomic(paths["tasks"], data)
+    out(to_json(effective) if args.json else describe_workflow(effective, paths["root"]))
+
+
 # ==== migrate.py ====
 # `atm migrate`: move a legacy tasks.json into the task folder and set the folder up (.gitignore, merge driver,
 # the current dashboard).
@@ -2483,6 +2584,8 @@ commands:
                  move finished tasks to tasks-archive.json, to keep tasks.json small
   unarchive <id>...
                  bring archived tasks back into tasks.json
+  workflow [set direct|pull-request] [--base B] [--verify true|false] [--max-rounds N] ...
+                 print the project's workflow (meta.workflow), or set it
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -2659,6 +2762,20 @@ def build_parser():
     archive.add_argument("--dry-run", action="store_true", help="only say what would move")
     unarchive = command("unarchive", cmd_unarchive, "bring archived tasks back into tasks.json")
     unarchive.add_argument("ids", nargs="+", metavar="id", help="task IDs")
+
+    workflow = command("workflow", cmd_workflow, "print the project's workflow, or set it (atm workflow set TYPE)")
+    workflow.add_argument("action", nargs="?", choices=["set"], help="set: change the workflow")
+    workflow.add_argument("type", nargs="?", help="direct or pull-request")
+    workflow.add_argument("--base", help="the branch PRs target, or that direct pushes to")
+    workflow.add_argument("--verify", choices=["true", "false"], help="run the project's verify before pushing")
+    workflow.add_argument("--max-rounds", type=int, help="CI fix rounds before /atm:push stops")
+    workflow.add_argument("--commit-template", metavar="TEXT", help='commit messages, e.g. "feat({id}): {name}"')
+    workflow.add_argument(
+        "--trailers",
+        choices=["forbid", "require", "none"],
+        help="forbid Co-Authored-By lines, require the --trailer lines, or leave it to the agent",
+    )
+    workflow.add_argument("--trailer", action="append", default=[], metavar="LINE", help="a required trailer line")
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

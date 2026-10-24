@@ -355,13 +355,17 @@ The dashboard is a single self-contained HTML file with no external dependencies
 
 - **Stats bar** — Total, done, in-progress, todo counts with progress bar
 - **Activity timeline** — Mini bar chart showing task completion over time, with hover details
-- **Filters** — Filter by phase, type, and status (multi-select)
+- **Filters** — Filter by phase, type, and status (multi-select); every button shows how many tasks it would show given the other filters, and empty choices are dimmed
 - **Task cards** — Color-coded by status and type, with dependency links
 - **Detail panel** — Click a task to see full description, deps, files, and timestamps
 - **Views** — Tabs for the Dependency Graph, a Kanban board and Progress; the selected tab is kept in the URL
 - **Dependency graph** — Interactive SVG graph with topological layout. Opens at a readable scale centered on the active task; drag to pan, Ctrl/⌘ + scroll (or pinch) to zoom, zoom/fit/1:1 buttons, keyboard shortcuts (`+` `-` `0` `F`, arrows) when focused, and a clickable minimap when the graph doesn't fit. Filtering and auto-refresh keep your zoom level
 - **Kanban board** — Todo / In Progress / Blocked / Done columns; todo cards show whether they're ready or what they wait on, and **Next up** marks the task `/atm:loop-tasks` will pick next; optional swimlanes per phase
 - **Progress** — Burndown chart (remaining vs. scope, with a forecast) and per-phase completion estimates in agent working time; click a phase to focus the chart. Estimates are most accurate with `started_at`/`completed_at`, which `/atm:do-task` and `/atm:loop-tasks` write since 0.7.0
+- **Saved view per project** — Filters, tab, collapsed panel, Kanban options, the Progress focus and the graph's zoom and position come back when you reopen the dashboard. Each project keeps its own (by `meta.id` in `tasks.json`, else the project name); **Reset view** clears it. A `#view=` link still opens that tab
+- **Light and dark mode** — Follows your system by default; switch between System, Light and Dark in the top right
+- **Themes** — Default, Nord, Solarized, Catppuccin, Tokyo Night and High contrast, each in light and dark, checked for readable contrast (see [docs/theme-validation.md](docs/theme-validation.md)). Theme and mode are remembered per browser
+- **Live claims** — In-progress tasks show which agent works on them, on which branch, and since when
 - **Auto-refresh** — On by default every 5s; the toggle and interval are remembered per browser
 - **What's new** — The version next to the title opens the release notes; a "new" marker appears after an upgrade
 - **Manual reload** — Click reload button for instant refresh

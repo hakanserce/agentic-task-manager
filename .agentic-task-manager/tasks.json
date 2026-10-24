@@ -2,7 +2,8 @@
   "meta": {
     "project": "ATM Dashboard",
     "created": "2026-10-22",
-    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the helper's test suite (tests/scripts) green: a behaviour change lands together with the tests it changes. The helper is plugin/scripts/atm.py: Python 3.9+, standard library only (docs/helper-runtime-proposal.md)."
+    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the helper's test suite (tests/scripts) green: a behaviour change lands together with the tests it changes. The helper is plugin/scripts/atm.py: Python 3.9+, standard library only (docs/helper-runtime-proposal.md).",
+    "id": "cb66fd8c"
   },
   "tasks": [
     {
@@ -2238,7 +2239,7 @@
       "description": "Changelog [0.12.0] (filter counts, saved views per project, light/dark modes, six themes). README dashboard features. Bump to 0.12.0, rebuild. All suites green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-088",
         "T-094"
@@ -2251,7 +2252,9 @@
         "plugin/templates/tasks-dashboard.html"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-24T01:53:24Z",
+      "started_at": "2026-10-24T01:50:13Z",
+      "completed_at": "2026-10-24T01:53:24Z"
     },
     {
       "id": "T-096",

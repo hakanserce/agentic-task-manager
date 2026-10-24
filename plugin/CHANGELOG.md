@@ -4,6 +4,27 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.12.0] - 2026-10-24
+
+### Added
+- Light and dark mode: the dashboard follows your system setting, or choose System, Light or Dark in the top right.
+  Your choice is remembered per browser and applied before the page appears, so there's no flash of the other mode.
+- Themes: Default, Nord, Solarized, Catppuccin (Latte/Mocha), Tokyo Night (Day/Night) and High contrast, each with a
+  light and a dark variant. All colours meet contrast targets for readable text (see docs/theme-validation.md in the
+  repository).
+- Filter buttons show how many tasks each would show, given the other filters; values with no tasks are dimmed.
+- The dashboard remembers your view per project: filters, the selected tab, the collapsed graph panel, Kanban
+  options, the phase in focus on the Progress tab, and the graph's zoom and position. **Reset view** forgets it.
+- `/atm:create-tasks` gives new task files a `meta.id`, and `atm init` adds one to existing files, so dashboards of
+  different projects on the same port keep separate views.
+
+### Changed
+- Kanban "Group by phase" is now remembered per project instead of per browser (your previous choice is kept as the
+  starting point).
+
+### Fixed
+- Phase badges have their tinted background again (lost in 0.5.0).
+
 ## [0.11.0] - 2026-10-23
 
 ### Added

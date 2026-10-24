@@ -2,7 +2,7 @@
   "meta": {
     "project": "ATM Dashboard",
     "created": "2026-10-22",
-    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the helper's test suite (tests/scripts) green: a behaviour change lands together with the tests it changes. The helper is plugin/scripts/atm.py: Python 3.9+, standard library only (docs/helper-runtime-proposal.md).",
+    "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the helper's test suite (tests/scripts) green: a behaviour change lands together with the tests it changes. The helper is plugin/scripts/atm.py: Python 3.9+, standard library only (docs/helper-runtime-proposal.md). Phase 13 = 0.13.0: footer, Help and About, priorities, project vocabularies, In Review (docs/v4-requirements.md).",
     "id": "cb66fd8c"
   },
   "tasks": [
@@ -2278,6 +2278,357 @@
       ],
       "created_at": "2026-10-24T00:13:54Z",
       "updated_at": "2026-10-24T01:54:10Z"
+    },
+    {
+      "id": "T-097",
+      "name": "Helper: project vocabularies and status kinds",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P0",
+      "description": "See docs/v4-requirements.md (decisions 3-4, FR-4). Read meta.statuses/phases/types/priorities/default_priority with the FR-4.2 defaults (in_review included) when absent. Validate per FR-4.3 (six kinds, at least one todo-, active- and done-kind status, unique IDs); commands that move a task to a kind (start, review, done, fail, release, reject) take --status <id> to pick one status of that kind (wrong kind is an error) and otherwise use the first listed; an invalid vocabulary exits with an error naming the problem and writes nothing. Replace status-name checks with kinds: STATUS_CHANGES targets the todo/active statuses, dependencies are met by done-kind statuses, the merge driver's STATUS_RANK ranks by kind. Scenarios for defaults, a custom vocabulary, each validation error and a merge with a custom status.",
+      "requirements": [
+        "FR-4.1",
+        "FR-4.2",
+        "FR-4.3",
+        "FR-4.4",
+        "NFR-2",
+        "NFR-3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-098",
+      "name": "Helper: priority in task selection",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P0",
+      "description": "See docs/v4-requirements.md (decision 2, FR-3). `atm next` (with and without --claim) orders ready tasks by phase, then priority rank (position in meta.priorities, most urgent first), then natural task ID. Missing or unknown priority ranks as default_priority (P2). Scenarios: priority beats ID within a phase, phase beats priority, missing and unknown priorities, custom priorities.",
+      "requirements": [
+        "FR-3.1",
+        "FR-3.2",
+        "FR-3.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-097"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-099",
+      "name": "Helper: atm review and atm reject",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P0",
+      "description": "See docs/v4-requirements.md (decision 5, FR-5.1-5.2). `atm review <id> [--note]`: active-kind -> review-kind status, set review_requested_at and the note, release the claim. `atm done` accepts active- and review-kind tasks (from review it needs no claim). `atm reject <id> --reason`: review-kind -> todo, record the reason as `fail` does, clear review_requested_at. Dependents of a task in review stay unready. Update the usage text. Scenarios for each transition, the refused ones, and dependents waiting.",
+      "requirements": [
+        "FR-5.1",
+        "FR-5.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-097"
+      ],
+      "files": [
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-100",
+      "name": "Dashboard: vocabularies from meta, status kinds",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P0",
+      "description": "See docs/v4-requirements.md (FR-4.5). A src/lib/vocab.ts that resolves the effective vocabularies from meta (FR-4.2 defaults, in_review included) and exposes kind lookups. Labels, filter values and Kanban columns follow the vocabularies in order; colours and icons come from the kind (add the review kind's colour and icon to every theme). Phase names show where phases are labelled. Unit tests for vocab.ts and the Kanban columns with a custom vocabulary.",
+      "requirements": [
+        "FR-4.1",
+        "FR-4.2",
+        "FR-4.5",
+        "FR-5.4",
+        "NFR-3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/types.ts",
+        "dashboard/src/lib/vocab.ts",
+        "dashboard/src/lib/theme.ts",
+        "dashboard/src/lib/kanban.ts",
+        "dashboard/src/lib/filters.ts",
+        "dashboard/tests/unit/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-101",
+      "name": "Dashboard: kinds in forecast, burndown, agents and utilisation",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (FR-4.5, FR-5.5). Replace status-name checks with kinds: review counts as unfinished and is not agent activity; blocked and skipped as today. Durations stay started_at->completed_at; time in review (review_requested_at->completed_at) is shown separately where durations are shown. Unit tests with custom statuses and in_review tasks.",
+      "requirements": [
+        "FR-4.5",
+        "FR-5.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-100"
+      ],
+      "files": [
+        "dashboard/src/lib/forecast.ts",
+        "dashboard/src/lib/burndown.ts",
+        "dashboard/src/lib/insights.ts",
+        "dashboard/src/lib/agents.ts",
+        "dashboard/src/lib/utilization.ts",
+        "dashboard/tests/unit/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-102",
+      "name": "Dashboard: priority badges, filter and sort",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (FR-3.4). Priority badge (label on hover) on task cards, Kanban cards, the List tab and the detail panel; a Priority filter group with counts, saved per project; List tab sorts by priority. Missing priority shows as the default. Unit and component tests.",
+      "requirements": [
+        "FR-3.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-100"
+      ],
+      "files": [
+        "dashboard/src/components/TaskCard.svelte",
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/Filters.svelte",
+        "dashboard/src/lib/filters.ts",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-103",
+      "name": "Dashboard: In Review waiting time",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (FR-5.4). Review-kind cards and the detail panel show how long the task has waited for review (from review_requested_at) and the review note. Component tests.",
+      "requirements": [
+        "FR-5.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-100"
+      ],
+      "files": [
+        "dashboard/src/components/TaskCard.svelte",
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-104",
+      "name": "Dashboard: footer",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (FR-1). Footer on every view: (c) <build year> <author> · <licence>, the version (opens What's new), GitHub (new tab), Help, About. Author, licence and repository URL injected from plugin.json at build time (extend inject-version or add a virtual module). Theme tokens; wraps at narrow widths. T-105 and T-106 wire the Help and About links to their dialogs. Component test; e2e check that the GitHub link is never fetched.",
+      "requirements": [
+        "FR-1.1",
+        "FR-1.2",
+        "FR-1.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/Footer.svelte",
+        "dashboard/src/App.svelte",
+        "dashboard/build/",
+        "dashboard/vite.config.ts",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-105",
+      "name": "Help page: docs/help.md and the Help dialog",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (decision 1, FR-2.1, FR-2.3). Write docs/help.md covering FR-2.1's topics. Inline it at build time as a virtual module (like build/changelog.ts), rendering the Markdown subset it uses without a library. Dialog: Escape, close button, click outside, focus returns to the opener, #help opens it. Shares a dialog shell with About (T-106). Component tests.",
+      "requirements": [
+        "FR-2.1",
+        "FR-2.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-104"
+      ],
+      "files": [
+        "docs/help.md",
+        "dashboard/build/help.ts",
+        "dashboard/src/components/HelpDialog.svelte",
+        "dashboard/vite.config.ts",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-106",
+      "name": "Dashboard: About dialog",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (FR-2.2, FR-2.3). Name, description, version, author, licence, repository link (from plugin.json at build time), and this project's vocabularies (statuses with kinds, phases, types, priorities) from vocab.ts. Same dialog behaviour as Help; #about opens it. Component tests.",
+      "requirements": [
+        "FR-2.2",
+        "FR-2.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-104",
+        "T-100"
+      ],
+      "files": [
+        "dashboard/src/components/AboutDialog.svelte",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-107",
+      "name": "Skill: create-tasks confirms vocabularies and sets priorities",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P0",
+      "description": "See docs/v4-requirements.md (FR-4.6). Before writing tasks, show the vocabularies it will use (defaults, or meta's when adding to an existing file), propose phase names from the decomposition, and ask the user to confirm or change statuses (each with a kind), phases, types and priorities. Write only lists that differ from the defaults, plus phase names, to meta. Give every task a priority (P0-P3 meanings from FR-3.2 unless the user defined others). Update the tasks.json example in the skill.",
+      "requirements": [
+        "FR-3.2",
+        "FR-4.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-097"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-108",
+      "name": "Skills: priority order and In Review in do-task and loop-tasks",
+      "phase": 13,
+      "type": "feature",
+      "priority": "P0",
+      "description": "See docs/v4-requirements.md (FR-3.3, FR-5.3). Describe the selection order (phase, priority, ID). When the task, the project's instructions or the user ask for a review by the user or another agent, end with `atm review --note` instead of `atm done` and report the task as waiting for review; loop-tasks continues with other ready tasks. How a reviewer passes (`atm done`) or rejects (`atm reject --reason`). Statuses are referred to by kind, so custom vocabularies work; when a kind has several statuses, the agent picks one by its name or label with --status (e.g. a review by the user vs by another agent), otherwise the first listed is used.",
+      "requirements": [
+        "FR-3.3",
+        "FR-5.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-098",
+        "T-099"
+      ],
+      "files": [
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/CLAUDE.md"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-109",
+      "name": "Screenshots and e2e for footer, dialogs, priority and In Review",
+      "phase": 13,
+      "type": "test",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md (NFR-1, NFR-4). Fixture with priorities, in_review tasks and a custom vocabulary. e2e: footer links, #help/#about, dialog keyboard behaviour, priority filter, In Review column. Strict screenshots in both modes (darwin locally; Linux baselines from CI). Check the build stays within the 256 KB budget.",
+      "requirements": [
+        "NFR-1",
+        "NFR-4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-101",
+        "T-102",
+        "T-103",
+        "T-105",
+        "T-106"
+      ],
+      "files": [
+        "dashboard/tests/e2e/",
+        "dashboard/tests/fixtures/"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
+    },
+    {
+      "id": "T-110",
+      "name": "Release 0.13.0",
+      "phase": 13,
+      "type": "docs",
+      "priority": "P1",
+      "description": "See docs/v4-requirements.md. README: priorities, vocabularies, In Review and the new helper commands. CHANGELOG 0.13.0 entry. Bump both versions to 0.13.0. `npm run verify` and the helper's suite green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-107",
+        "T-108",
+        "T-109"
+      ],
+      "files": [
+        "README.md",
+        "plugin/CHANGELOG.md",
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "plugin/CLAUDE.md"
+      ],
+      "created_at": "2026-10-24T07:23:07Z",
+      "updated_at": "2026-10-24T07:23:07Z"
     }
   ]
 }

@@ -63,14 +63,16 @@
               "dependencies": ["T-001"],
               "updated_at": "2026-05-01T10:00:00Z",
               "extra": "kept",
-              "started_at": "2026-05-01T10:00:00Z"
+              "started_at": "2026-05-01T10:00:00Z",
+              "agent": "alice"
             }
           ]
         }
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -141,7 +143,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -185,7 +188,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -240,7 +244,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -285,7 +290,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -336,7 +342,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -387,7 +394,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -438,7 +446,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -489,7 +498,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -540,7 +550,8 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -572,7 +583,8 @@
       "stderrIncludes": ["no task T-999"]
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -604,7 +616,8 @@
       "stderrIncludes": ["usage: atm done <task id>"]
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     }
   },
   {
@@ -639,12 +652,120 @@
       }
     },
     "env": {
-      "ATM_NOW": "2026-05-01T10:00:00Z"
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
     },
     "args": ["start", "T-002"],
     "expect": {
       "files": {
-        ".agentic-task-manager/tasks.json": "{\n  \"meta\": {\n    \"project\": \"Ünïcode ✓\"\n  },\n  \"tasks\": [\n    {\n      \"id\": \"T-001\",\n      \"status\": \"done\",\n      \"name\": \"Erste Aufgabe — fertig\",\n      \"dependencies\": []\n    },\n    {\n      \"status\": \"in_progress\",\n      \"id\": \"T-002\",\n      \"dependencies\": [\n        \"T-001\"\n      ],\n      \"updated_at\": \"2026-05-01T10:00:00Z\",\n      \"started_at\": \"2026-05-01T10:00:00Z\"\n    }\n  ]\n}\n"
+        ".agentic-task-manager/tasks.json": "{\n  \"meta\": {\n    \"project\": \"Ünïcode ✓\"\n  },\n  \"tasks\": [\n    {\n      \"id\": \"T-001\",\n      \"status\": \"done\",\n      \"name\": \"Erste Aufgabe — fertig\",\n      \"dependencies\": []\n    },\n    {\n      \"status\": \"in_progress\",\n      \"id\": \"T-002\",\n      \"dependencies\": [\n        \"T-001\"\n      ],\n      \"updated_at\": \"2026-05-01T10:00:00Z\",\n      \"started_at\": \"2026-05-01T10:00:00Z\",\n      \"agent\": \"alice\"\n    }\n  ]\n}\n"
+      }
+    }
+  },
+  {
+    "name": "done keeps the agent who did the task",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "dependencies": [],
+              "status": "in_progress",
+              "updated_at": "x",
+              "started_at": "2026-05-01T09:00:00Z",
+              "agent": "alice"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
+    },
+    "args": ["done", "T-001"],
+    "expect": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "dependencies": [],
+              "status": "done",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "started_at": "2026-05-01T09:00:00Z",
+              "agent": "alice",
+              "completed_at": "2026-05-01T10:00:00Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "release forgets the agent",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "dependencies": [],
+              "status": "in_progress",
+              "updated_at": "x",
+              "started_at": "2026-05-01T09:00:00Z",
+              "agent": "alice"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z",
+      "ATM_AGENT": "alice"
+    },
+    "args": ["release", "T-001"],
+    "expect": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "dependencies": [],
+              "status": "todo",
+              "updated_at": "2026-05-01T10:00:00Z"
+            }
+          ]
+        }
       }
     }
   }

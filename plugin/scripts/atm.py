@@ -723,8 +723,9 @@ def unfinished_dependencies(data, task):
     return [(dep, status.get(dep, "missing")) for dep in task.get("dependencies", []) if status.get(dep) != "done"]
 
 
-def change_status(task, data, command, reason=None):
-    """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed."""
+def change_status(task, data, command, reason=None, agent=None):
+    """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `start`
+    records the agent in the task (kept when it is done, so the dashboard can show who did what)."""
     allowed, new = STATUS_CHANGES[command]
     current = task.get("status")
     if current not in allowed:
@@ -739,11 +740,14 @@ def change_status(task, data, command, reason=None):
     if command == "start":
         task["started_at"] = stamp
         task.pop("completed_at", None)
+        if agent:
+            task["agent"] = agent
     elif command == "done":
         task["completed_at"] = stamp
     else:
         task.pop("started_at", None)
         task.pop("completed_at", None)
+        task.pop("agent", None)
         if command == "fail":
             task["last_failure"] = {"at": stamp, "reason": reason or "verification failed"}
     return current
@@ -842,6 +846,7 @@ def expire_claims(paths, data, claims):
             task["updated_at"] = stamp
             task.pop("started_at", None)
             task.pop("completed_at", None)
+            task.pop("agent", None)
             task["last_failure"] = {"at": stamp, "reason": f"lease expired ({claim.get('agent')})"}
     return expired
 
@@ -890,7 +895,7 @@ def cmd_status_change(command):
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
             check_holder(claims, task_id, agent, command)
-            previous = change_status(task, data, command, values.get("--reason"))
+            previous = change_status(task, data, command, values.get("--reason"), agent)
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose
@@ -962,7 +967,7 @@ def cmd_next(args):
         expired = expire_claims(paths, data, claims)
         task, reason = next_task(data, store, phase, values.get("--type"))
         if task and "--claim" in values:
-            change_status(task, data, "start")
+            change_status(task, data, "start", agent=agent)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
         if expired or (task and "--claim" in values):
             write_json_atomic(paths["tasks"], data)
@@ -1043,7 +1048,7 @@ GITATTRIBUTES_LINES = (
     "# Without it, git merges tasks.json line by line as usual.\n"
     "tasks.json merge=atm\n"
 )
-PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure")
+PROGRESS_FIELDS = ("status", "updated_at", "started_at", "completed_at", "last_failure", "agent")
 STATUS_RANK = {"todo": 0, "in_progress": 1, "blocked": 1, "done": 2, "skipped": 2}
 MISSING = object()
 

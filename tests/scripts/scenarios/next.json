@@ -468,7 +468,8 @@
           "status": "in_progress",
           "dependencies": [],
           "updated_at": "2026-05-01T10:00:00Z",
-          "started_at": "2026-05-01T10:00:00Z"
+          "started_at": "2026-05-01T10:00:00Z",
+          "agent": "alice"
         },
         "claim": {
           "task": "T-2",
@@ -510,7 +511,8 @@
               "status": "in_progress",
               "dependencies": [],
               "updated_at": "2026-05-01T10:00:00Z",
-              "started_at": "2026-05-01T10:00:00Z"
+              "started_at": "2026-05-01T10:00:00Z",
+              "agent": "alice"
             },
             {
               "id": "T-3",

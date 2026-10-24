@@ -134,7 +134,7 @@ def describe_migration(r, paths):
 def cmd_migrate(args):
     paths = find_paths(os.getcwd())
     r = migrate(paths)
-    if "--json" in args:
+    if args.json:
         out(to_json(r))
         return
     for line in describe_migration(r, paths):

@@ -6,6 +6,7 @@ Run through the `atm` launcher, which checks for Python 3.9+. Standard library o
 with nothing to install.
 """
 
+import argparse
 import contextlib
 import json
 import os
@@ -85,27 +86,6 @@ def parse_version(text):
         m = re.match(r"\d+", part)
         parts.append(int(m.group()) if m else 0)
     return parts
-
-
-def parse_options(args, flags=(), options=()):
-    """Split args into positionals, set flags and option values. Unknown --options are usage errors."""
-    positional, values = [], {}
-    i = 0
-    while i < len(args):
-        a = args[i]
-        if a in flags:
-            values[a] = True
-        elif a in options:
-            if i + 1 >= len(args):
-                raise AtmError(f"{a} needs a value", 2)
-            values[a] = args[i + 1]
-            i += 1
-        elif a.startswith("--"):
-            raise AtmError(f"unknown option {a}", 2)
-        else:
-            positional.append(a)
-        i += 1
-    return positional, values
 
 
 def now():
@@ -239,7 +219,7 @@ def find_paths(cwd):
 
 def cmd_paths(args):
     paths = find_paths(os.getcwd())
-    if "--json" in args:
+    if args.json:
         out(to_json(paths))
         return
     for key in ["root", "dir", "tasks", "dashboard"]:
@@ -341,7 +321,7 @@ def locked(directory):
 
 def cmd_lock_test(args):
     """Test hook: hold the task folder's lock for `seconds`, logging to .lock-test.log, so tests can check exclusion."""
-    seconds = float(args[0]) if args else 0.0
+    seconds = args.seconds
     task_dir = find_paths(os.getcwd())["dir"]
     log = os.path.join(task_dir, ".lock-test.log")
     with locked(task_dir):
@@ -436,10 +416,10 @@ CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the das
 DEFAULT_LEASE_MINUTES = 30
 
 
-def agent_identity(values):
+def agent_identity(agent=None):
     """--agent, else ATM_AGENT, else this Claude Code session, else user@host:worktree (stable across commands)."""
-    if values.get("--agent"):
-        return values["--agent"]
+    if agent:
+        return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
@@ -591,28 +571,23 @@ def next_task(data, store, phase=None, task_type=None):
 
 
 def cmd_next(args):
-    _, values = parse_options(args, flags=("--claim", "--json"), options=("--phase", "--type", "--agent"))
-    try:
-        phase = float(values["--phase"]) if "--phase" in values else None
-    except ValueError:
-        raise AtmError("--phase needs a number", 2)
-    agent = agent_identity(values)
+    agent = agent_identity(args.agent)
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
         store = read_store(paths)
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
-        task, reason = next_task(data, store, phase, values.get("--type"))
-        if task and "--claim" in values:
+        task, reason = next_task(data, store, args.phase, args.type)
+        if task and args.claim:
             change_status(task, data, "start", agent=agent)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
-        if expired or (task and "--claim" in values):
+        if expired or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
     report_expired(expired)
-    claim = claims.get(task["id"]) if task and "--claim" in values else None
-    if "--json" in values:
+    claim = claims.get(task["id"]) if task and args.claim else None
+    if args.json:
         out(to_json({"task": task, "claim": claim, "reason": reason}))
     elif task:
         verb = "Claimed" if claim else "Next"
@@ -624,10 +599,7 @@ def cmd_next(args):
 
 
 def cmd_heartbeat(args):
-    positional, values = parse_options(args, flags=("--json",), options=("--agent",))
-    if len(positional) != 1:
-        raise AtmError("usage: atm heartbeat <task id>", 2)
-    task_id, agent = positional[0], agent_identity(values)
+    task_id, agent = args.id, agent_identity(args.agent)
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
@@ -644,14 +616,13 @@ def cmd_heartbeat(args):
     if not claim:
         gone = any(c["task"] == task_id for c in expired)
         raise AtmError(f"{task_id} has no live claim" + (" (its lease expired)" if gone else ""), 4)
-    if "--json" in values:
+    if args.json:
         out(to_json(claim))
     else:
         out(f"{task_id}: lease extended to {claim['lease_expires_at']}")
 
 
 def cmd_claims(args):
-    _, values = parse_options(args, flags=("--json",))
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
@@ -661,7 +632,7 @@ def cmd_claims(args):
             write_json_atomic(paths["tasks"], data)
         write_store(paths, store)
     live = sorted(claims.values(), key=lambda c: c["task"])
-    if "--json" in values:
+    if args.json:
         out(to_json(live))
         return
     if not live:
@@ -678,10 +649,7 @@ def cmd_claims(args):
 
 def cmd_status_change(command):
     def run(args):
-        positional, values = parse_options(args, flags=("--json",), options=("--reason", "--agent"))
-        if len(positional) != 1:
-            raise AtmError(f"usage: atm {command} <task id>", 2)
-        task_id, agent = positional[0], agent_identity(values)
+        task_id, agent = args.id, agent_identity(args.agent)
         paths = find_paths(os.getcwd())
         with locked_with_claims(paths):
             data = load_tasks(paths)
@@ -690,7 +658,7 @@ def cmd_status_change(command):
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
             check_holder(claims, task_id, agent, command)
-            previous = change_status(task, data, command, values.get("--reason"), agent)
+            previous = change_status(task, data, command, getattr(args, "reason", None), agent)
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose
@@ -701,7 +669,7 @@ def cmd_status_change(command):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
         report_expired(expired)
-        if "--json" in values:
+        if args.json:
             out(to_json({**task, "claim": claims.get(task_id)}))
         else:
             out(f"{task['id']}: {previous} -> {task['status']}")
@@ -841,9 +809,7 @@ def merge_task_files(base, ours, theirs):
 
 
 def cmd_merge_driver(args):
-    if len(args) < 3:
-        raise AtmError("usage: atm merge-driver <base> <ours> <theirs>", 2)
-    base_path, ours_path, theirs_path = args[:3]
+    base_path, ours_path, theirs_path = args.base, args.ours, args.theirs
     versions = [read_json(p) for p in (base_path, ours_path, theirs_path)]
     if versions[0] is None and os.path.exists(base_path) and os.path.getsize(base_path) == 0:
         versions[0] = {"tasks": []}  # the file was added on both branches
@@ -851,6 +817,8 @@ def cmd_merge_driver(args):
         raise AtmError("tasks.json merge: one side is not valid JSON; resolve the conflict by hand")
     merged, conflicts = merge_task_files(*versions)
     write_json_atomic(ours_path, merged)
+    if args.json:
+        out(to_json({"conflicts": conflicts}))
     if conflicts:
         sys.stderr.write("atm: tasks.json has conflicting edits (this branch's version was kept):\n")
         for conflict in conflicts:
@@ -907,12 +875,16 @@ def ensure_project_id(paths):
 def cmd_init(args):
     paths = find_paths(os.getcwd())
     project_id = ensure_project_id(paths)
+    git_repo = in_git(paths["root"])
+    changed = ensure_merge_driver(paths) if git_repo else False
+    if args.json:
+        out(to_json({"project_id": project_id, "git": git_repo, "gitattributes_added": changed}))
+        return
     if project_id:
         out(f"Gave this project an id ({project_id}) in tasks.json meta, for the dashboard's saved view.")
-    if not in_git(paths["root"]):
+    if not git_repo:
         out("Not in a git repository: there is no merge driver to set up.")
         return
-    changed = ensure_merge_driver(paths)
     out(
         "Registered the tasks.json merge driver (git config merge.atm)"
         + (" and added .agentic-task-manager/.gitattributes (staged)." if changed else "; .gitattributes already set.")
@@ -1047,7 +1019,7 @@ def describe_migration(r, paths):
 def cmd_migrate(args):
     paths = find_paths(os.getcwd())
     r = migrate(paths)
-    if "--json" in args:
+    if args.json:
         out(to_json(r))
         return
     for line in describe_migration(r, paths):
@@ -1099,7 +1071,7 @@ def open_browser(url):
         out(f"Could not open a browser; open {url} yourself.")
 
 
-def serve_start(paths, values):
+def serve_start(paths, port):
     for line in describe_migration(migrate(paths), paths):
         if line != "Nothing to migrate.":
             out(line)
@@ -1110,7 +1082,6 @@ def serve_start(paths, values):
     if record:
         out(f"Dashboard server already running: {server_url(record['port'])}")
         return record
-    port = int(values.get("--port", DEFAULT_PORT))
     with open(os.path.join(task_dir, SERVER_LOG), "ab") as log:
         child = subprocess.Popen(
             [sys.executable, os.path.abspath(__file__), "_serve-child", task_dir, str(port)],
@@ -1154,9 +1125,9 @@ def serve_stop(paths):
     out(f"Dashboard server stopped (pid {pid}).")
 
 
-def serve_status(paths, values):
+def serve_status(paths, as_json):
     record = live_server(paths["dir"])
-    if "--json" in values:
+    if as_json:
         out(to_json({"running": bool(record), **(record or {}), "url": server_url(record["port"]) if record else None}))
         return
     if not record:
@@ -1167,19 +1138,15 @@ def serve_status(paths, values):
 
 
 def cmd_serve(args):
-    positional, values = parse_options(args, flags=("--open", "--json"), options=("--port",))
-    action = positional[0] if positional else "start"
     paths = find_paths(os.getcwd())
-    if action == "start":
-        record = serve_start(paths, values)
-        if "--open" in values:
+    if args.action == "start":
+        record = serve_start(paths, args.port)
+        if args.open:
             open_browser(server_url(record["port"]))
-    elif action == "stop":
+    elif args.action == "stop":
         serve_stop(paths)
-    elif action == "status":
-        serve_status(paths, values)
     else:
-        raise AtmError(f"unknown serve action '{action}' (use start, stop or status)", 2)
+        serve_status(paths, args.json)
 
 
 def cmd_serve_child(args):
@@ -1187,7 +1154,7 @@ def cmd_serve_child(args):
     import http.server
     import socketserver
 
-    task_dir, port = args[0], int(args[1])
+    task_dir, port = args.task_dir, args.port
     record_path = os.path.join(task_dir, SERVER_RECORD)
 
     class Handler(http.server.SimpleHTTPRequestHandler):
@@ -1251,7 +1218,10 @@ def cmd_serve_child(args):
 
 
 # ==== cli.py ====
-# The command table and main().
+# The command line: one argparse parser, a subparser per command, and main().
+#
+# Every command takes --json. Usage errors keep atm's format ("atm: <message>", exit code 2) followed by the command's
+# usage line; with --json, every error is {"error": "...", "code": N} on stderr, with the same exit code.
 
 USAGE = """usage: atm <command> [options]
 
@@ -1280,49 +1250,115 @@ commands:
                  list live claims, shared by all worktrees of this clone
                  (start/done/fail/release/heartbeat take --agent NAME and --json)
   help           show this help
+
+Every command takes --json, and `atm <command> --help` describes it.
 """
 
 
+class Parser(argparse.ArgumentParser):
+    """Usage errors as AtmError (exit code 2), so they are reported like every other error."""
+
+    def error(self, message):
+        raise AtmError(f"{message}\n{self.format_usage().strip()}", 2)
+
+
 def cmd_version(args):
-    out(plugin_version())
+    out(to_json({"version": plugin_version()}) if args.json else plugin_version())
 
 
 def cmd_help(args):
-    sys.stdout.write(USAGE)
+    if args.json:
+        out(to_json({"usage": USAGE}))
+    else:
+        sys.stdout.write(USAGE)
 
 
-COMMANDS = {
-    "version": cmd_version,
-    "paths": cmd_paths,
-    "migrate": cmd_migrate,
-    "serve": cmd_serve,
-    "start": cmd_status_change("start"),
-    "done": cmd_status_change("done"),
-    "fail": cmd_status_change("fail"),
-    "release": cmd_status_change("release"),
-    "next": cmd_next,
-    "heartbeat": cmd_heartbeat,
-    "init": cmd_init,
-    "merge-driver": cmd_merge_driver,
-    "claims": cmd_claims,
-    "_serve-child": cmd_serve_child,
-    "_lock-test": cmd_lock_test,
-    "help": cmd_help,
-}
+def build_parser():
+    parser = Parser(prog="atm", add_help=False)
+    commands = parser.add_subparsers(dest="command", parser_class=Parser)
+
+    def command(name, run, description, hidden=False):
+        sub = commands.add_parser(name, description=description, help=argparse.SUPPRESS if hidden else description)
+        sub.add_argument("--json", action="store_true", help="print the result as JSON")
+        sub.set_defaults(run=run)
+        return sub
+
+    def agent_option(sub):
+        sub.add_argument("--agent", metavar="NAME", help="who you are (default: ATM_AGENT, else this session)")
+
+    command("version", cmd_version, "print the plugin version")
+    command("help", cmd_help, "show the list of commands")
+    command("paths", cmd_paths, "print where this project's task files are")
+    command("migrate", cmd_migrate, "move an old tasks.json into .agentic-task-manager/ and set the folder up")
+
+    serve = command("serve", cmd_serve, "run the dashboard server for this project in the background")
+    serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
+    serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
+    serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
+
+    for name, description in (
+        ("start", "mark a task in_progress and claim it (its dependencies must be done)"),
+        ("done", "mark an in_progress task done and drop its claim"),
+        ("fail", "put an in_progress task back to todo, recording why"),
+        ("release", "put an in_progress task back to todo"),
+    ):
+        sub = command(name, cmd_status_change(name), description)
+        sub.add_argument("id", help="the task ID")
+        agent_option(sub)
+        if name == "fail":
+            sub.add_argument("--reason", metavar="TEXT", help="why it failed")
+
+    next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
+    next_.add_argument("--phase", type=float, help="only this phase")
+    next_.add_argument("--type", help="only this task type")
+    next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
+    agent_option(next_)
+
+    heartbeat = command("heartbeat", cmd_heartbeat, "extend your claim's lease")
+    heartbeat.add_argument("id", help="the task ID")
+    agent_option(heartbeat)
+
+    command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
+    merge = command("merge-driver", cmd_merge_driver, "git merge driver for tasks.json")
+    for side in ("base", "ours", "theirs"):
+        merge.add_argument(side)
+    command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+
+    child = command("_serve-child", cmd_serve_child, "the detached server process", hidden=True)
+    child.add_argument("task_dir")
+    child.add_argument("port", type=int)
+    lock_test = command("_lock-test", cmd_lock_test, "test hook: hold the lock", hidden=True)
+    lock_test.add_argument("seconds", type=float, nargs="?", default=0.0)
+    return parser, commands.choices
+
+
+def report(error, as_json):
+    if as_json:
+        sys.stderr.write(to_json({"error": str(error), "code": error.code}) + "\n")
+    else:
+        sys.stderr.write(f"atm: {error}\n")
 
 
 def main(argv):
     if not argv or argv[0] in ("-h", "--help"):
         sys.stdout.write(USAGE)
         return 0
-    command = COMMANDS.get(argv[0])
-    if not command:
-        sys.stderr.write(f"atm: unknown command '{argv[0]}'\n" + USAGE)
+    parser, commands = build_parser()
+    as_json = "--json" in argv
+    if argv[0] not in commands:
+        if as_json:
+            report(AtmError(f"unknown command '{argv[0]}'", 2), True)
+        else:
+            sys.stderr.write(f"atm: unknown command '{argv[0]}'\n" + USAGE)
         return 2
     try:
-        command(argv[1:])
+        args, extra = parser.parse_known_args(argv)
+        if extra:
+            # Reported by the command's own parser, so the usage line is the command's
+            commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")
+        args.run(args)
     except AtmError as e:
-        sys.stderr.write(f"atm: {e}\n")
+        report(e, as_json)
         return e.code
     except AtmExit as e:
         return e.code

@@ -45,7 +45,7 @@ def find_paths(cwd):
 
 def cmd_paths(args):
     paths = find_paths(os.getcwd())
-    if "--json" in args:
+    if args.json:
         out(to_json(paths))
         return
     for key in ["root", "dir", "tasks", "dashboard"]:

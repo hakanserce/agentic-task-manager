@@ -72,27 +72,6 @@ def parse_version(text):
     return parts
 
 
-def parse_options(args, flags=(), options=()):
-    """Split args into positionals, set flags and option values. Unknown --options are usage errors."""
-    positional, values = [], {}
-    i = 0
-    while i < len(args):
-        a = args[i]
-        if a in flags:
-            values[a] = True
-        elif a in options:
-            if i + 1 >= len(args):
-                raise AtmError(f"{a} needs a value", 2)
-            values[a] = args[i + 1]
-            i += 1
-        elif a.startswith("--"):
-            raise AtmError(f"unknown option {a}", 2)
-        else:
-            positional.append(a)
-        i += 1
-    return positional, values
-
-
 def now():
     """The current time; ATM_NOW (ISO 8601 UTC) overrides it, for tests."""
     fixed = os.environ.get("ATM_NOW")

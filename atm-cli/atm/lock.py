@@ -102,7 +102,7 @@ def locked(directory):
 
 def cmd_lock_test(args):
     """Test hook: hold the task folder's lock for `seconds`, logging to .lock-test.log, so tests can check exclusion."""
-    seconds = float(args[0]) if args else 0.0
+    seconds = args.seconds
     task_dir = find_paths(os.getcwd())["dir"]
     log = os.path.join(task_dir, ".lock-test.log")
     with locked(task_dir):

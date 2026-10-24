@@ -613,7 +613,7 @@
     "args": ["done"],
     "expect": {
       "exit": 2,
-      "stderrIncludes": ["usage: atm done <task id>"]
+      "stderrIncludes": ["atm: the following arguments are required: id", "usage: atm done"]
     },
     "env": {
       "ATM_NOW": "2026-05-01T10:00:00Z",

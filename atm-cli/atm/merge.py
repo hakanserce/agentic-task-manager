@@ -8,7 +8,7 @@ import os
 import re
 import sys
 
-from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, out, read_json, rel, write_json_atomic
+from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, out, read_json, rel, to_json, write_json_atomic
 from .lock import locked
 from .model import load_tasks
 from .paths import find_paths
@@ -139,9 +139,7 @@ def merge_task_files(base, ours, theirs):
 
 
 def cmd_merge_driver(args):
-    if len(args) < 3:
-        raise AtmError("usage: atm merge-driver <base> <ours> <theirs>", 2)
-    base_path, ours_path, theirs_path = args[:3]
+    base_path, ours_path, theirs_path = args.base, args.ours, args.theirs
     versions = [read_json(p) for p in (base_path, ours_path, theirs_path)]
     if versions[0] is None and os.path.exists(base_path) and os.path.getsize(base_path) == 0:
         versions[0] = {"tasks": []}  # the file was added on both branches
@@ -149,6 +147,8 @@ def cmd_merge_driver(args):
         raise AtmError("tasks.json merge: one side is not valid JSON; resolve the conflict by hand")
     merged, conflicts = merge_task_files(*versions)
     write_json_atomic(ours_path, merged)
+    if args.json:
+        out(to_json({"conflicts": conflicts}))
     if conflicts:
         sys.stderr.write("atm: tasks.json has conflicting edits (this branch's version was kept):\n")
         for conflict in conflicts:
@@ -205,12 +205,16 @@ def ensure_project_id(paths):
 def cmd_init(args):
     paths = find_paths(os.getcwd())
     project_id = ensure_project_id(paths)
+    git_repo = in_git(paths["root"])
+    changed = ensure_merge_driver(paths) if git_repo else False
+    if args.json:
+        out(to_json({"project_id": project_id, "git": git_repo, "gitattributes_added": changed}))
+        return
     if project_id:
         out(f"Gave this project an id ({project_id}) in tasks.json meta, for the dashboard's saved view.")
-    if not in_git(paths["root"]):
+    if not git_repo:
         out("Not in a git repository: there is no merge driver to set up.")
         return
-    changed = ensure_merge_driver(paths)
     out(
         "Registered the tasks.json merge driver (git config merge.atm)"
         + (" and added .agentic-task-manager/.gitattributes (staged)." if changed else "; .gitattributes already set.")

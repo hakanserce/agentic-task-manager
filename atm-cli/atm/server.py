@@ -16,7 +16,6 @@ from .core import (
     now_iso,
     out,
     parse_iso,
-    parse_options,
     pid_alive,
     read_json,
     to_json,
@@ -67,7 +66,7 @@ def open_browser(url):
         out(f"Could not open a browser; open {url} yourself.")
 
 
-def serve_start(paths, values):
+def serve_start(paths, port):
     for line in describe_migration(migrate(paths), paths):
         if line != "Nothing to migrate.":
             out(line)
@@ -78,7 +77,6 @@ def serve_start(paths, values):
     if record:
         out(f"Dashboard server already running: {server_url(record['port'])}")
         return record
-    port = int(values.get("--port", DEFAULT_PORT))
     with open(os.path.join(task_dir, SERVER_LOG), "ab") as log:
         child = subprocess.Popen(
             [sys.executable, os.path.abspath(__file__), "_serve-child", task_dir, str(port)],
@@ -122,9 +120,9 @@ def serve_stop(paths):
     out(f"Dashboard server stopped (pid {pid}).")
 
 
-def serve_status(paths, values):
+def serve_status(paths, as_json):
     record = live_server(paths["dir"])
-    if "--json" in values:
+    if as_json:
         out(to_json({"running": bool(record), **(record or {}), "url": server_url(record["port"]) if record else None}))
         return
     if not record:
@@ -135,19 +133,15 @@ def serve_status(paths, values):
 
 
 def cmd_serve(args):
-    positional, values = parse_options(args, flags=("--open", "--json"), options=("--port",))
-    action = positional[0] if positional else "start"
     paths = find_paths(os.getcwd())
-    if action == "start":
-        record = serve_start(paths, values)
-        if "--open" in values:
+    if args.action == "start":
+        record = serve_start(paths, args.port)
+        if args.open:
             open_browser(server_url(record["port"]))
-    elif action == "stop":
+    elif args.action == "stop":
         serve_stop(paths)
-    elif action == "status":
-        serve_status(paths, values)
     else:
-        raise AtmError(f"unknown serve action '{action}' (use start, stop or status)", 2)
+        serve_status(paths, args.json)
 
 
 def cmd_serve_child(args):
@@ -155,7 +149,7 @@ def cmd_serve_child(args):
     import http.server
     import socketserver
 
-    task_dir, port = args[0], int(args[1])
+    task_dir, port = args.task_dir, args.port
     record_path = os.path.join(task_dir, SERVER_RECORD)
 
     class Handler(http.server.SimpleHTTPRequestHandler):

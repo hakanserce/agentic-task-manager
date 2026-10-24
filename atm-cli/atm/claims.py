@@ -19,7 +19,6 @@ from .core import (
     now_iso,
     out,
     parse_iso,
-    parse_options,
     read_json,
     to_json,
     write_json_atomic,
@@ -34,10 +33,10 @@ CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the das
 DEFAULT_LEASE_MINUTES = 30
 
 
-def agent_identity(values):
+def agent_identity(agent=None):
     """--agent, else ATM_AGENT, else this Claude Code session, else user@host:worktree (stable across commands)."""
-    if values.get("--agent"):
-        return values["--agent"]
+    if agent:
+        return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
@@ -189,28 +188,23 @@ def next_task(data, store, phase=None, task_type=None):
 
 
 def cmd_next(args):
-    _, values = parse_options(args, flags=("--claim", "--json"), options=("--phase", "--type", "--agent"))
-    try:
-        phase = float(values["--phase"]) if "--phase" in values else None
-    except ValueError:
-        raise AtmError("--phase needs a number", 2)
-    agent = agent_identity(values)
+    agent = agent_identity(args.agent)
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
         store = read_store(paths)
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
-        task, reason = next_task(data, store, phase, values.get("--type"))
-        if task and "--claim" in values:
+        task, reason = next_task(data, store, args.phase, args.type)
+        if task and args.claim:
             change_status(task, data, "start", agent=agent)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
-        if expired or (task and "--claim" in values):
+        if expired or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
     report_expired(expired)
-    claim = claims.get(task["id"]) if task and "--claim" in values else None
-    if "--json" in values:
+    claim = claims.get(task["id"]) if task and args.claim else None
+    if args.json:
         out(to_json({"task": task, "claim": claim, "reason": reason}))
     elif task:
         verb = "Claimed" if claim else "Next"
@@ -222,10 +216,7 @@ def cmd_next(args):
 
 
 def cmd_heartbeat(args):
-    positional, values = parse_options(args, flags=("--json",), options=("--agent",))
-    if len(positional) != 1:
-        raise AtmError("usage: atm heartbeat <task id>", 2)
-    task_id, agent = positional[0], agent_identity(values)
+    task_id, agent = args.id, agent_identity(args.agent)
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
@@ -242,14 +233,13 @@ def cmd_heartbeat(args):
     if not claim:
         gone = any(c["task"] == task_id for c in expired)
         raise AtmError(f"{task_id} has no live claim" + (" (its lease expired)" if gone else ""), 4)
-    if "--json" in values:
+    if args.json:
         out(to_json(claim))
     else:
         out(f"{task_id}: lease extended to {claim['lease_expires_at']}")
 
 
 def cmd_claims(args):
-    _, values = parse_options(args, flags=("--json",))
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
         data = load_tasks(paths)
@@ -259,7 +249,7 @@ def cmd_claims(args):
             write_json_atomic(paths["tasks"], data)
         write_store(paths, store)
     live = sorted(claims.values(), key=lambda c: c["task"])
-    if "--json" in values:
+    if args.json:
         out(to_json(live))
         return
     if not live:

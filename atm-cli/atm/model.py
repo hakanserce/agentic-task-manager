@@ -33,9 +33,11 @@ WORKFLOW_TYPES = ("direct", "pull-request")
 # command: (kinds a task may be in, kind it moves to)
 STATUS_CHANGES = {
     "start": (("todo",), "active"),
-    "done": (("active",), "done"),
+    "review": (("active",), "review"),
+    "done": (("active", "review"), "done"),
     "fail": (("active",), "todo"),
     "release": (("active",), "todo"),
+    "reject": (("review",), "todo"),
 }
 
 
@@ -203,7 +205,15 @@ def back_to_todo(task, vocab, actor, stamp):
     """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
     task["status"] = status_for(vocab, "todo")
     touch(task, actor, stamp)
-    for field in ("started_at", "completed_at", "started_by", "completed_by", "agent", "commit"):
+    for field in (
+        "started_at",
+        "completed_at",
+        "started_by",
+        "completed_by",
+        "agent",
+        "commit",
+        "review_requested_at",
+    ):
         task.pop(field, None)
 
 
@@ -225,17 +235,26 @@ def change_status(task, data, command, reason=None, agent=None, status=None, not
             raise AtmError(f"can't start {task['id']}: waiting on " + ", ".join(f"{d} ({s})" for d, s in blocking))
     if note is not None:
         check_note(note)
+    if reason is not None:
+        check_note(reason)
     stamp = now_iso()
     if new_kind == "todo":
         back_to_todo(task, vocab, agent, stamp)
         if command == "fail":
             add_note(task, "failure", reason or "verification failed", agent, stamp)
+        elif command == "reject":
+            add_note(task, "rejection", reason, agent, stamp)
         elif note:
             add_note(task, "handoff", note, agent, stamp)
         return current
     task["status"] = new
     touch(task, agent, stamp)
-    if command == "start":
+    if command == "review":
+        # The work ends here: the review isn't agent work (DM-4.1); done keeps this timestamp
+        task["review_requested_at"] = stamp
+        if note:
+            add_note(task, "review", note, agent, stamp)
+    elif command == "start":
         task["started_at"] = stamp
         task.pop("completed_at", None)
         task.pop("completed_by", None)

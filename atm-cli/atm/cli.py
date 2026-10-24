@@ -27,8 +27,13 @@ commands:
   serve [start|stop|status] [--open] [--port N]
                  run the dashboard server for this project in the background
   start <id>     mark a task in_progress and claim it (its dependencies must be done)
+  review <id> [--note TEXT]
+                 ask for a review of a finished task: in_review, and its claim is released
   done <id> [--note TEXT] [--commit SHA]
-                 mark an in_progress task done and drop its claim; the note is a one-line outcome
+                 mark an in_progress or in_review task done and drop its claim; the note is a one-line
+                 outcome (for a task in review, done means the review passed)
+  reject <id> --reason TEXT
+                 send a task in review back to todo, with what needs to change
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
   release <id> [--note TEXT]
@@ -44,8 +49,8 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
-                 (start/done/fail/release/heartbeat take --agent NAME and --json; start/done/fail/release and
-                 next --claim take --status ID to pick a status when the project has several of that kind)
+                 (status commands and heartbeat take --agent NAME and --json; status commands and next --claim
+                 take --status ID to pick a status when the project has several of that kind)
   help           show this help
 
 Every command takes --json, and `atm <command> --help` describes it.
@@ -102,9 +107,11 @@ def build_parser():
 
     for name, description in (
         ("start", "mark a task in_progress and claim it (its dependencies must be done)"),
-        ("done", "mark an in_progress task done and drop its claim"),
+        ("review", "ask for a review of a finished task: in_review, its claim released"),
+        ("done", "mark an in_progress or in_review task done and drop its claim"),
         ("fail", "put an in_progress task back to todo, recording why"),
         ("release", "put an in_progress task back to todo"),
+        ("reject", "send a task in review back to todo, recording why"),
     ):
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
@@ -114,6 +121,10 @@ def build_parser():
             sub.add_argument("--reason", metavar="TEXT", help="why it failed (kept as a failure note)")
         if name == "release":
             sub.add_argument("--note", metavar="TEXT", help="a handoff for whoever picks it up next")
+        if name == "review":
+            sub.add_argument("--note", metavar="TEXT", help="what the reviewer should look at")
+        if name == "reject":
+            sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
         if name == "done":
             sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")

@@ -362,9 +362,11 @@ WORKFLOW_TYPES = ("direct", "pull-request")
 # command: (kinds a task may be in, kind it moves to)
 STATUS_CHANGES = {
     "start": (("todo",), "active"),
-    "done": (("active",), "done"),
+    "review": (("active",), "review"),
+    "done": (("active", "review"), "done"),
     "fail": (("active",), "todo"),
     "release": (("active",), "todo"),
+    "reject": (("review",), "todo"),
 }
 
 
@@ -532,7 +534,15 @@ def back_to_todo(task, vocab, actor, stamp):
     """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
     task["status"] = status_for(vocab, "todo")
     touch(task, actor, stamp)
-    for field in ("started_at", "completed_at", "started_by", "completed_by", "agent", "commit"):
+    for field in (
+        "started_at",
+        "completed_at",
+        "started_by",
+        "completed_by",
+        "agent",
+        "commit",
+        "review_requested_at",
+    ):
         task.pop(field, None)
 
 
@@ -554,17 +564,26 @@ def change_status(task, data, command, reason=None, agent=None, status=None, not
             raise AtmError(f"can't start {task['id']}: waiting on " + ", ".join(f"{d} ({s})" for d, s in blocking))
     if note is not None:
         check_note(note)
+    if reason is not None:
+        check_note(reason)
     stamp = now_iso()
     if new_kind == "todo":
         back_to_todo(task, vocab, agent, stamp)
         if command == "fail":
             add_note(task, "failure", reason or "verification failed", agent, stamp)
+        elif command == "reject":
+            add_note(task, "rejection", reason, agent, stamp)
         elif note:
             add_note(task, "handoff", note, agent, stamp)
         return current
     task["status"] = new
     touch(task, agent, stamp)
-    if command == "start":
+    if command == "review":
+        # The work ends here: the review isn't agent work (DM-4.1); done keeps this timestamp
+        task["review_requested_at"] = stamp
+        if note:
+            add_note(task, "review", note, agent, stamp)
+    elif command == "start":
         task["started_at"] = stamp
         task.pop("completed_at", None)
         task.pop("completed_by", None)
@@ -1475,8 +1494,13 @@ commands:
   serve [start|stop|status] [--open] [--port N]
                  run the dashboard server for this project in the background
   start <id>     mark a task in_progress and claim it (its dependencies must be done)
+  review <id> [--note TEXT]
+                 ask for a review of a finished task: in_review, and its claim is released
   done <id> [--note TEXT] [--commit SHA]
-                 mark an in_progress task done and drop its claim; the note is a one-line outcome
+                 mark an in_progress or in_review task done and drop its claim; the note is a one-line
+                 outcome (for a task in review, done means the review passed)
+  reject <id> --reason TEXT
+                 send a task in review back to todo, with what needs to change
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
   release <id> [--note TEXT]
@@ -1492,8 +1516,8 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
-                 (start/done/fail/release/heartbeat take --agent NAME and --json; start/done/fail/release and
-                 next --claim take --status ID to pick a status when the project has several of that kind)
+                 (status commands and heartbeat take --agent NAME and --json; status commands and next --claim
+                 take --status ID to pick a status when the project has several of that kind)
   help           show this help
 
 Every command takes --json, and `atm <command> --help` describes it.
@@ -1550,9 +1574,11 @@ def build_parser():
 
     for name, description in (
         ("start", "mark a task in_progress and claim it (its dependencies must be done)"),
-        ("done", "mark an in_progress task done and drop its claim"),
+        ("review", "ask for a review of a finished task: in_review, its claim released"),
+        ("done", "mark an in_progress or in_review task done and drop its claim"),
         ("fail", "put an in_progress task back to todo, recording why"),
         ("release", "put an in_progress task back to todo"),
+        ("reject", "send a task in review back to todo, recording why"),
     ):
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
@@ -1562,6 +1588,10 @@ def build_parser():
             sub.add_argument("--reason", metavar="TEXT", help="why it failed (kept as a failure note)")
         if name == "release":
             sub.add_argument("--note", metavar="TEXT", help="a handoff for whoever picks it up next")
+        if name == "review":
+            sub.add_argument("--note", metavar="TEXT", help="what the reviewer should look at")
+        if name == "reject":
+            sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
         if name == "done":
             sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")

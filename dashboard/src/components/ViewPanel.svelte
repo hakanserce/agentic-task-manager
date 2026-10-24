@@ -1,18 +1,17 @@
 <script lang="ts">
-  import { adjacentView, parseViewHash, VIEW_LABELS, VIEWS, withViewHash, type ViewId } from '../lib/tabs';
+  import { adjacentView, parseViewHash, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
   import { dashboard } from '../lib/state.svelte';
   import DepGraph from './DepGraph.svelte';
   import KanbanBoard from './KanbanBoard.svelte';
   import ProgressTab from './ProgressTab.svelte';
 
-  let view = $state<ViewId>(parseViewHash(location.hash));
+  const view = $derived(dashboard.tab);
   const tabs: Partial<Record<ViewId, HTMLButtonElement>> = {};
 
   // The hash is the source of truth (FR-2.2): selecting a tab writes it, back/forward and edits read it.
   function select(next: ViewId, focus = false) {
     dashboard.graphCollapsed = false;
-    if (next !== view) location.hash = withViewHash(location.hash, next);
-    view = next;
+    dashboard.selectTab(next);
     if (focus) tabs[next]?.focus();
   }
 
@@ -30,7 +29,7 @@
   }
 </script>
 
-<svelte:window onhashchange={() => (view = parseViewHash(location.hash))} />
+<svelte:window onhashchange={() => (dashboard.tab = parseViewHash(location.hash))} />
 
 <div class="graph-section" id="graph-section">
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->

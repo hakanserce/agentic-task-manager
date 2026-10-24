@@ -15,6 +15,11 @@ export function emptyFilters(): Filters {
   return { phase: new Set(), type: new Set(), status: new Set() };
 }
 
+/** Filters from plain lists of values (as saved per project). */
+export function filtersFrom(values: Record<FilterGroup, string[]>): Filters {
+  return { phase: new Set(values.phase), type: new Set(values.type), status: new Set(values.status) };
+}
+
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function statusRank(status: string): number {

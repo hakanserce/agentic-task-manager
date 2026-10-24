@@ -21,6 +21,11 @@ export function parseViewHash(hash: string): ViewId {
   return isView(view) ? view : DEFAULT_VIEW;
 }
 
+/** Whether the hash names a view at all (a link that should win over the saved tab). */
+export function hasViewHash(hash: string): boolean {
+  return new URLSearchParams(hash.replace(/^#/, '')).has('view');
+}
+
 /** `hash` with its view parameter set to `view`, keeping any other parameters. */
 export function withViewHash(hash: string, view: ViewId): string {
   const params = new URLSearchParams(hash.replace(/^#/, ''));

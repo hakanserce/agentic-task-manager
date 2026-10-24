@@ -221,6 +221,19 @@ h1 {
   margin: 0 8px;
 }
 
+.reset-view-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 8px;
+  text-decoration: underline dotted;
+}
+.reset-view-btn:hover {
+  color: var(--text);
+}
+
 .reload-btn {
   background: var(--surface);
   border: 1px solid var(--border);

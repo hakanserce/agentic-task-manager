@@ -28,6 +28,6 @@ export interface Task {
 }
 
 export interface TasksFile {
-  meta?: { project?: string; created?: string; description?: string };
+  meta?: { project?: string; id?: string; created?: string; description?: string; lease_minutes?: number };
   tasks?: Task[];
 }

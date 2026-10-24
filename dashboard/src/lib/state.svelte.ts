@@ -1,8 +1,10 @@
 import { loadClaims, type ClaimMap } from './claims';
-import { DEFAULT_PROJECT_NAME, loadTasks } from './load';
+import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks } from './load';
 import { getPref, setPref } from './prefs';
-import { emptyFilters, filterTasks, toggleFilter, type FilterGroup, type Filters } from './filters';
+import { emptyFilters, filtersFrom, filterTasks, toggleFilter, type FilterGroup, type Filters } from './filters';
+import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
 import type { Task } from './types';
+import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
 
@@ -32,6 +34,14 @@ export class DashboardState {
   detailOpen = $state(false);
 
   graphCollapsed = $state(false);
+  /** The selected view tab; mirrored in the URL hash ("#view=kanban") */
+  tab = $state<ViewId>(parseViewHash(location.hash));
+  kanbanGroupByPhase = $state(false);
+  kanbanShowSkipped = $state(false);
+  /** The phase the Progress tab focuses on; null for all phases */
+  progressPhase = $state<number | null>(null);
+  /** Where this project's view is saved; set once the first load says which project this is */
+  viewKey = $state<string | null>(null);
 
   whatsNewOpen = $state(false);
 
@@ -42,6 +52,7 @@ export class DashboardState {
   async load() {
     try {
       this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
+      if (!this.loaded) this.restoreView();
       this.loaded = true;
       this.loadError = null;
     } catch (e) {
@@ -54,6 +65,7 @@ export class DashboardState {
     this.reloading = true;
     try {
       this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
+      if (!this.loaded) this.restoreView();
       this.loaded = true;
       this.loadError = null;
     } catch (e) {
@@ -94,7 +106,55 @@ export class DashboardState {
     this.whatsNewOpen = false;
   }
 
-  private apply(loaded: { tasks: Task[]; taskMap: ReadonlyMap<string, Task>; projectName: string }, claims: ClaimMap) {
+  selectTab(tab: ViewId) {
+    if (tab !== this.tab) location.hash = withViewHash(location.hash, tab);
+    this.tab = tab;
+  }
+
+  /** The current view, as saved per project. */
+  currentView(): SavedView {
+    return {
+      filters: { phase: [...this.filters.phase], type: [...this.filters.type], status: [...this.filters.status] },
+      tab: this.tab,
+      graphCollapsed: this.graphCollapsed,
+      kanban: { groupByPhase: this.kanbanGroupByPhase, showSkipped: this.kanbanShowSkipped },
+      progressPhase: this.progressPhase,
+    };
+  }
+
+  saveView() {
+    const view = this.currentView(); // read first, so an $effect calling this tracks every field
+    if (this.viewKey) writeView(this.viewKey, view);
+  }
+
+  /** Forget this project's saved view and return to the defaults. */
+  resetView() {
+    if (this.viewKey) clearView(this.viewKey);
+    this.applyView(defaultView(), true);
+  }
+
+  /** After the first load: bring back this project's view. A #view= in the URL wins over the saved tab. */
+  private restoreView() {
+    this.viewKey = projectKey(this.meta);
+    this.applyView(sanitizeView(readView(this.viewKey), this.tasks), !hasViewHash(location.hash));
+  }
+
+  private applyView(view: SavedView, includeTab: boolean) {
+    this.filters = filtersFrom(view.filters);
+    this.graphCollapsed = view.graphCollapsed;
+    this.kanbanGroupByPhase = view.kanban.groupByPhase;
+    this.kanbanShowSkipped = view.kanban.showSkipped;
+    this.progressPhase = view.progressPhase;
+    if (includeTab && view.tab !== this.tab) {
+      history.replaceState(null, '', withViewHash(location.hash, view.tab));
+      this.tab = view.tab;
+    }
+  }
+
+  private meta: LoadedTasks['meta'] = undefined;
+
+  private apply(loaded: LoadedTasks, claims: ClaimMap) {
+    this.meta = loaded.meta;
     this.tasks = loaded.tasks;
     this.taskMap = loaded.taskMap;
     this.projectName = loaded.projectName;

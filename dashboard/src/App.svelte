@@ -12,6 +12,9 @@
   onMount(() => {
     dashboard.load();
   });
+
+  // Remember the view per project (FR-5): every change to filters, tab, panel or board options is saved
+  $effect(() => dashboard.saveView());
 </script>
 
 <Header />

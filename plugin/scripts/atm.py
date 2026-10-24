@@ -61,7 +61,8 @@ commands:
                  the task /atm:loop-tasks works on next; --claim also starts and claims it,
                  atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease
-  init           register the tasks.json merge driver in this clone (migrate does this too)
+  init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
+                 clone (migrate registers the driver too)
   merge-driver <base> <ours> <theirs>
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
@@ -1207,8 +1208,28 @@ def ensure_merge_driver(paths):
     return True
 
 
+def ensure_project_id(paths):
+    """Give tasks.json a meta.id if it has none: the dashboard keeps each project's saved view under it (projects
+    served from the same port share browser storage). Returns the new id, or None if there was one already."""
+    if not os.path.isfile(paths["tasks"]):
+        return None
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        meta = data.get("meta")
+        if not isinstance(meta, dict):
+            meta = data["meta"] = {}
+        if isinstance(meta.get("id"), str) and meta["id"]:
+            return None
+        meta["id"] = os.urandom(4).hex()
+        write_json_atomic(paths["tasks"], data)
+    return meta["id"]
+
+
 def cmd_init(args):
     paths = find_paths(os.getcwd())
+    project_id = ensure_project_id(paths)
+    if project_id:
+        out(f"Gave this project an id ({project_id}) in tasks.json meta, for the dashboard's saved view.")
     if not in_git(paths["root"]):
         out("Not in a git repository: there is no merge driver to set up.")
         return

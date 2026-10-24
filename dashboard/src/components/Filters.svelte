@@ -47,5 +47,11 @@
       <div class="separator"></div>
     {/each}
     <RefreshControls />
+    <button
+      class="reset-view-btn"
+      id="reset-view"
+      title="Forget this project's saved filters, tab and options"
+      onclick={() => dashboard.resetView()}>Reset view</button
+    >
   {/if}
 </div>

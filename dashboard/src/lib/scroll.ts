@@ -6,7 +6,7 @@ export function scrollToTask(id: string) {
   if (!el) return;
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   el.style.borderColor = 'var(--yellow)';
-  el.style.boxShadow = '0 0 12px rgba(210,153,34,0.3)';
+  el.style.boxShadow = '0 0 12px color-mix(in srgb, var(--yellow) 30%, transparent)';
   setTimeout(() => {
     el.style.borderColor = '';
     el.style.boxShadow = '';

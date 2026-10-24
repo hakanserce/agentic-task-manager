@@ -1,4 +1,5 @@
-// Colors and icons, lifted from the legacy dashboard (v0.4.0).
+// Colors and icons, lifted from the legacy dashboard (v0.4.0). Every color is a CSS token from app.css (or a tint of
+// one), so themes can change them.
 
 export interface ColorStyle {
   color: string;
@@ -6,24 +7,27 @@ export interface ColorStyle {
 }
 
 export const TYPE_COLORS: Record<string, ColorStyle> = {
-  feature: { color: 'var(--green)', bg: 'rgba(63,185,80,0.15)' },
-  bugfix: { color: 'var(--red)', bg: 'rgba(248,81,73,0.15)' },
-  bug: { color: 'var(--red)', bg: 'rgba(248,81,73,0.15)' },
-  test: { color: 'var(--purple)', bg: 'rgba(188,140,255,0.15)' },
-  infra: { color: 'var(--orange)', bg: 'rgba(209,134,22,0.15)' },
-  docs: { color: 'var(--cyan)', bg: 'rgba(57,210,192,0.15)' },
-  refactor: { color: 'var(--yellow)', bg: 'rgba(210,153,34,0.15)' },
-  polish: { color: 'var(--pink)', bg: 'rgba(247,120,186,0.15)' },
+  feature: { color: 'var(--green)', bg: 'color-mix(in srgb, var(--green) 15%, transparent)' },
+  bugfix: { color: 'var(--red)', bg: 'color-mix(in srgb, var(--red) 15%, transparent)' },
+  bug: { color: 'var(--red)', bg: 'color-mix(in srgb, var(--red) 15%, transparent)' },
+  test: { color: 'var(--purple)', bg: 'color-mix(in srgb, var(--purple) 15%, transparent)' },
+  infra: { color: 'var(--orange)', bg: 'color-mix(in srgb, var(--orange) 15%, transparent)' },
+  docs: { color: 'var(--cyan)', bg: 'color-mix(in srgb, var(--cyan) 15%, transparent)' },
+  refactor: { color: 'var(--yellow)', bg: 'color-mix(in srgb, var(--yellow) 15%, transparent)' },
+  polish: { color: 'var(--pink)', bg: 'color-mix(in srgb, var(--pink) 15%, transparent)' },
 };
 
-export const FALLBACK_TYPE: ColorStyle = { color: 'var(--text-muted)', bg: 'rgba(139,148,158,0.15)' };
+export const FALLBACK_TYPE: ColorStyle = {
+  color: 'var(--text-muted)',
+  bg: 'color-mix(in srgb, var(--text-muted) 15%, transparent)',
+};
 
 export const STATUS_COLORS: Record<string, ColorStyle> = {
-  todo: { color: 'var(--text-muted)', bg: 'rgba(139,148,158,0.15)' },
-  in_progress: { color: 'var(--accent)', bg: 'rgba(88,166,255,0.15)' },
-  done: { color: 'var(--green)', bg: 'rgba(63,185,80,0.15)' },
-  blocked: { color: 'var(--red)', bg: 'rgba(248,81,73,0.15)' },
-  skipped: { color: 'var(--text-muted)', bg: 'rgba(139,148,158,0.1)' },
+  todo: { color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 15%, transparent)' },
+  in_progress: { color: 'var(--accent)', bg: 'color-mix(in srgb, var(--accent) 15%, transparent)' },
+  done: { color: 'var(--green)', bg: 'color-mix(in srgb, var(--green) 15%, transparent)' },
+  blocked: { color: 'var(--red)', bg: 'color-mix(in srgb, var(--red) 15%, transparent)' },
+  skipped: { color: 'var(--text-muted)', bg: 'color-mix(in srgb, var(--text-muted) 10%, transparent)' },
 };
 
 export const PHASE_PALETTE = [
@@ -37,16 +41,16 @@ export const PHASE_PALETTE = [
   'var(--red)',
 ];
 
-/** Darker node fills for the dependency graph. */
+/** Darker node fills for the dependency graph (tokens --node-*). */
 export const GRAPH_NODE_BG: Record<string, string> = {
-  feature: '#1a3324',
-  bugfix: '#3d1518',
-  bug: '#3d1518',
-  test: '#2d1f4e',
-  infra: '#3d2a0f',
-  docs: '#1a3333',
-  refactor: '#33300a',
-  polish: '#3d1a2e',
+  feature: 'var(--node-feature)',
+  bugfix: 'var(--node-bugfix)',
+  bug: 'var(--node-bugfix)',
+  test: 'var(--node-test)',
+  infra: 'var(--node-infra)',
+  docs: 'var(--node-docs)',
+  refactor: 'var(--node-refactor)',
+  polish: 'var(--node-polish)',
 };
 export const FALLBACK_GRAPH_NODE_BG = 'var(--surface2)';
 

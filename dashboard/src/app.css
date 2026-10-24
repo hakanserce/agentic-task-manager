@@ -1,4 +1,6 @@
 /* Lifted verbatim from the legacy dashboard (v0.4.0). Global on purpose: the e2e suite and screenshots rely on these class names. */
+/* Colour tokens: every colour in the dashboard comes from these (tests/unit/no-hardcoded-colours.test.ts checks it).
+   Tints are color-mix() of a token with transparent, so a theme only defines the base colours. */
 :root {
   --bg: #0d1117;
   --surface: #161b22;
@@ -14,6 +16,18 @@
   --pink: #f778ba;
   --orange: #d18616;
   --cyan: #39d2c0;
+  /* Text and marks on an accent-coloured background (active filter buttons) */
+  --on-accent: #000;
+  /* Behind the detail and What's new panels */
+  --overlay: rgba(0, 0, 0, 0.6);
+  /* Dependency graph node fills, by task type: dark versions of the type colours */
+  --node-feature: #1a3324;
+  --node-bugfix: #3d1518;
+  --node-test: #2d1f4e;
+  --node-infra: #3d2a0f;
+  --node-docs: #1a3333;
+  --node-refactor: #33300a;
+  --node-polish: #3d1a2e;
 }
 
 * {
@@ -187,7 +201,7 @@ h1 {
 }
 .filter-btn.active {
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -206,8 +220,8 @@ h1 {
   text-align: center;
 }
 .filter-btn.active .filter-count {
-  background: rgba(0, 0, 0, 0.2);
-  color: #000;
+  background: color-mix(in srgb, var(--on-accent) 20%, transparent);
+  color: var(--on-accent);
 }
 /* A value with no tasks under the other filters: still clickable, but visibly empty */
 .filter-btn.empty {
@@ -304,7 +318,7 @@ h1 {
 }
 
 .auto-refresh-toggle input:checked + .toggle-track {
-  background: rgba(88, 166, 255, 0.2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   border-color: var(--accent);
 }
 
@@ -428,21 +442,21 @@ h1 {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(57, 210, 192, 0.12);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
   color: var(--cyan);
   font-family: 'SF Mono', 'Fira Code', monospace;
   cursor: pointer;
 }
 
 .uc-badge:hover {
-  background: rgba(57, 210, 192, 0.25);
+  background: color-mix(in srgb, var(--cyan) 25%, transparent);
 }
 
 .req-badge {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(247, 120, 186, 0.12);
+  background: color-mix(in srgb, var(--pink) 12%, transparent);
   color: var(--pink);
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
@@ -473,7 +487,7 @@ h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay);
   z-index: 100;
   justify-content: center;
   align-items: center;

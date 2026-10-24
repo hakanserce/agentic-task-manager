@@ -192,6 +192,28 @@ h1 {
   font-weight: 600;
 }
 
+.filter-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--border);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+.filter-btn.active .filter-count {
+  background: rgba(0, 0, 0, 0.2);
+  color: #000;
+}
+/* A value with no tasks under the other filters: still clickable, but visibly empty */
+.filter-btn.empty {
+  opacity: 0.45;
+}
+
 .separator {
   width: 1px;
   height: 24px;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { claimSummary } from '../lib/claims';
   import type { KanbanCard } from '../lib/kanban';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
@@ -7,6 +8,7 @@
   const task = $derived(card.task);
   const pc = $derived(phaseColor(task.phase));
   const ts = $derived(typeStyle(task.type));
+  const claim = $derived(task.status === 'in_progress' ? dashboard.claims.get(task.id) : undefined);
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -32,6 +34,9 @@
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>
   <div class="kanban-card-name">{task.name}</div>
+  {#if claim}
+    <div class="kanban-claim" title="Claimed by {claim.agent}">{claimSummary(claim, dashboard.loadedAt)}</div>
+  {/if}
   {#if card.readiness}
     {#if card.readiness.ready}
       <div class="kanban-readiness ready">Ready</div>

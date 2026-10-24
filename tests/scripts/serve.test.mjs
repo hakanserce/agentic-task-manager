@@ -9,7 +9,9 @@ import { after, describe, test } from 'node:test';
 import { makeProject, removeDir, runAtm } from './helpers.mjs';
 
 const TASKS = { meta: { project: 'Serve' }, tasks: [] };
-let nextPort = 18400;
+// A different range per run: ports of the previous run can still be in TIME_WAIT, and the server deliberately doesn't
+// use SO_REUSEADDR (on macOS it would let it share a port another server is listening on).
+let nextPort = 20000 + (process.pid % 400) * 50;
 /** A block of ports for one test, so tests never collide even if a stop fails. */
 const ports = () => (nextPort += 10) - 10;
 
@@ -20,12 +22,18 @@ const record = (root) => {
     return null;
   }
 };
+/** Running, and not a zombie (an exited process nobody reaped yet, as happens in containers without an init). */
 const alive = (pid) => {
   try {
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
+  }
+  try {
+    const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf8');
+    return stat.slice(stat.lastIndexOf(')') + 1).trim()[0] !== 'Z';
+  } catch {
+    return true; // no /proc (macOS): orphans are reaped right away
   }
 };
 const portOf = (stdout) => Number(/localhost:(\d+)\//.exec(stdout)?.[1]);

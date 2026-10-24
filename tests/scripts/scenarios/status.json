@@ -1,0 +1,651 @@
+[
+  {
+    "name": "start: todo -> in_progress, sets started_at, keeps the rest",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "done",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            },
+            {
+              "id": "T-002",
+              "name": "Task T-002",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": ["T-001"],
+              "updated_at": "2026-04-01T00:00:00Z",
+              "completed_at": "2026-03-01T00:00:00Z",
+              "extra": "kept"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["start", "T-002"],
+    "expect": {
+      "stdout": "T-002: todo -> in_progress\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "done",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            },
+            {
+              "id": "T-002",
+              "name": "Task T-002",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": ["T-001"],
+              "updated_at": "2026-05-01T10:00:00Z",
+              "extra": "kept",
+              "started_at": "2026-05-01T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "start refuses a task whose dependencies aren't done",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            },
+            {
+              "id": "T-002",
+              "name": "Task T-002",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": ["T-001", "T-404"],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["start", "T-002"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["can't start T-002: waiting on T-001 (in_progress), T-404 (missing)"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            },
+            {
+              "id": "T-002",
+              "name": "Task T-002",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": ["T-001", "T-404"],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "done: in_progress -> done, sets completed_at, keeps started_at; --json prints the task",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z",
+              "started_at": "2026-05-01T09:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["done", "T-001", "--json"],
+    "expect": {
+      "json": {
+        "id": "T-001",
+        "name": "Task T-001",
+        "phase": 0,
+        "type": "feature",
+        "description": "d",
+        "status": "done",
+        "dependencies": [],
+        "updated_at": "2026-05-01T10:00:00Z",
+        "started_at": "2026-05-01T09:00:00Z",
+        "completed_at": "2026-05-01T10:00:00Z",
+        "claim": null
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "fail: back to todo with the reason, timestamps of the attempt removed",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z",
+              "started_at": "2026-05-01T09:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["fail", "T-001", "--reason", "tests failed twice"],
+    "expect": {
+      "stdout": "T-001: in_progress -> todo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-05-01T10:00:00Z",
+              "last_failure": {
+                "at": "2026-05-01T10:00:00Z",
+                "reason": "tests failed twice"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "fail without --reason records a default reason",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["fail", "T-001", "--json"],
+    "expect": {
+      "json": {
+        "id": "T-001",
+        "name": "Task T-001",
+        "phase": 0,
+        "type": "feature",
+        "description": "d",
+        "status": "todo",
+        "dependencies": [],
+        "updated_at": "2026-05-01T10:00:00Z",
+        "last_failure": {
+          "at": "2026-05-01T10:00:00Z",
+          "reason": "verification failed"
+        },
+        "claim": null
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "release: back to todo, no failure recorded",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "in_progress",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z",
+              "started_at": "2026-05-01T09:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["release", "T-001"],
+    "expect": {
+      "stdout": "T-001: in_progress -> todo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-05-01T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "done refuses a task that is todo",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["done", "T-001"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["can't done T-001: it is todo, not in_progress"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "start refuses a task that is done",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "done",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["start", "T-001"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["can't start T-001: it is done, not todo"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "done",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "release refuses a task that is done",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "done",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["release", "T-001"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["can't release T-001: it is done, not in_progress"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "done",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "fail refuses a task that is todo",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["fail", "T-001"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["can't fail T-001: it is todo, not in_progress"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "an unknown task id",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["start", "T-999"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["no task T-999"]
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "a missing id is a usage error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "S"
+          },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "Task T-001",
+              "phase": 0,
+              "type": "feature",
+              "description": "d",
+              "status": "todo",
+              "dependencies": [],
+              "updated_at": "2026-04-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["done"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["usage: atm done <task id>"]
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "no task file",
+    "setup": {
+      "git": true
+    },
+    "args": ["start", "T-001"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["no tasks.json in"]
+    }
+  },
+  {
+    "name": "a file that isn't a task list",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": "[1, 2]"
+      }
+    },
+    "args": ["start", "T-001"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["is not a valid task file"]
+    }
+  },
+  {
+    "name": "the file is rewritten in the same format: key order, unicode, other tasks untouched",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": "{\n  \"meta\": {\n    \"project\": \"Ünïcode ✓\"\n  },\n  \"tasks\": [\n    {\n      \"id\": \"T-001\",\n      \"status\": \"done\",\n      \"name\": \"Erste Aufgabe — fertig\",\n      \"dependencies\": []\n    },\n    {\n      \"status\": \"todo\",\n      \"id\": \"T-002\",\n      \"dependencies\": [\n        \"T-001\"\n      ]\n    }\n  ]\n}\n"
+      }
+    },
+    "env": {
+      "ATM_NOW": "2026-05-01T10:00:00Z"
+    },
+    "args": ["start", "T-002"],
+    "expect": {
+      "files": {
+        ".agentic-task-manager/tasks.json": "{\n  \"meta\": {\n    \"project\": \"Ünïcode ✓\"\n  },\n  \"tasks\": [\n    {\n      \"id\": \"T-001\",\n      \"status\": \"done\",\n      \"name\": \"Erste Aufgabe — fertig\",\n      \"dependencies\": []\n    },\n    {\n      \"status\": \"in_progress\",\n      \"id\": \"T-002\",\n      \"dependencies\": [\n        \"T-001\"\n      ],\n      \"updated_at\": \"2026-05-01T10:00:00Z\",\n      \"started_at\": \"2026-05-01T10:00:00Z\"\n    }\n  ]\n}\n"
+      }
+    }
+  }
+]

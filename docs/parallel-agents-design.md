@@ -148,6 +148,12 @@ shared by all worktrees of the clone (S2), under a lock of their own. Outside a 
 task again: it moves back to `todo`, with a note on who held it (F7). For the dashboard, the tool also writes a
 read-only snapshot, `.agentic-task-manager/claims.json`, which is gitignored.
 
+`done` also leaves a **completion record** in the shared store. Each worktree has its own `tasks.json`, so a task
+finished in worktree A still reads `todo` in worktree B until the branches merge. Without the record, B's
+`atm next` would hand it out again as soon as A's claim was gone. `atm next` skips completed tasks, and
+`atm start <id>` clears the record, so deliberately redoing a task stays possible. (Found while writing the stress
+test: 16 agents in two worktrees over 40 tasks.)
+
 **L3. Merge-safe tasks.json.** `atm init` (run by `/atm:create-tasks` and on first use) adds
 `tasks.json merge=atm` to `.agentic-task-manager/.gitattributes` and registers the driver in the clone's git
 config. The driver merges task by task as described in option E. Branches that update different tasks already merge

@@ -118,8 +118,10 @@ Run the helper again, now that `tasks.json` exists:
 "${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
 ```
 
-It writes `.agentic-task-manager/.gitignore` (the dashboard and runtime files aren't committed; `tasks.json` is) and
-installs the plugin's current dashboard next to `tasks.json`. Relay what it prints, except "Nothing to migrate.".
+It writes `.agentic-task-manager/.gitignore` (the dashboard and runtime files aren't committed; `tasks.json` is),
+installs the plugin's current dashboard next to `tasks.json`, and in a git repository registers atm's merge driver
+for `tasks.json` (`.agentic-task-manager/.gitattributes` plus the clone's git config), so branches that changed
+different tasks merge cleanly. Relay what it prints, except "Nothing to migrate.".
 
 Then tell the user how to start the dashboard:
 

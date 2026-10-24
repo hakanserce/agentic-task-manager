@@ -12,12 +12,21 @@ export const PLUGIN_VERSION = JSON.parse(
   fs.readFileSync(path.join(REPO, 'plugin/.claude-plugin/plugin.json'), 'utf8'),
 ).version;
 
+/** The environment without this machine's agent identity, so every test decides who the agent is. */
+export function baseEnv() {
+  const env = { ...process.env };
+  delete env.CLAUDE_CODE_SESSION_ID;
+  delete env.ATM_AGENT;
+  delete env.ATM_NOW;
+  return env;
+}
+
 /** Run `atm args...`; returns { code, stdout, stderr }. */
 export function runAtm(args, cwd, env = {}) {
   const result = spawnSync(ATM, args, {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, ...env },
+    env: { ...baseEnv(), ...env },
   });
   if (result.error) throw result.error;
   return { code: result.status, stdout: result.stdout, stderr: result.stderr };
@@ -58,7 +67,7 @@ export function makeProject(setup = {}) {
     git(['commit', '-q', '-m', 'setup', '--allow-empty'], root);
   }
   for (const [cmd, ...args] of setup.commands || []) {
-    const env = { ...process.env, ATM };
+    const env = { ...baseEnv(), ATM };
     const result = spawnSync(cmd, args, { cwd: root, encoding: 'utf8', env });
     if (result.status !== 0) throw new Error(`${cmd} ${args.join(' ')} failed: ${result.stderr}`);
   }

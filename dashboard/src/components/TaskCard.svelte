@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { claimSummary } from '../lib/claims';
   import { scrollToTask } from '../lib/scroll';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, statusLabel, statusStyle, typeStyle } from '../lib/theme';
@@ -10,6 +11,7 @@
   const ts = $derived(typeStyle(task.type));
   const ss = $derived(statusStyle(task.status));
   const deps = $derived(task.dependencies ?? []);
+  const claim = $derived(task.status === 'in_progress' ? dashboard.claims.get(task.id) : undefined);
 </script>
 
 <div class="task-card status-{task.status}" id="task-{task.id}" data-id={task.id}>
@@ -30,6 +32,9 @@
         {/each}
       {/if}
     </div>
+    {#if claim}
+      <div class="task-claim" title="Claimed by {claim.agent}">{claimSummary(claim, dashboard.loadedAt)}</div>
+    {/if}
   </div>
   <div class="task-tags">
     {#each task.use_cases ?? [] as uc (uc)}<span class="uc-badge" title={uc}>{uc}</span

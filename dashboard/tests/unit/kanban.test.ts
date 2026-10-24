@@ -56,12 +56,13 @@ describe('nextUp', () => {
     expect(nextUp([t('a', 'done'), t('b', 'todo', { dependencies: ['c'] }), t('c', 'blocked')])).toBeUndefined();
   });
 
-  it('implements the selection rule /atm:loop-tasks documents', () => {
-    // If this fails, the skill's rule changed: update nextUp() and this test together.
+  it('is the rule /atm:loop-tasks uses: the skill takes its tasks from `atm next`', () => {
+    // The rule itself lives in plugin/scripts/atm.py (next_task); next-up-parity.test.ts checks that it and nextUp()
+    // pick the same task for every fixture. If this fails, the skill stopped using atm next: re-check the parity.
     const skill = readFileSync(new URL('../../../plugin/skills/loop-tasks/SKILL.md', import.meta.url), 'utf8');
-    expect(skill).toContain('- status == "todo"');
-    expect(skill).toContain('- all dependencies have status == "done"');
-    expect(skill).toContain('- sort by: lowest phase first, then lowest task ID');
+    expect(skill).toContain('`atm next --claim --json [--phase N] [--type T]`');
+    expect(skill).toContain('status todo, all dependencies done, not claimed by another');
+    expect(skill).toContain('lowest phase, then lowest task ID');
   });
 });
 

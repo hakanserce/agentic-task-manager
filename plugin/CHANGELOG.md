@@ -4,6 +4,30 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.11.0] - 2026-10-23
+
+### Added
+- Several agents can now work on one project at once. Run `/atm:loop-tasks` in more than one session, ideally each
+  in its own git worktree: they never take the same task or overwrite each other's changes to `tasks.json`. See
+  "Running agents in parallel" in the README.
+- Claims: the skills take each task with `atm next --claim`, which records the agent, branch and worktree. All
+  worktrees of a clone share the claims. A claim lasts 30 minutes and is renewed during long tasks; if an agent stops,
+  its task becomes available again when the claim runs out.
+- The dashboard shows who works on each in-progress task, on which branch and since when (cards, Kanban board and
+  task details).
+- `tasks.json` merges task by task: status changes from different branches combine, and tasks added on both
+  branches are both kept. A git merge driver for this is registered automatically.
+
+### Changed
+- `/atm:do-task` and `/atm:loop-tasks` change task status only through the plugin's helper, which locks
+  `tasks.json` and writes it atomically, so the dashboard never reads a half-written file.
+- The skills commit only the files a task changed plus `tasks.json`, instead of everything in the working tree.
+- A failed task records why in `last_failure`.
+
+### Fixed
+- `/atm:serve stop` no longer waits several seconds in containers (dev containers, CI images) before reporting the
+  server stopped.
+
 ## [0.10.0] - 2026-10-23
 
 ### Added

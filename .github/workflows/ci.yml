@@ -47,14 +47,15 @@ jobs:
       matrix:
         # Oldest supported version (what macOS's Command Line Tools ship), and a current one
         python: ['3.9', '3.13']
+    # The official Python images (Debian, with git) rather than setup-python, which has no build of old versions for
+    # newer Ubuntu runners
+    container: python:${{ matrix.python }}
     defaults:
       run:
         working-directory: .
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
+      - run: python3 --version && git --version
       # The test runner is Node (node:test); the helper under test is Python
       - uses: actions/setup-node@v4
         with:

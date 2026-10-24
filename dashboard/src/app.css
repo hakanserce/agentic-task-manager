@@ -932,6 +932,16 @@ svg.graph-minimap.hidden {
 .kanban-readiness.waiting {
   color: var(--text-muted);
 }
+.task-claim,
+.kanban-claim {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--accent);
+}
+.task-claim::before,
+.kanban-claim::before {
+  content: '● ';
+}
 .kanban-empty {
   font-size: 12px;
   color: var(--text-muted);

@@ -4,3 +4,4 @@ tasks-dashboard.html
 .server.log
 claims.json
 .lock/
+claims-store.json

@@ -1659,7 +1659,7 @@
         "FR-8.1"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-071"
       ],
@@ -1668,7 +1668,9 @@
         "tests/scripts/lock.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T22:59:21Z",
+      "started_at": "2026-10-23T22:57:23Z",
+      "completed_at": "2026-10-23T22:59:21Z"
     },
     {
       "id": "T-073",
@@ -1681,7 +1683,7 @@
         "FR-8.2"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-072"
       ],
@@ -1690,7 +1692,9 @@
         "tests/scripts/scenarios/status-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:01:06Z",
+      "started_at": "2026-10-23T22:59:47Z",
+      "completed_at": "2026-10-23T23:01:06Z"
     },
     {
       "id": "T-074",
@@ -1703,7 +1707,7 @@
         "FR-8.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-073"
       ],
@@ -1712,7 +1716,9 @@
         "tests/scripts/claims.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:06:54Z",
+      "started_at": "2026-10-23T23:01:31Z",
+      "completed_at": "2026-10-23T23:06:54Z"
     },
     {
       "id": "T-075",
@@ -1724,7 +1730,7 @@
         "FR-8.3"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-074"
       ],
@@ -1733,7 +1739,9 @@
         "tests/scripts/scenarios/next-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:09:05Z",
+      "started_at": "2026-10-23T23:06:59Z",
+      "completed_at": "2026-10-23T23:09:05Z"
     },
     {
       "id": "T-076",
@@ -1745,7 +1753,7 @@
         "FR-8.10"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-075"
       ],
@@ -1753,7 +1761,9 @@
         "tests/scripts/stress.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:12:22Z",
+      "started_at": "2026-10-23T23:09:22Z",
+      "completed_at": "2026-10-23T23:12:22Z"
     },
     {
       "id": "T-077",
@@ -1765,7 +1775,7 @@
         "FR-8.6"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-073"
       ],
@@ -1773,7 +1783,9 @@
         "plugin/scripts/atm.py"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:15:50Z",
+      "started_at": "2026-10-23T23:12:44Z",
+      "completed_at": "2026-10-23T23:15:50Z"
     },
     {
       "id": "T-078",
@@ -1786,7 +1798,7 @@
         "FR-8.10"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-077"
       ],
@@ -1794,7 +1806,9 @@
         "tests/scripts/merge.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:18:04Z",
+      "started_at": "2026-10-23T23:16:29Z",
+      "completed_at": "2026-10-23T23:18:04Z"
     },
     {
       "id": "T-079",
@@ -1808,7 +1822,7 @@
         "FR-8.7"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-075",
         "T-077"
@@ -1819,7 +1833,9 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T23:20:40Z",
+      "started_at": "2026-10-23T23:18:13Z",
+      "completed_at": "2026-10-23T23:20:40Z"
     },
     {
       "id": "T-080",
@@ -1831,7 +1847,7 @@
         "FR-8.8"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-074"
       ],
@@ -1846,7 +1862,9 @@
         "dashboard/tests/e2e/claims.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T23:24:26Z",
+      "started_at": "2026-10-23T23:20:50Z",
+      "completed_at": "2026-10-23T23:24:26Z"
     },
     {
       "id": "T-081",
@@ -1858,7 +1876,7 @@
         "FR-8.11"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "skipped",
       "dependencies": [
         "T-075"
       ],
@@ -1867,7 +1885,8 @@
         "tests/scripts/remote.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:23:54Z"
+      "updated_at": "2026-10-23T23:25:02Z",
+      "skip_reason": "Not cheap enough for this round: a safe version needs create-only pushes (--force-with-lease), leases on the remote (claim commits carrying the expiry, heartbeats that push, clearing expired refs) so a crashed machine can't block a task forever, and a network round-trip inside the lock. Open question for the maintainer (design §6 Q3: remote claims now or later); revisit when multi-machine work is needed."
     },
     {
       "id": "T-082",
@@ -1879,7 +1898,7 @@
         "FR-8.9"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-079",
         "T-080"
@@ -1888,7 +1907,9 @@
         "README.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T23:26:57Z",
+      "started_at": "2026-10-23T23:25:02Z",
+      "completed_at": "2026-10-23T23:26:57Z"
     },
     {
       "id": "T-083",
@@ -1898,11 +1919,10 @@
       "description": "Changelog [0.11.0] (parallel agents: atm helper, claims with leases, merge driver, commit hygiene, claims on the dashboard). Bump to 0.11.0, rebuild. All suites green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-076",
         "T-078",
-        "T-081",
         "T-082"
       ],
       "files": [
@@ -1912,7 +1932,9 @@
         "plugin/templates/tasks-dashboard.html"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:41:18Z"
+      "updated_at": "2026-10-23T23:28:34Z",
+      "started_at": "2026-10-23T23:27:07Z",
+      "completed_at": "2026-10-23T23:28:34Z"
     },
     {
       "id": "T-084",
@@ -2208,6 +2230,29 @@
       ],
       "created_at": "2026-10-23T16:41:18Z",
       "updated_at": "2026-10-23T16:41:18Z"
+    },
+    {
+      "id": "T-096",
+      "name": "atm helper: modules for development, one file for the plugin",
+      "phase": 12,
+      "type": "refactor",
+      "description": "plugin/scripts/atm.py is ~1,200 lines in one file (review feedback: fine for 0.11.0, but it must become manageable). Goal: develop it as several modules (paths/migrate, server, lock, tasks/claims, merge driver, CLI), ship ONE file in the plugin. 1) Write a short proposal in docs/ comparing: (a) source modules in a dev-only folder (e.g. helper/atm/*.py) concatenated by a small build script into a single readable plugin/scripts/atm.py (strip intra-package imports, keep module banners); (b) the stdlib zipapp (python3 -m zipapp → atm.pyz; one file but not readable as text, and users read what a plugin runs); (c) shipping the package directory itself (several files; rejected unless the single-file requirement is dropped). Recommend one (expected: a), and get it approved before step 2. 2) Implement: move the code into modules without behaviour changes (tests/scripts must pass unchanged), add the build (`npm run build:helper` or a Python script; also run by `npm run verify` and the pre-commit hook when helper sources change), keep plugin/scripts/atm.py a committed build artifact with a 'generated, don't edit' header, and add a CI freshness check like the dashboard's (rebuild, git diff --exit-code). Unit-test the modules directly where useful. Update CLAUDE.md.",
+      "requirements": [
+        "NFR-2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/helper-structure-proposal.md",
+        "helper/",
+        "plugin/scripts/atm.py",
+        ".githooks/pre-commit",
+        ".github/workflows/ci.yml",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-24T00:13:54Z",
+      "updated_at": "2026-10-24T00:13:54Z"
     }
   ]
 }

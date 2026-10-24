@@ -41,7 +41,8 @@
    - pink: #ea76cb -> #ad5796 (label contrast)
    - orange: #fe640b -> #cb5009 (label contrast)
    - cyan: #179299 -> #15838a (label contrast)
-   - accent: #1e66f5 -> #1d62eb (text on accent) */
+   - accent: #1e66f5 -> #1d62eb (text on accent)
+   - burndown series #1a5ad8/#e0580a: blue/peach darkened 12% for 3:1 against the surface */
 :root[data-theme='catppuccin'][data-mode='light'] {
   color-scheme: light;
   --bg: #eff1f5;
@@ -67,6 +68,6 @@
   --node-docs: #ccdfe4;
   --node-refactor: #e3dbd1;
   --node-polish: #e4d8e6;
-  --series-remaining: #1e66f5;
-  --series-scope: #fe640b;
+  --series-remaining: #1a5ad8;
+  --series-scope: #e0580a;
 }

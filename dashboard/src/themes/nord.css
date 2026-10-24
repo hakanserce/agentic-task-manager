@@ -9,7 +9,7 @@
    - purple: #b48ead -> #b995b2 (label contrast)
    - pink: #c8879f -> #cb8ea5 (label contrast)
    - orange: #d08770 -> #d38e79 (label contrast)
-   - burndown series #4a8fdb/#d6633a: Frost/Aurora read as gray to the chart validator (chroma floor) */
+   - burndown series #5b9bd5/#e06c3c: WCAG 3:1 against the surface (SC 1.4.11) wins over the chart validator's lightness band, which the blue exceeds slightly (0.671); all other validator checks pass */
 :root[data-theme='nord'] {
   color-scheme: dark;
   --bg: #2e3440;
@@ -35,8 +35,8 @@
   --node-docs: #43525b;
   --node-refactor: #585550;
   --node-polish: #514856;
-  --series-remaining: #4a8fdb;
-  --series-scope: #d6633a;
+  --series-remaining: #5b9bd5;
+  --series-scope: #e06c3c;
 }
 
 /* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):

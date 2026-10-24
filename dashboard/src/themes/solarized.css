@@ -4,7 +4,7 @@
    tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
 
 /* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
-   - text: #93a1a1 -> #9ca9a9 (text contrast)
+   - text: #93a1a1 -> #a9b4b4 (text contrast)
    - text-muted: #839496 -> #8d9d9e (muted text contrast)
    - accent: #268bd2 -> #2f90d4 (label contrast)
    - red: #dc322f -> #e25350 (label contrast)
@@ -18,7 +18,7 @@
   --surface: #073642;
   --surface2: #0d4150;
   --border: #1f4f5c;
-  --text: #9ca9a9;
+  --text: #a9b4b4;
   --text-muted: #8d9d9e;
   --accent: #2f90d4;
   --green: #859900;
@@ -42,7 +42,7 @@
 }
 
 /* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
-   - text: #586e75 -> #4f6369 (text contrast)
+   - text: #586e75 -> #4a5c62 (text contrast)
    - text-muted: #657b83 -> #576a71 (muted text contrast)
    - accent: #268bd2 -> #217ab9 (label contrast)
    - green: #859900 -> #6d7d00 (label contrast)
@@ -57,7 +57,7 @@
   --surface: #eee8d5;
   --surface2: #e4dcc5;
   --border: #d6ceb8;
-  --text: #4f6369;
+  --text: #4a5c62;
   --text-muted: #576a71;
   --accent: #2075b2;
   --green: #6d7d00;

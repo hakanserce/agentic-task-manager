@@ -93,3 +93,19 @@ test.describe('visual: light mode', () => {
     await expect(page.locator('#detail-panel')).toHaveScreenshot('light-standard-detail.png');
   });
 });
+
+// FR-3: one main view (the Kanban board) per theme and mode, to catch regressions in any palette.
+for (const theme of ['nord', 'solarized', 'catppuccin', 'tokyo-night', 'high-contrast']) {
+  for (const mode of ['dark', 'light']) {
+    test(`visual: theme ${theme} (${mode})`, async ({ page, tasksServer }) => {
+      await page.addInitScript(
+        ([t, m]) => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: t, mode: m, autoRefresh: false })),
+        [theme, mode],
+      );
+      await openDashboard(page, tasksServer, 'kanban');
+      await page.locator('#tab-kanban').click();
+      await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
+      await expect(page.locator('#graph-section')).toHaveScreenshot(`theme-${theme}-${mode}.png`);
+    });
+  }
+}

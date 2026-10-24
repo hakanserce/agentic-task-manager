@@ -14,6 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
+from .edit import cmd_add
 from .query import cmd_deps, cmd_list, cmd_show, cmd_status
 from .tasks import cmd_note, cmd_status_change
 
@@ -45,6 +46,8 @@ commands:
   release <id> [--note TEXT]
                  put an in_progress task back to todo; the note is a handoff for the next agent
   note <id> TEXT add a note to a task (at most 500 characters)
+  add --name N --phase P --type T [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
+                 add a task with the next ID; add --json-file F adds many (see atm add --help)
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -160,6 +163,26 @@ def build_parser():
     )
     deps = command("deps", cmd_deps, "what a task waits for, and what waits for it")
     deps.add_argument("id", help="the task ID")
+
+    add = command("add", cmd_add, "add a task with the next ID, or many from a JSON file")
+    add.add_argument("--name", help="a short name (about 60 characters)")
+    add.add_argument("--phase", type=float, help="the phase number")
+    add.add_argument("--type", help="the task type (one of the project's types)")
+    add.add_argument("--priority", help="the priority (default: none, which counts as the project's default)")
+    add.add_argument("--label", action="append", default=[], help="a label (repeatable)")
+    describe = add.add_mutually_exclusive_group()
+    describe.add_argument("--description", default="", help="what exactly to do")
+    describe.add_argument("--description-file", metavar="FILE", help="read the description from a file")
+    add.add_argument("--dep", action="append", default=[], metavar="ID", help="a task it depends on (repeatable)")
+    add.add_argument("--file", action="append", default=[], help="a file it will create or change (repeatable)")
+    add.add_argument("--requirement", action="append", default=[], help="a requirement ID (repeatable)")
+    add.add_argument(
+        "--json-file",
+        metavar="FILE",
+        help='add many: a JSON list of tasks; an "id" there is a placeholder (e.g. "new-1") other tasks\' '
+        '"dependencies" can use, replaced by the real ID',
+    )
+    agent_option(add)
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

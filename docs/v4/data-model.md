@@ -41,7 +41,7 @@ All in `.agentic-task-manager/` at the project root.
 |---|---|---|
 | DM-2.1 | P1 | Every list or setting that is absent falls back to its default, so 0.12.0 files keep working unchanged. |
 | DM-2.2 | P1 | atm-cli validates `meta` when it reads the file: every status has one of the six kinds; at least one `todo`-, one `active`- and one `done`-kind status; unique IDs; a known workflow type. An invalid `meta` is an error naming the problem, and nothing is written. |
-| DM-2.3 | P1 | `next_id` is kept by atm-cli, and added by `atm migrate` when missing, so new IDs never require reading the archive and two agents never get the same ID. IDs keep the project's pattern (`T-001`, or the prefix and width of the existing IDs). |
+| DM-2.3 | P1 | `next_id` is kept by atm-cli: `atm add` advances it (never behind the highest ID in the file), and `atm archive` sets it before any task leaves `tasks.json`, so new IDs never require reading the archive and two agents never get the same ID. IDs keep the project's pattern (`T-001`, or the prefix and width of the existing IDs). |
 
 ## 3. Statuses and kinds
 

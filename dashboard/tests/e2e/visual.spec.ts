@@ -52,3 +52,44 @@ test('visual: progress tab', async ({ page, tasksServer }) => {
   await expect(page.locator('#burndown svg')).toBeVisible();
   await expect(page.locator('#graph-section')).toHaveScreenshot('progress-progress.png');
 });
+
+// FR-2.6: the main views in light mode (the OS setting is light; Playwright emulates it).
+test.describe('visual: light mode', () => {
+  test.use({ colorScheme: 'light' });
+
+  test('full page', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
+    await expect(page).toHaveScreenshot('light-standard-page.png', {
+      fullPage: true,
+      mask: [page.locator('#version-chip'), page.locator('#auto-refresh-interval')],
+      stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
+  });
+
+  test('dependency graph', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'large-90');
+    await expect(page.locator('#graph-section')).toHaveScreenshot('light-large-90-graph.png');
+  });
+
+  test('kanban board', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'kanban');
+    await page.locator('#tab-kanban').click();
+    await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
+    await expect(page.locator('#graph-section')).toHaveScreenshot('light-kanban.png');
+  });
+
+  test('progress tab', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(new Date('2026-04-06T12:00:00Z'));
+    await openDashboard(page, tasksServer, 'progress');
+    await page.locator('#tab-progress').click();
+    await expect(page.locator('#burndown svg')).toBeVisible();
+    await expect(page.locator('#graph-section')).toHaveScreenshot('light-progress.png');
+  });
+
+  test('detail panel', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('.task-card[data-id="T-004"] .task-name').click();
+    await expect(page.locator('#detail-panel')).toHaveScreenshot('light-standard-detail.png');
+  });
+});

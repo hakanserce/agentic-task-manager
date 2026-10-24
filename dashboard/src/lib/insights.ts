@@ -1,7 +1,9 @@
 // Numbers behind the Progress and Activity widgets in the top bar: completion shares (overall, per phase, per type)
 // and activity over time (completions, cumulative done vs scope, cycle time, work in progress).
-import { completedAt, completions, type Completion } from './timeline';
+import { completions, type Completion } from './timeline';
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, kindOf, type StatusKind, type Vocabulary } from './vocab';
+import { workSpan } from './work';
 
 export interface Share {
   key: string;
@@ -24,10 +26,11 @@ export interface ProgressBreakdown {
   byType: Share[];
 }
 
-const STATUS_ORDER = ['done', 'in_progress', 'todo', 'blocked', 'skipped'];
+/** The status split's order: by kind, finished first; statuses without a kind last */
+const KIND_ORDER: StatusKind[] = ['done', 'active', 'review', 'todo', 'blocked', 'skipped'];
 
-function share(key: string, label: string, tasks: Task[]): Share {
-  const done = tasks.filter((t) => t.status === 'done').length;
+function share(key: string, label: string, tasks: Task[], vocab: Vocabulary): Share {
+  const done = tasks.filter((t) => kindOf(vocab, t.status) === 'done').length;
   return { key, label, done, total: tasks.length, ratio: tasks.length ? done / tasks.length : 0 };
 }
 
@@ -37,20 +40,23 @@ function groupBy<K>(tasks: Task[], key: (t: Task) => K): Map<K, Task[]> {
   return groups;
 }
 
-export function progressBreakdown(tasks: Task[]): ProgressBreakdown {
+export function progressBreakdown(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): ProgressBreakdown {
   const statusCounts = groupBy(tasks, (t) => t.status);
-  const rank = (s: string) => (STATUS_ORDER.includes(s) ? STATUS_ORDER.indexOf(s) : STATUS_ORDER.length);
+  const rank = (s: string) => {
+    const kind = kindOf(vocab, s);
+    return kind ? KIND_ORDER.indexOf(kind) : KIND_ORDER.length;
+  };
   return {
-    overall: share('all', 'All tasks', tasks),
+    overall: share('all', 'All tasks', tasks, vocab),
     byStatus: [...statusCounts]
       .map(([status, list]) => ({ status, count: list.length }))
       .sort((a, b) => rank(a.status) - rank(b.status) || a.status.localeCompare(b.status)),
     byPhase: [...groupBy(tasks, (t) => t.phase)]
       .sort(([a], [b]) => a - b)
-      .map(([phase, list]) => share(String(phase), `Phase ${phase}`, list)),
+      .map(([phase, list]) => share(String(phase), `Phase ${phase}`, list, vocab)),
     byType: [...groupBy(tasks, (t) => t.type)]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([type, list]) => share(type, type, list)),
+      .map(([type, list]) => share(type, type, list, vocab)),
   };
 }
 
@@ -256,8 +262,10 @@ export function activitySeries(
   tasks: Task[],
   period?: { start: number; end: number } | null,
   now = Date.now(),
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
 ): ActivitySeries | null {
-  const all = completions(tasks);
+  const kind = (t: Task) => kindOf(vocab, t.status);
+  const all = completions(tasks, vocab);
   if (all.length === 0) return null;
   const done = period ? all.filter((c) => c.time >= period.start && c.time < period.end) : all;
   const starts = tasks.map((t) => ms(t.started_at)).filter((t): t is number => t !== null);
@@ -274,12 +282,10 @@ export function activitySeries(
   const count = Math.floor((last - origin) / bucketMs) + 1;
 
   const typeOf = new Map(tasks.map((t) => [t.id, t.type]));
-  // Work intervals per agent: start to completion, or to now while in progress
+  // Work intervals per agent (work.ts): start to completion or review request, or to now while active
   const work = tasks.flatMap((t) => {
-    const s = ms(t.started_at);
-    if (s === null || (t.status !== 'done' && t.status !== 'in_progress')) return [];
-    const e = t.status === 'in_progress' ? now : ms(t.completed_at);
-    return e === null || e <= s ? [] : [{ agent: t.agent ?? '', start: s, end: e }];
+    const span = workSpan(t, now, vocab);
+    return !span || span.end <= span.start ? [] : [{ agent: t.agent ?? '', start: span.start, end: span.end }];
   });
   const buckets: ActivityBucket[] = [];
   for (let i = 0; i < count; i++) {
@@ -305,20 +311,23 @@ export function activitySeries(
       average: recent.reduce((a, b) => a + b, 0) / recent.length,
       cumulativeDone: all.filter((c) => c.time < end).length,
       scope: tasks.filter((t) => (ms(t.created_at) ?? -Infinity) < end).length,
+      // Agent work in progress at the bucket's end (a task waiting for review isn't)
       wip: tasks.filter((t) => {
-        const s = ms(t.started_at);
-        if (s === null || s >= end) return false;
-        const c = t.status === 'done' ? ms(completedAt(t)) : null;
-        return c === null ? t.status === 'in_progress' : c >= end;
+        const span = workSpan(t, now, vocab);
+        return !!span && span.start < end && (span.live || span.end >= end);
       }).length,
     });
   }
 
+  // Time per task is its work: until it asked for a review, if it did; the review isn't part of it
   const cycleTimes: CycleTime[] = tasks
-    .filter((t) => t.status === 'done')
-    .map((t) => ({ t, s: ms(t.started_at), c: ms(t.completed_at) }))
-    .filter(({ s, c }) => s !== null && c !== null && c >= s && (!period || (c >= period.start && c < period.end)))
-    .map(({ t, s, c }) => ({ id: t.id, name: t.name, type: t.type, time: c!, minutes: (c! - s!) / 60_000 }))
+    .filter((t) => kind(t) === 'done')
+    .map((t) => ({ t, s: ms(t.started_at), c: ms(t.completed_at), w: ms(t.review_requested_at) ?? ms(t.completed_at) }))
+    .filter(
+      ({ s, c, w }) =>
+        s !== null && c !== null && w !== null && w >= s && (!period || (c >= period.start && c < period.end)),
+    )
+    .map(({ t, s, c, w }) => ({ id: t.id, name: t.name, type: t.type, time: c!, minutes: (w! - s!) / 60_000 }))
     .sort((a, b) => a.time - b.time);
 
   const typeTotals = new Map<string, number>();
@@ -331,7 +340,7 @@ export function activitySeries(
       (a, b) => Number(a === '') - Number(b === '') || a.localeCompare(b),
     ),
     ...idleIn(work, first, period ? Math.min(period.end, now) : Math.max(last, now)),
-    workingNow: new Set(tasks.filter((t) => t.status === 'in_progress').map((t) => t.agent ?? '')).size,
+    workingNow: new Set(tasks.filter((t) => kind(t) === 'active').map((t) => t.agent ?? '')).size,
     unitLabel,
     bucketMs,
     buckets,

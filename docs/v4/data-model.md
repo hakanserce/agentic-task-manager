@@ -83,7 +83,7 @@ New fields, all optional:
 | `priority` | `add`, `edit` | — | a priority ID (`P0`…`P3` by default) |
 | `labels` | `add`, `edit` | — | free-form tags, e.g. `["spike-2", "ux"]` (4.2) |
 | `created_by`, `updated_by`, `started_by`, `completed_by` | atm-cli | see 4.1 | who did it (4.1) |
-| `review_requested_at` | `review` | `done`, `reject` | when the review was asked for |
+| `review_requested_at` | `review` | `reject` (a return to `todo`) | when the review was asked for; kept by `done`, since the task's work ended there (DM-4.1) |
 | `waiting_on` | `block` | `unblock` | `user` or `agent` |
 | `questions` | `block` | `unblock` (moved to `notes` with the answers) | the open questions, a list of strings |
 | `blocked_at` | `block` | `unblock` | when it started waiting |
@@ -94,7 +94,7 @@ New fields, all optional:
 
 | ID | P | Requirement |
 |---|---|---|
-| DM-4.1 | P1 | `started_at` → `completed_at` stays the measure of work. Time in review or blocked is shown separately and never counted as agent work. |
+| DM-4.1 | P1 | A task's work runs from `started_at` to `review_requested_at` when it asked for a review, else to `completed_at`. Time in review or blocked is shown separately and never counted as agent work. |
 | DM-4.2 | P1 | A note's text is at most 500 characters (longer text is refused with a message suggesting a file in the repo instead). |
 | DM-4.3 | P1 | **Stages of Done** are derived, not stored as statuses: Done (no `pr`), In PR (`pr`, no `merged_at`), Merged (`merged_at`). They never affect dependencies, and a workflow change can't leave a task without a status. |
 

@@ -1,8 +1,11 @@
-// Who did what, when: one lane per agent with a bar per task, from start to completion (or to now while in
-// progress). The agent comes from the task (written by `atm start`) or, for work in progress, from its live claim.
+// Who did what, when: one lane per agent with a bar per task, for the task's work (work.ts: from start to completion
+// or review request, or to now while active). The agent comes from the task (written by `atm start`) or, for work in
+// progress, from its live claim.
 import type { ClaimMap } from './claims';
 import { median } from './insights';
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, kindOf, type Vocabulary } from './vocab';
+import { workSpan } from './work';
 
 export const UNATTRIBUTED = '';
 
@@ -34,11 +37,6 @@ export interface AgentTimeline {
   lanes: AgentLane[];
 }
 
-const ms = (iso: string | undefined) => {
-  const t = iso ? Date.parse(iso) : NaN;
-  return Number.isNaN(t) ? null : t;
-};
-
 /**
  * The timeline of all `tasks`. With `matching`, the tasks outside it stay on the timeline (to be greyed out) but the
  * lane stats count only matching tasks.
@@ -48,26 +46,26 @@ export function agentTimeline(
   claims: ClaimMap,
   now: number,
   matching?: ReadonlySet<string>,
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
 ): AgentTimeline | null {
   const byAgent = new Map<string, AgentBar[]>();
   for (const task of tasks) {
-    const start = ms(task.started_at);
-    if (start === null || (task.status !== 'done' && task.status !== 'in_progress')) continue;
-    const live = task.status === 'in_progress';
-    const end = live ? Math.max(now, start) : (ms(task.completed_at) ?? start);
-    const agent = (live ? claims.get(task.id)?.agent : undefined) ?? task.agent ?? UNATTRIBUTED;
-    byAgent.set(agent, [...(byAgent.get(agent) ?? []), { task, start, end: Math.max(end, start), live }]);
+    const span = workSpan(task, now, vocab);
+    if (!span) continue;
+    const agent = (span.live ? claims.get(task.id)?.agent : undefined) ?? task.agent ?? UNATTRIBUTED;
+    byAgent.set(agent, [...(byAgent.get(agent) ?? []), { task, ...span }]);
   }
   if (byAgent.size === 0) return null;
 
   const lanes: AgentLane[] = [...byAgent].map(([agent, all]) => {
     const bars = matching ? all.filter((b) => matching.has(b.task.id)) : all;
+    // Work handed over for review is finished work, but the task isn't done yet
     const finished = bars.filter((b) => !b.live);
     return {
       agent,
       bars: all.sort((a, b) => a.start - b.start),
       matches: bars.length > 0,
-      done: finished.length,
+      done: finished.filter((b) => kindOf(vocab, b.task.status) === 'done').length,
       medianMinutes: median(finished.map((b) => (b.end - b.start) / 60_000)),
       current: bars.filter((b) => b.live).map((b) => b.task),
       lastActive: Math.max(...all.map((b) => b.end)),

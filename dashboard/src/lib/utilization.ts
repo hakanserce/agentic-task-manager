@@ -1,9 +1,11 @@
-// Agent utilisation: how much of the calendar time agents spent working on tasks. Work is each task's time from
-// started_at to completed_at (to now while in progress), per agent; parallel agents add up, so the total can exceed
-// 100%. Two bases: every hour of every day (24/7), and an 8-hour working day on weekdays only.
+// Agent utilisation: how much of the calendar time agents spent working on tasks. Work is each task's work (work.ts:
+// started_at until completed or handed over for review, to now while active), per agent; parallel agents add up, so
+// the total can exceed 100%. Two bases: every hour of every day (24/7), and an 8-hour working day on weekdays only.
 import type { ClaimMap } from './claims';
 import type { Task } from './types';
 import { UNATTRIBUTED } from './agents';
+import { DEFAULT_VOCABULARY, type Vocabulary } from './vocab';
+import { ms, workSpan } from './work';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -30,11 +32,6 @@ export interface Utilization {
   /** Busiest agent first */
   agents: AgentUtilization[];
 }
-
-const ms = (iso: string | undefined) => {
-  const t = iso ? Date.parse(iso) : NaN;
-  return Number.isNaN(t) ? null : t;
-};
 
 /** Working time between `start` and `end`: 8 of every 24 hours on Monday to Friday (local time), pro rata. */
 export function workdayTime(start: number, end: number): number {
@@ -63,6 +60,7 @@ export function utilization(
   claims: ClaimMap,
   now: number,
   periodTasks: Task[] = tasks,
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
 ): Utilization | null {
   const starts = periodTasks.map((t) => ms(t.started_at)).filter((t): t is number => t !== null);
   if (starts.length === 0) return null;
@@ -71,13 +69,10 @@ export function utilization(
 
   const byAgent = new Map<string, number>();
   for (const t of tasks) {
-    const s = ms(t.started_at);
-    if (s === null || (t.status !== 'done' && t.status !== 'in_progress')) continue;
-    const live = t.status === 'in_progress';
-    const e = live ? now : ms(t.completed_at);
-    if (e === null || e <= s) continue;
-    const agent = (live ? claims.get(t.id)?.agent : undefined) ?? t.agent ?? UNATTRIBUTED;
-    byAgent.set(agent, (byAgent.get(agent) ?? 0) + (e - s));
+    const span = workSpan(t, now, vocab);
+    if (!span || span.end <= span.start) continue;
+    const agent = (span.live ? claims.get(t.id)?.agent : undefined) ?? t.agent ?? UNATTRIBUTED;
+    byAgent.set(agent, (byAgent.get(agent) ?? 0) + (span.end - span.start));
   }
 
   const calendarMs = end - start;

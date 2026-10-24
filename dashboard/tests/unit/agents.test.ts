@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { agentTimeline, timeTicks, UNATTRIBUTED } from '../../src/lib/agents';
 import type { Claim } from '../../src/lib/claims';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 
 const M = 60_000;
 const T0 = Date.parse('2026-04-01T08:00:00Z');
@@ -29,6 +30,39 @@ const claim = (task: string, agent: string): Claim => ({
 });
 
 describe('agentTimeline', () => {
+  it('ends a bar when the task asked for a review; reviews are finished work but not done', () => {
+    const reviewing = { ...worked('a', 0, null, 'alice'), status: 'in_review', review_requested_at: iso(T0 + 15 * M) };
+    const approved = { ...worked('b', 20, 120, 'alice'), review_requested_at: iso(T0 + 30 * M) };
+    const t = agentTimeline([reviewing, approved], new Map(), T0 + 200 * M)!;
+    const [alice] = t.lanes;
+    expect(alice.bars.map((b) => [b.task.id, (b.end - b.start) / M, b.live])).toEqual([
+      ['a', 15, false],
+      ['b', 10, false],
+    ]);
+    expect(alice).toMatchObject({ done: 1, medianMinutes: 12.5, current: [] });
+  });
+
+  it("follows a project's statuses by kind", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'backlog', kind: 'todo' },
+        { id: 'doing', kind: 'active' },
+        { id: 'shipped', kind: 'done' },
+      ],
+    });
+    const t = agentTimeline(
+      [
+        { ...worked('a', 0, 10, 'alice'), status: 'shipped' },
+        { ...worked('b', 20, null, 'alice'), status: 'doing' },
+      ],
+      new Map(),
+      T0 + 60 * M,
+      undefined,
+      vocab,
+    )!;
+    expect(t.lanes[0]).toMatchObject({ done: 1, current: [expect.objectContaining({ id: 'b' })] });
+  });
+
   it('is null when no task has been started', () => {
     expect(agentTimeline([], new Map(), T0)).toBeNull();
     const todo = { ...worked('a', 0, 10), status: 'todo' };

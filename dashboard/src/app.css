@@ -1728,6 +1728,9 @@ svg.graph-minimap.hidden {
   font-size: 11px;
   color: var(--red);
 }
+.phase-in-review {
+  color: var(--yellow);
+}
 .estimate-range {
   color: var(--text-muted);
 }

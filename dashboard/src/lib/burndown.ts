@@ -1,8 +1,10 @@
 // Burndown series (FR-4.1): remaining tasks and total scope over time, plus a forecast from now to the estimated
-// finish. Skipped tasks are not part of the scope; blocked tasks stay "remaining" (they are not done).
+// finish. Skipped-kind tasks are not part of the scope; blocked and in-review tasks stay "remaining" (they are not
+// done), and the forecast doesn't cover them (they wait on someone, not on agent work).
 import type { Forecast } from './forecast';
 import { completedAt } from './timeline';
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, kindOf, type Vocabulary } from './vocab';
 
 export interface BurndownPoint {
   t: number;
@@ -12,7 +14,7 @@ export interface BurndownPoint {
 
 export interface BurndownForecast {
   from: { t: number; remaining: number };
-  /** Likely finish; `remaining` there is what the estimate doesn't cover (blocked tasks) */
+  /** Likely finish; `remaining` there is what the estimate doesn't cover (blocked and in-review tasks) */
   to: { t: number; remaining: number };
   range: { low: number; high: number };
 }
@@ -35,13 +37,20 @@ function earliest(tasks: Task[], now: number): number {
   return known.length ? Math.min(...known) : now;
 }
 
-export function burndown(allTasks: Task[], forecast: Forecast, now: number, phase?: number): Burndown {
-  const tasks = allTasks.filter((t) => t.status !== 'skipped' && (phase === undefined || t.phase === phase));
+export function burndown(
+  allTasks: Task[],
+  forecast: Forecast,
+  now: number,
+  phase?: number,
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+): Burndown {
+  const kind = (t: Task) => kindOf(vocab, t.status);
+  const tasks = allTasks.filter((t) => kind(t) !== 'skipped' && (phase === undefined || t.phase === phase));
   if (tasks.length === 0) return { points: [] };
 
   const fallback = earliest(allTasks, now);
   const created = tasks.map((t) => time(t.created_at) ?? fallback);
-  const completed = tasks.filter((t) => t.status === 'done').map((t) => time(completedAt(t)) ?? fallback);
+  const completed = tasks.filter((t) => kind(t) === 'done').map((t) => time(completedAt(t)) ?? fallback);
 
   const times = [...new Set([...created, ...completed])].filter((t) => t <= now).sort((a, b) => a - b);
   const at = (t: number): BurndownPoint => {
@@ -53,14 +62,15 @@ export function burndown(allTasks: Task[], forecast: Forecast, now: number, phas
   const phases = forecast.phases.filter((p) => p.estimate && (phase === undefined || p.phase === phase));
   const last = phases.at(-1)?.estimate;
   const current = points[points.length - 1];
-  const blocked = tasks.filter((t) => t.status === 'blocked').length;
+  // What the estimate doesn't cover: tasks waiting on someone rather than on agent work
+  const waiting = tasks.filter((t) => kind(t) === 'blocked' || kind(t) === 'review').length;
   return {
     points,
-    ...(last && current.remaining > blocked
+    ...(last && current.remaining > waiting
       ? {
           forecast: {
             from: { t: now, remaining: current.remaining },
-            to: { t: last.finishAt.likely, remaining: blocked },
+            to: { t: last.finishAt.likely, remaining: waiting },
             range: { low: last.finishAt.low, high: last.finishAt.high },
           },
         }

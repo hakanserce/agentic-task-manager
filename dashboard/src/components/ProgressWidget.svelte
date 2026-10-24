@@ -7,7 +7,7 @@
   import Ring from './Ring.svelte';
 
   // Compact: a progress bar. Click: overall completion, the status split, and completion per phase and type.
-  const p = $derived(progressBreakdown(dashboard.tasks));
+  const p = $derived(progressBreakdown(dashboard.tasks, dashboard.vocab));
   const pct = $derived(Math.round(p.overall.ratio * 100));
   let open = $state(false);
   let root: HTMLElement;

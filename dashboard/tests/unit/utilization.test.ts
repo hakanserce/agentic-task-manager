@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '../../src/lib/types';
 import { utilization, workdayTime } from '../../src/lib/utilization';
+import { resolveVocabulary } from '../../src/lib/vocab';
 
 const H = 3_600_000;
 // Monday 2026-03-30, local time
@@ -31,6 +32,32 @@ describe('workdayTime', () => {
 describe('utilization', () => {
   it('is null before any task has started', () => {
     expect(utilization([], new Map(), MON)).toBeNull();
+  });
+
+  it('counts work until a review was requested, not the review; blocked tasks hold no work', () => {
+    const tasks = [
+      { ...worked('a', MON, MON + 10 * H, 'alice'), review_requested_at: iso(MON + 2 * H) },
+      { ...worked('b', MON, null, 'alice'), status: 'in_review', review_requested_at: iso(MON + 3 * H) },
+      { ...worked('c', MON, null, 'alice'), status: 'blocked' },
+    ];
+    expect(utilization(tasks, new Map(), MON + 24 * H)!.workMs).toBe(5 * H);
+  });
+
+  it("follows a project's statuses by kind", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'backlog', kind: 'todo' },
+        { id: 'doing', kind: 'active' },
+        { id: 'shipped', kind: 'done' },
+      ],
+    });
+    const tasks = [
+      { ...worked('a', MON, MON + 2 * H, 'alice'), status: 'shipped' },
+      { ...worked('b', MON, null, 'alice'), status: 'doing' },
+    ];
+    expect(utilization(tasks, new Map(), MON + 4 * H, tasks, vocab)!.workMs).toBe(6 * H);
+    // Without the vocabulary neither status means anything
+    expect(utilization(tasks, new Map(), MON + 4 * H)!.workMs).toBe(0);
   });
 
   it('compares agent work with calendar and working time, per agent and in total', () => {

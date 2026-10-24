@@ -8,12 +8,12 @@
 
   // Recomputed whenever tasks or filters change (auto-refresh reloads keep it current)
   const now = $derived.by(() => (dashboard.tasks, dashboard.filtered, Date.now()));
-  const forecast = $derived(forecastPhases(dashboard.filtered, now, dashboard.tasks));
+  const forecast = $derived(forecastPhases(dashboard.filtered, now, dashboard.tasks, dashboard.vocab));
   // Clicking a phase row focuses the burndown on that phase (FR-4.6); a filter that hides it resets the focus
   // The focused phase is part of the project's saved view (dashboard state)
   const selected = $derived(dashboard.progressPhase);
   const focus = $derived(selected !== null && forecast.phases.some((p) => p.phase === selected) ? selected : undefined);
-  const chart = $derived(burndown(dashboard.filtered, forecast, now, focus));
+  const chart = $derived(burndown(dashboard.filtered, forecast, now, focus, dashboard.vocab));
 
   const toggle = (phase: number) => (dashboard.progressPhase = focus === phase ? null : phase);
 </script>

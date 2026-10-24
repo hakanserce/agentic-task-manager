@@ -1,4 +1,5 @@
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, kindOf, type Vocabulary } from './vocab';
 
 export interface Completion {
   id: string;
@@ -11,10 +12,10 @@ export function completedAt(task: Task): string | undefined {
   return task.completed_at ?? task.updated_at;
 }
 
-/** Done tasks with a valid completion time, oldest first. */
-export function completions(tasks: Task[]): Completion[] {
+/** Done-kind tasks with a valid completion time, oldest first. */
+export function completions(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): Completion[] {
   return tasks
-    .filter((t) => t.status === 'done' && completedAt(t))
+    .filter((t) => kindOf(vocab, t.status) === 'done' && completedAt(t))
     .map((t) => ({ id: t.id, name: t.name, time: new Date(completedAt(t)!).getTime() }))
     .filter((c) => !isNaN(c.time))
     .sort((a, b) => a.time - b.time);

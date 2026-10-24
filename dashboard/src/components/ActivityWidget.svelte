@@ -13,14 +13,14 @@
   import Icon from './Icon.svelte';
 
   // Compact: completions per period (bars) with their rolling average (line, same scale). Click: the deep dive.
-  const series = $derived(activitySeries(dashboard.tasks, null, dashboard.loadedAt));
+  const series = $derived(activitySeries(dashboard.tasks, null, dashboard.loadedAt, dashboard.vocab));
   let open = $state(false);
 
   // The panel shows the chosen period (saved with the view); the pill always shows all time
   const range = $derived(dashboard.activityRange);
   const period = $derived(rangeWindow(range, dashboard.loadedAt));
   const detail = $derived(
-    range.preset === 'all' ? series : activitySeries(dashboard.tasks, period, dashboard.loadedAt),
+    range.preset === 'all' ? series : activitySeries(dashboard.tasks, period, dashboard.loadedAt, dashboard.vocab),
   );
 
   // <input type="datetime-local"> works in local time without seconds

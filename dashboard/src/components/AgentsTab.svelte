@@ -29,7 +29,9 @@
   // Tasks outside the search and filters stay, greyed out.
   const narrowed = $derived(dashboard.filtered.length < dashboard.tasks.length);
   const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
-  const timeline = $derived(agentTimeline(dashboard.tasks, dashboard.claims, now, narrowed ? matching : undefined));
+  const timeline = $derived(
+    agentTimeline(dashboard.tasks, dashboard.claims, now, narrowed ? matching : undefined, dashboard.vocab),
+  );
   const bounds = $derived<TimeWindow>(
     timeline
       ? {

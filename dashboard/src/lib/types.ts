@@ -26,6 +26,8 @@ export interface Task {
   completed_at?: string;
   /** The agent that started the task (written by `atm start`; kept when it is done) */
   agent?: string;
+  /** ISO 8601 UTC; when the task asked for a review (`atm review`). Its work ended here; review time isn't work */
+  review_requested_at?: string;
 }
 
 export interface TasksFile {

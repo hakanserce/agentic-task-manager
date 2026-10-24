@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { forecastPhases, pace, percentile, taskDurations } from '../../src/lib/forecast';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import progress from '../fixtures/progress.json';
 
 // Expected numbers: tests/fixtures/progress.md
@@ -114,5 +115,49 @@ describe('forecastPhases', () => {
     const withHistory = forecastPhases(phase2, NOW, tasks);
     expect(withHistory.pace?.likely).toBe(8.5);
     expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
+  });
+});
+
+describe('status kinds', () => {
+  const vocab = resolveVocabulary({
+    statuses: [
+      { id: 'backlog', kind: 'todo' },
+      { id: 'doing', kind: 'active' },
+      { id: 'awaiting_user', kind: 'review' },
+      { id: 'shipped', kind: 'done' },
+      { id: 'on_hold', kind: 'blocked' },
+    ],
+  });
+  const done = (id: string, start: string, end: string, extra: Partial<Task> = {}) =>
+    t(id, 'shipped', { started_at: start, completed_at: end, ...extra });
+  const history = [
+    done('a', '2026-04-01T10:00:00Z', '2026-04-01T10:10:00Z'),
+    done('b', '2026-04-01T11:00:00Z', '2026-04-01T11:10:00Z'),
+    // Its review took 5 hours: not work, so it measures 10 minutes too
+    done('c', '2026-04-01T12:00:00Z', '2026-04-01T17:10:00Z', { review_requested_at: '2026-04-01T12:10:00Z' }),
+  ];
+
+  it('measures work until the review was requested', () => {
+    expect(taskDurations(history, vocab).map((d) => d.minutes)).toEqual([10, 10, 10]);
+  });
+
+  it('counts only tasks that need agent work as remaining: in review and blocked are waiting on someone', () => {
+    const phase = [
+      ...history,
+      t('d', 'backlog'),
+      t('e', 'doing'),
+      t('f', 'awaiting_user'),
+      t('g', 'on_hold'),
+      t('h', 'mystery'),
+    ];
+    const [row] = forecastPhases(phase, NOW, phase, vocab).phases;
+    expect(row).toMatchObject({ total: 8, done: 3, remaining: 3, blocked: 1, inReview: 1, state: 'in_progress' });
+    expect(row.estimate!.minutes.likely).toBe(3 * 10);
+  });
+
+  it('a phase with only reviews left is not finished, and has nothing to estimate', () => {
+    const [row] = forecastPhases([...history, t('f', 'awaiting_user')], NOW, history, vocab).phases;
+    expect(row).toMatchObject({ remaining: 0, inReview: 1, state: 'in_progress' });
+    expect(row.estimate).toBeUndefined();
   });
 });

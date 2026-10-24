@@ -32,6 +32,10 @@ PROGRESS_FIELDS = (
     "completed_by",
     "updated_by",
     "commit",
+    "review_requested_at",
+    "waiting_on",
+    "questions",
+    "blocked_at",
 )
 # How far along a status's kind is (DM-3.3); a status without a kind ranks like todo
 KIND_RANK = {"todo": 0, "active": 1, "blocked": 1, "review": 1, "done": 2, "skipped": 2}

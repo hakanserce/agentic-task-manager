@@ -41,6 +41,10 @@ commands:
                  outcome (for a task in review, done means the review passed); prints the tasks now ready
   reject <id> --reason TEXT
                  send a task in review back to todo, with what needs to change
+  block <id> --on user|agent (--question TEXT)... [--reason TEXT]
+                 a task that can't go on until someone decides: blocked, its claim released
+  unblock <id> [--answer TEXT]...
+                 back to todo, with the questions and answers kept as a note
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
   release <id> [--note TEXT]
@@ -125,6 +129,8 @@ def build_parser():
         ("fail", "put an in_progress task back to todo, recording why"),
         ("release", "put an in_progress task back to todo"),
         ("reject", "send a task in review back to todo, recording why"),
+        ("block", "a task that can't go on until someone decides: blocked, with the questions; claim released"),
+        ("unblock", "a blocked task goes back to todo, with the answers as a note"),
     ):
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
@@ -138,6 +144,12 @@ def build_parser():
             sub.add_argument("--note", metavar="TEXT", help="what the reviewer should look at")
         if name == "reject":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
+        if name == "block":
+            sub.add_argument("--on", required=True, choices=["user", "agent"], help="who has to decide")
+            sub.add_argument("--question", action="append", default=[], metavar="TEXT", help="an open question")
+            sub.add_argument("--reason", metavar="TEXT", help="what it waits for, when it isn't a question")
+        if name == "unblock":
+            sub.add_argument("--answer", action="append", default=[], metavar="TEXT", help="an answer, in order")
         if name == "done":
             sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")

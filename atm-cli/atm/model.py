@@ -38,7 +38,10 @@ STATUS_CHANGES = {
     "fail": (("active",), "todo"),
     "release": (("active",), "todo"),
     "reject": (("review",), "todo"),
+    "block": (("todo", "active"), "blocked"),
+    "unblock": (("blocked",), "todo"),
 }
+WAITING_ON = ("user", "agent")
 
 
 def _terms(meta, key, defaults, need_kind=False):
@@ -213,15 +216,41 @@ def back_to_todo(task, vocab, actor, stamp):
         "agent",
         "commit",
         "review_requested_at",
+        "waiting_on",
+        "questions",
+        "blocked_at",
     ):
         task.pop(field, None)
 
 
-def change_status(task, data, command, reason=None, agent=None, status=None, note=None, commit=None):
+def answer_note(questions, answers):
+    """One note for an unblocked task: each question with its answer."""
+    pairs = []
+    for i in range(max(len(questions), len(answers))):
+        q = questions[i] if i < len(questions) else None
+        a = answers[i] if i < len(answers) else None
+        pairs.append(f"{q} → {a}" if q and a else (f"{q} → (no answer)" if q else a))
+    return "; ".join(pairs)
+
+
+def change_status(
+    task,
+    data,
+    command,
+    reason=None,
+    agent=None,
+    status=None,
+    note=None,
+    commit=None,
+    waiting_on=None,
+    questions=(),
+    answers=(),
+):
     """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
     picks the new status when its kind has several; `agent` is who runs it. `start` records them as started_by,
     `done` as completed_by (both kept when it is done, so the dashboard can show who did what); `note` and `reason`
-    become notes, `commit` the task's commit."""
+    become notes, `commit` the task's commit. `block` records who it waits on and the open questions; `unblock`
+    turns them, with the answers, into an answer note."""
     vocab = vocabulary(data)
     allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
@@ -237,9 +266,22 @@ def change_status(task, data, command, reason=None, agent=None, status=None, not
         check_note(note)
     if reason is not None:
         check_note(reason)
+    for question in questions:
+        check_note(question)
+    if command == "block":
+        if waiting_on not in WAITING_ON:
+            raise AtmError(f"--on must be {' or '.join(WAITING_ON)}", 2)
+        if not questions and not reason:
+            raise AtmError("say what it waits for: --question (repeatable) or --reason", 2)
+    asked = list(task.get("questions") or [])
+    answered = answer_note(asked, list(answers)) if command == "unblock" and (asked or answers) else None
+    if answered is not None:
+        check_note(answered)
     stamp = now_iso()
     if new_kind == "todo":
         back_to_todo(task, vocab, agent, stamp)
+        if answered:
+            add_note(task, "answer", answered, agent, stamp)
         if command == "fail":
             add_note(task, "failure", reason or "verification failed", agent, stamp)
         elif command == "reject":
@@ -249,7 +291,14 @@ def change_status(task, data, command, reason=None, agent=None, status=None, not
         return current
     task["status"] = new
     touch(task, agent, stamp)
-    if command == "review":
+    if command == "block":
+        # Who started it stays visible while it waits; unblock returns it to to-do and clears the attempt
+        task["waiting_on"] = waiting_on
+        task["questions"] = list(questions)
+        task["blocked_at"] = stamp
+        if reason:
+            add_note(task, "note", reason, agent, stamp)
+    elif command == "review":
         # The work ends here: the review isn't agent work (DM-4.1); done keeps this timestamp
         task["review_requested_at"] = stamp
         if note:

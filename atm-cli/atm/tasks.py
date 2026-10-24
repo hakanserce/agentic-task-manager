@@ -40,6 +40,9 @@ def cmd_status_change(command):
                 status=args.status,
                 note=getattr(args, "note", None),
                 commit=getattr(args, "commit", None),
+                waiting_on=getattr(args, "on", None),
+                questions=getattr(args, "question", None) or [],
+                answers=getattr(args, "answer", None) or [],
             )
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)

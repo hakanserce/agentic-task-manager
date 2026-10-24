@@ -10,8 +10,11 @@ import os
 from .claims import next_task, read_store
 from .core import out, to_json
 from .model import (
+    archive_path,
+    archived_task,
     find_task,
     kind_of,
+    load_archive,
     load_tasks,
     natural_key,
     phase_of,
@@ -61,6 +64,9 @@ def describe_task(data, task):
     """A task in full, as text: what an agent needs to work on it."""
     vocab = vocabulary(data)
     by_id = {t.get("id"): t for t in data["tasks"]}
+    for d in task.get("dependencies") or []:
+        if d not in by_id and archived_task(d):
+            by_id[d] = {**archived_task(d), "status": archived_task(d).get("status") + ", archived"}
     labels = task.get("labels") or []
     lines = [
         f"{task.get('id')}  {task.get('name', '')}",
@@ -106,7 +112,7 @@ def describe_task(data, task):
 def cmd_show(args):
     paths = find_paths(os.getcwd())
     data = load_tasks(paths)
-    tasks = [find_task(data, task_id) for task_id in args.ids]
+    tasks = [find_task(data, task_id, archived=True) for task_id in args.ids]
     if args.json:
         out(to_json(tasks))
     else:
@@ -119,7 +125,7 @@ def cmd_list(args):
     vocab = vocabulary(data)
     ready = {t.get("id") for t in ready_tasks(data)}
     tasks = []
-    for t in data["tasks"]:
+    for t in load_archive(paths)["tasks"] if args.archived else data["tasks"]:
         kind = kind_of(vocab, t.get("status"))
         if args.status and t.get("status") not in args.status:
             continue
@@ -159,12 +165,16 @@ def cmd_list(args):
 def cmd_deps(args):
     paths = find_paths(os.getcwd())
     data = load_tasks(paths)
-    task = find_task(data, args.id)
+    task = find_task(data, args.id, archived=True)
     by_id = {t.get("id"): t for t in data["tasks"]}
-    waits_for = [
-        {"id": d, "status": by_id[d].get("status") if d in by_id else "missing", "name": by_id.get(d, {}).get("name", "")}
-        for d in task.get("dependencies") or []
-    ]
+
+    def dependency(d):
+        found = by_id.get(d) or archived_task(d)
+        if not found:
+            return {"id": d, "status": "missing", "name": ""}
+        return {"id": d, "status": found.get("status") + (", archived" if d not in by_id else ""), "name": found.get("name", "")}
+
+    waits_for = [dependency(d) for d in task.get("dependencies") or []]
     waited_on_by = [
         {"id": t.get("id"), "status": t.get("status"), "name": t.get("name", "")}
         for t in data["tasks"]
@@ -237,6 +247,8 @@ def cmd_status(args):
         "next_reason": reason,
         "file_bytes": os.path.getsize(paths["tasks"]),
         "largest_tasks": [{"id": task_id, "bytes": size} for size, task_id in sizes[:3]],
+        "archived": len(load_archive(paths)["tasks"]),
+        "archive_bytes": os.path.getsize(archive_path(paths)) if os.path.isfile(archive_path(paths)) else 0,
     }
     if args.json:
         out(to_json(result))
@@ -258,3 +270,5 @@ def cmd_status(args):
     out(f"next: {nxt.get('id')} {nxt.get('name', '')}" if nxt else f"next: none ({reason})")
     largest = ", ".join(f"{i['id']} {i['bytes'] // 1024 or 1} KB" for i in result["largest_tasks"])
     out(f"file: {result['file_bytes'] // 1024} KB" + (f"; largest tasks: {largest}" if largest else ""))
+    if result["archived"]:
+        out(f"archive: {result['archived']} tasks, {result['archive_bytes'] // 1024} KB")

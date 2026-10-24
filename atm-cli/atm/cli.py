@@ -14,6 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
+from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
 from .query import cmd_deps, cmd_list, cmd_show, cmd_status
 from .tasks import cmd_note, cmd_status_change
@@ -56,6 +57,10 @@ commands:
             [--add-file/--remove-file F] [--add-label/--remove-label L]
                  change a task's definition (its status changes only through the status commands)
   check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
+  archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]
+                 move finished tasks to tasks-archive.json, to keep tasks.json small
+  unarchive <id>...
+                 bring archived tasks back into tasks.json
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -172,6 +177,7 @@ def build_parser():
     list_.add_argument("--agent", metavar="NAME", help="only tasks started by this agent")
     list_.add_argument("--ready", action="store_true", help="only to-do tasks whose dependencies are done")
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
+    list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
     command(
         "status",
         cmd_status,
@@ -220,6 +226,16 @@ def build_parser():
 
     check = command("check", cmd_check, "check tasks.json: the schema, the vocabularies, dependencies; exit 1 on errors")
     check.add_argument("--files", action="store_true", help="also warn about missing files listed by finished tasks")
+
+    archive = command("archive", cmd_archive, "move finished tasks to tasks-archive.json, to keep tasks.json small")
+    archive.add_argument("--phase", action="append", type=float, help="only this phase (repeatable)")
+    archive.add_argument("--before", metavar="DATE", help="only tasks finished before this date (2026-05-01)")
+    archive.add_argument(
+        "--keep-days", type=float, help="keep tasks finished in the last N days (default: meta.archive.keep_days, 14)"
+    )
+    archive.add_argument("--dry-run", action="store_true", help="only say what would move")
+    unarchive = command("unarchive", cmd_unarchive, "bring archived tasks back into tasks.json")
+    unarchive.add_argument("ids", nargs="+", metavar="id", help="task IDs")
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

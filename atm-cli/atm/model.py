@@ -138,6 +138,36 @@ def status_for(vocab, kind, chosen=None):
     return chosen
 
 
+ARCHIVE_FILE = "tasks-archive.json"
+# The archive of the project this command works on, read only when needed (a dependency not in tasks.json, show of
+# an archived task): one atm process works on one project
+_archive = {"paths": None, "data": None}
+
+
+def archive_path(paths):
+    return os.path.join(paths["dir"], ARCHIVE_FILE)
+
+
+def load_archive(paths):
+    """tasks-archive.json, or an empty archive when there is none (DM-1.2)."""
+    p = archive_path(paths)
+    if not os.path.isfile(p):
+        return {"meta": {}, "tasks": []}
+    data = read_json(p)
+    if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
+        raise AtmError(f"{p} is not a valid archive (expected an object with a 'tasks' list)")
+    return data
+
+
+def archived_task(task_id):
+    """The archived task with this ID, if the archive has it (the archive is read on the first lookup)."""
+    if _archive["paths"] is None:
+        return None
+    if _archive["data"] is None:
+        _archive["data"] = {t.get("id"): t for t in load_archive(_archive["paths"])["tasks"]}
+    return _archive["data"].get(task_id)
+
+
 def load_tasks(paths):
     if not os.path.isfile(paths["tasks"]):
         raise AtmError(f"no tasks.json in {paths['dir']}. Run /atm:create-tasks first.")
@@ -145,24 +175,30 @@ def load_tasks(paths):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
+    _archive["paths"], _archive["data"] = paths, None
     return data
 
 
-def find_task(data, task_id):
+def find_task(data, task_id, archived=False):
+    """The task with this ID in tasks.json; with `archived`, also in the archive (for reading only)."""
     for task in data["tasks"]:
         if task.get("id") == task_id:
             return task
-    raise AtmError(f"no task {task_id}")
+    if archived and archived_task(task_id):
+        return archived_task(task_id)
+    hint = " (it is archived: atm unarchive brings it back)" if not archived and archived_task(task_id) else ""
+    raise AtmError(f"no task {task_id}{hint}")
 
 
 def unfinished_dependencies(data, task):
-    """Dependencies that don't have a done-kind status yet, with their status ("missing" for unknown IDs)."""
+    """Dependencies that don't have a done-kind status yet, with their status ("missing" for unknown IDs). A
+    dependency that is only in the archive is done (DM-3.1)."""
     vocab = vocabulary(data)
     status = {t.get("id"): t.get("status") for t in data["tasks"]}
     return [
         (dep, status.get(dep, "missing"))
         for dep in task.get("dependencies", [])
-        if dep not in status or kind_of(vocab, status[dep]) != "done"
+        if (dep in status and kind_of(vocab, status[dep]) != "done") or (dep not in status and not archived_task(dep))
     ]
 
 

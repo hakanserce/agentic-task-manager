@@ -20,7 +20,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PACKAGE = os.path.join(HERE, "atm")
 TARGET = os.path.join(os.path.dirname(HERE), "plugin", "scripts", "atm.py")
 # Dependency order: a module may only import from modules before it
-MODULES = ["core", "paths", "lock", "model", "claims", "query", "tasks", "edit", "merge", "migrate", "server", "cli"]
+MODULES = [
+    "core",
+    "paths",
+    "lock",
+    "model",
+    "claims",
+    "query",
+    "tasks",
+    "edit",
+    "merge",
+    "archive",
+    "migrate",
+    "server",
+    "cli",
+]
 HEADER = (
     "# Generated from atm-cli/atm/ by atm-cli/build.py. Don't edit this file: edit the modules and run\n"
     "# `npm run build:cli` in dashboard/ (the pre-commit hook does it too).\n"

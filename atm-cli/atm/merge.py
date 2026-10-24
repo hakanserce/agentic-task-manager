@@ -223,6 +223,27 @@ def ensure_merge_driver(paths):
     return True
 
 
+ARCHIVE_ATTRIBUTES_LINE = "tasks-archive.json merge=atm\n"
+
+
+def ensure_archive_merge(paths):
+    """In git: the archive merges task by task too. Added when a project first archives, so projects that never do
+    see no change. Returns True if .gitattributes changed (staged)."""
+    root = paths["root"]
+    if not in_git(root):
+        return False
+    ensure_merge_driver(paths)  # the driver itself, and the tasks.json line
+    attributes = os.path.join(paths["dir"], ".gitattributes")
+    with open(attributes, encoding="utf-8") as f:
+        text = f.read()
+    if ARCHIVE_ATTRIBUTES_LINE.strip() in text.splitlines():
+        return False
+    with open(attributes, "w", encoding="utf-8") as f:
+        f.write(text + ("" if text.endswith("\n") else "\n") + ARCHIVE_ATTRIBUTES_LINE)
+    git(["add", "--", rel(root, attributes)], root)
+    return True
+
+
 def ensure_project_id(paths):
     """Give tasks.json a meta.id if it has none: the dashboard keeps each project's saved view under it (projects
     served from the same port share browser storage). Returns the new id, or None if there was one already."""

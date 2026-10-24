@@ -8,7 +8,7 @@ import re
 from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
-from .model import find_task, kind_of, load_tasks, status_for, touch, vocabulary
+from .model import find_task, kind_of, load_archive, load_tasks, status_for, touch, vocabulary
 from .paths import find_paths
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -274,10 +274,12 @@ def cmd_edit(args):
         out(f"{task['id']}: nothing changed")
 
 
-def check_data(data, root, files=False):
-    """Problems in a task file: (errors, warnings), each a list of messages. With `files`, also a warning for each file
-    a finished task lists that doesn't exist (often just history: files get renamed and deleted later)."""
+def check_data(data, root, files=False, archived=()):
+    """Problems in a task file: (errors, warnings), each a list of messages. `archived` are the archive's tasks:
+    dependencies on them are fine, and an ID in both files is an error. With `files`, also a warning for each file a
+    finished task lists that doesn't exist (often just history: files get renamed and deleted later)."""
     errors, warnings = [], []
+    archived_ids = {t.get("id") for t in archived if isinstance(t, dict)}
     try:
         vocab = vocabulary(data)
     except AtmError as e:
@@ -287,7 +289,9 @@ def check_data(data, root, files=False):
     ids = [t.get("id") for t in tasks if isinstance(t, dict)]
     for task_id in sorted({i for i in ids if ids.count(i) > 1}, key=str):
         errors.append(f"{task_id}: the ID is used by {ids.count(task_id)} tasks")
-    known_ids = set(ids)
+    for task_id in sorted(set(ids) & archived_ids, key=str):
+        errors.append(f"{task_id}: in both tasks.json and the archive (atm archive keeps the tasks.json copy)")
+    known_ids = set(ids) | archived_ids
     statuses = {s["id"] for s in vocab["statuses"]}
     types = {t["id"] for t in vocab["types"]}
     priorities = {p["id"] for p in vocab["priorities"]}
@@ -337,7 +341,15 @@ def cmd_check(args):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         errors, warnings = ["tasks.json is not a task file (expected an object with a 'tasks' list)"], []
     else:
-        errors, warnings = check_data(data, paths["root"], files=args.files)
+        try:
+            archived = load_archive(paths)["tasks"]
+        except AtmError as e:
+            archived = []
+            errors_before = [str(e)]
+        else:
+            errors_before = []
+        errors, warnings = check_data(data, paths["root"], files=args.files, archived=archived)
+        errors = errors_before + errors
     if args.json:
         out(to_json({"errors": errors, "warnings": warnings}))
     else:

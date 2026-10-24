@@ -467,6 +467,36 @@ def status_for(vocab, kind, chosen=None):
     return chosen
 
 
+ARCHIVE_FILE = "tasks-archive.json"
+# The archive of the project this command works on, read only when needed (a dependency not in tasks.json, show of
+# an archived task): one atm process works on one project
+_archive = {"paths": None, "data": None}
+
+
+def archive_path(paths):
+    return os.path.join(paths["dir"], ARCHIVE_FILE)
+
+
+def load_archive(paths):
+    """tasks-archive.json, or an empty archive when there is none (DM-1.2)."""
+    p = archive_path(paths)
+    if not os.path.isfile(p):
+        return {"meta": {}, "tasks": []}
+    data = read_json(p)
+    if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
+        raise AtmError(f"{p} is not a valid archive (expected an object with a 'tasks' list)")
+    return data
+
+
+def archived_task(task_id):
+    """The archived task with this ID, if the archive has it (the archive is read on the first lookup)."""
+    if _archive["paths"] is None:
+        return None
+    if _archive["data"] is None:
+        _archive["data"] = {t.get("id"): t for t in load_archive(_archive["paths"])["tasks"]}
+    return _archive["data"].get(task_id)
+
+
 def load_tasks(paths):
     if not os.path.isfile(paths["tasks"]):
         raise AtmError(f"no tasks.json in {paths['dir']}. Run /atm:create-tasks first.")
@@ -474,24 +504,30 @@ def load_tasks(paths):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
+    _archive["paths"], _archive["data"] = paths, None
     return data
 
 
-def find_task(data, task_id):
+def find_task(data, task_id, archived=False):
+    """The task with this ID in tasks.json; with `archived`, also in the archive (for reading only)."""
     for task in data["tasks"]:
         if task.get("id") == task_id:
             return task
-    raise AtmError(f"no task {task_id}")
+    if archived and archived_task(task_id):
+        return archived_task(task_id)
+    hint = " (it is archived: atm unarchive brings it back)" if not archived and archived_task(task_id) else ""
+    raise AtmError(f"no task {task_id}{hint}")
 
 
 def unfinished_dependencies(data, task):
-    """Dependencies that don't have a done-kind status yet, with their status ("missing" for unknown IDs)."""
+    """Dependencies that don't have a done-kind status yet, with their status ("missing" for unknown IDs). A
+    dependency that is only in the archive is done (DM-3.1)."""
     vocab = vocabulary(data)
     status = {t.get("id"): t.get("status") for t in data["tasks"]}
     return [
         (dep, status.get(dep, "missing"))
         for dep in task.get("dependencies", [])
-        if dep not in status or kind_of(vocab, status[dep]) != "done"
+        if (dep in status and kind_of(vocab, status[dep]) != "done") or (dep not in status and not archived_task(dep))
     ]
 
 
@@ -938,6 +974,9 @@ def describe_task(data, task):
     """A task in full, as text: what an agent needs to work on it."""
     vocab = vocabulary(data)
     by_id = {t.get("id"): t for t in data["tasks"]}
+    for d in task.get("dependencies") or []:
+        if d not in by_id and archived_task(d):
+            by_id[d] = {**archived_task(d), "status": archived_task(d).get("status") + ", archived"}
     labels = task.get("labels") or []
     lines = [
         f"{task.get('id')}  {task.get('name', '')}",
@@ -983,7 +1022,7 @@ def describe_task(data, task):
 def cmd_show(args):
     paths = find_paths(os.getcwd())
     data = load_tasks(paths)
-    tasks = [find_task(data, task_id) for task_id in args.ids]
+    tasks = [find_task(data, task_id, archived=True) for task_id in args.ids]
     if args.json:
         out(to_json(tasks))
     else:
@@ -996,7 +1035,7 @@ def cmd_list(args):
     vocab = vocabulary(data)
     ready = {t.get("id") for t in ready_tasks(data)}
     tasks = []
-    for t in data["tasks"]:
+    for t in load_archive(paths)["tasks"] if args.archived else data["tasks"]:
         kind = kind_of(vocab, t.get("status"))
         if args.status and t.get("status") not in args.status:
             continue
@@ -1036,12 +1075,16 @@ def cmd_list(args):
 def cmd_deps(args):
     paths = find_paths(os.getcwd())
     data = load_tasks(paths)
-    task = find_task(data, args.id)
+    task = find_task(data, args.id, archived=True)
     by_id = {t.get("id"): t for t in data["tasks"]}
-    waits_for = [
-        {"id": d, "status": by_id[d].get("status") if d in by_id else "missing", "name": by_id.get(d, {}).get("name", "")}
-        for d in task.get("dependencies") or []
-    ]
+
+    def dependency(d):
+        found = by_id.get(d) or archived_task(d)
+        if not found:
+            return {"id": d, "status": "missing", "name": ""}
+        return {"id": d, "status": found.get("status") + (", archived" if d not in by_id else ""), "name": found.get("name", "")}
+
+    waits_for = [dependency(d) for d in task.get("dependencies") or []]
     waited_on_by = [
         {"id": t.get("id"), "status": t.get("status"), "name": t.get("name", "")}
         for t in data["tasks"]
@@ -1114,6 +1157,8 @@ def cmd_status(args):
         "next_reason": reason,
         "file_bytes": os.path.getsize(paths["tasks"]),
         "largest_tasks": [{"id": task_id, "bytes": size} for size, task_id in sizes[:3]],
+        "archived": len(load_archive(paths)["tasks"]),
+        "archive_bytes": os.path.getsize(archive_path(paths)) if os.path.isfile(archive_path(paths)) else 0,
     }
     if args.json:
         out(to_json(result))
@@ -1135,6 +1180,8 @@ def cmd_status(args):
     out(f"next: {nxt.get('id')} {nxt.get('name', '')}" if nxt else f"next: none ({reason})")
     largest = ", ".join(f"{i['id']} {i['bytes'] // 1024 or 1} KB" for i in result["largest_tasks"])
     out(f"file: {result['file_bytes'] // 1024} KB" + (f"; largest tasks: {largest}" if largest else ""))
+    if result["archived"]:
+        out(f"archive: {result['archived']} tasks, {result['archive_bytes'] // 1024} KB")
 
 
 # ==== tasks.py ====
@@ -1479,10 +1526,12 @@ def cmd_edit(args):
         out(f"{task['id']}: nothing changed")
 
 
-def check_data(data, root, files=False):
-    """Problems in a task file: (errors, warnings), each a list of messages. With `files`, also a warning for each file
-    a finished task lists that doesn't exist (often just history: files get renamed and deleted later)."""
+def check_data(data, root, files=False, archived=()):
+    """Problems in a task file: (errors, warnings), each a list of messages. `archived` are the archive's tasks:
+    dependencies on them are fine, and an ID in both files is an error. With `files`, also a warning for each file a
+    finished task lists that doesn't exist (often just history: files get renamed and deleted later)."""
     errors, warnings = [], []
+    archived_ids = {t.get("id") for t in archived if isinstance(t, dict)}
     try:
         vocab = vocabulary(data)
     except AtmError as e:
@@ -1492,7 +1541,9 @@ def check_data(data, root, files=False):
     ids = [t.get("id") for t in tasks if isinstance(t, dict)]
     for task_id in sorted({i for i in ids if ids.count(i) > 1}, key=str):
         errors.append(f"{task_id}: the ID is used by {ids.count(task_id)} tasks")
-    known_ids = set(ids)
+    for task_id in sorted(set(ids) & archived_ids, key=str):
+        errors.append(f"{task_id}: in both tasks.json and the archive (atm archive keeps the tasks.json copy)")
+    known_ids = set(ids) | archived_ids
     statuses = {s["id"] for s in vocab["statuses"]}
     types = {t["id"] for t in vocab["types"]}
     priorities = {p["id"] for p in vocab["priorities"]}
@@ -1542,7 +1593,15 @@ def cmd_check(args):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         errors, warnings = ["tasks.json is not a task file (expected an object with a 'tasks' list)"], []
     else:
-        errors, warnings = check_data(data, paths["root"], files=args.files)
+        try:
+            archived = load_archive(paths)["tasks"]
+        except AtmError as e:
+            archived = []
+            errors_before = [str(e)]
+        else:
+            errors_before = []
+        errors, warnings = check_data(data, paths["root"], files=args.files, archived=archived)
+        errors = errors_before + errors
     if args.json:
         out(to_json({"errors": errors, "warnings": warnings}))
     else:
@@ -1773,6 +1832,27 @@ def ensure_merge_driver(paths):
     return True
 
 
+ARCHIVE_ATTRIBUTES_LINE = "tasks-archive.json merge=atm\n"
+
+
+def ensure_archive_merge(paths):
+    """In git: the archive merges task by task too. Added when a project first archives, so projects that never do
+    see no change. Returns True if .gitattributes changed (staged)."""
+    root = paths["root"]
+    if not in_git(root):
+        return False
+    ensure_merge_driver(paths)  # the driver itself, and the tasks.json line
+    attributes = os.path.join(paths["dir"], ".gitattributes")
+    with open(attributes, encoding="utf-8") as f:
+        text = f.read()
+    if ARCHIVE_ATTRIBUTES_LINE.strip() in text.splitlines():
+        return False
+    with open(attributes, "w", encoding="utf-8") as f:
+        f.write(text + ("" if text.endswith("\n") else "\n") + ARCHIVE_ATTRIBUTES_LINE)
+    git(["add", "--", rel(root, attributes)], root)
+    return True
+
+
 def ensure_project_id(paths):
     """Give tasks.json a meta.id if it has none: the dashboard keeps each project's saved view under it (projects
     served from the same port share browser storage). Returns the new id, or None if there was one already."""
@@ -1807,6 +1887,143 @@ def cmd_init(args):
         "Registered the tasks.json merge driver (git config merge.atm)"
         + (" and added .agentic-task-manager/.gitattributes (staged)." if changed else "; .gitattributes already set.")
     )
+
+
+# ==== archive.py ====
+# The archive: finished tasks moved out of tasks.json into tasks-archive.json, so the working file stays small
+# (docs/v4/data-model.md §5). Both files stay readable JSON in the same format, merged by the same driver.
+#
+# A move writes one file, then the other. A task found in both files keeps its tasks.json copy and loses the
+# archive's: an archive that crashed halfway simply hasn't happened, an unarchive that crashed halfway is complete, and
+# no task is ever lost.
+
+DEFAULT_KEEP_DAYS = 14
+
+
+def keep_days(data, override=None):
+    if override is not None:
+        return override
+    settings = data.get("meta", {}).get("archive") if isinstance(data.get("meta"), dict) else None
+    days = settings.get("keep_days") if isinstance(settings, dict) else None
+    return days if isinstance(days, (int, float)) and not isinstance(days, bool) and days >= 0 else DEFAULT_KEEP_DAYS
+
+
+def finished_at(task):
+    for key in ("completed_at", "updated_at"):
+        try:
+            return parse_iso(task[key])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return None
+
+
+def archivable(data, phases=None, before=None, keep=None):
+    """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days,
+    not in an open PR; only `phases` and those finished before `before`, when given."""
+    vocab = vocabulary(data)
+    recent = now() - timedelta(days=keep_days(data, keep))
+    result = []
+    for t in data["tasks"]:
+        if kind_of(vocab, t.get("status")) not in ("done", "skipped"):
+            continue
+        if phases and phase_of(t) not in phases:
+            continue
+        if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
+            continue  # still in an open PR
+        finished = finished_at(t)
+        if finished is not None and finished > recent:
+            continue
+        if before is not None and (finished is None or finished >= before):
+            continue
+        result.append(t)
+    return result
+
+
+def drop_duplicates(data, archive):
+    """Tasks in both files keep their tasks.json copy (see the module docstring). Returns the dropped IDs."""
+    ids = {t.get("id") for t in data["tasks"]}
+    dropped = [t.get("id") for t in archive["tasks"] if t.get("id") in ids]
+    archive["tasks"] = [t for t in archive["tasks"] if t.get("id") not in ids]
+    return dropped
+
+
+def size_kb(p):
+    return os.path.getsize(p) // 1024 if os.path.isfile(p) else 0
+
+
+def describe_ids(ids, limit=12):
+    return ", ".join(ids[:limit]) + (f" and {len(ids) - limit} more" if len(ids) > limit else "")
+
+
+def cmd_archive(args):
+    before = None
+    if args.before:
+        try:
+            before = parse_iso(args.before if "T" in args.before else args.before + "T00:00:00Z")
+        except ValueError:
+            raise AtmError(f"--before {args.before}: use a date like 2026-05-01", 2)
+    phases = [float(p) for p in args.phase] if args.phase else None
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        archive = load_archive(paths)
+        dropped = drop_duplicates(data, archive)
+        moving = archivable(data, phases, before, args.keep_days)
+        ids = [t.get("id") for t in moving]
+        if not args.dry_run and (moving or dropped):
+            # New IDs must never come back to an archived ID (DM-2.3)
+            if not isinstance(data.get("meta"), dict):
+                data["meta"] = {}
+            data["meta"]["next_id"] = next_number(data)
+            archive.setdefault("meta", {})["archived_at"] = now_iso()
+            archive["tasks"].extend(moving)
+            write_json_atomic(archive_path(paths), archive)
+            moved = set(ids)
+            data["tasks"] = [t for t in data["tasks"] if t.get("id") not in moved]
+            write_json_atomic(paths["tasks"], data)
+            ensure_archive_merge(paths)
+    result = {
+        "moved": ids,
+        "dry_run": bool(args.dry_run),
+        "tasks_kb": size_kb(paths["tasks"]),
+        "archive_kb": size_kb(archive_path(paths)),
+        "duplicates_dropped": dropped,
+    }
+    if args.json:
+        out(to_json(result))
+        return
+    if dropped and not args.dry_run:
+        out(f"Kept {describe_ids(dropped)} in tasks.json and dropped the archive's copy (an interrupted move).")
+    if not ids:
+        out("Nothing to archive.")
+    elif args.dry_run:
+        out(f"Would archive {len(ids)} task(s): {describe_ids(ids)}.")
+    else:
+        out(
+            f"Archived {len(ids)} task(s): {describe_ids(ids)}. "
+            f"tasks.json is now {result['tasks_kb']} KB, tasks-archive.json {result['archive_kb']} KB."
+        )
+
+
+def cmd_unarchive(args):
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        archive = load_archive(paths)
+        drop_duplicates(data, archive)
+        by_id = {t.get("id"): t for t in archive["tasks"]}
+        missing = [i for i in args.ids if i not in by_id]
+        if missing:
+            raise AtmError(f"not in the archive: {', '.join(missing)}")
+        # tasks.json first: a crash here leaves the task in both files, and it stays in tasks.json
+        data["tasks"].extend(by_id[i] for i in args.ids)
+        write_json_atomic(paths["tasks"], data)
+        archive["tasks"] = [t for t in archive["tasks"] if t.get("id") not in args.ids]
+        write_json_atomic(archive_path(paths), archive)
+    if args.json:
+        out(to_json({"restored": args.ids}))
+    else:
+        out(f"Brought back {', '.join(args.ids)} from the archive.")
 
 
 # ==== migrate.py ====
@@ -2179,6 +2396,10 @@ commands:
             [--add-file/--remove-file F] [--add-label/--remove-label L]
                  change a task's definition (its status changes only through the status commands)
   check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
+  archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]
+                 move finished tasks to tasks-archive.json, to keep tasks.json small
+  unarchive <id>...
+                 bring archived tasks back into tasks.json
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -2295,6 +2516,7 @@ def build_parser():
     list_.add_argument("--agent", metavar="NAME", help="only tasks started by this agent")
     list_.add_argument("--ready", action="store_true", help="only to-do tasks whose dependencies are done")
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
+    list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
     command(
         "status",
         cmd_status,
@@ -2343,6 +2565,16 @@ def build_parser():
 
     check = command("check", cmd_check, "check tasks.json: the schema, the vocabularies, dependencies; exit 1 on errors")
     check.add_argument("--files", action="store_true", help="also warn about missing files listed by finished tasks")
+
+    archive = command("archive", cmd_archive, "move finished tasks to tasks-archive.json, to keep tasks.json small")
+    archive.add_argument("--phase", action="append", type=float, help="only this phase (repeatable)")
+    archive.add_argument("--before", metavar="DATE", help="only tasks finished before this date (2026-05-01)")
+    archive.add_argument(
+        "--keep-days", type=float, help="keep tasks finished in the last N days (default: meta.archive.keep_days, 14)"
+    )
+    archive.add_argument("--dry-run", action="store_true", help="only say what would move")
+    unarchive = command("unarchive", cmd_unarchive, "bring archived tasks back into tasks.json")
+    unarchive.add_argument("ids", nargs="+", metavar="id", help="task IDs")
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

@@ -14,7 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .registry import cmd_projects
-from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
+from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
 from .git_ops import cmd_commit, cmd_merged, cmd_pr, cmd_workflow
@@ -29,9 +29,10 @@ commands:
   migrate [--json]
                  move tasks.json from docs/ or the root into .agentic-task-manager/,
                  and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH]
+  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH] [--refresh]
                  run the dashboard server in the background: one per user, for all registered projects
-                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's)
+                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's;
+                 --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
@@ -100,6 +101,11 @@ Every command takes --json, and `atm <command> --help` describes it.
 """
 
 
+# Commands that don't check for an outdated dashboard server first: serve does it itself, the server process is the
+# server, and git runs the merge driver in the middle of a merge
+NO_REFRESH = ("serve", "_serve-child", "merge-driver", "_lock-test", "help", "version")
+
+
 class Parser(argparse.ArgumentParser):
     """Usage errors as AtmError (exit code 2), so they are reported like every other error."""
 
@@ -147,6 +153,11 @@ def build_parser():
     serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
     serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
     serve.add_argument("--all", action="store_true", help="show the overview of all projects, not this project")
+    serve.add_argument(
+        "--refresh",
+        action="store_true",
+        help="only restart a running server that has an older dashboard than this plugin (the SessionStart hook)",
+    )
     serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
     serve.add_argument("--dir", metavar="PATH", help="the project to show (default: the current directory's)")
 
@@ -360,6 +371,11 @@ def main(argv):
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")
+        if argv[0] not in NO_REFRESH:
+            try:
+                refresh_server()  # after a plugin update, the first atm command brings the dashboard server along
+            except Exception:
+                pass  # never in the way of the command itself
         args.run(args)
     except AtmError as e:
         report(e, as_json)

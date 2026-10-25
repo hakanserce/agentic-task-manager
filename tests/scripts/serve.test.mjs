@@ -347,6 +347,93 @@ describe('serve', () => {
     run(['serve', 'stop']);
   });
 
+  /** A copy of the plugin whose dashboard claims to be `version`, as an older or newer install would be. */
+  function pluginAt(version) {
+    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
+    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
+    cleanups.push(() => removeDir(path.dirname(plugin)));
+    const page = path.join(plugin, 'templates/tasks-dashboard.html');
+    fs.writeFileSync(
+      page,
+      fs
+        .readFileSync(page, 'utf8')
+        .replace(/(name="atm-dashboard-version" content=")[^"]*/, `$1${version}`)
+        .replace(/(name="atm-dashboard-build" content=")[^"]*/, '$1old-build'),
+    );
+    return (args, cwd, atmHome) =>
+      spawnSync(path.join(plugin, 'scripts/atm'), args, {
+        cwd,
+        encoding: 'utf8',
+        env: { ...baseEnv(), ATM_HOME: atmHome },
+      });
+  }
+
+  const whoami = async (port) => (await fetch(`http://localhost:${port}/__atm/whoami`)).json();
+
+  test('serve --refresh restarts a server with an older dashboard, on the same port', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    assert.equal(pluginAt('0.0.1')(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const old = await whoami(port);
+    assert.equal(old.version, '0.0.1');
+    const refreshed = atm(['serve', '--refresh'], root);
+    assert.equal(refreshed.code, 0, refreshed.stderr);
+    assert.equal(
+      refreshed.stdout,
+      `Dashboard server restarted with dashboard ${PLUGIN_VERSION}: http://localhost:${port}/\n`,
+    );
+    const now = await whoami(port);
+    assert.deepEqual([now.version, now.build, now.port], [PLUGIN_VERSION, PLUGIN_BUILD, port]);
+    assert.notEqual(now.pid, old.pid);
+    assert.equal(alive(old.pid), false);
+    atm(['serve', 'stop'], root);
+  });
+
+  test('serve --refresh leaves a current or newer server alone, and starts none', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    assert.equal(atm(['serve', '--refresh'], root).stdout, '');
+    assert.equal(record(atmHome), null, 'nothing started');
+
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const current = record(atmHome).pid;
+    assert.equal(atm(['serve', '--refresh'], root).stdout, '');
+    assert.equal(record(atmHome).pid, current);
+    atm(['serve', 'stop'], root);
+
+    // A newer plugin's server (another session already updated) is never downgraded
+    assert.equal(pluginAt('99.0.0')(['serve', '--port', String(port + 1)], root, atmHome).status, 0);
+    const newer = record(atmHome).pid;
+    assert.equal(atm(['serve', '--refresh'], root).stdout, '');
+    assert.equal(atm(['status'], root).code, 0);
+    assert.equal(record(atmHome).pid, newer);
+    atm(['serve', 'stop'], root);
+  });
+
+  test('any atm command, and the PostToolUse hook, bring an outdated server along', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    const older = pluginAt('0.0.1');
+    assert.equal(older(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const status = atm(['status'], root);
+    assert.equal(status.code, 0, status.stderr);
+    assert.doesNotMatch(status.stdout, /restarted/, 'the command prints only its own output');
+    assert.equal((await whoami(port)).version, PLUGIN_VERSION);
+    atm(['serve', 'stop'], root);
+
+    assert.equal(older(['serve', '--port', String(port + 1)], root, atmHome).status, 0);
+    const hook = atm(['heartbeat', '--auto'], root);
+    assert.equal(hook.stdout + hook.stderr, '');
+    assert.equal((await whoami(port + 1)).version, PLUGIN_VERSION);
+    atm(['serve', 'stop'], root);
+  });
+
   test('migrates an old docs/tasks.json before serving', () => {
     const atm = atmIn(home());
     const root = makeProject({ commit: true, files: { 'docs/tasks.json': TASKS } });

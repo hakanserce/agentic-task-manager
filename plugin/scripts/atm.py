@@ -3065,6 +3065,17 @@ def serve_start(paths, port, overview):
     return url
 
 
+def stop_server(home, pid):
+    """Stop the user's server (whose pid whoami confirmed) and remove its record."""
+    os.kill(pid, signal.SIGTERM)
+    deadline = time.time() + 5
+    while time.time() < deadline and pid_alive(pid):
+        time.sleep(0.05)
+    record_path = os.path.join(home, SERVER_RECORD)
+    if os.path.exists(record_path):
+        os.remove(record_path)
+
+
 def serve_stop(home):
     record_path = os.path.join(home, SERVER_RECORD)
     record = read_json(record_path)
@@ -3076,14 +3087,39 @@ def serve_stop(home):
         os.remove(record_path)
         out(f"Dashboard server is not running (removed a stale record for pid {record.get('pid')}).")
         return
-    pid = record["pid"]
-    os.kill(pid, signal.SIGTERM)
-    deadline = time.time() + 5
-    while time.time() < deadline and pid_alive(pid):
-        time.sleep(0.05)
-    if os.path.exists(record_path):
-        os.remove(record_path)
-    out(f"Dashboard server stopped (pid {pid}).")
+    stop_server(home, record["pid"])
+    out(f"Dashboard server stopped (pid {record['pid']}).")
+
+
+def outdated(record):
+    """True when the server runs an older dashboard than this plugin's: an older version, or the same version but
+    another build. A newer server is left alone, so a session still on an older plugin never downgrades it."""
+    mine, mine_build = dashboard_head(TEMPLATE) or ("", "")
+    theirs, theirs_build = str(record.get("version") or ""), str(record.get("build") or "")
+    if parse_version(mine) != parse_version(theirs):
+        return parse_version(mine) > parse_version(theirs)
+    return bool(mine_build) and mine_build != theirs_build
+
+
+def refresh_server(home=None):
+    """Restart the user's server on the same port if it runs an older dashboard than this plugin's (after a plugin
+    update). Cheap when there is nothing to do: one read of server.json, and no request unless it is outdated.
+    Never starts a server that isn't running. Returns the new record, or None."""
+    home = home or atm_home()
+    record = read_json(os.path.join(home, SERVER_RECORD))
+    if not isinstance(record, dict) or not outdated(record):
+        return None
+    live = live_server(home)
+    if not live:
+        return None
+    stop_server(home, live["pid"])
+    return ensure_server(home, live["port"])[0]
+
+
+def serve_refresh(home):
+    record = refresh_server(home)
+    if record:
+        out(f"Dashboard server restarted with dashboard {record.get('version')}: {server_url(record['port'])}")
 
 
 def serve_status(home, as_json):
@@ -3107,7 +3143,10 @@ def cmd_serve(args):
     if not os.path.isdir(cwd):
         raise AtmError(f"--dir {args.dir}: not a directory", 2)
     home = atm_home()
-    if args.action == "start":
+    if args.refresh:
+        serve_refresh(home)
+    elif args.action == "start":
+        refresh_server(home)  # an outdated server is replaced before its URL is shown
         url = serve_start(find_paths(cwd), args.port, args.all)
         if args.open:
             open_browser(url)
@@ -3115,6 +3154,13 @@ def cmd_serve(args):
         serve_stop(home)
     else:
         serve_status(home, args.json)
+
+
+def port_in_use(port):
+    """Something accepts connections on 127.0.0.1:port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", port)) == 0
 
 
 def file_stamp(p):
@@ -3298,10 +3344,14 @@ def cmd_serve_child(args):
 
     class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
         daemon_threads = True
-        allow_reuse_address = False
+        # A restarted server takes its port back while the old one's connections linger in TIME_WAIT. On macOS the
+        # same option would also let it share a port another server listens on, hence port_in_use() first.
+        allow_reuse_address = True
 
     server = None
     for candidate in range(port, port + PORT_TRIES):
+        if port_in_use(candidate):
+            continue
         try:
             server = Server(("127.0.0.1", candidate), Handler)
             break
@@ -3344,9 +3394,10 @@ commands:
   migrate [--json]
                  move tasks.json from docs/ or the root into .agentic-task-manager/,
                  and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH]
+  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH] [--refresh]
                  run the dashboard server in the background: one per user, for all registered projects
-                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's)
+                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's;
+                 --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
@@ -3415,6 +3466,11 @@ Every command takes --json, and `atm <command> --help` describes it.
 """
 
 
+# Commands that don't check for an outdated dashboard server first: serve does it itself, the server process is the
+# server, and git runs the merge driver in the middle of a merge
+NO_REFRESH = ("serve", "_serve-child", "merge-driver", "_lock-test", "help", "version")
+
+
 class Parser(argparse.ArgumentParser):
     """Usage errors as AtmError (exit code 2), so they are reported like every other error."""
 
@@ -3462,6 +3518,11 @@ def build_parser():
     serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
     serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
     serve.add_argument("--all", action="store_true", help="show the overview of all projects, not this project")
+    serve.add_argument(
+        "--refresh",
+        action="store_true",
+        help="only restart a running server that has an older dashboard than this plugin (the SessionStart hook)",
+    )
     serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
     serve.add_argument("--dir", metavar="PATH", help="the project to show (default: the current directory's)")
 
@@ -3675,6 +3736,11 @@ def main(argv):
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")
+        if argv[0] not in NO_REFRESH:
+            try:
+                refresh_server()  # after a plugin update, the first atm command brings the dashboard server along
+            except Exception:
+                pass  # never in the way of the command itself
         args.run(args)
     except AtmError as e:
         report(e, as_json)

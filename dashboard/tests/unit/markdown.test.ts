@@ -106,9 +106,19 @@ describe('docs/help.md', () => {
   const ids = blocks.flatMap((b) => (b.t === 'heading' ? [b.id] : []));
 
   it('covers the topics D-1.3 asks for', () => {
-    for (const id of ['views', 'filters-and-saved-views', 'statuses-and-kinds', 'priorities', 'the-skills'])
+    for (const id of [
+      'views',
+      'filters-and-saved-views',
+      'statuses-and-kinds',
+      'waiting-on-you',
+      'priorities-and-labels',
+      'the-task-details',
+      'workflows-and-stages',
+      'the-archive',
+      'the-skills',
+      'running-agents-in-parallel',
+    ])
       expect(ids).toContain(id);
-    expect(ids).toContain('running-agents-in-parallel');
   });
 
   it("links within the page only to headings that exist, and off the page only to the project's repository", () => {

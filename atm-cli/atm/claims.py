@@ -5,6 +5,7 @@ Lock order: the task folder, then the claims store, so two commands can never wa
 """
 
 import contextlib
+import json
 import os
 import socket
 import sys
@@ -231,7 +232,72 @@ def cmd_next(args):
         raise AtmExit(3)
 
 
+AUTO_RENEW_AFTER = timedelta(minutes=10)
+
+
+def hook_input():
+    """The JSON a Claude Code hook gets on stdin ({session_id, cwd, ...}), or {}."""
+    if sys.stdin is None or sys.stdin.isatty():
+        return {}
+    try:
+        value = json.loads(sys.stdin.read() or "{}")
+    except ValueError:
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def renewed_at(claim):
+    try:
+        return parse_iso(claim.get("renewed_at") or claim["claimed_at"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def auto_heartbeat(args):
+    """`heartbeat --auto`, run by the plugin's PostToolUse hook after every tool call (CLI-6.2): renew this agent's
+    live claims once their last renewal is ten minutes old. Most calls only read the claims store; it never prints
+    and never fails, so a tool call is never disturbed."""
+    try:
+        payload = hook_input()
+        if payload.get("session_id") and not (args.agent or os.environ.get("ATM_AGENT")):
+            agent = "claude:" + str(payload["session_id"])[:8]
+        else:
+            agent = agent_identity(args.agent)
+        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
+        paths = find_paths(cwd)
+        if not paths["tasks_exists"]:
+            return
+        current = now()
+
+        def due(claims):
+            return [
+                c
+                for c in claims.values()
+                if isinstance(c, dict)
+                and c.get("agent") == agent
+                and parse_iso(c["lease_expires_at"]) > current
+                and (renewed_at(c) is None or current - renewed_at(c) >= AUTO_RENEW_AFTER)
+            ]
+
+        if not due(read_store(paths)["claims"]):
+            return
+        with locked_with_claims(paths):
+            data = load_tasks(paths)
+            store = read_store(paths)
+            for claim in due(store["claims"]):
+                claim["lease_expires_at"] = lease_until(data)
+                claim["renewed_at"] = now_iso()
+            write_store(paths, store)
+    except Exception:  # a hook must never break the tool call it follows
+        return
+
+
 def cmd_heartbeat(args):
+    if args.auto:
+        auto_heartbeat(args)
+        return
+    if not args.id:
+        raise AtmError("atm heartbeat needs a task ID (or --auto)", 2)
     task_id, agent = args.id, agent_identity(args.agent)
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
@@ -243,6 +309,7 @@ def cmd_heartbeat(args):
         if claim:
             check_holder(claims, task_id, agent, "heartbeat")
             claim["lease_expires_at"] = lease_until(data)
+            claim["renewed_at"] = now_iso()
         if expired:
             write_json_atomic(paths["tasks"], data)
         write_store(paths, store)

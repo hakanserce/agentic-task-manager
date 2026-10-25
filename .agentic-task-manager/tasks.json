@@ -3100,7 +3100,7 @@
         "CLI-6.2"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-112"
       ],
@@ -3111,7 +3111,10 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T21:48:53Z"
+      "updated_at": "2026-10-25T00:35:10Z",
+      "started_at": "2026-10-25T00:31:36Z",
+      "agent": "claude:e5ea9db0",
+      "completed_at": "2026-10-25T00:35:10Z"
     },
     {
       "id": "T-126",

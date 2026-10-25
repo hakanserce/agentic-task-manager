@@ -91,8 +91,8 @@ Use the `files` array as hints for which files to create or modify, but also cre
 any additional files that are needed. Keep a list of every file you create, change or delete: Step 7b commits
 exactly those.
 
-On a long task, run `atm heartbeat $TASK_ID` every ten minutes or so (before a long build or test run is a good
-moment). Your claim has a lease (30 minutes by default); if it runs out, the task goes back to `todo` for others.
+Your claim has a lease (30 minutes by default); if it runs out, the task goes back to `todo` for others. The plugin's
+hook renews it while you work, so you don't need to (`atm heartbeat $TASK_ID` does it by hand).
 
 ## Step 6: Verify
 

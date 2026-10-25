@@ -1,0 +1,16 @@
+{
+  "description": "Renew the agent's atm claims while it works (atm heartbeat --auto: reads the claims store, writes only when a claim's last renewal is ten minutes old)",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/atm\" heartbeat --auto",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -74,7 +74,7 @@ commands:
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
-  heartbeat <id> extend your claim's lease
+  heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
   init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too)
   merge-driver <base> <ours> <theirs>
@@ -287,7 +287,12 @@ def build_parser():
     agent_option(note)
 
     heartbeat = command("heartbeat", cmd_heartbeat, "extend your claim's lease")
-    heartbeat.add_argument("id", help="the task ID")
+    heartbeat.add_argument("id", nargs="?", help="the task ID")
+    heartbeat.add_argument(
+        "--auto",
+        action="store_true",
+        help="renew your claims if their last renewal is ten minutes old; silent (the plugin's PostToolUse hook)",
+    )
     agent_option(heartbeat)
 
     command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")

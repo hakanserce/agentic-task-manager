@@ -84,8 +84,8 @@ errors (the message says what).
 **Rules:**
 1. Never edit `status`, `started_at`, `completed_at` or `updated_at` in tasks.json yourself; use `atm`.
 2. Get work only from `atm next --claim` (or `atm start <id>`).
-3. On long tasks, run `atm heartbeat <id>` every ten minutes or so (before long builds or test runs is a good
-   moment), so your claim's lease (30 minutes by default) doesn't expire and the task go to someone else.
+3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
+   out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand).
 4. Finish with `atm done <id>`, or with `atm review <id> --note "..."` when a review is asked for (step 5 below);
    give up with `atm fail <id> --reason "..."`.
 5. Commit only the files you changed for the task, plus `.agentic-task-manager/tasks.json`. Never `git add -A`
@@ -124,7 +124,6 @@ while true:
        - Implement what it describes (same approach as /atm:do-task Step 5)
        - Follow project conventions
        - Keep a list of the files you create, change or delete for this task
-       - On long tasks, `atm heartbeat $TASK_ID` now and then (rule 3)
 
     4. VERIFY the task:
        - Run build/test/lint if available (same as /atm:do-task Step 6)

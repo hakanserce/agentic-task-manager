@@ -3847,7 +3847,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T06:35:08Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "updated_by": "claude:e5ea9db0",
       "notes": [
         {
@@ -3867,7 +3867,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "14fbed0e3bbfaa91600691a831a18085e5b3de14",
       "completed_at": "2026-10-25T06:35:08Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-143",
@@ -3887,7 +3891,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T06:42:26Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:41:09Z",
       "started_by": "claude:e5ea9db0",
@@ -3901,7 +3905,11 @@
           "text": "Each ring in the Progress panel is a card (theme tokens), like the Activity charts; light-mode screenshot added",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-144",
@@ -3923,7 +3931,7 @@
         "dashboard/tests/unit/insights.test.ts"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:13:56Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -3962,7 +3970,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "924a3e1ccd037c62bafaaf11cd8e7ca953b14851",
       "completed_at": "2026-10-25T06:13:56Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-145",
@@ -3985,7 +3997,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:40:49Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:35:09Z",
@@ -4000,7 +4012,11 @@
           "text": "Progress tab: 'Active phases only' hides phases finished more than N days ago (7 by default), saved per project",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-146",
@@ -4025,7 +4041,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:33:43Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:25:02Z",
@@ -4040,7 +4056,11 @@
           "text": "plugin/WHATS-NEW.md: short user notes for every release, shown in What's new and /atm:update-dashboard; the dashboard is 9 KB under budget again",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-147",
@@ -4060,7 +4080,7 @@
         "docs/themes.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:51:30Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:40:49Z",
@@ -4075,7 +4095,11 @@
           "text": "docs/themes.md: 20 MIT/Apache themes by installs (2026-10-24), colours, batches; open: size budget and dark-only themes",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-148",
@@ -4313,7 +4337,7 @@
         "README.md"
       ],
       "created_at": "2026-10-25T05:55:53Z",
-      "updated_at": "2026-10-25T06:16:06Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:14:01Z",
@@ -4328,7 +4352,11 @@
           "text": "do-task and loop-tasks commit while the task is in progress, then mark it done; a failed commit leaves it in progress",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-155",
@@ -4350,7 +4378,7 @@
         "tests/scripts/scenarios/skip.json"
       ],
       "created_at": "2026-10-25T06:57:56Z",
-      "updated_at": "2026-10-25T07:01:00Z",
+      "updated_at": "2026-10-25T07:05:01Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:58:00Z",
@@ -4365,7 +4393,11 @@
           "text": "atm skip <id> --reason: todo/blocked to skipped, reason as a note; scenarios in skip.json",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     }
   ]
 }

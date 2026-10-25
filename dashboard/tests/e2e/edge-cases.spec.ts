@@ -24,9 +24,9 @@ test.describe('edge cases', () => {
   });
 
   test('unknown status renders with the todo style but is not counted as todo', async ({ page }) => {
-    await expect(card(page, 'T-002')).toHaveClass(/status-review/);
+    await expect(card(page, 'T-002')).toHaveClass(/status-review kind-none/);
     const statusBadge = card(page, 'T-002').locator('.task-meta .badge').nth(2);
-    await expect(statusBadge).toHaveText('review');
+    await expect(statusBadge).toHaveText('Review');
     await expect(statusBadge).toHaveCSS('color', MUTED);
     await openFilters(page);
     await expect(filterButton(page, 'status', 'todo').locator('.filter-count')).toHaveText('5');

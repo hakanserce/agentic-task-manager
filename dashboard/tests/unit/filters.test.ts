@@ -6,10 +6,12 @@ import {
   filterTasks,
   isActive,
   searchTasks,
+  sortTasks,
   toggleFilter,
   type Filters,
 } from '../../src/lib/filters';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import standardFile from '../fixtures/standard.json';
 import edgeFile from '../fixtures/edge-cases.json';
 
@@ -19,21 +21,41 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
   phase: new Set(f.phase),
   type: new Set(f.type),
   status: new Set(f.status),
+  priority: new Set(f.priority),
+  stage: new Set(f.stage),
+  label: new Set(f.label),
+  agent: new Set(f.agent),
 });
 
 describe('filterOptions', () => {
-  it('derives sorted options with labels', () => {
+  it("derives options in the vocabulary's order, with its labels", () => {
     const o = filterOptions(standard);
     expect(o.phase.map((x) => x.label)).toEqual(['0', '1', '2']);
-    expect(o.type.map((x) => x.value)).toEqual(['bugfix', 'docs', 'feature', 'infra', 'polish', 'refactor', 'test']);
-    expect(o.type[0].label).toBe('Bugfix');
+    expect(o.type.map((x) => x.value)).toEqual(['feature', 'bugfix', 'test', 'infra', 'docs', 'refactor', 'polish']);
+    expect(o.type[1].label).toBe('Bugfix');
     expect(o.status).toEqual([
-      { value: 'todo', label: 'Todo' },
-      { value: 'in_progress', label: 'In progress' },
-      { value: 'done', label: 'Done' },
+      { value: 'todo', label: 'To Do' },
+      { value: 'in_progress', label: 'In Progress' },
       { value: 'blocked', label: 'Blocked' },
+      { value: 'done', label: 'Done' },
       { value: 'skipped', label: 'Skipped' },
     ]);
+  });
+
+  it("uses a project's vocabulary: its order and labels, phase names; values it doesn't list come last", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'doing', label: 'Doing', kind: 'active' },
+        { id: 'todo', label: 'Backlog', kind: 'todo' },
+        { id: 'done', label: 'Shipped', kind: 'done' },
+      ],
+      types: [{ id: 'test', label: 'Tests' }],
+      phases: [{ id: 1, name: 'Core' }],
+    });
+    const o = filterOptions(standard, vocab);
+    expect(o.status.map((x) => x.label)).toEqual(['Backlog', 'Shipped', 'Blocked', 'In Progress', 'Skipped']);
+    expect(o.type.slice(0, 3).map((x) => x.label)).toEqual(['Tests', 'Bugfix', 'Docs']);
+    expect(o.phase.map((x) => x.label)).toEqual(['0', '1 · Core', '2']);
   });
 
   it('sorts phases numerically, not as strings', () => {
@@ -47,7 +69,130 @@ describe('filterOptions', () => {
   });
 
   it('is empty for no tasks', () => {
-    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [] });
+    expect(filterOptions([])).toEqual({
+      phase: [],
+      type: [],
+      status: [],
+      priority: [],
+      stage: [],
+      label: [],
+      agent: [],
+    });
+  });
+
+  it('offers the priorities in the data, most urgent first; a missing or unknown priority is the default', () => {
+    const tasks = [
+      { ...standard[0], priority: 'P3' },
+      { ...standard[1], priority: 'P0' },
+      { ...standard[2], priority: 'urgent!' },
+      standard[3],
+    ];
+    expect(filterOptions(tasks).priority).toEqual([
+      { value: 'P0', label: 'P0 Critical' },
+      { value: 'P2', label: 'P2 Medium' },
+      { value: 'P3', label: 'P3 Low' },
+    ]);
+    const p2 = filterTasks(tasks, filters({ priority: ['P2'] }));
+    expect(ids(p2)).toEqual([standard[2].id, standard[3].id]);
+    expect(facetCounts(tasks, filters({})).priority.values.get('P2')).toBe(2);
+  });
+});
+
+describe('labels', () => {
+  const withLabels = [
+    { ...standard[0], labels: ['ux', 'spike-2'] },
+    { ...standard[1], labels: ['ux'] },
+    { ...standard[2], labels: ['api', 'ux', 7 as unknown as string] },
+    standard[3],
+  ];
+
+  it('offers the labels in the data, alphabetically; meta.labels sets their text and order first', () => {
+    expect(filterOptions(withLabels).label).toEqual([
+      { value: 'api', label: 'api' },
+      { value: 'spike-2', label: 'spike-2' },
+      { value: 'ux', label: 'ux' },
+    ]);
+    const vocab = resolveVocabulary({ labels: [{ id: 'ux', label: 'UX' }, { id: 'nope' }] });
+    expect(filterOptions(withLabels, vocab).label.map((o) => o.label)).toEqual(['UX', 'api', 'spike-2']);
+  });
+
+  it('a task matches when it has any selected label; tasks without labels match only "All"', () => {
+    expect(ids(filterTasks(withLabels, filters({ label: ['spike-2', 'api'] })))).toEqual([
+      standard[0].id,
+      standard[2].id,
+    ]);
+    expect(filterTasks(withLabels, filters({}))).toHaveLength(4);
+  });
+
+  it('counts each label once per task that has it', () => {
+    const c = facetCounts(withLabels, filters({}));
+    expect(Object.fromEntries(c.label.values)).toEqual({ ux: 3, 'spike-2': 1, api: 1 });
+    expect(c.label.all).toBe(4);
+    expect(facetCounts(withLabels, filters({ label: ['api'] })).phase.all).toBe(1);
+  });
+
+  it('search matches labels', () => {
+    expect(ids(searchTasks(withLabels, 'spike-2'))).toEqual([standard[0].id]);
+  });
+});
+
+describe('the stage group', () => {
+  it('offers the stages done tasks have, in order; filters by them; tasks not done have none', () => {
+    const done = standard.filter((t) => t.status === 'done');
+    const tasks = [
+      { ...done[0], merged_at: '2026-04-01T00:00:00Z', pr: { number: 2 } },
+      { ...done[1], pr: { number: 3, url: 'u' } },
+      done[2],
+      { ...standard.find((t) => t.status === 'todo')!, pr: { number: 3 } },
+    ];
+    expect(filterOptions(tasks).stage).toEqual([
+      { value: 'done', label: 'Done' },
+      { value: 'in_pr', label: 'In PR' },
+      { value: 'merged', label: 'Merged' },
+    ]);
+    expect(ids(filterTasks(tasks, filters({ stage: ['in_pr'] })))).toEqual([done[1].id]);
+  });
+});
+
+describe('the agent group', () => {
+  const started = [
+    { ...standard[0], started_by: 'claude:aaaa' },
+    { ...standard[1], agent: 'claude:bbbb' },
+    { ...standard[2], started_by: 'alice@host:/repo' },
+    standard[3],
+  ];
+
+  it('offers who started tasks (an older agent field too), shortened; filters and counts by it', () => {
+    expect(filterOptions(started).agent).toEqual([
+      { value: 'alice@host:/repo', label: 'alice@host' },
+      { value: 'claude:aaaa', label: 'claude:aaaa' },
+      { value: 'claude:bbbb', label: 'claude:bbbb' },
+    ]);
+    expect(ids(filterTasks(started, filters({ agent: ['claude:bbbb'] })))).toEqual([standard[1].id]);
+    expect(facetCounts(started, filters({})).agent.values.get('claude:aaaa')).toBe(1);
+  });
+});
+
+describe('sortTasks', () => {
+  const t = (id: string, phase: number, priority?: string): Task => ({
+    id,
+    name: id,
+    phase,
+    type: 'feature',
+    description: '',
+    status: 'todo',
+    ...(priority ? { priority } : {}),
+  });
+  const tasks = [t('T-10', 0, 'P1'), t('T-2', 1, 'P0'), t('T-3', 0), t('T-1', 0, 'P1'), t('T-4', 0, 'P0')];
+
+  it('keeps the file order, or sorts by priority, then phase, then ID', () => {
+    expect(ids(sortTasks(tasks, 'file'))).toEqual(['T-10', 'T-2', 'T-3', 'T-1', 'T-4']);
+    expect(ids(sortTasks(tasks, 'priority'))).toEqual(['T-4', 'T-2', 'T-1', 'T-10', 'T-3']);
+  });
+
+  it("uses the project's priorities", () => {
+    const vocab = resolveVocabulary({ priorities: [{ id: 'P1' }, { id: 'P0' }], default_priority: 'P0' });
+    expect(ids(sortTasks(tasks, 'priority', vocab))).toEqual(['T-1', 'T-10', 'T-3', 'T-4', 'T-2']);
   });
 });
 
@@ -107,12 +252,7 @@ describe('toggleFilter / isActive', () => {
 describe('facetCounts', () => {
   // standard.json: 12 tasks, 4 per phase. Phase 0: infra×2, docs, test (all done). Phase 1: feature (done),
   // feature (in_progress), bugfix (todo), refactor (blocked). Phase 2: polish, test, feature (todo), docs (skipped).
-  const counts = (filters: Partial<Record<keyof Filters, string[]>>) =>
-    facetCounts(standard, {
-      phase: new Set(filters.phase ?? []),
-      type: new Set(filters.type ?? []),
-      status: new Set(filters.status ?? []),
-    });
+  const counts = (f: Partial<Record<keyof Filters, string[]>>) => facetCounts(standard, filters(f));
   const asObject = (m: ReadonlyMap<string, number>) => Object.fromEntries([...m].sort());
 
   it('without selections: every value over all tasks', () => {

@@ -56,11 +56,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 --version && git --version
+      # The plugin ships the committed build of atm-cli/; it must match the modules (CI never commits it for you)
+      - name: Built atm-cli is up to date
+        run: python3 atm-cli/build.py --check
       # The test runner is Node (node:test); the helper under test is Python
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: node tests/scripts/run.mjs
+      # Large task files (1k and 10k tasks): fails only far over generous limits (tests/scripts/bench.mjs)
+      - name: Benchmark atm-cli
+        run: node tests/scripts/bench.mjs --cli --check
 
   e2e:
     name: Playwright regression suite
@@ -101,6 +107,9 @@ jobs:
       - name: Run e2e tests
         if: steps.baselines.outputs.generate == 'false'
         run: npx playwright test
+      - name: Benchmark the dashboard
+        if: steps.baselines.outputs.generate == 'false'
+        run: npm run bench -- --dashboard --check
       - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:

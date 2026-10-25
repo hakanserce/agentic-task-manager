@@ -11,6 +11,10 @@ export const ATM = path.join(REPO, 'plugin/scripts/atm');
 export const PLUGIN_VERSION = JSON.parse(
   fs.readFileSync(path.join(REPO, 'plugin/.claude-plugin/plugin.json'), 'utf8'),
 ).version;
+/** The shipped dashboard's build ID (<meta name="atm-dashboard-build">) */
+export const PLUGIN_BUILD = /<meta name="atm-dashboard-build" content="([^"]*)"/.exec(
+  fs.readFileSync(path.join(REPO, 'plugin/templates/tasks-dashboard.html'), 'utf8'),
+)?.[1];
 
 /** The environment without this machine's agent identity, so every test decides who the agent is. */
 export function baseEnv() {
@@ -74,9 +78,9 @@ export function makeProject(setup = {}) {
   return root;
 }
 
-/** Replace {root} and {version} placeholders in strings anywhere inside an expected value. */
+/** Replace {root}, {version} and {build} placeholders in strings anywhere inside an expected value. */
 export function fill(value, vars) {
-  if (typeof value === 'string') return value.replace(/\{(root|version)\}/g, (_, k) => vars[k]);
+  if (typeof value === 'string') return value.replace(/\{(root|version|build)\}/g, (_, k) => vars[k]);
   if (Array.isArray(value)) return value.map((v) => fill(v, vars));
   if (value && typeof value === 'object')
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, fill(v, vars)]));

@@ -1,0 +1,364 @@
+"""Adding and changing tasks: atm add (one task, or many from a JSON file), atm edit, and atm check. IDs come from
+meta.next_id under the lock, so two agents adding at once never get the same one (docs/v4/data-model.md DM-2.3).
+Status and timestamps are not edited here: they change only through the status commands."""
+
+import os
+import re
+
+from .claims import agent_identity
+from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
+from .lock import locked
+from .model import find_task, kind_of, load_archive, load_tasks, status_for, touch, vocabulary
+from .paths import find_paths
+
+LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
+ID_PATTERN = re.compile(r"^(.*?)(\d+)$")
+DEFAULT_ID = ("T-", 3)
+
+
+def id_format(data):
+    """The project's ID pattern: the prefix and digit count of its last numbered task ID (T-001: "T-", 3)."""
+    for task in reversed(data["tasks"]):
+        m = ID_PATTERN.match(str(task.get("id", "")))
+        if m:
+            return m.group(1), len(m.group(2))
+    return DEFAULT_ID
+
+
+def highest_number(data, prefix):
+    numbers = [
+        int(m.group(2))
+        for m in (ID_PATTERN.match(str(t.get("id", ""))) for t in data["tasks"])
+        if m and m.group(1) == prefix
+    ]
+    return max(numbers, default=0)
+
+
+def next_number(data):
+    """meta.next_id, but never behind the highest ID in the file (tasks added by hand, or by an older atm)."""
+    prefix, _ = id_format(data)
+    stored = data.get("meta", {}).get("next_id") if isinstance(data.get("meta"), dict) else None
+    floor = highest_number(data, prefix) + 1
+    return max(stored, floor) if isinstance(stored, int) and not isinstance(stored, bool) else floor
+
+
+def allocate_ids(data, count):
+    """`count` new IDs in the project's pattern; advances meta.next_id."""
+    prefix, width = id_format(data)
+    first = next_number(data)
+    ids = [prefix + str(n).zfill(width) for n in range(first, first + count)]
+    if not isinstance(data.get("meta"), dict):
+        data["meta"] = {}
+    data["meta"]["next_id"] = first + count
+    return ids
+
+
+def check_labels(labels):
+    for label in labels:
+        if not isinstance(label, str) or not LABEL.match(label):
+            raise AtmError(
+                f"label {label!r}: use lowercase letters, digits, - and _ (at most 32 characters)", 2
+            )
+    return labels
+
+
+def number(value, what):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise AtmError(f"{what} must be a number", 2)
+    return int(value) if float(value).is_integer() else value
+
+
+def new_task(vocab, fields, actor, stamp):
+    """A complete new task from the given fields, checked against the vocabularies."""
+    for key in ("name", "phase", "type"):
+        if fields.get(key) in (None, ""):
+            raise AtmError(f"a new task needs a {key}", 2)
+    types = [t["id"] for t in vocab["types"]]
+    if fields["type"] not in types:
+        raise AtmError(f"unknown type {fields['type']!r}; use one of {', '.join(types)}", 2)
+    priorities = [p["id"] for p in vocab["priorities"]]
+    if fields.get("priority") is not None and fields["priority"] not in priorities:
+        raise AtmError(f"unknown priority {fields['priority']!r}; use one of {', '.join(priorities)}", 2)
+    task = {
+        "id": None,
+        "name": str(fields["name"]),
+        "phase": number(fields["phase"], "phase"),
+        "type": fields["type"],
+    }
+    if fields.get("priority") is not None:
+        task["priority"] = fields["priority"]
+    labels = check_labels(list(fields.get("labels") or []))
+    if labels:
+        task["labels"] = labels
+    task.update(
+        {
+            "description": str(fields.get("description") or ""),
+            "requirements": list(fields.get("requirements") or []),
+            "use_cases": list(fields.get("use_cases") or []),
+            "status": status_for(vocab, "todo"),
+            "dependencies": list(fields.get("dependencies") or []),
+            "files": list(fields.get("files") or []),
+            "created_at": stamp,
+            "updated_at": stamp,
+        }
+    )
+    if actor:
+        task["created_by"] = actor
+        task["updated_by"] = actor
+    return task
+
+
+def find_cycle(tasks):
+    """A dependency cycle among `tasks` (as a list of IDs), or None."""
+    deps = {t["id"]: t.get("dependencies") or [] for t in tasks}
+    state = {}
+
+    def visit(node, path):
+        state[node] = "visiting"
+        for dep in deps.get(node, []):
+            if state.get(dep) == "visiting":
+                return path[path.index(dep):] + [dep] if dep in path else [node, dep]
+            if dep in deps and dep not in state:
+                cycle = visit(dep, path + [dep])
+                if cycle:
+                    return cycle
+        state[node] = "done"
+        return None
+
+    for node in deps:
+        if node not in state:
+            cycle = visit(node, [node])
+            if cycle:
+                return cycle
+    return None
+
+
+def add_tasks(data, entries, actor):
+    """Add `entries` (dicts of task fields; an "id" there is a placeholder other entries' dependencies may use) to
+    `data`. Returns the new tasks. Raises AtmError, before changing anything, if one is invalid."""
+    vocab = vocabulary(data)
+    stamp = now_iso()
+    tasks = [new_task(vocab, e, actor, stamp) for e in entries]
+    placeholders = [e.get("id") for e in entries]
+    for p in placeholders:
+        if p is not None and placeholders.count(p) > 1:
+            raise AtmError(f"placeholder ID {p!r} is used twice", 2)
+    ids = allocate_ids(data, len(tasks))
+    rename = {p: real for p, real in zip(placeholders, ids) if p is not None}
+    existing = {t.get("id") for t in data["tasks"]}
+    for task, real in zip(tasks, ids):
+        task["id"] = real
+        task["dependencies"] = [rename.get(d, d) for d in task["dependencies"]]
+        missing = [d for d in task["dependencies"] if d not in existing and d not in ids]
+        if missing:
+            raise AtmError(f"{real} ({task['name']}) depends on {', '.join(missing)}, which doesn't exist", 2)
+    cycle = find_cycle(data["tasks"] + tasks)
+    if cycle:
+        raise AtmError("these dependencies would make a cycle: " + " -> ".join(cycle), 2)
+    data["tasks"].extend(tasks)
+    return tasks
+
+
+def read_entries(path):
+    """The tasks of an `atm add --json-file`: a list of task objects, or {"tasks": [...]}."""
+    value = read_json(path)
+    if isinstance(value, dict):
+        value = value.get("tasks")
+    if not isinstance(value, list) or not all(isinstance(e, dict) for e in value):
+        raise AtmError(f"{path}: expected a JSON list of tasks (or {{\"tasks\": [...]}})", 2)
+    return value
+
+
+def cmd_add(args):
+    actor = agent_identity(args.agent)
+    if args.json_file:
+        entries = read_entries(args.json_file)
+    else:
+        description = args.description
+        if args.description_file:
+            with open(args.description_file, encoding="utf-8") as f:
+                description = f.read()
+        entries = [
+            {
+                "name": args.name,
+                "phase": args.phase,
+                "type": args.type,
+                "priority": args.priority,
+                "labels": args.label,
+                "description": description,
+                "dependencies": args.dep,
+                "files": args.file,
+                "requirements": args.requirement,
+            }
+        ]
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        tasks = add_tasks(data, entries, actor)
+        write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json(tasks))
+    else:
+        for task in tasks:
+            out(f"Added {task['id']} {task['name']}")
+
+
+def edit_task(data, task, args):
+    """Apply atm edit's options to `task`; returns the names of the fields that changed. Raises AtmError (nothing
+    changed yet in the file) when a value is invalid."""
+    vocab = vocabulary(data)
+    changed = []
+
+    def set_field(key, value):
+        if task.get(key) != value:
+            task[key] = value
+            changed.append(key)
+
+    def edit_list(key, add, remove):
+        current = list(task.get(key) or [])
+        updated = [v for v in current if v not in remove] + [v for v in add if v not in current]
+        if updated != current:
+            task[key] = updated
+            changed.append(key)
+
+    if args.name is not None:
+        set_field("name", args.name)
+    description = args.description
+    if args.description_file:
+        with open(args.description_file, encoding="utf-8") as f:
+            description = f.read()
+    if description is not None:
+        set_field("description", description)
+    if args.phase is not None:
+        set_field("phase", number(args.phase, "phase"))
+    if args.type is not None:
+        types = [t["id"] for t in vocab["types"]]
+        if args.type not in types:
+            raise AtmError(f"unknown type {args.type!r}; use one of {', '.join(types)}", 2)
+        set_field("type", args.type)
+    if args.priority is not None:
+        priorities = [p["id"] for p in vocab["priorities"]]
+        if args.priority not in priorities:
+            raise AtmError(f"unknown priority {args.priority!r}; use one of {', '.join(priorities)}", 2)
+        set_field("priority", args.priority)
+    edit_list("files", args.add_file, args.remove_file)
+    edit_list("labels", check_labels(args.add_label), args.remove_label)
+    ids = {t.get("id") for t in data["tasks"]}
+    missing = [d for d in args.add_dep if d not in ids]
+    if missing:
+        raise AtmError(f"{task['id']} can't depend on {', '.join(missing)}, which doesn't exist", 2)
+    if task["id"] in args.add_dep:
+        raise AtmError(f"{task['id']} can't depend on itself", 2)
+    edit_list("dependencies", args.add_dep, args.remove_dep)
+    cycle = find_cycle(data["tasks"])
+    if cycle:
+        raise AtmError("these dependencies would make a cycle: " + " -> ".join(cycle), 2)
+    return changed
+
+
+def cmd_edit(args):
+    actor = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        task = find_task(data, args.id)
+        changed = edit_task(data, task, args)
+        if changed:
+            touch(task, actor, now_iso())
+            write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json(task))
+    elif changed:
+        out(f"{task['id']}: changed {', '.join(changed)}")
+    else:
+        out(f"{task['id']}: nothing changed")
+
+
+def check_data(data, root, files=False, archived=()):
+    """Problems in a task file: (errors, warnings), each a list of messages. `archived` are the archive's tasks:
+    dependencies on them are fine, and an ID in both files is an error. With `files`, also a warning for each file a
+    finished task lists that doesn't exist (often just history: files get renamed and deleted later)."""
+    errors, warnings = [], []
+    archived_ids = {t.get("id") for t in archived if isinstance(t, dict)}
+    try:
+        vocab = vocabulary(data)
+    except AtmError as e:
+        errors.append(str(e))
+        vocab = vocabulary({})
+    tasks = data.get("tasks", [])
+    ids = [t.get("id") for t in tasks if isinstance(t, dict)]
+    for task_id in sorted({i for i in ids if ids.count(i) > 1}, key=str):
+        errors.append(f"{task_id}: the ID is used by {ids.count(task_id)} tasks")
+    for task_id in sorted(set(ids) & archived_ids, key=str):
+        errors.append(f"{task_id}: in both tasks.json and the archive (atm archive keeps the tasks.json copy)")
+    known_ids = set(ids) | archived_ids
+    statuses = {s["id"] for s in vocab["statuses"]}
+    types = {t["id"] for t in vocab["types"]}
+    priorities = {p["id"] for p in vocab["priorities"]}
+    for i, task in enumerate(tasks):
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str) or not task["id"]:
+            errors.append(f"task #{i + 1}: needs an \"id\" (a non-empty string)")
+            continue
+        task_id = task["id"]
+        for key, kind in (("name", str), ("type", str), ("status", str)):
+            if not isinstance(task.get(key), kind):
+                errors.append(f"{task_id}: needs a {key!r} (a string)")
+        phase = task.get("phase")
+        if isinstance(phase, bool) or not isinstance(phase, (int, float)):
+            errors.append(f"{task_id}: needs a \"phase\" (a number)")
+        if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
+            errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
+        if isinstance(task.get("type"), str) and task["type"] not in types:
+            warnings.append(f"{task_id}: the type {task['type']!r} is not one of the project's types")
+        if "priority" in task and task["priority"] not in priorities:
+            warnings.append(f"{task_id}: the priority {task['priority']!r} is not one of the project's priorities")
+        for key in ("dependencies", "files", "labels", "requirements", "use_cases"):
+            if key in task and not (isinstance(task[key], list) and all(isinstance(v, str) for v in task[key])):
+                errors.append(f"{task_id}: {key!r} must be a list of strings")
+        for dep in task.get("dependencies") or []:
+            if isinstance(dep, str) and dep not in known_ids:
+                errors.append(f"{task_id}: depends on {dep}, which doesn't exist")
+        for label in task.get("labels") or []:
+            if isinstance(label, str) and not LABEL.match(label):
+                errors.append(f"{task_id}: the label {label!r} isn't lowercase letters, digits, - and _")
+        # Tasks list the files they will create, so only a finished task's missing files are worth a word
+        if files and kind_of(vocab, task.get("status")) == "done":
+            for f in task.get("files") or []:
+                if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
+                    warnings.append(f"{task_id}: the file {f} doesn't exist")
+    well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
+    cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
+    if cycle:
+        errors.append("dependency cycle: " + " -> ".join(str(c) for c in cycle))
+    return errors, warnings
+
+
+def cmd_check(args):
+    paths = find_paths(os.getcwd())
+    if not os.path.isfile(paths["tasks"]):
+        raise AtmError(f"no tasks.json in {paths['dir']}. Run /atm:create-tasks first.")
+    data = read_json(paths["tasks"])
+    if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
+        errors, warnings = ["tasks.json is not a task file (expected an object with a 'tasks' list)"], []
+    else:
+        try:
+            archived = load_archive(paths)["tasks"]
+        except AtmError as e:
+            archived = []
+            errors_before = [str(e)]
+        else:
+            errors_before = []
+        errors, warnings = check_data(data, paths["root"], files=args.files, archived=archived)
+        errors = errors_before + errors
+    if args.json:
+        out(to_json({"errors": errors, "warnings": warnings}))
+    else:
+        for e in errors:
+            out(f"error: {e}")
+        for w in warnings:
+            out(f"warning: {w}")
+        if not errors:
+            count = len(data["tasks"])
+            out(f"tasks.json is fine ({count} tasks" + (f", {len(warnings)} warnings)" if warnings else ")"))
+    if errors:
+        raise AtmExit(1)

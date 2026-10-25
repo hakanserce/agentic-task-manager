@@ -149,6 +149,65 @@ test.describe('visual: light mode', () => {
   });
 });
 
+// v4 (docs/v4/dashboard.md D-6.2): priorities, labels, stages, In Review and Blocked, notes and actors, the dialogs,
+// in both modes. fixtures/v4.json at a fixed time, so the waiting times are stable.
+const V4_NOW = new Date('2026-04-10T12:00:00Z');
+
+for (const mode of ['dark', 'light'] as const) {
+  test.describe(`visual: v4 (${mode})`, () => {
+    test.use({ colorScheme: mode });
+    test.beforeEach(async ({ page, tasksServer }) => {
+      await page.clock.setFixedTime(V4_NOW);
+      tasksServer.archive('archive');
+    });
+
+    test('kanban board: review, blocked, stages in Done', async ({ page, tasksServer }) => {
+      await openDashboard(page, tasksServer, 'v4', { tab: 'kanban' });
+      await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
+      await expect(page.locator('#graph-section')).toHaveScreenshot(`v4-${mode}-kanban.png`);
+    });
+
+    test('list: labels, priorities, stages', async ({ page, tasksServer }) => {
+      await openDashboard(page, tasksServer, 'v4', { tab: 'list' });
+      await expect(page.locator('#graph-section')).toHaveScreenshot(`v4-${mode}-list.png`);
+    });
+
+    test('detail panel: notes, actors, stage', async ({ page, tasksServer }) => {
+      await openDashboard(page, tasksServer, 'v4', { tab: 'list' });
+      await page.locator('.task-card[data-id="T-002"] .task-name').click();
+      await expect(page.locator('#detail-panel')).toHaveScreenshot(`v4-${mode}-detail.png`);
+    });
+
+    test('detail panel: a blocked task and its questions', async ({ page, tasksServer }) => {
+      await openDashboard(page, tasksServer, 'v4', { tab: 'list' });
+      await page.locator('.task-card[data-id="T-005"] .task-name').click();
+      await expect(page.locator('#detail-panel')).toHaveScreenshot(`v4-${mode}-detail-blocked.png`);
+    });
+
+    test('header and footer', async ({ page, tasksServer }) => {
+      await openDashboard(page, tasksServer, 'v4');
+      await expect(page.locator('header.topbar')).toHaveScreenshot(`v4-${mode}-header.png`, {
+        mask: [page.locator('#version-chip')],
+      });
+      await expect(page.locator('#site-footer')).toHaveScreenshot(`v4-${mode}-footer.png`, {
+        mask: [page.locator('#footer-version')],
+      });
+    });
+
+    test('About and Help', async ({ page, tasksServer }) => {
+      await openDashboard(page, tasksServer, 'v4');
+      await page.locator('#footer-about').click();
+      // The version changes with every release: masked
+      await expect(page.locator('#about-panel')).toHaveScreenshot(`v4-${mode}-about.png`, {
+        mask: [page.locator('#about-panel dd').nth(0)],
+      });
+      await page.keyboard.press('Escape');
+      await page.locator('#footer-help').click();
+      await expect(page.locator('#help-panel')).toHaveScreenshot(`v4-${mode}-help.png`);
+    });
+  });
+}
+
 // FR-3: one main view (the Kanban board) per theme and mode, to catch regressions in any palette.
 for (const theme of ['nord', 'solarized', 'catppuccin', 'tokyo-night', 'high-contrast']) {
   for (const mode of ['dark', 'light']) {

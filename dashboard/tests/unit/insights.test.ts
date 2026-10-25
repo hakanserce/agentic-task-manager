@@ -9,6 +9,7 @@ import {
   rangeWindow,
 } from '../../src/lib/insights';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import standard from '../fixtures/standard.json';
 
 const H = 3_600_000;
@@ -81,6 +82,23 @@ describe('progressBreakdown', () => {
     expect(progressBreakdown([]).overall.ratio).toBe(0);
   });
 
+  it("follows a project's statuses by kind: done-kind is done, the split is in kind order", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'backlog', kind: 'todo' },
+        { id: 'doing', kind: 'active' },
+        { id: 'awaiting_user', kind: 'review' },
+        { id: 'shipped', kind: 'done' },
+      ],
+    });
+    const tasks = ['backlog', 'awaiting_user', 'shipped', 'doing', 'shipped'].map((status, i) =>
+      task(String(i), { status }),
+    );
+    const p = progressBreakdown(tasks, vocab);
+    expect(p.overall.done).toBe(2);
+    expect(p.byStatus.map((s) => s.status)).toEqual(['shipped', 'doing', 'awaiting_user', 'backlog']);
+  });
+
   it('works on the standard fixture', () => {
     const p = progressBreakdown(standard.tasks as Task[]);
     expect(p.overall.total).toBe(12);
@@ -89,6 +107,39 @@ describe('progressBreakdown', () => {
 });
 
 describe('activitySeries', () => {
+  it('measures time per task and agent work until the review was requested; reviews are not work in progress', () => {
+    const s = activitySeries(
+      [
+        worked('a', 0, 4, { agent: 'alice', review_requested_at: iso(T0 + H) }),
+        worked('b', 1, undefined, { agent: 'bob', status: 'in_review', review_requested_at: iso(T0 + 2 * H) }),
+      ],
+      null,
+      T0 + 5 * H,
+    )!;
+    expect(s.cycleTimes.map((c) => [c.id, c.minutes])).toEqual([['a', 60]]);
+    expect(s.workingNow).toBe(0);
+    // Each worked one hour (hourly buckets, aligned to the clock: 08:00, 09:00, ...), not until completion or now
+    const busyHours = (agent: string) => s.buckets.reduce((sum, b) => sum + (b.agentBusy[agent] ?? 0), 0);
+    expect(busyHours('alice')).toBeCloseTo(1);
+    expect(busyHours('bob')).toBeCloseTo(1);
+    // At 09:00 alice works, at 10:00 bob; after that both tasks only wait for their reviews
+    expect(s.buckets.map((b) => b.wip)).toEqual([1, 1, 0, 0, 0]);
+  });
+
+  it("follows a project's statuses by kind", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'backlog', kind: 'todo' },
+        { id: 'doing', kind: 'active' },
+        { id: 'shipped', kind: 'done' },
+      ],
+    });
+    const tasks = [worked('a', 0, 1, { status: 'shipped' }), worked('b', 1, undefined, { status: 'doing' })];
+    expect(activitySeries(tasks, null, T0 + 2 * H)).toBeNull();
+    const s = activitySeries(tasks, null, T0 + 2 * H, vocab)!;
+    expect([s.totalCompleted, s.workingNow]).toEqual([1, 1]);
+  });
+
   it('is null without completions', () => {
     expect(activitySeries([])).toBeNull();
     expect(activitySeries([worked('a', 0)])).toBeNull();

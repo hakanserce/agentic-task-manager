@@ -468,8 +468,9 @@
           "status": "in_progress",
           "dependencies": [],
           "updated_at": "2026-05-01T10:00:00Z",
+          "updated_by": "alice",
           "started_at": "2026-05-01T10:00:00Z",
-          "agent": "alice"
+          "started_by": "alice"
         },
         "claim": {
           "task": "T-2",
@@ -511,8 +512,9 @@
               "status": "in_progress",
               "dependencies": [],
               "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice",
               "started_at": "2026-05-01T10:00:00Z",
-              "agent": "alice"
+              "started_by": "alice"
             },
             {
               "id": "T-3",
@@ -777,5 +779,72 @@
       "ATM_AGENT": "alice",
       "ATM_NOW": "2026-05-01T11:00:01Z"
     }
+  },
+  {
+    "name": "priority: within a phase the most urgent goes first, before a lower ID",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "Low", "phase": 0, "type": "feature", "status": "todo", "priority": "P3" },
+            { "id": "T-2", "name": "Default", "phase": 0, "type": "feature", "status": "todo" },
+            { "id": "T-3", "name": "Urgent", "phase": 0, "type": "feature", "status": "todo", "priority": "P0" }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "stdout": "Next: T-3 Urgent (phase 0, feature)\n" }
+  },
+  {
+    "name": "priority: the phase still comes first",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "Later, urgent", "phase": 1, "type": "feature", "status": "todo", "priority": "P0" },
+            { "id": "T-2", "name": "Now, low", "phase": 0, "type": "feature", "status": "todo", "priority": "P3" }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "stdout": "Next: T-2 Now, low (phase 0, feature)\n" }
+  },
+  {
+    "name": "priority: a missing or unknown priority ranks as the default (P2)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "Low", "phase": 0, "type": "feature", "status": "todo", "priority": "P3" },
+            { "id": "T-2", "name": "Unknown", "phase": 0, "type": "feature", "status": "todo", "priority": "urgent!" },
+            { "id": "T-3", "name": "High", "phase": 0, "type": "feature", "status": "todo", "priority": "P1" }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--claim"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "stdout": "Claimed: T-3 High (phase 0, feature)\n" }
+  },
+  {
+    "name": "priority: a project's own priorities and default",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "priorities": [{ "id": "must" }, { "id": "should" }, { "id": "could" }],
+            "default_priority": "could"
+          },
+          "tasks": [
+            { "id": "T-1", "name": "No priority", "phase": 0, "type": "feature", "status": "todo" },
+            { "id": "T-2", "name": "Should", "phase": 0, "type": "feature", "status": "todo", "priority": "should" }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "stdout": "Next: T-2 Should (phase 0, feature)\n" }
   }
 ]

@@ -1,0 +1,237 @@
+[
+  {
+    "name": "add: one task with the next ID, checked against the vocabularies",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] }
+      }
+    },
+    "args": [
+      "add",
+      "--name",
+      "New",
+      "--phase",
+      "1",
+      "--type",
+      "feature",
+      "--priority",
+      "P1",
+      "--label",
+      "api",
+      "--dep",
+      "T-001",
+      "--file",
+      "src/x.ts",
+      "--description",
+      "Do it."
+    ],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdout": "Added T-002 New\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-001", "status": "done" },
+            {
+              "id": "T-002",
+              "name": "New",
+              "phase": 1,
+              "type": "feature",
+              "priority": "P1",
+              "labels": ["api"],
+              "description": "Do it.",
+              "requirements": [],
+              "use_cases": [],
+              "status": "todo",
+              "dependencies": ["T-001"],
+              "files": ["src/x.ts"],
+              "created_at": "2026-05-01T10:00:00Z",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "created_by": "alice",
+              "updated_by": "alice"
+            }
+          ],
+          "meta": { "next_id": 3 }
+        }
+      }
+    }
+  },
+  {
+    "name": "add --json-file: many tasks; placeholder IDs become real ones, in the project's pattern",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-09", "status": "done" }] },
+        "new.json": [
+          { "id": "new-1", "name": "A", "phase": 0, "type": "feature", "dependencies": ["T-09"] },
+          { "id": "new-2", "name": "B", "phase": 0, "type": "test", "priority": "P0", "dependencies": ["new-1"] }
+        ]
+      }
+    },
+    "args": ["add", "--json-file", "new.json", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": [
+        {
+          "id": "T-10",
+          "name": "A",
+          "phase": 0,
+          "type": "feature",
+          "description": "",
+          "requirements": [],
+          "use_cases": [],
+          "status": "todo",
+          "dependencies": ["T-09"],
+          "files": [],
+          "created_at": "2026-05-01T10:00:00Z",
+          "updated_at": "2026-05-01T10:00:00Z",
+          "created_by": "alice",
+          "updated_by": "alice"
+        },
+        {
+          "id": "T-11",
+          "name": "B",
+          "phase": 0,
+          "type": "test",
+          "priority": "P0",
+          "description": "",
+          "requirements": [],
+          "use_cases": [],
+          "status": "todo",
+          "dependencies": ["T-10"],
+          "files": [],
+          "created_at": "2026-05-01T10:00:00Z",
+          "updated_at": "2026-05-01T10:00:00Z",
+          "created_by": "alice",
+          "updated_by": "alice"
+        }
+      ]
+    }
+  },
+  {
+    "name": "add uses meta.next_id when it is ahead (tasks were archived or deleted)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "next_id": 20 },
+          "tasks": [{ "id": "T-005", "status": "done" }]
+        }
+      }
+    },
+    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "stdout": "Added T-020 N\n" }
+  },
+  {
+    "name": "add never goes behind the highest ID (tasks added by hand)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "next_id": 2 }, "tasks": [{ "id": "T-005", "status": "done" }] }
+      }
+    },
+    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "stdout": "Added T-006 N\n" }
+  },
+  {
+    "name": "add: a new task starts in the project's first to-do status, with the project's types",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "doing", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ],
+            "types": [{ "id": "spike" }]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["add", "--name", "Try it", "--phase", "0", "--type", "spike", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": [
+        {
+          "id": "T-001",
+          "name": "Try it",
+          "phase": 0,
+          "type": "spike",
+          "description": "",
+          "requirements": [],
+          "use_cases": [],
+          "status": "backlog",
+          "dependencies": [],
+          "files": [],
+          "created_at": "2026-05-01T10:00:00Z",
+          "updated_at": "2026-05-01T10:00:00Z",
+          "created_by": "alice",
+          "updated_by": "alice"
+        }
+      ]
+    }
+  },
+  {
+    "name": "add refuses an unknown type, and nothing changes",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["add", "--name", "N", "--phase", "0", "--type", "spike"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["atm: unknown type 'spike'; use one of feature, bugfix, test, infra, docs, refactor, polish"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } }
+    }
+  },
+  {
+    "name": "add refuses an unknown priority",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs", "--priority", "urgent"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: unknown priority 'urgent'; use one of P0, P1, P2, P3"] }
+  },
+  {
+    "name": "add refuses a dependency that doesn't exist",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs", "--dep", "T-404"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: T-001 (N) depends on T-404, which doesn't exist"] }
+  },
+  {
+    "name": "add refuses dependencies that make a cycle",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        "new.json": {
+          "tasks": [
+            { "id": "a", "name": "A", "phase": 0, "type": "docs", "dependencies": ["b"] },
+            { "id": "b", "name": "B", "phase": 0, "type": "docs", "dependencies": ["a"] }
+          ]
+        }
+      }
+    },
+    "args": ["add", "--json-file", "new.json"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["atm: these dependencies would make a cycle: T-001 -> T-002 -> T-001"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } }
+    }
+  },
+  {
+    "name": "add refuses a label that isn't lowercase letters, digits, - and _",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs", "--label", "Spike 2"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: label 'Spike 2': use lowercase letters, digits, - and _"] }
+  },
+  {
+    "name": "add needs a name, a phase and a type",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["add", "--phase", "0", "--type", "docs"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: a new task needs a name"] }
+  },
+  {
+    "name": "add --json-file that isn't a list of tasks",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [] }, "new.json": { "name": "not a list" } }
+    },
+    "args": ["add", "--json-file", "new.json"],
+    "expect": { "exit": 2, "stderrIncludes": ["new.json: expected a JSON list of tasks"] }
+  }
+]

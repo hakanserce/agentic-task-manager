@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test as base, expect, type Page } from '@playwright/test';
+import type { FilterGroup } from '../../src/lib/filters';
 import { PREFS_KEY } from '../../src/lib/prefs';
 import type { ViewId } from '../../src/lib/tabs';
 
@@ -9,6 +10,7 @@ export type TasksData = { meta?: Record<string, unknown>; tasks: Record<string, 
 
 const TASKS_JSON = /\/tasks\.json(\?.*)?$/;
 const CLAIMS_JSON = /\/claims\.json(\?.*)?$/;
+const ARCHIVE_JSON = /\/tasks-archive\.json(\?.*)?$/;
 
 export function loadFixture(name: string): TasksData {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
@@ -19,14 +21,33 @@ export class TasksServer {
   private body: string | null = null;
   private status = 200;
   private claimsBody: string | null = null;
+  private archiveBody: string | null = null;
+  /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
+  archiveRequests = 0;
+  // Like atm serve: each version of the file has an ETag, and a request that already has it gets a 304 (D-5.1)
+  private version = 0;
   requests = 0;
+  /** How many requests were answered 304 Not Modified */
+  notModified = 0;
 
   constructor(private page: Page) {}
 
   async install() {
     await this.page.route(TASKS_JSON, (route) => {
       this.requests++;
-      return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '' });
+      const etag = `"v${this.version}"`;
+      if (this.status === 200 && route.request().headers()['if-none-match'] === etag) {
+        this.notModified++;
+        return route.fulfill({ status: 304, headers: { ETag: etag } });
+      }
+      const headers = this.status === 200 ? { ETag: etag } : undefined;
+      return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '', headers });
+    });
+    await this.page.route(ARCHIVE_JSON, (route) => {
+      this.archiveRequests++;
+      return this.archiveBody === null
+        ? route.fulfill({ status: 404, body: 'not found' })
+        : route.fulfill({ status: 200, contentType: 'application/json', body: this.archiveBody });
     });
     await this.page.route(CLAIMS_JSON, (route) =>
       this.claimsBody === null
@@ -41,16 +62,24 @@ export class TasksServer {
     return this;
   }
 
+  /** Serve tasks-archive.json (a fixture by name or inline tasks); null makes it a 404 (no archive) again. */
+  archive(data: string | TasksData | null) {
+    this.archiveBody = data === null ? null : JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
+    return this;
+  }
+
   /** Serve a fixture by name (tests/fixtures/<name>.json) or an inline object. */
   use(data: string | TasksData) {
     this.body = JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
     this.status = 200;
+    this.version++;
     return this;
   }
 
   fail(status = 404) {
     this.status = status;
     this.body = 'not found';
+    this.version++;
     return this;
   }
 }
@@ -122,7 +151,7 @@ export async function openMenu(page: Page, button: string) {
   if ((await b.getAttribute('aria-expanded')) !== 'true') await b.click();
 }
 
-export function filterButton(page: Page, group: 'phase' | 'type' | 'status', value: string) {
+export function filterButton(page: Page, group: FilterGroup, value: string) {
   return page.locator(`.filter-btn[data-filter="${group}"][data-value="${value}"]`);
 }
 

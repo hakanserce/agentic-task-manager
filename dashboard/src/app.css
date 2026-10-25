@@ -140,6 +140,74 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
+/* Rendered Markdown (Markdown.svelte): Help, and later task descriptions */
+.markdown {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin: 20px 0 6px;
+  font-weight: 600;
+}
+.markdown h3 {
+  font-size: 16px;
+}
+.markdown h4 {
+  font-size: 14px;
+}
+.markdown h5,
+.markdown h6 {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown pre,
+.markdown blockquote {
+  margin: 6px 0;
+}
+.markdown ul,
+.markdown ol {
+  padding-left: 20px;
+}
+.markdown li {
+  margin-bottom: 3px;
+}
+.markdown code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.markdown pre {
+  background: var(--surface2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.markdown pre code {
+  padding: 0;
+  background: none;
+}
+.markdown blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 10px;
+  color: var(--text-muted);
+}
+.markdown a {
+  color: var(--accent);
+}
+.about .about-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 20px 0 8px;
+}
 .about .about-facts {
   display: grid;
   grid-template-columns: max-content 1fr;
@@ -1048,20 +1116,24 @@ button.menu-trigger:hover,
   border-color: var(--accent);
   background: var(--surface2);
 }
-.task-card.status-done {
+/* Styled by the status's kind (vocab.ts), so a project's own statuses look like the built-in one of their kind */
+.task-card.kind-done {
   opacity: 0.5;
   border-left: 3px solid var(--green);
 }
-.task-card.status-in_progress {
+.task-card.kind-active {
   border-left: 3px solid var(--accent);
 }
-.task-card.status-todo {
+.task-card.kind-review {
+  border-left: 3px solid var(--yellow);
+}
+.task-card.kind-todo {
   border-left: 3px solid var(--border);
 }
-.task-card.status-blocked {
+.task-card.kind-blocked {
   border-left: 3px solid var(--red);
 }
-.task-card.status-skipped {
+.task-card.kind-skipped {
   opacity: 0.4;
   border-left: 3px solid var(--text-muted);
 }
@@ -1122,6 +1194,81 @@ button.menu-trigger:hover,
 
 .uc-badge:hover {
   background: color-mix(in srgb, var(--cyan) 25%, transparent);
+}
+
+/* "Include archived" in the filter bar (D-5.2) */
+.include-archived {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+/* A dependency on an archived task (D-5.3) */
+.detail-dep-item.archived {
+  opacity: 0.7;
+  cursor: default;
+}
+/* The footer's archive notice (D-5.4) */
+.archive-notice {
+  color: var(--yellow);
+}
+
+/* Stages of Done (D-4.2) */
+.stage-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.stage-chip.in-pr {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+a.stage-chip.in-pr:hover {
+  text-decoration: underline;
+}
+.stage-chip.merged {
+  color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+.kanban-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kanban-section-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 4px 2px 0;
+}
+.kanban-section-header a {
+  color: inherit;
+}
+
+/* Labels (D-2.4): neutral, outlined, so they don't compete with the coloured type, status and priority badges */
+.label-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label-chip {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .req-badge {
@@ -1589,8 +1736,8 @@ svg.graph-minimap.hidden {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.kanban-card.status-done,
-.kanban-card.status-skipped {
+.kanban-card.kind-done,
+.kanban-card.kind-skipped {
   opacity: 0.65;
 }
 .kanban-card.next-up {
@@ -1644,6 +1791,94 @@ svg.graph-minimap.hidden {
 .task-claim::before,
 .kanban-claim::before {
   content: '● ';
+}
+/* Waiting on someone rather than on agent work (waiting.ts) */
+.task-waiting,
+.kanban-waiting {
+  margin-top: 6px;
+  font-size: 11px;
+}
+.review-wait {
+  color: var(--yellow);
+}
+.review-wait::before {
+  content: '◷ ';
+}
+.review-note {
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
+/* Blocked on a decision (D-3.2): waiting on you stands out; waiting on an agent stays quiet */
+.block-wait {
+  color: var(--text-muted);
+}
+.block-wait.on-user {
+  color: var(--orange);
+  font-weight: 600;
+}
+.block-wait::before {
+  content: '✋ ';
+}
+.block-questions {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.block-questions li {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+}
+/* Notes in the detail panel (D-4.1), newest first */
+.detail-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.detail-note {
+  border-left: 2px solid var(--border);
+  padding: 2px 0 2px 10px;
+  font-size: 13px;
+}
+.detail-note.note-failure,
+.detail-note.note-rejection {
+  border-left-color: var(--red);
+}
+.detail-note.note-outcome {
+  border-left-color: var(--green);
+}
+.detail-note.note-review,
+.detail-note.note-answer {
+  border-left-color: var(--yellow);
+}
+.note-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.note-kind {
+  font-weight: 600;
+}
+.note-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.note-text {
+  white-space: pre-wrap;
+  margin-top: 2px;
+}
+/* The header's "need you" count (D-3.3) */
+.attention-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 8px;
+  margin-left: 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--yellow) 50%, transparent);
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
+  color: var(--yellow);
+  cursor: pointer;
 }
 .kanban-empty {
   font-size: 12px;
@@ -1717,6 +1952,9 @@ svg.graph-minimap.hidden {
   margin-left: 8px;
   font-size: 11px;
   color: var(--red);
+}
+.phase-in-review {
+  color: var(--yellow);
 }
 .estimate-range {
   color: var(--text-muted);
@@ -2002,6 +2240,22 @@ svg.graph-minimap.hidden {
   padding: 0 5px;
   line-height: 22px;
   white-space: nowrap;
+}
+/* Completed by someone other than who started it (a reviewer's approval): a small mark at the bar's end (D-4.5) */
+.agent-bar-approved {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--green);
+  border-radius: 0 3px 3px 0;
+}
+.agent-kind {
+  display: inline-flex;
+  color: var(--text-muted);
+  vertical-align: -1px;
+  margin-right: 2px;
 }
 .live-swatch {
   background: repeating-linear-gradient(-45deg, var(--accent) 0 3px, transparent 3px 6px);

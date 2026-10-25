@@ -3,12 +3,14 @@ name: serve
 description: >
   Start, stop or check the local server for the project's task dashboard. Use when the user says "serve the
   dashboard", "start the dashboard", "open the dashboard", "stop the dashboard server", or "is the dashboard running".
+allowed-tools: Bash(atm *)
 ---
 
 # Serve the Dashboard
 
 You start, stop or report the background HTTP server that shows this project's `tasks-dashboard.html`.
-The plugin's `atm` helper does the work; you run it and relay what it prints.
+The plugin's `atm` command does the work; you run it and relay what it prints. Never read or edit `tasks.json` or
+`tasks-archive.json` directly: `atm status`, `atm show` and `atm list` answer questions about the tasks.
 
 ## Step 1: Parse arguments
 
@@ -21,14 +23,18 @@ The plugin's `atm` helper does the work; you run it and relay what it prints.
 | `status` | Say whether it runs, and where |
 | `--open` | With `start`: also open the dashboard in the default browser |
 | `--port N` | With `start`: try port N first (default 8000; the next free port is used if it's busy) |
+| `--dir PATH` | Act on the project at PATH instead of the current one (e.g. stop another project's server) |
 
 ## Step 2: Run the helper
 
 From the project root, run:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" serve <action> [--open] [--port N]
+atm serve <action> [--open] [--port N] [--dir PATH]
 ```
+
+(`atm` is atm-cli, the plugin's command; its `bin/` is on your PATH while the plugin is enabled. If the shell says
+`atm: command not found`, write `"${CLAUDE_SKILL_DIR}/../../bin/atm"` instead.)
 
 The helper:
 - moves an old `docs/tasks.json` (or `tasks.json` in the root) into `.agentic-task-manager/` first, and makes sure

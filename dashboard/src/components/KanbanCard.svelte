@@ -3,12 +3,20 @@
   import type { KanbanCard } from '../lib/kanban';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
+  import { kindOf } from '../lib/vocab';
+  import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
+  import LabelChips from './LabelChips.svelte';
+  import PriorityBadge from './PriorityBadge.svelte';
+  import StageChip from './StageChip.svelte';
 
   let { card }: { card: KanbanCard } = $props();
   const task = $derived(card.task);
   const pc = $derived(phaseColor(task.phase));
   const ts = $derived(typeStyle(task.type));
-  const claim = $derived(task.status === 'in_progress' ? dashboard.claims.get(task.id) : undefined);
+  const kind = $derived(kindOf(dashboard.vocab, task.status));
+  const claim = $derived(kind === 'active' ? dashboard.claims.get(task.id) : undefined);
+  const review = $derived(reviewWait(task, dashboard.loadedAt, dashboard.vocab));
+  const block = $derived(blockWait(task, dashboard.loadedAt, dashboard.vocab));
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -19,7 +27,7 @@
 </script>
 
 <div
-  class="kanban-card status-{task.status}"
+  class="kanban-card status-{task.status} kind-{kind ?? 'none'}"
   class:next-up={card.nextUp}
   data-id={task.id}
   role="button"
@@ -33,11 +41,22 @@
       >Phase {task.phase}</span
     >
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
+    <PriorityBadge {task} />
+    <StageChip {task} />
+    <LabelChips {task} />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>
   <div class="kanban-card-name">{task.name}</div>
   {#if claim}
     <div class="kanban-claim" title="Claimed by {claim.agent}">{claimSummary(claim, dashboard.loadedAt)}</div>
+  {/if}
+  {#if review}
+    <div class="kanban-waiting review-wait" title={review.note?.text}>{reviewSummary(review)}</div>
+  {/if}
+  {#if block}
+    <div class="kanban-waiting block-wait" class:on-user={block.on === 'user'} title={block.questions.join('\n')}>
+      {blockSummary(block)}
+    </div>
   {/if}
   {#if card.readiness}
     {#if card.readiness.ready}

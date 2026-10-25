@@ -4,6 +4,8 @@ import { parseChangelog } from '../src/lib/changelog.ts';
 import type { PluginInfo } from '../src/lib/plugin-info.ts';
 
 const ID = 'virtual:atm-plugin-info';
+/** plugin.json's name is the short command name, `atm`; the About dialog shows both (D-1.4) */
+const FULL_NAME = 'Agentic Task Manager';
 const RESOLVED_ID = '\0' + ID;
 
 /**
@@ -17,6 +19,7 @@ export function readPluginInfo(pluginJson: string, changelog: string): PluginInf
   if (!released?.date) throw new Error('No dated release in the changelog');
   return {
     name: plugin.name,
+    fullName: FULL_NAME,
     description: plugin.description,
     version: plugin.version,
     author: plugin.author?.name,

@@ -6,9 +6,10 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 ## Layout
 - `plugin/skills/*/SKILL.md` — the `/atm:*` skills
 - `plugin/templates/tasks-dashboard.html` — the dashboard that skills copy into user projects
-- `plugin/scripts/atm` — the helper the skills call (launcher for `atm.py`, see below)
+- `plugin/scripts/atm` — atm-cli, the `atm` command the skills call (launcher for `atm.py`, see below)
+- `atm-cli/` — atm-cli's source modules and the build that writes `plugin/scripts/atm.py` (dev only, not shipped)
 - `dashboard/` — Svelte 5 + TypeScript source for the dashboard (dev only, not shipped)
-- `tests/scripts/` — tests for the helper (dev only)
+- `tests/scripts/` — tests for atm-cli (dev only)
 - `.agentic-task-manager/tasks.json` — this repo's own task list; we dogfood atm here (`/atm:serve` shows it)
 - `docs/` — requirements, designs and plans the tasks were created from
 
@@ -28,17 +29,23 @@ Commands (run in `dashboard/`):
 - `npm test` / `npm run test:coverage` — Vitest unit tests (`tests/unit/`, 90% line threshold on `src/lib`)
 - `npm run test:e2e` — build, then the Playwright e2e suite
 - `npm run check` — svelte-check, ESLint, Prettier
-- `npm run test:scripts` — the helper's test suite (see below)
+- `npm run build:cli` — build `plugin/scripts/atm.py` from `atm-cli/` (see below)
+- `npm run test:scripts` — atm-cli's test suite (see below)
 - `npm run verify` — everything above; run before committing
 
-## Helper (`plugin/scripts/`)
-`atm` is a POSIX sh launcher that runs `atm.py` with Python 3.9+ (or explains that Python is needed). `atm.py` uses
-the **standard library only** and must stay compatible with Python 3.9, the version macOS's Command Line Tools ship.
-Python is the plugin's one runtime requirement; why there is a single implementation is in
-`docs/helper-runtime-proposal.md`.
+## atm-cli (`atm-cli/`, built into `plugin/scripts/`)
+atm-cli is the `atm` command the skills run (earlier docs call it "the helper"). `plugin/scripts/atm` is a POSIX sh
+launcher that runs `atm.py` with Python 3.9+ (or explains that Python is needed). atm-cli uses the **standard library
+only** and must stay compatible with Python 3.9, the version macOS's Command Line Tools ship. Python is the plugin's
+one runtime requirement; why there is a single implementation is in `docs/helper-runtime-proposal.md`.
 
-Tests (`tests/scripts/`, run with `node tests/scripts/run.mjs` or `npm run test:scripts`) drive the helper through the
-launcher. Prefer data-driven scenarios in `tests/scripts/scenarios/*.json` (format at the top of
+**Edit the modules in `atm-cli/atm/`, never `plugin/scripts/atm.py`.** That file is a **committed build artifact**:
+`atm-cli/build.py` concatenates the modules in dependency order (its `MODULES` list; a module imports only from
+earlier ones, and no two modules may define the same top-level name). The pre-commit hook rebuilds it when `atm-cli/`
+changes, and CI fails if it is stale. Design: `docs/v4/atm-cli.md`.
+
+Tests (`tests/scripts/`, run with `node tests/scripts/run.mjs` or `npm run test:scripts`) drive the built atm-cli
+through the launcher, exactly as users run it. Prefer data-driven scenarios in `tests/scripts/scenarios/*.json` (format at the top of
 `scenarios.test.mjs`); use `*.test.mjs` with `helpers.mjs` for things scenarios can't express (servers, concurrency,
 git merges). CI runs the suite with Python 3.9 and a current version.
 
@@ -58,6 +65,20 @@ git merges). CI runs the suite with Python 3.9 and a current version.
   container). After an intended UI change: `npx playwright test visual --update-snapshots`, delete the matching
   `-linux.png` files, push; CI generates the missing Linux baselines as an artifact and fails until you commit them
   (or run `npm run test:e2e:linux-snapshots` with Docker running).
+
+## CI
+- **Workflow:** `pull-request` (also in `tasks.json` `meta.workflow`, so `/atm:push` knows): work happens on a
+  release branch (e.g. `dev/v4`) and reaches `main` through **one combined PR per release branch**.
+- **Linux screenshot baselines:** after a visual change, CI fails until the `-linux.png` baselines are committed, and
+  attaches the generated ones as the `linux-screenshot-baselines` artifact. Find its ID with
+  `gh api repos/hakanserce/agentic-task-manager/actions/runs/<run-id>/artifacts`, download it with
+  `gh api repos/hakanserce/agentic-task-manager/actions/artifacts/<id>/zip > <scratch>/baselines.zip` (`gh run download`
+  fails on the zip's duplicate entries), extract only the `*-linux.png` files into
+  `dashboard/tests/e2e/__screenshots__/`, look at one to check it shows what you expect, then commit them.
+- **Performance budgets:** the e2e interaction budget is 200 ms locally and twice that in CI
+  (`tests/e2e/performance.spec.ts`), and CI runners are about 3× slower than a developer Mac. A failure only in CI
+  (e.g. 407 ms against 400) still needs a local measurement and a real fix: never raise the budget or just re-run.
+  The large-file benchmark (`tests/scripts/bench.mjs --check`) has generous limits and fails only far over them.
 
 ## Versions
 `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` versions must match. Bump both when the

@@ -4,6 +4,41 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.13.0] - 2026-10-24
+
+**Update the plugin for every agent before your first `atm archive`:** older versions see a dependency on an
+archived task as missing, so its dependents never become ready.
+
+### Added
+- **atm-cli** (the `atm` command) does everything the skills need; they never touch `tasks.json` directly. New:
+  `status`, `show`, `list`, `deps`, `add`, `edit`, `check`, `note`, `review`/`reject`, `block`/`unblock`, `commit`,
+  `workflow`, `pr`, `merged`, `archive`/`unarchive`, all with `--json`. It is on Claude Code's PATH, so one rule,
+  `Bash(atm *)`, approves it across upgrades.
+- **Priorities** (`P0`–`P3`): agents take the most urgent first within a phase; cards, filters and List sort show
+  them.
+- **Labels** such as `spike-2` or `ux`: chips on cards, a filter, and search.
+- **Your own vocabularies**: statuses (each of a kind), phases, types, priorities and labels, confirmed by
+  `/atm:create-tasks` and listed in **About**.
+- **In Review**: `atm review` hands work over for approval; `atm done` passes it, `atm reject` sends it back. Cards
+  say how long it has waited.
+- **Blocked on a decision**: agents ask instead of guessing (`atm block --on user|agent --question`); cards say
+  "Waiting on you" or "on an agent", the details list the questions, `atm unblock --answer` replies. The header counts
+  what needs you.
+- **Notes** (handoffs, outcomes, reviews, rejections, answers, failures) and **who** created, started and completed a
+  task, in its details; the Agents tab marks people, agents and approvals; a Started by filter.
+- **`/atm:push`** for both workflows, direct or pull requests: pushes, opens the PR, watches CI and fixes failures
+  without weakening tests or raising budgets. Your `CLAUDE.md` comes first.
+- **Stages of Done**: In PR (linked) and Merged chips; in pull-request projects Done is split by stage. A Stage filter.
+- **The archive**: `atm archive` moves old finished tasks to `tasks-archive.json`; atm suggests it past 1 MB or 500
+  archivable tasks. The dashboard loads it only for Progress, activity details and **Include archived**.
+- **Help** and **About** in the footer.
+- A plugin hook renews claims while an agent works.
+
+### Changed
+- Unchanged `tasks.json` polls are a `304 Not Modified` (exact ETags, even for two changes in one second).
+- The skills commit with `atm commit`: exactly the files named, plus `tasks.json`.
+- `started_by` replaces `agent` (still read); `atm migrate` also updates a rebuilt dashboard of the same version.
+
 ## [0.12.0] - 2026-10-24
 
 ### Added

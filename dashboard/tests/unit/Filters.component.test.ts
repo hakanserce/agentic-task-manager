@@ -26,7 +26,7 @@ describe('Filters', () => {
     const toggle = container.querySelector('#filters-toggle')!;
     expect(container.querySelector('#filter-panel')).toBeNull();
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(container.querySelector('#active-filters')).toHaveTextContent('All phases, types and statuses');
+    expect(container.querySelector('#active-filters')).toHaveTextContent('No filters');
     expect(container.querySelector('#match-count')).toHaveTextContent('12 of 12 tasks');
 
     await openPanel(container);
@@ -35,6 +35,7 @@ describe('Filters', () => {
       'phase',
       'type',
       'status',
+      'priority',
     ]);
   });
 
@@ -46,10 +47,14 @@ describe('Filters', () => {
         (b) => (b as HTMLElement).dataset.value,
       );
     expect(values('phase')).toEqual(['all', '0', '1', '2']);
-    expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'done', 'blocked', 'skipped']);
-    expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(3);
+    expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'blocked', 'done', 'skipped']);
+    expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(4);
     expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 3 tasks');
     expect(button(container, 'phase', 'all')).toHaveAttribute('aria-label', 'All phases, 12 tasks');
+    // standard.json has no priorities: every task has the default
+    expect(values('priority')).toEqual(['all', 'P2']);
+    expect(button(container, 'priority', 'all')).toHaveAttribute('aria-label', 'All priorities, 12 tasks');
+    expect(button(container, 'priority', 'P2')).toHaveAttribute('aria-label', 'P2 Medium, 12 tasks');
   });
 
   it('toggles filters, shows them as chips, and clears them from the chip', async () => {
@@ -75,6 +80,36 @@ describe('Filters', () => {
     await fireEvent.click(button(container, 'type', 'all'));
     expect(dashboard.filters.type.size).toBe(0);
     expect(button(container, 'type', 'all')).toHaveClass('active');
+  });
+
+  it('shows a Labels group, with counts, once some task has a label', async () => {
+    const labelled = standard.tasks.map((t, i) => (i < 3 ? { ...t, labels: i === 0 ? ['ux', 'api'] : ['ux'] } : t));
+    loadIntoDashboard({ ...standard, tasks: labelled });
+    const { container } = render(Filters);
+    await openPanel(container);
+    expect(container.querySelector('.filter-group[data-group="label"] .filter-group-label')).toHaveTextContent(
+      'Labels',
+    );
+    expect(button(container, 'label', 'ux')).toHaveAttribute('aria-label', 'ux, 3 tasks');
+    await fireEvent.click(button(container, 'label', 'api'));
+    expect(dashboard.filtered.map((t) => t.id)).toEqual(['T-001']);
+    expect(container.querySelector('.filter-chip[data-filter="label"]')).toHaveTextContent('Labels: api');
+  });
+
+  it('shows a Started by group only when more than one actor started tasks', async () => {
+    const one = standard.tasks.map((t, i) => (i < 2 ? { ...t, started_by: 'claude:aaaa' } : t));
+    loadIntoDashboard({ ...standard, tasks: one });
+    const first = render(Filters);
+    await openPanel(first.container);
+    expect(first.container.querySelector('.filter-group[data-group="agent"]')).toBeNull();
+    first.unmount();
+
+    const two = one.map((t, i) => (i === 2 ? { ...t, started_by: 'Hakan' } : t));
+    loadIntoDashboard({ ...standard, tasks: two });
+    const { container } = render(Filters);
+    await openPanel(container);
+    expect(container.querySelector('.filter-group[data-group="agent"]')).toHaveTextContent('Started by');
+    expect(button(container, 'agent', 'claude:aaaa')).toHaveAttribute('aria-label', 'claude:aaaa, 2 tasks');
   });
 
   it('the search narrows the tasks and the filter counts, and can be cleared', async () => {

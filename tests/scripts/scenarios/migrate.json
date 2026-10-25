@@ -189,7 +189,7 @@
           "tasks": []
         },
         ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"> current"
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\"> current"
       }
     },
     "args": ["migrate"],
@@ -197,7 +197,7 @@
       "stdout": "Nothing to migrate.\n",
       "files": {
         ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"> current"
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\"> current"
       }
     }
   },
@@ -209,7 +209,7 @@
           "tasks": []
         },
         ".agentic-task-manager/.gitignore": "notes.txt\n.server.json",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\">"
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\">"
       }
     },
     "args": ["migrate"],
@@ -296,6 +296,42 @@
     "args": ["migrate"],
     "expect": {
       "stdout": "Nothing to migrate.\n"
+    }
+  },
+  {
+    "name": "the same version but another build is replaced (a fix shipped without a new version number)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"000000000000\">"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Dashboard updated (same version, v{version}, new build).\n",
+      "files": {
+        ".agentic-task-manager/tasks-dashboard.html": true
+      }
+    }
+  },
+  {
+    "name": "the same version without a build ID (built before build IDs existed) is replaced",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\">"
+      }
+    },
+    "args": ["migrate", "--json"],
+    "expect": {
+      "json": {
+        "moved": null,
+        "removed_dashboard": null,
+        "warning": null,
+        "gitignore_updated": true,
+        "merge_driver_updated": false,
+        "dashboard": { "action": "rebuilt", "from": "{version}", "to": "{version}" }
+      }
     }
   }
 ]

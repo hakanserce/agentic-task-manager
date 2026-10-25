@@ -84,6 +84,25 @@ test.describe('auto-refresh', () => {
     await expect(progress(page)).toHaveAccessibleName('Progress 50%, 6 of 12 tasks done');
   });
 
+  test('an unchanged file is a 304: nothing is parsed or re-rendered; a change still shows', async ({
+    page,
+    tasksServer,
+  }) => {
+    // A marker on a rendered card survives only if the card isn't rendered again
+    await page.keyboard.press('Escape'); // the refresh menu
+    await page.getByRole('tab', { name: 'Task List' }).click();
+    await page.locator('.task-card[data-id="T-005"]').evaluate((el) => el.setAttribute('data-marker', '1'));
+    await page.clock.runFor(10_000);
+    await requests(tasksServer).toBe(3);
+    expect(tasksServer.notModified).toBe(2);
+    await expect(page.locator('.task-card[data-id="T-005"][data-marker="1"]')).toHaveCount(1);
+
+    tasksServer.use(standardWithT005Done());
+    await page.clock.runFor(5_000);
+    await expect(progress(page)).toHaveAccessibleName('Progress 50%, 6 of 12 tasks done');
+    expect(tasksServer.notModified).toBe(2);
+  });
+
   test('a changed interval applies immediately and is remembered', async ({ page, tasksServer }) => {
     await interval(page).fill('2');
     await interval(page).press('Tab');

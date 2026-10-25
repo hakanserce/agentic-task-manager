@@ -13,12 +13,13 @@
 //     "git": { "staged": ["path", ...] }    `git diff --cached --name-status` lines, e.g. "R docs/a .agentic-task-manager/a"
 //   }
 // }
-// Strings may use {root} (the project's real path) and {version} (the plugin version); setup only {version}.
+// Strings may use {root} (the project's real path), {version} (the plugin version) and {build} (the shipped
+// dashboard's build ID); setup only {version} and {build}.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, test } from 'node:test';
-import { PLUGIN_VERSION, REPO, fill, git, makeProject, removeDir, runAtm } from './helpers.mjs';
+import { PLUGIN_BUILD, PLUGIN_VERSION, REPO, fill, git, makeProject, removeDir, runAtm } from './helpers.mjs';
 
 const dir = path.join(REPO, 'tests/scripts/scenarios');
 const scenarios = fs
@@ -46,9 +47,9 @@ function checkFile(root, file, expected) {
 describe('scenarios', () => {
   for (const s of scenarios) {
     test(`${s.file}: ${s.name}`, () => {
-      const root = makeProject(fill(s.setup, { root: '{root}', version: PLUGIN_VERSION }));
+      const root = makeProject(fill(s.setup, { root: '{root}', version: PLUGIN_VERSION, build: PLUGIN_BUILD }));
       try {
-        const vars = { root, version: PLUGIN_VERSION };
+        const vars = { root, version: PLUGIN_VERSION, build: PLUGIN_BUILD };
         const e = fill(s.expect, vars);
         const r = runAtm(s.args, path.join(root, s.cwd || '.'), s.env);
         const context = `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`;

@@ -7,7 +7,7 @@
   let { now }: { now: number } = $props();
 
   // Work of the matching tasks, over the whole project's period (first start to now)
-  const u = $derived(utilization(dashboard.filtered, dashboard.claims, now, dashboard.tasks));
+  const u = $derived(utilization(dashboard.filtered, dashboard.claims, now, dashboard.tasks, dashboard.vocab));
   const pct = (r: number) => `${Math.round(r * 100)}%`;
   const hours = (msSpan: number) => formatMinutes(msSpan / 60_000);
   const span = (msSpan: number) => {

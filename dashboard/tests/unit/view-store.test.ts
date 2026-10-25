@@ -30,10 +30,19 @@ describe('reading and writing', () => {
 
   it('round-trips a view', () => {
     const view: SavedView = {
-      filters: { phase: ['1'], type: ['feature', 'test'], status: [] },
+      filters: {
+        phase: ['1'],
+        type: ['feature', 'test'],
+        status: [],
+        priority: ['P0'],
+        stage: ['in_pr'],
+        label: ['ux'],
+        agent: ['claude:a'],
+      },
       query: 'login',
       tab: 'agents',
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
+      listSort: 'priority',
       progressPhase: 2,
       graphFiltered: 'dim',
       graph: { k: 1.5, x: -120, y: 40 },
@@ -58,7 +67,10 @@ describe('reading and writing', () => {
       key,
       JSON.stringify({ tab: 'nope', filters: { phase: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
     );
-    expect(readView(key)).toEqual({ ...defaultView(), filters: { phase: ['2'], type: [], status: [] } });
+    expect(readView(key)).toEqual({
+      ...defaultView(),
+      filters: { phase: ['2'], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
+    });
   });
 
   it('a malformed graph position is ignored', () => {
@@ -92,23 +104,44 @@ describe('reading and writing', () => {
 });
 
 describe('sanitizeView', () => {
-  const tasks = [task(0, 'feature', 'done'), task(1, 'test', 'todo')];
+  const tasks = [{ ...task(0, 'feature', 'done'), labels: ['ux'], started_by: 'claude:a' }, task(1, 'test', 'todo')];
 
   it('drops filter values and a focused phase the tasks no longer have', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['0', '5'], type: ['feature', 'docs'], status: ['todo', 'blocked'] },
+      filters: {
+        phase: ['0', '5'],
+        type: ['feature', 'docs'],
+        status: ['todo', 'blocked'],
+        priority: ['P2', 'P0'],
+        stage: ['done', 'merged'],
+        label: ['ux', 'gone'],
+        agent: ['claude:a', 'claude:gone'],
+      },
       progressPhase: 5,
     };
+    // Neither task has a priority: both are the default, P2
     expect(sanitizeView(view, tasks)).toEqual({
       ...view,
-      filters: { phase: ['0'], type: ['feature'], status: ['todo'] },
+      filters: {
+        phase: ['0'],
+        type: ['feature'],
+        status: ['todo'],
+        priority: ['P2'],
+        stage: ['done'],
+        label: ['ux'],
+        agent: ['claude:a'],
+      },
       progressPhase: null,
     });
   });
 
   it('keeps everything that still exists', () => {
-    const view: SavedView = { ...defaultView(), filters: { phase: ['1'], type: [], status: [] }, progressPhase: 0 };
+    const view: SavedView = {
+      ...defaultView(),
+      filters: { phase: ['1'], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
+      progressPhase: 0,
+    };
     expect(sanitizeView(view, tasks)).toEqual(view);
   });
 });

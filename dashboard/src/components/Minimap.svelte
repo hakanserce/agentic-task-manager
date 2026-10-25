@@ -1,7 +1,9 @@
 <script lang="ts">
   import type { GraphNode } from '../lib/graph/layout';
   import type { Size, View } from '../lib/graph/view';
-  import { statusStyle } from '../lib/theme';
+  import { dashboard } from '../lib/state.svelte';
+  import { kindStyle } from '../lib/theme';
+  import { kindOf } from '../lib/vocab';
 
   const MAX_W = 180;
   const MAX_H = 110;
@@ -62,7 +64,7 @@
       width={nodeSize.w}
       height={nodeSize.h}
       rx="8"
-      fill={statusStyle(node.task.status).color}
+      fill={kindStyle(kindOf(dashboard.vocab, node.task.status)).color}
       opacity="0.8"
     />
   {/each}

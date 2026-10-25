@@ -1,10 +1,11 @@
 // Claims and leases: who works on which task, shared across the worktrees of a clone, expiring when an agent stops
 // renewing its lease. Time is controlled with ATM_NOW.
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, test } from 'node:test';
-import { git, makeProject, removeDir, runAtm, tempDir } from './helpers.mjs';
+import { ATM, baseEnv, git, makeProject, removeDir, runAtm, tempDir } from './helpers.mjs';
 
 const T0 = '2026-05-01T10:00:00Z';
 const at = (minutes) => new Date(Date.parse(T0) + minutes * 60_000).toISOString().replace(/\.\d+Z$/, 'Z');
@@ -86,6 +87,63 @@ describe('claims', () => {
     }
   });
 
+  test('heartbeat --auto renews only claims last renewed ten minutes ago, silently, without touching tasks.json', () => {
+    const root = repo();
+    const store = () => JSON.parse(fs.readFileSync(path.join(root, '.git/atm/claims.json'), 'utf8'));
+    try {
+      runAtm(['start', 'T-001'], root, as('alice'));
+      runAtm(['start', 'T-002'], root, as('bob'));
+      const before = fs.readFileSync(path.join(root, '.agentic-task-manager/tasks.json'), 'utf8');
+      const storeMtime = fs.statSync(path.join(root, '.git/atm/claims.json')).mtimeMs;
+
+      // Fresh: nothing is written
+      const fresh = runAtm(['heartbeat', '--auto'], root, as('alice', 9));
+      assert.deepEqual([fresh.code, fresh.stdout, fresh.stderr], [0, '', '']);
+      assert.equal(fs.statSync(path.join(root, '.git/atm/claims.json')).mtimeMs, storeMtime);
+
+      // Ten minutes after the claim: alice's lease is renewed, bob's is left alone
+      const due = runAtm(['heartbeat', '--auto'], root, as('alice', 10));
+      assert.deepEqual([due.code, due.stdout, due.stderr], [0, '', '']);
+      assert.equal(store().claims['T-001'].lease_expires_at, at(40));
+      assert.equal(store().claims['T-001'].renewed_at, at(10));
+      assert.equal(store().claims['T-002'].lease_expires_at, at(30));
+      // The next renewal counts from the last one
+      runAtm(['heartbeat', '--auto'], root, as('alice', 15));
+      assert.equal(store().claims['T-001'].lease_expires_at, at(40));
+      assert.equal(fs.readFileSync(path.join(root, '.agentic-task-manager/tasks.json'), 'utf8'), before);
+    } finally {
+      removeDir(root);
+    }
+  });
+
+  test('heartbeat --auto as a hook: the session and cwd come from stdin; it never fails', () => {
+    const root = repo();
+    const elsewhere = tempDir();
+    try {
+      runAtm(['start', 'T-001'], root, { CLAUDE_CODE_SESSION_ID: 'abcdef1234', ATM_NOW: T0 });
+      const hook = (input, cwd = elsewhere) =>
+        spawnSync(ATM, ['heartbeat', '--auto'], {
+          cwd,
+          input,
+          encoding: 'utf8',
+          env: { ...baseEnv(), ATM_NOW: at(12) },
+        });
+      const r = hook(JSON.stringify({ session_id: 'abcdef1234-rest', cwd: root, hook_event_name: 'PostToolUse' }));
+      assert.deepEqual([r.status, r.stdout, r.stderr], [0, '', '']);
+      const store = JSON.parse(fs.readFileSync(path.join(root, '.git/atm/claims.json'), 'utf8'));
+      assert.equal(store.claims['T-001'].lease_expires_at, at(42));
+      // Outside a project, with garbage on stdin: still exit 0, nothing printed
+      for (const input of ['not json', '']) {
+        const quiet = hook(input);
+        assert.deepEqual([quiet.status, quiet.stdout, quiet.stderr], [0, '', '']);
+      }
+      assert.equal(runAtm(['heartbeat'], root, as('alice')).code, 2);
+    } finally {
+      removeDir(root);
+      removeDir(elsewhere);
+    }
+  });
+
   test('an expired lease frees the task: back to todo, with a note on who held it', () => {
     const root = repo();
     try {
@@ -95,7 +153,8 @@ describe('claims', () => {
       const t = statusOf(root, 'T-001');
       assert.equal(t.status, 'todo');
       assert.equal(t.started_at, undefined);
-      assert.deepEqual(t.last_failure, { at: at(31), reason: 'lease expired (alice)' });
+      assert.equal(t.started_by, undefined);
+      assert.deepEqual(t.notes, [{ at: at(31), kind: 'failure', text: 'lease expired (alice)' }]);
       // Now bob can take it; alice's late heartbeat is told what happened
       assert.equal(runAtm(['start', 'T-001'], root, as('bob', 32)).code, 0);
       const late = runAtm(['heartbeat', 'T-001'], root, as('alice', 33));
@@ -169,17 +228,26 @@ describe('claims', () => {
     }
   });
 
-  test('the default identity is this Claude Code session, else user@host:worktree', () => {
+  test('the default identity is this Claude Code session, else the git user, else user@host', () => {
     const root = repo();
+    const outside = makeProject({ files: { '.agentic-task-manager/tasks.json': TASKS } });
     try {
       const session = JSON.parse(
         runAtm(['start', 'T-001', '--json'], root, { CLAUDE_CODE_SESSION_ID: 'abcdef1234567890' }).stdout,
       );
       assert.equal(session.claim.agent, 'claude:abcdef12');
-      const plain = JSON.parse(runAtm(['start', 'T-002', '--json'], root).stdout);
-      assert.match(plain.claim.agent, new RegExp(`@.+:${root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+      assert.equal(session.started_by, 'claude:abcdef12');
+      // A person in a terminal: their git name (the test repository's is "atm test")
+      const person = JSON.parse(runAtm(['start', 'T-002', '--json'], root).stdout);
+      assert.equal(person.claim.agent, 'atm test');
+      assert.equal(person.started_by, 'atm test');
+      // Outside git (and with no global git name in the test environment's HOME), user@host
+      const env = { HOME: outside, GIT_CONFIG_NOSYSTEM: '1', XDG_CONFIG_HOME: outside };
+      const plain = JSON.parse(runAtm(['start', 'T-002', '--json'], outside, env).stdout);
+      assert.match(plain.claim.agent, /^[^@:]+@[^:]+$/);
     } finally {
       removeDir(root);
+      removeDir(outside);
     }
   });
 });

@@ -43,7 +43,10 @@ after(() => cleanups.forEach((fn) => fn()));
 
 /** A project with tasks.json in the new folder; stopped (and its server killed) when the tests end. */
 function project(files = {}) {
-  const root = makeProject({ git: true, files: { '.agentic-task-manager/tasks.json': TASKS, ...files } });
+  const root = makeProject({
+    git: true,
+    files: { '.agentic-task-manager/tasks.json': TASKS, ...files },
+  });
   cleanups.push(() => {
     const r = record(root);
     if (r && alive(r.pid)) process.kill(r.pid, 'SIGTERM');
@@ -87,6 +90,28 @@ describe('serve', () => {
     assert.equal(atm(['serve', 'stop'], root).stdout, 'Dashboard server is not running.\n');
   });
 
+  test('tasks.json has an ETag; a poll with it gets 304 until the file changes, even within a second', async () => {
+    const root = project();
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const url = `http://localhost:${port}/tasks.json`;
+    const first = await fetch(url);
+    const etag = first.headers.get('etag');
+    assert.match(etag, /^"[0-9a-f]+-[0-9a-f]+"$/);
+    const unchanged = await fetch(url, { headers: { 'If-None-Match': etag } });
+    assert.equal(unchanged.status, 304);
+    assert.equal(unchanged.headers.get('etag'), etag);
+    // An atm change right away (same second): a new ETag and the new content
+    assert.equal(atm(['add', '--name', 'New', '--phase', '0', '--type', 'feature'], root).code, 0);
+    const changed = await fetch(url, { headers: { 'If-None-Match': etag } });
+    assert.equal(changed.status, 200);
+    assert.notEqual(changed.headers.get('etag'), etag);
+    assert.equal((await changed.json()).tasks.length, 1);
+    // Not for other files (the dashboard)
+    assert.equal((await fetch(`http://localhost:${port}/tasks-dashboard.html`)).headers.get('etag'), null);
+    atm(['serve', 'stop'], root);
+  });
+
   test('a busy port moves the server to the next free one', async () => {
     const root = project();
     const port = ports();
@@ -104,7 +129,12 @@ describe('serve', () => {
   test('a stale record (process gone) is cleaned up, and start works', () => {
     const root = project();
     const port = ports();
-    const stale = { pid: 999999, port, folder: path.join(root, '.agentic-task-manager'), started_at: 'x' };
+    const stale = {
+      pid: 999999,
+      port,
+      folder: path.join(root, '.agentic-task-manager'),
+      started_at: 'x',
+    };
     fs.writeFileSync(path.join(root, '.agentic-task-manager/.server.json'), JSON.stringify(stale));
     assert.equal(atm(['serve', 'status'], root).stdout, 'Dashboard server is not running.\n');
     assert.equal(record(root), null);
@@ -121,7 +151,12 @@ describe('serve', () => {
     // An unrelated process
     const sleeper = spawn('sleep', ['30'], { stdio: 'ignore' });
     cleanups.push(() => sleeper.kill());
-    const fake = { pid: sleeper.pid, port, folder: path.join(a, '.agentic-task-manager'), started_at: 'x' };
+    const fake = {
+      pid: sleeper.pid,
+      port,
+      folder: path.join(a, '.agentic-task-manager'),
+      started_at: 'x',
+    };
     fs.writeFileSync(path.join(a, '.agentic-task-manager/.server.json'), JSON.stringify(fake));
     assert.match(atm(['serve', 'stop'], a).stdout, /not running \(removed a stale record for pid \d+\)/);
     assert.equal(alive(sleeper.pid), true);
@@ -146,13 +181,33 @@ describe('serve', () => {
   });
 
   test('migrates an old docs/tasks.json and installs the dashboard before serving', () => {
-    const root = makeProject({ commit: true, files: { 'docs/tasks.json': TASKS } });
+    const root = makeProject({
+      commit: true,
+      files: { 'docs/tasks.json': TASKS },
+    });
     cleanups.push(() => removeDir(root));
     const r = atm(['serve', '--port', String(ports())], root);
     assert.match(r.stdout, /Moved docs\/tasks.json to .agentic-task-manager\/tasks.json/);
     assert.match(r.stdout, /Dashboard v[\d.]+ installed/);
     assert.ok(fs.existsSync(path.join(root, '.agentic-task-manager/tasks-dashboard.html')));
     atm(['serve', 'stop'], root);
+  });
+
+  test('--dir acts on another project: start, status and stop from elsewhere', async () => {
+    const root = project();
+    const elsewhere = makeProject({});
+    cleanups.push(() => removeDir(elsewhere));
+    const port = ports();
+    const started = atm(['serve', '--dir', root, '--port', String(port)], elsewhere);
+    assert.equal(started.code, 0, started.stderr);
+    assert.equal(portOf(started.stdout), port);
+    assert.equal(record(root)?.port, port);
+    assert.equal(record(elsewhere), null, 'nothing started for the current directory');
+    assert.match(atm(['serve', 'status', '--dir', root], elsewhere).stdout, new RegExp(`localhost:${port}/`));
+    const stopped = atm(['serve', 'stop', '--dir', root], elsewhere);
+    assert.match(stopped.stdout, /Dashboard server stopped/);
+    assert.equal(record(root), null);
+    assert.equal(atm(['serve', 'status', '--dir', path.join(root, 'nope')], elsewhere).code, 2);
   });
 
   test('without a task file: an error, nothing started', () => {

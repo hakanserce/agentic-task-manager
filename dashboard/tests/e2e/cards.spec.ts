@@ -30,7 +30,7 @@ test.describe('task cards', () => {
     await expect(c).toHaveClass(/status-done/);
     await expect(c.locator('.task-id')).toHaveText('T-004');
     await expect(c.locator('.task-name')).toHaveText('User login');
-    await expect(c.locator('.task-meta .badge')).toHaveText(['Phase 1', 'feature', 'done']);
+    await expect(c.locator('.task-meta .badge')).toHaveText(['Phase 1', 'feature', 'Done', 'P2']);
     await expect(c.locator('.deps-label')).toHaveText('needs:');
     await expect(c.locator('.dep-link')).toHaveText(['T-002', 'T-003']);
     await expect(c.locator('.dep-link').first()).toHaveAttribute('title', 'Write contributing guide');
@@ -38,13 +38,36 @@ test.describe('task cards', () => {
     await expect(c.locator('.req-badge')).toHaveText(['FR-1.1', 'FR-1.2']);
   });
 
-  test('status classes and labels', async ({ page, tasksServer }) => {
+  test('status classes (status and kind) and labels', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
-    const expected = { 'T-005': 'in_progress', 'T-006': 'todo', 'T-007': 'blocked', 'T-010': 'skipped' };
-    for (const [id, status] of Object.entries(expected)) {
-      await expect(card(page, id)).toHaveClass(new RegExp(`status-${status}`));
-      await expect(card(page, id).locator('.task-meta .badge').nth(2)).toHaveText(status.replace('_', ' '));
+    const expected = {
+      'T-005': ['in_progress', 'active', 'In Progress'],
+      'T-006': ['todo', 'todo', 'To Do'],
+      'T-007': ['blocked', 'blocked', 'Blocked'],
+      'T-010': ['skipped', 'skipped', 'Skipped'],
+    };
+    for (const [id, [status, kind, label]] of Object.entries(expected)) {
+      await expect(card(page, id)).toHaveClass(new RegExp(`status-${status} kind-${kind}`));
+      await expect(card(page, id).locator('.task-meta .badge').nth(2)).toHaveText(label);
     }
+  });
+
+  test("a project's own statuses: its labels, styled by kind", async ({ page, tasksServer }) => {
+    const data = loadFixture('standard');
+    data.meta = {
+      ...data.meta,
+      statuses: [
+        { id: 'todo', label: 'Backlog', kind: 'todo' },
+        { id: 'in_progress', label: 'Doing', kind: 'active' },
+        { id: 'awaiting_user', label: 'Awaiting you', kind: 'review' },
+        { id: 'done', label: 'Shipped', kind: 'done' },
+      ],
+    };
+    data.tasks.find((t) => t.id === 'T-005')!.status = 'awaiting_user';
+    await openDashboard(page, tasksServer, data, { tab: 'list' });
+    await expect(card(page, 'T-005')).toHaveClass(/kind-review/);
+    await expect(card(page, 'T-005').locator('.task-meta .badge').nth(2)).toHaveText('Awaiting you');
+    await expect(card(page, 'T-004').locator('.task-meta .badge').nth(2)).toHaveText('Shipped');
   });
 
   test('tasks without dependencies have no "needs:" label', async ({ page, tasksServer }) => {

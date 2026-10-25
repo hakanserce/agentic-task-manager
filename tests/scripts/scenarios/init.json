@@ -1,0 +1,69 @@
+[
+  {
+    "name": "init --meta-file creates tasks.json with that meta (and an id)",
+    "setup": {
+      "files": {
+        "meta.json": { "project": "Demo", "phases": [{ "id": 0, "name": "Foundations" }] }
+      }
+    },
+    "env": { "ATM_NOW": "2026-05-01T12:00:00Z" },
+    "args": ["init", "--meta-file", "meta.json", "--json"],
+    "expect": {
+      "stdoutIncludes": ["\"project_id\""]
+    }
+  },
+  {
+    "name": "init --meta-file merges into an existing meta, keeping its id and the tasks",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "id": "abcd1234", "project": "Old", "created": "2026-01-01" },
+          "tasks": [{ "id": "T-001", "status": "todo" }]
+        },
+        "meta.json": {
+          "id": "ignored",
+          "project": "New",
+          "priorities": [{ "id": "must" }, { "id": "could" }],
+          "default_priority": "must"
+        }
+      }
+    },
+    "args": ["init", "--meta-file", "meta.json"],
+    "expect": {
+      "stdoutIncludes": ["Updated tasks.json meta: default_priority, priorities, project\n"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "id": "abcd1234",
+            "project": "New",
+            "created": "2026-01-01",
+            "priorities": [{ "id": "must" }, { "id": "could" }],
+            "default_priority": "must"
+          },
+          "tasks": [{ "id": "T-001", "status": "todo" }]
+        }
+      }
+    }
+  },
+  {
+    "name": "init --meta-file refuses a bad vocabulary, and nothing is written",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234" }, "tasks": [] },
+        "meta.json": { "statuses": [{ "id": "todo", "label": "To Do", "kind": "todo" }] }
+      }
+    },
+    "args": ["init", "--meta-file", "meta.json"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["meta.statuses"],
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234" }, "tasks": [] } }
+    }
+  },
+  {
+    "name": "init --meta-file needs a JSON object",
+    "setup": { "files": { "meta.json": ["not", "an", "object"] } },
+    "args": ["init", "--meta-file", "meta.json"],
+    "expect": { "exit": 2, "stderrIncludes": ["must hold a JSON object"] }
+  }
+]

@@ -1,13 +1,42 @@
 <script lang="ts">
   import { FILTER_GROUPS, facetCounts, filterOptions, isActive, type FilterGroup } from '../lib/filters';
+  import { hasStage } from '../lib/stages';
   import { dashboard } from '../lib/state.svelte';
   import Icon from './Icon.svelte';
 
   // Compact: a search box and what is selected, as chips. The ⌄ opens every filter, one group per line.
-  const LABELS: Record<FilterGroup, string> = { phase: 'Phase', type: 'Type', status: 'Status' };
-  const options = $derived(filterOptions(dashboard.tasks));
+  const LABELS: Record<FilterGroup, string> = {
+    phase: 'Phase',
+    type: 'Type',
+    status: 'Status',
+    priority: 'Priority',
+    stage: 'Stage',
+    label: 'Labels',
+    agent: 'Started by',
+  };
+  const PLURALS: Record<FilterGroup, string> = {
+    phase: 'phases',
+    type: 'types',
+    status: 'statuses',
+    priority: 'priorities',
+    stage: 'stages',
+    label: 'labels',
+    agent: 'agents',
+  };
+  const options = $derived(filterOptions(dashboard.base, dashboard.vocab));
+  // Labels only when some task has a label; Stage only when some task is in a PR or merged; Started by only when
+  // more than one actor started tasks
+  const anyStage = $derived(dashboard.base.some(hasStage));
+  const groups = $derived(
+    FILTER_GROUPS.filter(
+      (g) =>
+        (g !== 'label' || options.label.length > 0) &&
+        (g !== 'stage' || anyStage) &&
+        (g !== 'agent' || options.agent.length > 1),
+    ),
+  );
   // How many tasks each button would show, given the search and the selections in the other groups
-  const counts = $derived(facetCounts(dashboard.searched, dashboard.filters));
+  const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab));
   let open = $state(false);
 
   const selected = $derived(
@@ -22,12 +51,7 @@
   }
 
   function ariaLabel(group: FilterGroup, value: string, label: string, n: number): string {
-    const name =
-      value === 'all'
-        ? `All ${group === 'status' ? 'statuses' : group + 's'}`
-        : group === 'phase'
-          ? `Phase ${label}`
-          : label;
+    const name = value === 'all' ? `All ${PLURALS[group]}` : group === 'phase' ? `Phase ${label}` : label;
     return `${name}, ${n} ${n === 1 ? 'task' : 'tasks'}`;
   }
 </script>
@@ -49,7 +73,7 @@
           type="search"
           id="task-search"
           placeholder="Search tasks"
-          aria-label="Search tasks by ID, name, description or type"
+          aria-label="Search tasks by ID, name, description, type or label"
           value={dashboard.query}
           oninput={(e) => (dashboard.query = e.currentTarget.value)}
         />
@@ -70,11 +94,22 @@
             ></span
           >
         {:else}
-          <span class="filter-none">All phases, types and statuses</span>
+          <span class="filter-none">No filters</span>
         {/each}
       </div>
+      {#if dashboard.archivedCount > 0}
+        <label class="include-archived" title="Search, list and graph the archived tasks too (tasks-archive.json)">
+          <input
+            type="checkbox"
+            id="include-archived"
+            checked={dashboard.includeArchived}
+            onchange={(e) => dashboard.setIncludeArchived(e.currentTarget.checked)}
+          />
+          Include archived
+        </label>
+      {/if}
       <span class="match-count" id="match-count" aria-live="polite"
-        ><strong>{dashboard.filtered.length}</strong> of {dashboard.tasks.length} tasks</span
+        ><strong>{dashboard.filtered.length}</strong> of {dashboard.base.length} tasks</span
       >
       <button
         class="reset-view-btn"
@@ -85,7 +120,7 @@
     </div>
     {#if open}
       <div class="filter-panel" id="filter-panel">
-        {#each FILTER_GROUPS as group (group)}
+        {#each groups as group (group)}
           <div class="filter-group" data-group={group}>
             <div class="filter-group-label">{LABELS[group]}</div>
             <div class="filter-group-buttons">

@@ -1,0 +1,368 @@
+[
+  {
+    "name": "a custom vocabulary: start moves a todo-kind task to the first active-kind status; done-kind meets dependencies",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "testing", "kind": "active" },
+              { "id": "awaiting_user", "kind": "review" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [
+            { "id": "T-1", "status": "shipped" },
+            { "id": "T-2", "status": "backlog", "dependencies": ["T-1"] }
+          ]
+        }
+      }
+    },
+    "args": ["start", "T-2"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": { "stdoutIncludes": ["T-2: backlog -> coding\n", "depends on: T-1 (shipped)"] }
+  },
+  {
+    "name": "--status picks one of the statuses of that kind",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "testing", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "backlog" }]
+        }
+      }
+    },
+    "args": ["start", "T-1", "--status", "testing"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "stdoutIncludes": ["T-1: backlog -> testing\n"] }
+  },
+  {
+    "name": "a --status of the wrong kind is a usage error, and nothing changes",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "backlog" }]
+        }
+      }
+    },
+    "args": ["start", "T-1", "--status", "shipped"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["--status shipped is not one of the active statuses (its kind is done); use coding"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "backlog" }]
+        }
+      }
+    }
+  },
+  {
+    "name": "a task in review doesn't meet a dependency",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "in_review" },
+            { "id": "T-2", "status": "todo", "dependencies": ["T-1"] }
+          ]
+        }
+      }
+    },
+    "args": ["start", "T-2"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "exit": 1, "stderrIncludes": ["can't start T-2: waiting on T-1 (in_review)"] }
+  },
+  {
+    "name": "next takes only todo-kind tasks whose dependencies are done-kind",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "on_hold", "kind": "blocked" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [
+            { "id": "T-1", "name": "Held", "phase": 0, "type": "feature", "status": "on_hold" },
+            {
+              "id": "T-2",
+              "name": "Waits",
+              "phase": 0,
+              "type": "feature",
+              "status": "backlog",
+              "dependencies": ["T-1"]
+            },
+            { "id": "T-3", "name": "Shipped", "phase": 0, "type": "feature", "status": "shipped" },
+            {
+              "id": "T-4",
+              "name": "Ready",
+              "phase": 0,
+              "type": "feature",
+              "status": "backlog",
+              "dependencies": ["T-3"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "stdout": "Next: T-4 Ready (phase 0, feature)\n" }
+  },
+  {
+    "name": "done moves to the first done-kind status",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" },
+              { "id": "released", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "coding" }]
+        }
+      }
+    },
+    "args": ["done", "T-1"],
+    "expect": { "stdout": "T-1: coding -> shipped\n" }
+  },
+  {
+    "name": "fail moves to the first todo-kind status; a default status the project doesn't list keeps its kind",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-2", "status": "in_progress" }]
+        }
+      }
+    },
+    "args": ["fail", "T-2", "--reason", "broken"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdout": "T-2: in_progress -> backlog\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-2",
+              "status": "backlog",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice",
+              "notes": [{ "at": "2026-05-01T10:00:00Z", "kind": "failure", "text": "broken", "by": "alice" }]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "an unknown kind is an error naming it, and nothing is written",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "todo", "kind": "todo" },
+              { "id": "waiting", "kind": "pending" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["start", "T-1"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": [
+        "atm: meta.statuses: \"waiting\" has the kind 'pending'; use one of todo, active, review, blocked, done, skipped"
+      ],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "todo", "kind": "todo" },
+              { "id": "waiting", "kind": "pending" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    }
+  },
+  {
+    "name": "statuses without a done kind are an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "todo", "kind": "todo" },
+              { "id": "doing", "kind": "active" }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.statuses needs at least one status of the kind 'done'"] }
+  },
+  {
+    "name": "a status listed twice is an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "todo", "kind": "todo" },
+              { "id": "doing", "kind": "active" },
+              { "id": "done", "kind": "done" },
+              { "id": "doing", "kind": "review" }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.statuses: \"doing\" is listed twice"] }
+  },
+  {
+    "name": "an entry without an id is an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "types": [{ "label": "Spike" }] }, "tasks": [] }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.types: every entry needs an \"id\""] }
+  },
+  {
+    "name": "a default priority the project doesn't have is an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "priorities": [{ "id": "must" }, { "id": "could" }], "default_priority": "P2" },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.default_priority 'P2' is not one of meta.priorities"] }
+  },
+  {
+    "name": "an unknown workflow type is an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "workflow": { "type": "trunk" } }, "tasks": [] }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.workflow.type must be one of direct, pull-request"] }
+  },
+  {
+    "name": "malformed phases are an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "phases": [{ "id": "one", "name": "x" }] }, "tasks": [] }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.phases must be a list of"] }
+  },
+  {
+    "name": "the merge driver ranks a project's statuses by kind: done-kind beats active-kind",
+    "setup": {
+      "files": {
+        "base.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "backlog", "updated_at": "2026-04-01T00:00:00Z" }]
+        },
+        "ours.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "coding", "updated_at": "2026-04-03T00:00:00Z" }]
+        },
+        "theirs.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "shipped", "updated_at": "2026-04-02T00:00:00Z" }]
+        }
+      }
+    },
+    "args": ["merge-driver", "base.json", "ours.json", "theirs.json"],
+    "expect": {
+      "exit": 0,
+      "files": {
+        "ours.json": {
+          "meta": {
+            "statuses": [
+              { "id": "backlog", "kind": "todo" },
+              { "id": "coding", "kind": "active" },
+              { "id": "shipped", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "shipped", "updated_at": "2026-04-02T00:00:00Z" }]
+        }
+      }
+    }
+  }
+]

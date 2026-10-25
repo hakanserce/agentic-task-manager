@@ -1,6 +1,8 @@
 <script lang="ts">
   import { agentTimeline, timeTicks, UNATTRIBUTED } from '../lib/agents';
+  import { approvedBy, isAgent } from '../lib/actors';
   import { shortAgent } from '../lib/claims';
+  import Icon from './Icon.svelte';
   import { formatMinutes, formatWhen } from '../lib/format';
   import { dashboard } from '../lib/state.svelte';
   import { typeStyle } from '../lib/theme';
@@ -27,9 +29,13 @@
 
   // One lane per agent: each task a bar from start to completion (or to now while in progress), in its type colour.
   // Tasks outside the search and filters stay, greyed out.
-  const narrowed = $derived(dashboard.filtered.length < dashboard.tasks.length);
+  // Archived work joins the timeline with "Include archived" (D-5.2), like the lists and the graph: a bar per task,
+  // so thousands of archived tasks would make every visit slow (D-6.3)
+  const narrowed = $derived(dashboard.filtered.length < dashboard.base.length);
   const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
-  const timeline = $derived(agentTimeline(dashboard.tasks, dashboard.claims, now, narrowed ? matching : undefined));
+  const timeline = $derived(
+    agentTimeline(dashboard.base, dashboard.claims, now, narrowed ? matching : undefined, dashboard.vocab),
+  );
   const bounds = $derived<TimeWindow>(
     timeline
       ? {
@@ -278,6 +284,12 @@
         <div class="agent-info" class:graph-dimmed={!lane.matches} data-agent={lane.agent}>
           <div class="agent-name" title={lane.agent || 'Tasks started before agents were recorded'}>
             <span class="agent-dot" class:active={lane.current.length > 0}></span>
+            {#if lane.agent !== UNATTRIBUTED}<span
+                class="agent-kind"
+                data-kind={isAgent(lane.agent) ? 'agent' : 'person'}
+                aria-label={isAgent(lane.agent) ? 'Agent' : 'Person'}
+                ><Icon name={isAgent(lane.agent) ? 'bot' : 'user'} size={12} /></span
+              >{/if}
             {lane.agent === UNATTRIBUTED ? 'Unattributed' : shortAgent(lane.agent)}
           </div>
           <div class="agent-stats">
@@ -293,10 +305,12 @@
           {#each ticks as t (t)}<span class="agents-gridline" style="left:{pos(t)}%"></span>{/each}
           {#each lane.bars as bar (bar.task.id)}
             {@const seg = segment(bar.start, bar.end)}
+            {@const approver = approvedBy(bar.task)}
             {#if seg}
               <button
                 class="agent-bar"
                 class:live={bar.live}
+                class:approved={!!approver}
                 class:graph-dimmed={narrowed && !matching.has(bar.task.id)}
                 class:cut-start={bar.start < win.start}
                 class:cut-end={bar.end > win.end}
@@ -304,9 +318,14 @@
                 style="left:{seg.left}%;width:max(4px, {seg.width}%);--bar:{typeStyle(bar.task.type).color}"
                 title="{bar.task.id} {bar.task.name}&#10;{formatWhen(bar.start, now)} → {bar.live
                   ? 'now'
-                  : formatWhen(bar.end, now)} ({formatMinutes((bar.end - bar.start) / 60_000)})"
+                  : formatWhen(bar.end, now)} ({formatMinutes((bar.end - bar.start) / 60_000)}){approver
+                  ? `\napproved by ${approver}`
+                  : ''}"
                 onclick={() => dashboard.showDetail(bar.task.id)}
-                ><span class="agent-bar-label">{bar.task.id}</span></button
+                ><span class="agent-bar-label">{bar.task.id}</span>{#if approver}<span
+                    class="agent-bar-approved"
+                    data-by={approver}
+                  ></span>{/if}</button
               >
             {/if}
           {/each}

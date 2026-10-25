@@ -1,5 +1,5 @@
 import { loadClaims, type ClaimMap } from './claims';
-import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks } from './load';
+import { DEFAULT_PROJECT_NAME, loadArchive, loadTasks, type LoadedTasks, type Validators } from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
 import { dashboardVersion } from './release-notes';
@@ -12,12 +12,14 @@ import {
   toggleFilter,
   type FilterGroup,
   type Filters,
+  type ListSort,
 } from './filters';
 import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
+import { DEFAULT_VOCABULARY, resolveVocabulary, type Vocabulary } from './vocab';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
@@ -34,6 +36,10 @@ export class DashboardState {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   taskMap = $state.raw<ReadonlyMap<string, Task>>(new Map());
   projectName = $state(DEFAULT_PROJECT_NAME);
+  /** tasks.json's meta, as loaded */
+  meta = $state.raw<LoadedTasks['meta']>(undefined);
+  /** The project's vocabularies (statuses with kinds, types, priorities, phase names), defaults where meta has none */
+  vocab = $state.raw<Vocabulary>(DEFAULT_VOCABULARY);
   /** Live claims by task ID (who works on what), from the optional claims.json; empty without it. */
   // Replaced on every (re)load, never mutated (like taskMap)
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -46,12 +52,40 @@ export class DashboardState {
   loadError = $state<string | null>(null);
   reloading = $state(false);
 
+  /** tasks.json's size (characters), for the archive notice */
+  tasksBytes = $state(0);
+  /**
+   * tasks-archive.json's tasks (DM-5), loaded only once a view needs history (D-5.2: wantArchive); empty until then,
+   * and when there is no archive. A task in both files is shown from tasks.json (DM-5.2).
+   */
+  archive = $state.raw<Task[]>([]);
+  archiveLoaded = $state(false);
+  /** Search, the lists and the graph include archived tasks ("Include archived") */
+  includeArchived = $state(false);
+  /** tasks.json's tasks, then the archived ones it doesn't have: the history views use these */
+  history = $derived(
+    this.archive.length ? [...this.tasks, ...this.archive.filter((t) => !this.taskMap.has(t.id))] : this.tasks,
+  );
+  // Archived tasks by ID, for dependency stubs in the detail panel
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  archiveMap = $derived<ReadonlyMap<string, Task>>(new Map(this.archive.map((t) => [t.id, t])));
+  /** How many tasks are archived: meta.archived (written by atm archive), else the loaded archive's size */
+  archivedCount = $derived(
+    typeof this.meta?.archived === 'number' ? this.meta.archived : this.archiveLoaded ? this.archive.length : 0,
+  );
+
   filters = $state.raw<Filters>(emptyFilters());
   /** Keyword search over ID, name, description and type; part of the saved view */
   query = $state('');
   /** Tasks matching the search, before the phase/type/status filters (the filter counts are based on these) */
-  searched = $derived(searchTasks(this.tasks, this.query));
-  filtered = $derived(filterTasks(this.searched, this.filters));
+  /** The tasks the lists, the board and the graph start from: tasks.json's, plus the archive's with Include archived */
+  base = $derived(this.includeArchived ? this.history : this.tasks);
+  searched = $derived(searchTasks(this.base, this.query));
+  filtered = $derived(filterTasks(this.searched, this.filters, this.vocab));
+  /** History (archived tasks too, once loaded) matching the search and filters: for the Progress tab */
+  historyFiltered = $derived(
+    this.includeArchived ? this.filtered : filterTasks(searchTasks(this.history, this.query), this.filters, this.vocab),
+  );
 
   /** Task shown in the detail panel; the panel keeps its last content while closed. */
   detailId = $state<string | null>(null);
@@ -63,6 +97,8 @@ export class DashboardState {
   kanbanShowSkipped = $state(false);
   /** The Kanban done column shows every card, not just the most recent */
   kanbanShowAllDone = $state(false);
+  /** The List tab's order: as in the file, or by priority */
+  listSort = $state<ListSort>('file');
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
@@ -97,11 +133,38 @@ export class DashboardState {
   autoRefresh = $state(getPref('autoRefresh', true));
   autoRefreshSeconds = $state(getPref('autoRefreshSeconds', 5));
 
+  // The last tasks.json's ETag / Last-Modified: polls ask whether it changed, and skip the work when it hasn't
+  #validators: Validators | undefined;
+  #archiveValidators: Validators | undefined;
+  #archiveWanted = false;
+
+  /**
+   * A view needs history (D-5.2): load the archive now, and keep it current with the polls from then on. Failures
+   * are logged only; the views then show tasks.json alone.
+   */
+  wantArchive() {
+    if (this.#archiveWanted) return;
+    this.#archiveWanted = true;
+    void this.refreshArchive().catch((e) => console.error('Loading the archive failed:', e));
+  }
+
+  setIncludeArchived(on: boolean) {
+    this.includeArchived = on;
+    if (on) this.wantArchive();
+  }
+
+  private async refreshArchive() {
+    const result = await loadArchive(fetch, this.archiveLoaded ? this.#archiveValidators : undefined);
+    if (!result.unchanged) {
+      this.#archiveValidators = result.validators;
+      this.archive = result.tasks;
+    }
+    this.archiveLoaded = true;
+  }
+
   async load() {
     try {
-      this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
-      if (!this.loaded) this.restoreView();
-      this.loaded = true;
+      await this.fetchAndApply();
       this.loadError = null;
     } catch (e) {
       this.loadError = (e as Error).message;
@@ -112,14 +175,32 @@ export class DashboardState {
   async reload() {
     this.reloading = true;
     try {
-      this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
-      if (!this.loaded) this.restoreView();
-      this.loaded = true;
+      await this.fetchAndApply();
       this.loadError = null;
     } catch (e) {
       console.error('Reload failed:', e);
     }
     setTimeout(() => (this.reloading = false), RELOAD_SPIN_MS);
+  }
+
+  private async fetchAndApply() {
+    const [result, claims] = await Promise.all([
+      loadTasks(fetch, this.loaded ? this.#validators : undefined),
+      loadClaims(),
+      this.#archiveWanted
+        ? this.refreshArchive().catch((e) => console.error('Reloading the archive failed:', e))
+        : undefined,
+    ]);
+    if (result.unchanged) {
+      // tasks.json is as it was: keep the tasks (no re-parse, no re-render); claims and the clock still move
+      this.claims = claims;
+      this.loadedAt = Date.now();
+    } else {
+      this.#validators = result.validators;
+      this.apply(result.loaded, claims);
+    }
+    if (!this.loaded) this.restoreView();
+    this.loaded = true;
   }
 
   setAutoRefresh(on: boolean) {
@@ -147,7 +228,7 @@ export class DashboardState {
   }
 
   showDetail(id: string) {
-    if (!this.taskMap.has(id)) return;
+    if (!this.taskMap.has(id) && !this.archiveMap.has(id)) return;
     this.detailId = id;
     this.detailOpen = true;
   }
@@ -186,7 +267,15 @@ export class DashboardState {
   /** The current view, as saved per project. */
   currentView(): SavedView {
     return {
-      filters: { phase: [...this.filters.phase], type: [...this.filters.type], status: [...this.filters.status] },
+      filters: {
+        phase: [...this.filters.phase],
+        type: [...this.filters.type],
+        status: [...this.filters.status],
+        priority: [...this.filters.priority],
+        stage: [...this.filters.stage],
+        label: [...this.filters.label],
+        agent: [...this.filters.agent],
+      },
       query: this.query,
       tab: this.tab,
       kanban: {
@@ -194,6 +283,7 @@ export class DashboardState {
         showSkipped: this.kanbanShowSkipped,
         showAllDone: this.kanbanShowAllDone,
       },
+      listSort: this.listSort,
       progressPhase: this.progressPhase,
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
@@ -217,7 +307,7 @@ export class DashboardState {
   /** After the first load: bring back this project's view. A #view= in the URL wins over the saved tab. */
   private restoreView() {
     this.viewKey = projectKey(this.meta);
-    this.applyView(sanitizeView(readView(this.viewKey), this.tasks), !hasViewHash(location.hash));
+    this.applyView(sanitizeView(readView(this.viewKey), this.tasks, this.vocab), !hasViewHash(location.hash));
   }
 
   private applyView(view: SavedView, includeTab: boolean) {
@@ -226,6 +316,7 @@ export class DashboardState {
     this.kanbanGroupByPhase = view.kanban.groupByPhase;
     this.kanbanShowSkipped = view.kanban.showSkipped;
     this.kanbanShowAllDone = view.kanban.showAllDone;
+    this.listSort = view.listSort;
     this.progressPhase = view.progressPhase;
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
@@ -238,10 +329,10 @@ export class DashboardState {
     }
   }
 
-  private meta: LoadedTasks['meta'] = undefined;
-
   private apply(loaded: LoadedTasks, claims: ClaimMap) {
+    this.tasksBytes = loaded.bytes;
     this.meta = loaded.meta;
+    this.vocab = resolveVocabulary(loaded.meta);
     this.tasks = loaded.tasks;
     this.taskMap = loaded.taskMap;
     this.projectName = loaded.projectName;

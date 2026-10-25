@@ -1,7 +1,7 @@
 // The open dialog (About, Help) is a flag in the URL hash ("#about"), so a dialog can be linked and Back closes it.
 import { formatHash, hashParams } from './hash';
 
-export const DIALOGS = ['about'] as const;
+export const DIALOGS = ['about', 'help'] as const;
 export type DialogId = (typeof DIALOGS)[number];
 
 /** The dialog a location hash opens, if any. */

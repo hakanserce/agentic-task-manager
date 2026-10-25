@@ -70,6 +70,10 @@
           {row.remaining}{#if row.blocked}<span
               class="phase-blocked"
               title="Blocked tasks are not included in the estimate">{row.blocked} blocked</span
+            >{/if}{#if row.inReview}<span
+              class="phase-blocked phase-in-review"
+              title="Tasks waiting for a review need no agent work and are not included in the estimate"
+              >{row.inReview} in review</span
             >{/if}
         </td>
         <td>{STATE_LABELS[row.state]}</td>
@@ -88,6 +92,8 @@
             </div>
           {:else if row.remaining === 0 && row.blocked}
             Blocked
+          {:else if row.remaining === 0 && row.inReview}
+            Waiting for review
           {:else}
             <span class="estimate-none">Not enough history to estimate</span>
           {/if}

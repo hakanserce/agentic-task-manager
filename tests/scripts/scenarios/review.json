@@ -1,0 +1,176 @@
+[
+  {
+    "name": "review: in progress -> in review, the time and note recorded, the claim released",
+    "setup": {
+      "git": true,
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      },
+      "commands": [["sh", "-c", "ATM_NOW=2026-05-01T10:00:00Z \"$ATM\" start T-1 --agent alice"]]
+    },
+    "args": ["review", "T-1", "--note", "Check the column order", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T10:10:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": {
+        "id": "T-1",
+        "status": "in_review",
+        "updated_at": "2026-05-01T10:10:00Z",
+        "updated_by": "alice",
+        "started_at": "2026-05-01T10:00:00Z",
+        "started_by": "alice",
+        "review_requested_at": "2026-05-01T10:10:00Z",
+        "notes": [{ "at": "2026-05-01T10:10:00Z", "kind": "review", "text": "Check the column order", "by": "alice" }],
+        "claim": null
+      }
+    }
+  },
+  {
+    "name": "done from review: the reviewer completes it; the review timestamp stays (the work ended there)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "in_review",
+              "started_at": "2026-05-01T09:00:00Z",
+              "started_by": "alice",
+              "review_requested_at": "2026-05-01T09:30:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["done", "T-1", "--note", "Looks good"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "Hakan" },
+    "expect": {
+      "stdout": "T-1: in_review -> done\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "started_at": "2026-05-01T09:00:00Z",
+              "started_by": "alice",
+              "review_requested_at": "2026-05-01T09:30:00Z",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "Hakan",
+              "completed_at": "2026-05-01T10:00:00Z",
+              "completed_by": "Hakan",
+              "notes": [{ "at": "2026-05-01T10:00:00Z", "kind": "outcome", "text": "Looks good", "by": "Hakan" }]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "reject: back to todo with what needs to change; the attempt is cleared",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "in_review",
+              "started_at": "2026-05-01T09:00:00Z",
+              "started_by": "alice",
+              "review_requested_at": "2026-05-01T09:30:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["reject", "T-1", "--reason", "Names don't match the API"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "Hakan" },
+    "expect": {
+      "stdout": "T-1: in_review -> todo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "Hakan",
+              "notes": [
+                {
+                  "at": "2026-05-01T10:00:00Z",
+                  "kind": "rejection",
+                  "text": "Names don't match the API",
+                  "by": "Hakan"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "reject needs a reason",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "in_review" }] } }
+    },
+    "args": ["reject", "T-1"],
+    "expect": { "exit": 2, "stderrIncludes": ["the following arguments are required: --reason"] }
+  },
+  {
+    "name": "review refuses a task that isn't in progress",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } }
+    },
+    "args": ["review", "T-1"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "exit": 1, "stderrIncludes": ["can't review T-1: it is todo, not in_progress"] }
+  },
+  {
+    "name": "reject refuses a task that isn't in review",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "in_progress" }] } }
+    },
+    "args": ["reject", "T-1", "--reason", "x"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "exit": 1, "stderrIncludes": ["can't reject T-1: it is in_progress, not in_review"] }
+  },
+  {
+    "name": "a task in review keeps its dependents waiting; next says why",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "Reviewed", "phase": 0, "type": "feature", "status": "in_review" },
+            { "id": "T-2", "name": "Waits", "phase": 0, "type": "feature", "status": "todo", "dependencies": ["T-1"] }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 3, "stdout": "No task available: 1 todo task(s) waiting on dependencies.\n" }
+  },
+  {
+    "name": "--status picks one of several review statuses",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "statuses": [
+              { "id": "todo", "kind": "todo" },
+              { "id": "doing", "kind": "active" },
+              { "id": "awaiting_user", "kind": "review" },
+              { "id": "awaiting_agent", "kind": "review" },
+              { "id": "done", "kind": "done" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "doing" }]
+        }
+      }
+    },
+    "args": ["review", "T-1", "--status", "awaiting_agent"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "stdout": "T-1: doing -> awaiting_agent\n" }
+  }
+]

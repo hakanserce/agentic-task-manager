@@ -1,0 +1,159 @@
+# v4 atm-cli: structure and commands
+
+Part of the v4 design ([overview](README.md)). The fields and files the commands work on are defined in the
+[data model](data-model.md).
+
+**atm-cli** is the `atm` command the plugin ships: `plugin/scripts/atm`, a launcher for `atm.py`. Earlier documents
+call it "the helper".
+
+## 1. Why
+
+An agent working another project's tasks with `/atm:do-task` (0.12.0) kept working around missing atm-cli commands:
+
+- **Reading tasks:** it parsed `tasks.json` with Python, jq or partial Reads. The file is too big to read whole, and
+  each workaround can set off a permission prompt.
+- **Changing tasks:** it edited `tasks.json` by hand, outside atm-cli's lock, racing other agents.
+- **State that lived only in chat:** a task waiting on the user's decisions, and handoff notes.
+
+Part of the cause is in the skills: `/atm:do-task` says "Read and parse the file", and `/atm:create-tasks` writes the
+JSON by hand. Meanwhile `atm.py` is 1,299 lines in one file, and about fifteen commands are about to be added.
+
+## 2. Structure
+
+Two constraints stay: **one file in the plugin** (users install by cloning, nothing is built on their side) and
+**readable** (people read what a plugin runs; Claude reads atm-cli when a skill's call fails).
+
+**Modules for development, concatenated into one readable file.** The source lives in `atm-cli/atm/` at the repo root
+(dev only, not shipped); `atm-cli/build.py` (standard library) writes `plugin/scripts/atm.py`:
+- a "generated from atm-cli/atm/ by atm-cli/build.py — don't edit" header;
+- standard-library imports, deduplicated and hoisted;
+- each module in dependency order under a banner (`# ==== lock.py ====`), its intra-package imports removed;
+- an `ast` check that no top-level name is defined in two modules.
+
+```
+atm-cli/
+  build.py
+  atm/
+    core.py       # constants, errors, output (text and --json), git(), time helpers, atomic writes
+    paths.py      # project root, task folder, legacy locations
+    model.py      # loading and validating tasks.json and the archive, vocabularies, kinds, next_id
+    lock.py       # the lock directory
+    tasks.py      # status changes, notes
+    query.py      # show, list, status, deps
+    edit.py       # add, edit, check
+    archive.py    # archive, unarchive, the size hint
+    claims.py     # claims store, leases, next
+    git_ops.py    # commit, pr, merged
+    merge.py      # the merge driver, init
+    migrate.py    # migrate, the dashboard copy and build ID
+    server.py     # serve
+    cli.py        # argparse commands, main()
+```
+
+**Options considered:** Python's `zipapp` (one file, but a zip archive nobody can read); shipping the package folder
+(no build, but about 15 files in the plugin).
+
+**argparse, not click.** click isn't in the standard library: users would have to `pip install` it (a second
+requirement, refused by PEP 668 system Pythons), or we'd vendor about 10,000 lines (8× atm-cli; click 8.2+ also
+needs Python 3.10). argparse gives subcommands, per-command help, typed and required arguments and choices, declared
+together in `cli.py`.
+
+| ID | P | Requirement |
+|---|---|---|
+| CLI-2.1 | P1 | `npm run build:cli` (part of `build` and `verify`) regenerates `plugin/scripts/atm.py`; the pre-commit hook rebuilds and stages it when `atm-cli/` changes; CI fails if it is stale. The build is deterministic. |
+| CLI-2.2 | P1 | `tests/scripts/` keeps testing the built file through the launcher. The move is done one module at a time, each step passing the existing tests unchanged. |
+| CLI-2.3 | P1 | Python 3.9+, standard library only, tested with 3.9 and a current version. |
+
+## 3. Conventions for every command
+
+| ID | P | Requirement |
+|---|---|---|
+| CLI-3.1 | P1 | Every command takes `--json`. Errors with `--json` are `{"error": "…", "code": N}` on stderr, with the same exit code as in text mode. |
+| CLI-3.2 | P1 | Existing commands keep their output and exit codes; new lines are only added after the existing ones. argparse words some usage errors differently, and atm-cli tests checking them are updated. |
+| CLI-3.3 | P1 | Text output is short and stable, meant for agents to read; anything that parses uses `--json`. |
+| CLI-3.4 | P1 | Every change runs under the lock and writes atomically. Status and timestamps change only through the status commands. |
+| CLI-3.5 | P1 | Every change records its actor: `updated_by` always, and `created_by`, `started_by`, `completed_by` as in DM-4.4. The actor is `--agent`, else `ATM_AGENT`, else `claude:<session>`, else the git user name (DM-4.5). |
+
+## 4. Commands
+
+Existing commands are marked *(exists)*.
+
+### 4.1 Reading
+
+| Command | Prints |
+|---|---|
+| `atm show <id>... ` | tasks in full, falling back to the archive |
+| `atm list [--status S] [--phase N] [--type T] [--priority P] [--label L]... [--agent A] [--ready] [--blocked] [--archived]` | one line per task: ID, status, phase, priority, labels, name |
+| `atm status` | counts by status, phase, type and label; in progress and who claims it; the next available task; blocked tasks and what they wait for; in review; the files' sizes, the archive count and the largest tasks |
+| `atm deps <id>` | what the task waits for (with each one's status) and what waits for it |
+| `atm vocab` | the effective vocabularies (P2) |
+| `atm next [--claim]` *(exists)* | ordered by phase, then priority rank, then ID (natural sort) |
+
+### 4.2 Status changes
+
+| Command | From → to | Also |
+|---|---|---|
+| `atm start <id>` *(exists)* | todo → active | now prints the task, as `next --claim` does |
+| `atm done <id> [--note T] [--commit SHA]` *(exists)* | active, review → done | prints the tasks it unblocked |
+| `atm fail <id> [--reason T]` *(exists)* | active → todo | the reason becomes a `failure` note |
+| `atm release <id> [--note T]` *(exists)* | active → todo | the note is a `handoff` |
+| `atm review <id> [--note T] [--status S]` | active → review | records `review_requested_at`, releases the claim |
+| `atm reject <id> --reason T` | review → todo | a `rejection` note; clears `review_requested_at` |
+| `atm block <id> --on user\|agent (--question T)... [--reason T]` | active, todo → blocked | records `waiting_on`, `questions`, `blocked_at`; releases the claim. `--on agent` hands the decision to another agent (e.g. a reviewer agent), which answers with `unblock` |
+| `atm unblock <id> [--answer T]...` | blocked → todo | the questions and answers become an `answer` note |
+| `atm note <id> T` | — | adds a `note` |
+| `atm heartbeat <id>` *(exists)* | — | extends the claim |
+
+### 4.3 Editing tasks
+
+| Command | Does |
+|---|---|
+| `atm add --name … --phase N --type T [--priority P] [--label L]... [--description T \| --description-file F] [--dep ID]... [--file F]...` | adds one task with the next ID; prints it |
+| `atm add --json-file F` | adds many (what `/atm:create-tasks` uses); IDs in the file are placeholders (`new-1`, …) that dependencies can refer to, and are replaced by real IDs |
+| `atm edit <id> [--name] [--description \| --description-file] [--add-file/--remove-file] [--add-dep/--remove-dep] [--phase] [--type] [--priority] [--add-label/--remove-label]` | changes a task; refuses a dependency that is missing or would make a cycle |
+| `atm check [--files]` | the schema, `meta` (DM-2.2), missing and circular dependencies, IDs in both files; unknown types and priorities as warnings; with `--files`, files listed by finished tasks that don't exist as warnings (off by default: files get renamed and deleted later, and to-do tasks list files they will create); exit code 1 on errors |
+
+### 4.4 Archive
+
+| Command | Does |
+|---|---|
+| `atm archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]` | moves finished tasks to the archive (DM-5); prints what it moved and the new sizes |
+| `atm unarchive <id>...` | brings tasks back, for example to reopen one |
+
+### 4.5 Git and workflow
+
+| Command | Does |
+|---|---|
+| `atm commit <id> --file F [--file F]... [--message T]` | stages exactly the files the agent names (`--file` is required; atm-cli never works them out, since another agent's work can be in the same tree) plus `tasks.json`, and commits them; refuses `-A`, `.` and paths outside the repository; the message comes from `meta.workflow.commit_template` (default `feat({id}): {name}`) and its trailer rule; records `commit` on the task (the SHA exists only after the commit, so that change to `tasks.json` goes in with the next commit) |
+| `atm workflow [set <direct\|pull-request>] [--base B] [--verify true\|false] [--max-rounds N]` | prints or changes `meta.workflow` |
+| `atm pr <id>... --number N --url U` | records the PR on tasks |
+| `atm merged --pr N [--at TIME]` | records the merge on the PR's tasks |
+
+### 4.6 Setup
+
+| Command | Change |
+|---|---|
+| `atm migrate` *(exists)* | compares the dashboard's **build ID** (a second meta tag, `atm-dashboard-build`, a hash the dashboard build computes once) instead of only the version, so a new build with the same version is installed. It reads only the head of both files, as today, and hashes nothing at run time. Adds `meta.next_id` when missing. |
+| `atm serve --dir <path>` *(exists, new option)* | acts on another project's server without a `cd` |
+| `atm init --meta-file F` *(exists, new option)* | merges a JSON object into `meta` (project, description, phases, vocabularies), creating `tasks.json` if there is none, after checking the vocabularies; keeps `meta.id`. `/atm:create-tasks` uses it so it never writes `tasks.json` itself (added with T-128) |
+| `atm paths`, `version`, `claims`, `merge-driver` *(exist)* | unchanged; the merge driver also handles the archive |
+
+## 5. Hints
+
+| ID | P | Requirement |
+|---|---|---|
+| CLI-5.1 | P1 | When the archive threshold is reached (DM-5.3), commands add one line, e.g. ``tasks.json is 1.4 MB with 620 finished tasks; `atm archive` would move 580 of them to tasks-archive.json.``, and `"suggest": {"archive": {…}}` with `--json`. |
+| CLI-5.2 | P1 | `atm status` and `atm migrate` always show the hint; `atm done` at most once a day per clone (remembered in the claims store), so a loop doesn't repeat it. |
+
+## 6. Plumbing
+
+| ID | P | Requirement |
+|---|---|---|
+| CLI-6.1 | P1 | **A stable command name.** Skills call `"${CLAUDE_SKILL_DIR}/../../scripts/atm"`, a versioned cache path that changes with every upgrade, so permission rules don't carry over. First check whether Claude Code puts a plugin's `bin/` on the Bash tool's PATH. If it does, ship `bin/atm` and the skills call plain `atm` (one rule, `Bash(atm *)`); if not, the README documents one rule for atm-cli's path. **Finding (T-124):** it does: "Files in `bin/` at the plugin root are on the `PATH` of the Bash tool's shell while the plugin is enabled" ([plugin components](https://code.claude.com/docs/en/plugins/components.md)), after the user's own `PATH` entries. So `plugin/bin/atm` (which runs `scripts/atm`, still the merge driver's target) is the command; the skills call `atm` and pre-approve it with `allowed-tools: Bash(atm *)`, and fall back to `${CLAUDE_SKILL_DIR}/../../bin/atm` if `atm` isn't found. A plugin can't ship allow rules (only `agent` and `subagentStatusLine` take effect from a plugin's `settings.json`), so the README gives users the one rule. |
+| CLI-6.2 | P2 | **Automatic heartbeats.** A plugin `PostToolUse` hook renews the agent's claims instead of the agent remembering to. It reads only the claims store and writes only when the lease is more than ten minutes old. **Done (T-125):** `plugin/hooks/hooks.json` runs `atm heartbeat --auto` after every tool call. The agent is the hook's `session_id` (as `claude:<first 8>`), the project its `cwd`; a claim records `renewed_at`, and one is renewed when that (or `claimed_at`) is ten minutes old. It never prints and always exits 0. |
+
+## 7. Benchmark
+
+| ID | P | Requirement |
+|---|---|---|
+| CLI-7.1 | P1 | `tests/scripts/bench.mjs` (committed) generates 1k- and 10k-task files and times `atm` writes, the merge driver and the dashboard's reload. It replaces the estimates in the [data model](data-model.md#5-size-and-the-archive) and runs in CI as a check with generous limits. |

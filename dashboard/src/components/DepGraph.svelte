@@ -13,7 +13,8 @@
     type View,
   } from '../lib/graph/view';
   import { dashboard } from '../lib/state.svelte';
-  import { graphNodeBg, STATUS_EMOJI, TYPE_EMOJI, typeStyle } from '../lib/theme';
+  import { graphNodeBg, KIND_EMOJI, TYPE_EMOJI, typeStyle } from '../lib/theme';
+  import { kindOf } from '../lib/vocab';
   import GraphControls from './GraphControls.svelte';
   import Minimap from './Minimap.svelte';
 
@@ -23,12 +24,18 @@
 
   // "Dim": lay out every task and grey out the ones the search and filters exclude, so the shape stays put
   const dim = $derived(dashboard.graphFiltered === 'dim');
-  const shown = $derived(dim ? dashboard.tasks : dashboard.filtered);
+  // Archived tasks only with "Include archived" (D-5.3): dashboard.base has them then
+  const shown = $derived(dim ? dashboard.base : dashboard.filtered);
   const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
-  const narrowed = $derived(dashboard.filtered.length < dashboard.tasks.length);
+  const narrowed = $derived(dashboard.filtered.length < dashboard.base.length);
   const layout = $derived(layoutGraph(shown));
   const empty = $derived(shown.length === 0);
   const content = $derived({ w: layout.width, h: layout.height });
+  /** The status's kind icon; none for a status no vocabulary defines */
+  const statusEmoji = (status: string) => {
+    const kind = kindOf(dashboard.vocab, status);
+    return kind ? KIND_EMOJI[kind] : '';
+  };
   // When the graph overflows, the initial view centers on the task in progress, else the next one to do
   const focus = $derived(
     layout.nodes.find((n) => matching.has(n.task.id) && n.task.status === 'in_progress') ??
@@ -223,7 +230,7 @@
               stroke-width="1.5"
             />
             <text x={node.x + 8} y={node.y + 18} fill={ts.color} font-weight="700" font-size="12"
-              >{`${STATUS_EMOJI[t.status] ?? ''} ${t.id} ${TYPE_EMOJI[t.type] ?? ''}`}</text
+              >{`${statusEmoji(t.status)} ${t.id} ${TYPE_EMOJI[t.type] ?? ''}`}</text
             >
             <text x={node.x + 8} y={node.y + 36} fill="var(--text-muted)" font-size="10" font-weight="400"
               >{node.label}</text

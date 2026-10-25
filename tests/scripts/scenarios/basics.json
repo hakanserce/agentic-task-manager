@@ -25,5 +25,56 @@
       "stdout": "",
       "stderrIncludes": ["atm: unknown command 'frobnicate'", "usage: atm"]
     }
+  },
+  {
+    "name": "version --json",
+    "args": ["version", "--json"],
+    "expect": { "exit": 0, "json": { "version": "{version}" } }
+  },
+  {
+    "name": "--help on a command describes it",
+    "args": ["start", "--help"],
+    "expect": {
+      "exit": 0,
+      "stdoutIncludes": ["usage: atm start", "--agent NAME", "--json", "mark a task in_progress and claim it"]
+    }
+  },
+  {
+    "name": "help says every command takes --json and has --help",
+    "args": ["help"],
+    "expect": { "exit": 0, "stdoutIncludes": ["Every command takes --json"] }
+  },
+  {
+    "name": "a usage error names the problem and the command's usage",
+    "args": ["next", "--bogus"],
+    "expect": {
+      "exit": 2,
+      "stdout": "",
+      "stderrIncludes": ["atm: unrecognized arguments: --bogus", "usage: atm next"]
+    }
+  },
+  {
+    "name": "an option's value is checked",
+    "args": ["next", "--phase", "one"],
+    "expect": { "exit": 2, "stderrIncludes": ["argument --phase: invalid float value: 'one'"] }
+  },
+  {
+    "name": "with --json, a usage error is JSON on stderr, with the same exit code",
+    "args": ["start", "--json"],
+    "expect": {
+      "exit": 2,
+      "stdout": "",
+      "stderrIncludes": ["\"error\": \"the following arguments are required: id", "\"code\": 2"]
+    }
+  },
+  {
+    "name": "with --json, any other error is JSON too",
+    "args": ["done", "T-1", "--json"],
+    "expect": { "exit": 1, "stderrIncludes": ["\"error\": \"no tasks.json in", "\"code\": 1"] }
+  },
+  {
+    "name": "with --json, an unknown command is JSON",
+    "args": ["frobnicate", "--json"],
+    "expect": { "exit": 2, "stdout": "", "stderrIncludes": ["\"error\": \"unknown command 'frobnicate'\""] }
   }
 ]

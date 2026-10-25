@@ -1,0 +1,271 @@
+[
+  {
+    "name": "archive moves finished tasks out of tasks.json; recent ones and open PRs stay; next_id is kept",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-001", "status": "done", "completed_at": "2026-04-01T00:00:00Z" },
+            { "id": "T-002", "status": "skipped", "updated_at": "2026-04-02T00:00:00Z" },
+            { "id": "T-003", "status": "done", "completed_at": "2026-04-30T00:00:00Z" },
+            {
+              "id": "T-004",
+              "status": "done",
+              "completed_at": "2026-04-01T00:00:00Z",
+              "pr": { "number": 7, "url": "u" }
+            },
+            { "id": "T-005", "status": "todo", "dependencies": ["T-001"] }
+          ]
+        }
+      }
+    },
+    "args": ["archive"],
+    "env": { "ATM_NOW": "2026-05-01T00:00:00Z" },
+    "expect": {
+      "stdoutIncludes": ["Archived 2 task(s): T-001, T-002. tasks.json is now"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-003", "status": "done", "completed_at": "2026-04-30T00:00:00Z" },
+            {
+              "id": "T-004",
+              "status": "done",
+              "completed_at": "2026-04-01T00:00:00Z",
+              "pr": { "number": 7, "url": "u" }
+            },
+            { "id": "T-005", "status": "todo", "dependencies": ["T-001"] }
+          ],
+          "meta": { "next_id": 6, "archived": 2 }
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": { "archived_at": "2026-05-01T00:00:00Z" },
+          "tasks": [
+            { "id": "T-001", "status": "done", "completed_at": "2026-04-01T00:00:00Z" },
+            { "id": "T-002", "status": "skipped", "updated_at": "2026-04-02T00:00:00Z" }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "archive --dry-run only says what would move",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-001", "status": "done", "completed_at": "2026-04-01T00:00:00Z" }]
+        }
+      }
+    },
+    "args": ["archive", "--dry-run"],
+    "env": { "ATM_NOW": "2026-05-01T00:00:00Z" },
+    "expect": {
+      "stdout": "Would archive 1 task(s): T-001.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-001", "status": "done", "completed_at": "2026-04-01T00:00:00Z" }]
+        },
+        ".agentic-task-manager/tasks-archive.json": false
+      }
+    }
+  },
+  {
+    "name": "archive --phase, --before and --keep-days narrow it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "phase": 0, "status": "done", "completed_at": "2026-03-01T00:00:00Z" },
+            { "id": "T-2", "phase": 0, "status": "done", "completed_at": "2026-04-20T00:00:00Z" },
+            { "id": "T-3", "phase": 1, "status": "done", "completed_at": "2026-03-01T00:00:00Z" }
+          ]
+        }
+      }
+    },
+    "args": ["archive", "--phase", "0", "--before", "2026-04-01", "--keep-days", "0", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T00:00:00Z" },
+    "expect": {
+      "json": { "moved": ["T-1"], "dry_run": false, "tasks_kb": 0, "archive_kb": 0, "duplicates_dropped": [] }
+    }
+  },
+  {
+    "name": "an archived dependency is done: its dependents can start",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-2", "name": "Next", "phase": 0, "type": "feature", "status": "todo", "dependencies": ["T-1"] }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": { "tasks": [{ "id": "T-1", "name": "Old", "status": "done" }] }
+      }
+    },
+    "args": ["next"],
+    "expect": { "stdout": "Next: T-2 Next (phase 0, feature)\n" }
+  },
+  {
+    "name": "show and deps fall back to the archive; start refuses an archived task with a hint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-2", "status": "todo", "dependencies": ["T-1"] }] },
+        ".agentic-task-manager/tasks-archive.json": { "tasks": [{ "id": "T-1", "name": "Old", "status": "done" }] }
+      }
+    },
+    "args": ["deps", "T-2"],
+    "expect": { "stdout": "T-2 waits for: T-1 (done, archived)\nT-2 is waited on by: nothing\n" }
+  },
+  {
+    "name": "show of an archived task",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-archive.json": { "tasks": [{ "id": "T-1", "name": "Old", "status": "done" }] }
+      }
+    },
+    "args": ["show", "T-1", "--json"],
+    "expect": { "json": [{ "id": "T-1", "name": "Old", "status": "done" }] }
+  },
+  {
+    "name": "a status change on an archived task says how to bring it back",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-archive.json": { "tasks": [{ "id": "T-1", "status": "done" }] }
+      }
+    },
+    "args": ["start", "T-1"],
+    "env": { "ATM_AGENT": "alice" },
+    "expect": { "exit": 1, "stderrIncludes": ["atm: no task T-1 (it is archived: atm unarchive brings it back)"] }
+  },
+  {
+    "name": "list --archived lists the archive",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-2", "name": "New", "phase": 0, "status": "todo" }] },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [{ "id": "T-1", "name": "Old", "phase": 0, "status": "done" }]
+        }
+      }
+    },
+    "args": ["list", "--archived"],
+    "expect": { "stdout": "T-1  done  0   P2  Old\n" }
+  },
+  {
+    "name": "unarchive brings tasks back",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-2", "status": "todo" }] },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": { "archived_at": "x" },
+          "tasks": [
+            { "id": "T-1", "status": "done" },
+            { "id": "T-0", "status": "done" }
+          ]
+        }
+      }
+    },
+    "args": ["unarchive", "T-1"],
+    "expect": {
+      "stdout": "Brought back T-1 from the archive.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-2", "status": "todo" },
+            { "id": "T-1", "status": "done" }
+          ],
+          "meta": { "archived": 1 }
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": { "archived_at": "x" },
+          "tasks": [{ "id": "T-0", "status": "done" }]
+        }
+      }
+    }
+  },
+  {
+    "name": "unarchive of a task that isn't archived",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["unarchive", "T-9"],
+    "expect": { "exit": 1, "stderrIncludes": ["atm: not in the archive: T-9"] }
+  },
+  {
+    "name": "a move interrupted between the two writes: the task stays in tasks.json, the archive's copy goes",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "status": "done", "completed_at": "2026-04-30T00:00:00Z" }]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [{ "id": "T-1", "status": "done", "completed_at": "2026-04-30T00:00:00Z" }]
+        }
+      }
+    },
+    "args": ["archive"],
+    "env": { "ATM_NOW": "2026-05-01T00:00:00Z" },
+    "expect": {
+      "stdoutIncludes": [
+        "Kept T-1 in tasks.json and dropped the archive's copy (an interrupted move).",
+        "Nothing to archive."
+      ],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "status": "done", "completed_at": "2026-04-30T00:00:00Z" }],
+          "meta": { "next_id": 2, "archived": 0 }
+        },
+        ".agentic-task-manager/tasks-archive.json": { "tasks": [], "meta": { "archived_at": "2026-05-01T00:00:00Z" } }
+      }
+    }
+  },
+  {
+    "name": "check covers both files: a task in both is an error, dependencies on the archive are fine",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "A", "phase": 0, "type": "feature", "status": "done" },
+            { "id": "T-3", "name": "C", "phase": 0, "type": "feature", "status": "todo", "dependencies": ["T-2"] }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            { "id": "T-1", "status": "done" },
+            { "id": "T-2", "status": "done" }
+          ]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": {
+      "exit": 1,
+      "stdout": "error: T-1: in both tasks.json and the archive (atm archive keeps the tasks.json copy)\n"
+    }
+  },
+  {
+    "name": "the first archive in a git repository makes the archive merge task by task too",
+    "setup": {
+      "git": true,
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "status": "done", "completed_at": "2026-01-01T00:00:00Z" }]
+        }
+      }
+    },
+    "args": ["archive"],
+    "env": { "ATM_NOW": "2026-05-01T00:00:00Z" },
+    "expect": {
+      "files": {
+        ".agentic-task-manager/.gitattributes": "# 'atm' is defined in each clone's git config (merge.atm.driver), registered by the atm plugin on every run.\n# Without it, git merges tasks.json line by line as usual.\ntasks.json merge=atm\ntasks-archive.json merge=atm\n"
+      }
+    }
+  },
+  {
+    "name": "status counts the archive",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] },
+        ".agentic-task-manager/tasks-archive.json": { "tasks": [{ "id": "T-1", "status": "done" }] }
+      }
+    },
+    "args": ["status"],
+    "expect": { "stdoutIncludes": ["archive: 1 tasks, 0 KB\n"] }
+  }
+]

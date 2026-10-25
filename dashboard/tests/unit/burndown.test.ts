@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { burndown } from '../../src/lib/burndown';
 import { forecastPhases } from '../../src/lib/forecast';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import progress from '../fixtures/progress.json';
 
 // Expected numbers: tests/fixtures/progress.md
@@ -70,5 +71,44 @@ describe('burndown', () => {
 
   it('is empty without tasks', () => {
     expect(burndown([], forecastPhases([], NOW), NOW)).toEqual({ points: [] });
+  });
+
+  it("follows a project's kinds: skipped-kind out of scope; review and blocked left for the forecast's end", () => {
+    const vocab = resolveVocabulary({
+      statuses: [
+        { id: 'backlog', kind: 'todo' },
+        { id: 'doing', kind: 'active' },
+        { id: 'awaiting_user', kind: 'review' },
+        { id: 'shipped', kind: 'done' },
+        { id: 'dropped', kind: 'skipped' },
+      ],
+    });
+    const t = (id: string, status: string, extra: Partial<Task> = {}): Task => ({
+      id,
+      name: id,
+      phase: 0,
+      type: 'feature',
+      description: '',
+      status,
+      ...extra,
+    });
+    const created = { created_at: '2026-04-01T09:00:00Z' };
+    const shipped = (id: string, h: number) =>
+      t(id, 'shipped', {
+        ...created,
+        started_at: `2026-04-01T${h}:00:00Z`,
+        completed_at: `2026-04-01T${h}:10:00Z`,
+      });
+    const all = [
+      shipped('a', 10),
+      shipped('b', 11),
+      shipped('c', 12),
+      t('d', 'backlog', created),
+      t('e', 'awaiting_user', created),
+      t('f', 'dropped', created),
+    ];
+    const b = burndown(all, forecastPhases(all, NOW, all, vocab), NOW, undefined, vocab);
+    expect(b.points.at(-1)).toMatchObject({ scope: 5, remaining: 2 });
+    expect(b.forecast!.to.remaining).toBe(1);
   });
 });

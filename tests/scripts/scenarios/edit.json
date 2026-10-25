@@ -1,0 +1,226 @@
+[
+  {
+    "name": "edit: changes the definition and records who and when; the status stays",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "done" },
+            {
+              "id": "T-2",
+              "name": "Old",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "files": ["a.ts", "b.ts"],
+              "labels": ["api"],
+              "dependencies": []
+            }
+          ]
+        }
+      }
+    },
+    "args": [
+      "edit",
+      "T-2",
+      "--name",
+      "New",
+      "--description",
+      "Now with tests.",
+      "--phase",
+      "2",
+      "--type",
+      "test",
+      "--priority",
+      "P0",
+      "--add-file",
+      "c.ts",
+      "--remove-file",
+      "a.ts",
+      "--add-label",
+      "ux",
+      "--remove-label",
+      "api",
+      "--add-dep",
+      "T-1"
+    ],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdout": "T-2: changed name, description, phase, type, priority, files, labels, dependencies\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "done" },
+            {
+              "id": "T-2",
+              "name": "New",
+              "phase": 2,
+              "type": "test",
+              "status": "in_progress",
+              "files": ["b.ts", "c.ts"],
+              "labels": ["ux"],
+              "dependencies": ["T-1"],
+              "description": "Now with tests.",
+              "priority": "P0",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "edit with nothing to change leaves the file alone",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "name": "Same", "status": "todo" }] } }
+    },
+    "args": ["edit", "T-1", "--name", "Same"],
+    "expect": {
+      "stdout": "T-1: nothing changed\n",
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "name": "Same", "status": "todo" }] } }
+    }
+  },
+  {
+    "name": "edit refuses a dependency that would make a cycle, and nothing changes",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "todo", "dependencies": ["T-2"] },
+            { "id": "T-2", "status": "todo", "dependencies": [] }
+          ]
+        }
+      }
+    },
+    "args": ["edit", "T-2", "--add-dep", "T-1"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["atm: these dependencies would make a cycle: T-1 -> T-2 -> T-1"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "todo", "dependencies": ["T-2"] },
+            { "id": "T-2", "status": "todo", "dependencies": [] }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "edit refuses a missing dependency, a dependency on itself, and unknown types",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["edit", "T-1", "--add-dep", "T-404"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: T-1 can't depend on T-404, which doesn't exist"] }
+  },
+  {
+    "name": "edit refuses a dependency on itself",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["edit", "T-1", "--add-dep", "T-1"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: T-1 can't depend on itself"] }
+  },
+  {
+    "name": "edit refuses an unknown type",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["edit", "T-1", "--type", "spike"],
+    "expect": { "exit": 2, "stderrIncludes": ["atm: unknown type 'spike'"] }
+  },
+  {
+    "name": "edit has no --status: statuses change only through the status commands",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["edit", "T-1", "--status", "done"],
+    "expect": { "exit": 2, "stderrIncludes": ["unrecognized arguments: --status done"] }
+  },
+  {
+    "name": "check: a good file",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "A", "phase": 0, "type": "feature", "status": "done", "dependencies": [] },
+            { "id": "T-2", "name": "B", "phase": 0, "type": "test", "status": "todo", "dependencies": ["T-1"] }
+          ]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "stdout": "tasks.json is fine (2 tasks)\n" }
+  },
+  {
+    "name": "check: errors and warnings, exit code 1",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "A", "phase": 0, "type": "feature", "status": "done", "dependencies": ["T-3"] },
+            { "id": "T-4", "name": "D", "phase": 0, "type": "feature", "status": "todo" },
+            { "id": "T-4", "name": "D again", "phase": 0, "type": "feature", "status": "todo" },
+            {
+              "id": "T-2",
+              "name": "B",
+              "phase": "zero",
+              "type": "spike",
+              "status": "waiting",
+              "priority": "P9",
+              "labels": ["Bad Label"]
+            },
+            {
+              "id": "T-3",
+              "name": "C",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "dependencies": ["T-1", "T-404"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": {
+      "exit": 1,
+      "stdout": "error: T-4: the ID is used by 2 tasks\nerror: T-2: needs a \"phase\" (a number)\nerror: T-2: the status 'waiting' is not one of the project's statuses\nerror: T-2: the label 'Bad Label' isn't lowercase letters, digits, - and _\nerror: T-3: depends on T-404, which doesn't exist\nerror: dependency cycle: T-1 -> T-3 -> T-1\nwarning: T-2: the type 'spike' is not one of the project's types\nwarning: T-2: the priority 'P9' is not one of the project's priorities\n"
+    }
+  },
+  {
+    "name": "check reports an unusable vocabulary as an error instead of stopping",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "statuses": [{ "id": "todo", "kind": "todo" }] },
+          "tasks": [{ "id": "T-1", "name": "A", "phase": 0, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["check", "--json"],
+    "expect": {
+      "exit": 1,
+      "json": { "errors": ["meta.statuses needs at least one status of the kind 'active'"], "warnings": [] }
+    }
+  },
+  {
+    "name": "check --files: a finished task's files that don't exist are warnings",
+    "setup": {
+      "files": {
+        "src/here.ts": "x",
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "A",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "files": ["src/here.ts", "src/gone.ts"]
+            },
+            { "id": "T-2", "name": "B", "phase": 0, "type": "feature", "status": "todo", "files": ["src/later.ts"] }
+          ]
+        }
+      }
+    },
+    "args": ["check", "--files"],
+    "expect": {
+      "stdout": "warning: T-1: the file src/gone.ts doesn't exist\ntasks.json is fine (2 tasks, 1 warnings)\n"
+    }
+  }
+]

@@ -4,19 +4,25 @@ description: >
   Update the project's tasks-dashboard.html to the latest version shipped with
   the plugin. Use when the user says "update dashboard", "refresh dashboard",
   "get latest dashboard", or "upgrade dashboard".
+allowed-tools: Bash(atm *)
 ---
 
 # Update Dashboard
 
-You update the project's `tasks-dashboard.html` to the latest version from the plugin.
+You update the project's `tasks-dashboard.html` to the latest version from the plugin. Never read or edit
+`tasks.json` or `tasks-archive.json` directly: `atm status`, `atm show` and `atm list` answer questions about the
+tasks.
 
 ## Step 1: Update the dashboard
 
-From the project root, run the plugin's helper:
+From the project root, run atm-cli, the plugin's `atm` command:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate --json
+atm migrate --json
 ```
+
+(The plugin's `bin/` is on your PATH while the plugin is enabled. If the shell says `atm: command not found`, write
+`"${CLAUDE_SKILL_DIR}/../../bin/atm"` instead of `atm`.)
 
 It moves an old `docs/tasks.json` (or `tasks.json` in the project root) into `.agentic-task-manager/` if needed (the
 move is staged in git, not committed), and installs or updates `.agentic-task-manager/tasks-dashboard.html` to the
@@ -36,6 +42,10 @@ In its JSON output:
   > **Dashboard installed** (v$VERSION). Start it with `/atm:serve`.
 
   with `dashboard.to` as $VERSION, and stop.
+- `dashboard.action` is `"rebuilt"` (the same version, but the plugin ships a newer build of it): report
+  > **Dashboard updated** (v$VERSION, a newer build of the same version). Refresh your browser to see it.
+
+  with `dashboard.to` as $VERSION, and stop: there are no new release notes for it.
 - `dashboard.action` is `"updated"`: $OLD_VERSION is `dashboard.from` (empty means the old dashboard had no version
   tag) and $NEW_VERSION is `dashboard.to`. Continue with Step 2.
 

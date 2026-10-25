@@ -3878,7 +3878,7 @@
       "description": "In the Progress panel's deep dive, give each ring under \"By Phase\" and \"By Type\" a border or a light background (theme tokens only, no hard-coded colours), so each ring reads as a separate item, like the Activity charts' cards. Check every theme and both modes; update the screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -3887,7 +3887,10 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-24T22:03:56Z"
+      "updated_at": "2026-10-25T06:41:09Z",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T06:41:09Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-144",
@@ -3962,7 +3965,7 @@
       "description": "The Progress tab gets long with many phases (this repo has 15). Add a checkbox above the phase table, \"Active phases only\": an active phase is one with unfinished tasks (todo/active/review/blocked kinds), or a finished one whose last completion is within the last N days (N = 7 by default, editable next to the checkbox). With it on, the phase table and the burndown's phase list show only active phases (\"Show all phases\" focus still works; the overall burndown keeps all tasks). Remembered in the project's saved view (view-store.ts), like progressPhase. Logic in a lib function (e.g. activePhases(tasks, now, days, vocab) in forecast.ts or a new phases.ts) with unit tests; a component or e2e test for the toggle; screenshots in both modes.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressTab.svelte",
@@ -3971,11 +3974,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:35:09Z",
+      "updated_at": "2026-10-25T06:40:49Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:35:09Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "13acc3faec48b73419cdb3f0526eef85c9e1812d",
+      "completed_at": "2026-10-25T06:40:49Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:40:49Z",
+          "kind": "outcome",
+          "text": "Progress tab: 'Active phases only' hides phases finished more than N days ago (7 by default), saved per project",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-146",
@@ -4029,15 +4043,17 @@
       "description": "Choose the 20 most popular VS Code colour themes (by Marketplace installs; note the date and source) that aren't already in the dashboard (it has Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast; see dashboard/src/themes/). For each: its name, licence (must allow reusing the palette), whether it has light and dark variants, and the source of its colours. Record the list in docs/theme-validation.md (or a new docs/themes.md), split into four batches of five for the next tasks. If the menu needs to change for 26 themes (grouping, light/dark pairs), note a proposal.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/themes.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T06:40:49Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T06:40:49Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-148",

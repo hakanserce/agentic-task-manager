@@ -142,6 +142,13 @@ test.describe('visual: light mode', () => {
     await expect(page.locator('#activity-panel')).toHaveScreenshot('light-agents-activity-panel.png');
   });
 
+  test('progress details', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(AGENTS_NOW);
+    await openDashboard(page, tasksServer, 'agents');
+    await page.locator('#progress-card').click();
+    await expect(page.locator('#progress-panel')).toHaveScreenshot('light-agents-progress-panel.png');
+  });
+
   test('detail panel', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     await page.locator('.task-card[data-id="T-004"] .task-name').click();

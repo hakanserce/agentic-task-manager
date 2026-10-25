@@ -22,6 +22,7 @@ describe('AboutDialog', () => {
     flushSync();
     expect(overlay()).toHaveClass('open');
     const dialog = screen.getByRole('dialog', { name: 'About' });
+    expect(document.querySelector('.about-name')).toHaveTextContent(/^Agentic Task Manager \(atm\)$/);
     expect(dialog).toHaveTextContent(pluginInfo.description);
     expect(dialog).toHaveTextContent(`Version ${pluginInfo.version}`);
     expect(dialog).toHaveTextContent('Author Hakan Serce');

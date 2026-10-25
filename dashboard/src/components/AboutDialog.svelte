@@ -15,7 +15,7 @@
 </script>
 
 <Dialog id="about" title="About" open={dashboard.dialog === 'about'} onclose={() => dashboard.closeDialog()}>
-  <p class="about-name">{pluginInfo.name}</p>
+  <p class="about-name">{pluginInfo.fullName} ({pluginInfo.name})</p>
   <p class="about-description">{pluginInfo.description}</p>
   <dl class="about-facts">
     <dt>Version</dt>

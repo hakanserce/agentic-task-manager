@@ -19,6 +19,7 @@ describe('readPluginInfo', () => {
   it('takes the name, author, licence and links from plugin.json', () => {
     expect(readPluginInfo(pluginJson, changelog)).toEqual({
       name: 'atm',
+      fullName: 'Agentic Task Manager',
       description: 'Tasks for agents.',
       version: '1.2.0',
       author: 'Ada Lovelace',

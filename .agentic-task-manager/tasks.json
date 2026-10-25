@@ -3880,7 +3880,7 @@
       "description": "Bug: in the Activity details, choosing Week shows \"Tasks completed per 6 hours\": the headings use series.unitLabel (the bucket size picked by activitySeries in dashboard/src/lib/insights.ts, BUCKET_SIZES/MAX_ACTIVITY_BUCKETS), not the period the user selected. Fix both sides: (1) each preset gets a natural bucket (hour → 5 minutes, day → hour, week → day, month → day, all time/custom → the current automatic choice); (2) the headings name the period and the bucket, e.g. \"Tasks completed this week, per day\" / \"last week\" when stepped back with ‹ (rangeLabel already has the period text). Same for \"Agents working (1 = one agent busy the whole …)\". Unit tests in tests/unit/insights.test.ts for each preset's bucket and label; update the activity screenshots (light/dark) and their -linux baselines per CLAUDE.md.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/insights.ts",
@@ -3888,7 +3888,7 @@
         "dashboard/tests/unit/insights.test.ts"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:13:42Z",
+      "updated_at": "2026-10-25T06:13:56Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -3915,10 +3915,19 @@
           "kind": "answer",
           "text": "T-153 is committed (fe75775); atm commit now takes git-rm'd files",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:13:56Z",
+          "kind": "outcome",
+          "text": "Each period has its natural bucket (week per day); headings name the period: 'Tasks completed this week, per day'",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-25T06:13:42Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "924a3e1ccd037c62bafaaf11cd8e7ca953b14851",
+      "completed_at": "2026-10-25T06:13:56Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-145",
@@ -4197,7 +4206,7 @@
       "description": "do-task and loop-tasks mark a task done (atm done) before committing it (atm commit), so a failed commit leaves a task done with its work uncommitted (happened with T-144). Reorder: verify, atm commit <id> --file ... (the task still in progress), then atm done <id> --note; if the commit fails, the task stays in progress and the agent fixes the cause or releases it with a handoff note. For a review or a block, the same: commit first, then atm review / atm block. Check atm commit works on an in-progress task and records the SHA (atm done keeps it). Update plugin/skills/do-task and loop-tasks, plugin/CLAUDE.md, and README's do-task steps.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "plugin/skills/do-task/SKILL.md",
@@ -4206,9 +4215,11 @@
         "README.md"
       ],
       "created_at": "2026-10-25T05:55:53Z",
-      "updated_at": "2026-10-25T05:55:53Z",
+      "updated_at": "2026-10-25T06:14:01Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T06:14:01Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

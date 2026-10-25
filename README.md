@@ -167,9 +167,10 @@ Type `/atm:` in Claude Code — you should see six skills in autocomplete:
 2. Reads the task and its notes (a reviewer's rejection, a previous agent's handoff) with `atm show`
 3. Implements the task according to its description, updating later tasks with `atm edit` if it has to
 4. Runs build/test/lint verification
-5. Ends it: `atm done --note "<outcome>"`, or `atm review` when a review is asked for, or `atm block --on user
-   --question "..."` when it can't go on without your decision
-6. Commits exactly the files it changed with `atm commit`
+5. Commits exactly the files it changed with `atm commit`, while the task is still in progress
+6. Only then ends it: `atm done --note "<outcome>"`, or `atm review` when a review is asked for, or `atm block --on
+   user --question "..."` when it can't go on without your decision. A task is never marked done with its work
+   uncommitted; one marked done by mistake goes back with `atm reopen <id> --reason "..."`
 7. Reports what was done and what's now unblocked, and suggests `/atm:push` when there are unpushed commits
 
 **Task selection** (when auto-picking): to-do, all dependencies done, not claimed by another agent; lowest phase

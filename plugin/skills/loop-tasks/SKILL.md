@@ -95,12 +95,14 @@ errors (the message says what).
 2. Get work only from `atm next --claim` (or `atm start <id>`).
 3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
    out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand).
-4. Finish with `atm done <id> --note "<one-line outcome>"`, or with `atm review <id> --note "..."` when a review is
-   asked for, or `atm block <id> --on user|agent --question "..."` when you can't go on without a decision (step 5
-   below); give up with `atm fail <id> --reason "..."`; stop early with `atm release <id> --note "<handoff>"`.
-5. Commit with `atm commit <id> --file <path> ...`, naming every file you changed for the task: it commits exactly
-   those plus `tasks.json`. Never `git add -A` or `git add .`: another agent's unfinished work may be in the same
-   working tree.
+4. **Commit first, then finish.** Commit with `atm commit <id> --file <path> ...` while the task is still in
+   progress, naming every file you changed for the task: it commits exactly those plus `tasks.json`. Never
+   `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree. Only then finish with
+   `atm done <id> --note "<one-line outcome>"`, or `atm review <id> --note "..."` when a review is asked for, or
+   `atm block <id> --on user|agent --question "..."` when you can't go on without a decision (steps 5 and 6 below).
+   A task is never done with its work uncommitted.
+5. Give up with `atm fail <id> --reason "..."`; stop early with `atm release <id> --note "<handoff>"`. A task marked
+   done by mistake goes back with `atm reopen <id> --reason "..."`; never change a status by editing `tasks.json`.
 6. **Statuses have kinds.** A project may name its own statuses; each has one of six kinds (`todo`, `active`,
    `review`, `blocked`, `done`, `skipped`) and atm works by kind, so "to do", "in review" and "done" below mean any
    status of that kind. When a kind has several statuses (e.g. `awaiting_user` and `awaiting_agent`, both `review`),
@@ -136,7 +138,8 @@ while true:
        - Follow project conventions
        - Keep a list of the files you create, change or delete for this task
        - If what you built changes a later task, update it with `atm edit <id>` (do-task Step 5)
-       - If you can't go on without a decision, don't guess: block it (step 5) and move on
+       - If you can't go on without a decision, don't guess: commit what's worth keeping, block it (steps 5 and 6)
+         and move on
 
     4. VERIFY the task:
        - Run build/test/lint if available (same as /atm:do-task Step 6)
@@ -145,7 +148,16 @@ while true:
          - Log the failure
          - Continue to next iteration (the failed task is back in todo; skip it for the rest of this loop)
 
-    5. FINISH the task:
+    5. COMMIT the task, while it is still in progress (default; also before a review or block):
+        - Unless --no-commit is set:
+          - `atm commit $TASK_ID --file <path> --file <path> ...` with every file from your list, deleted ones too
+            (also `.agentic-task-manager/.gitignore` and `.agentic-task-manager/.gitattributes` if `git status`
+            shows atm changed them); the message comes from the project (`feat($TASK_ID): $TASK_NAME` by default)
+          - If the commit fails: the task stays in progress. Fix the cause and commit again; if you can't,
+            `atm release $TASK_ID --note "<what's done; why the commit failed>"`, log it and continue with the next
+            iteration. Don't mark it done.
+
+    6. FINISH the task, once its commit is in:
        - If a review is asked for (by the task's description, the project's instructions or the user; by the user
          or by another agent): `atm review $TASK_ID --note "<what the reviewer should check>"` (with `--status`
          when one of several review statuses fits). The claim is released and the tasks that depend on it keep
@@ -154,15 +166,10 @@ while true:
          (`--on agent` when the project or the user hands such decisions to a reviewer agent). The claim is
          released and its dependents wait; the loop goes on with other ready tasks. Count it as blocked. Whoever
          decides answers with `atm unblock <id> --answer "..."` (one per question), which puts it back to to do.
-       - Otherwise: `atm done $TASK_ID --note "<one-line outcome>"`
+       - Otherwise: `atm done $TASK_ID --note "<one-line outcome>"`, then completed_count += 1
+       (The status change goes in with the next commit, like the commit's SHA.)
 
-    6. completed_count += 1 (for done tasks)
-
-    7. GIT OPERATIONS (default: commit after each task, also after a review or block):
-        - Unless --no-commit is set:
-          - `atm commit $TASK_ID --file <path> --file <path> ...` with every file from your list, deleted ones too
-            (also `.agentic-task-manager/.gitignore` and `.agentic-task-manager/.gitattributes` if `git status`
-            shows atm changed them); the message comes from the project (`feat($TASK_ID): $TASK_NAME` by default)
+    7. BETWEEN TASKS:
         - If `atm done` (or `atm status`) suggested archiving ("`atm archive` would move …"), archive now, between
           tasks, as /atm:do-task Step 7c says: `atm archive`, then its own commit
           (`chore: archive N finished tasks`); unless the hint's `auto` is false or the project says not to, in

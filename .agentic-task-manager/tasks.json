@@ -8,7 +8,25 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 162
+    "next_id": 165,
+    "labels": [
+      {
+        "id": "dashboard",
+        "label": "Dashboard"
+      },
+      {
+        "id": "cli",
+        "label": "CLI"
+      },
+      {
+        "id": "skills",
+        "label": "Skills"
+      },
+      {
+        "id": "architecture",
+        "label": "Architecture"
+      }
+    ]
   },
   "tasks": [
     {
@@ -23,7 +41,11 @@
       "dependencies": [],
       "files": [],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-25T19:41:41Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-002",
@@ -43,7 +65,11 @@
         "docs/tasks-dashboard.html"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:19:41Z"
+      "updated_at": "2026-10-25T19:41:54Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-003",
@@ -68,7 +94,12 @@
         ".gitignore"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:28:27Z"
+      "updated_at": "2026-10-25T19:41:54Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-004",
@@ -87,7 +118,12 @@
         "dashboard/build/inject-version.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:28:59Z"
+      "updated_at": "2026-10-25T19:41:54Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-005",
@@ -106,7 +142,11 @@
         "dashboard/tests/unit/setup.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:29:55Z"
+      "updated_at": "2026-10-25T19:41:55Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-006",
@@ -126,7 +166,11 @@
         "dashboard/tests/legacy/tasks-dashboard.v0.4.0.html"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T19:30:36Z"
+      "updated_at": "2026-10-25T19:41:55Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-007",
@@ -147,7 +191,11 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:22:04Z"
+      "updated_at": "2026-10-25T19:41:55Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-008",
@@ -165,7 +213,11 @@
         "dashboard/tests/fixtures/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:45:09Z"
+      "updated_at": "2026-10-25T19:41:55Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-009",
@@ -184,7 +236,11 @@
         "dashboard/tests/e2e/stats.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:46:00Z"
+      "updated_at": "2026-10-25T19:41:55Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-010",
@@ -203,7 +259,11 @@
         "dashboard/tests/e2e/cards.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:47:53Z"
+      "updated_at": "2026-10-25T19:41:56Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-011",
@@ -222,7 +282,11 @@
         "dashboard/tests/e2e/graph.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:48:46Z"
+      "updated_at": "2026-10-25T19:41:56Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-012",
@@ -241,7 +305,11 @@
         "dashboard/tests/e2e/edge-cases.spec.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:49:55Z"
+      "updated_at": "2026-10-25T19:41:56Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-013",
@@ -263,7 +331,11 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T20:53:51Z"
+      "updated_at": "2026-10-25T19:41:56Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-014",
@@ -285,7 +357,12 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:07:35Z"
+      "updated_at": "2026-10-25T19:41:57Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-015",
@@ -306,7 +383,11 @@
         "dashboard/tests/unit/stats.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:08:35Z"
+      "updated_at": "2026-10-25T19:41:57Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-016",
@@ -325,7 +406,11 @@
         "dashboard/tests/unit/timeline.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:09:12Z"
+      "updated_at": "2026-10-25T19:41:57Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-017",
@@ -344,7 +429,11 @@
         "dashboard/tests/unit/layout.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:09:58Z"
+      "updated_at": "2026-10-25T19:41:57Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-018",
@@ -366,7 +455,12 @@
         "dashboard/src/components/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:13:40Z"
+      "updated_at": "2026-10-25T19:41:57Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-019",
@@ -387,7 +481,11 @@
         "dashboard/src/components/TaskCard.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:16:50Z"
+      "updated_at": "2026-10-25T19:41:58Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-020",
@@ -405,7 +503,11 @@
         "dashboard/src/components/DetailPanel.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:18:05Z"
+      "updated_at": "2026-10-25T19:41:58Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-021",
@@ -424,7 +526,11 @@
         "dashboard/src/components/DepGraph.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:18:52Z"
+      "updated_at": "2026-10-25T19:41:58Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-022",
@@ -444,7 +550,11 @@
         "dashboard/tests/unit/Filters.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:20:38Z"
+      "updated_at": "2026-10-25T19:41:58Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-023",
@@ -465,7 +575,12 @@
         "plugin/templates/tasks-dashboard.html"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:32:44Z"
+      "updated_at": "2026-10-25T19:41:58Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-024",
@@ -484,7 +599,11 @@
         "dashboard/scripts/check-versions.mjs"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:33:54Z"
+      "updated_at": "2026-10-25T19:41:59Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-025",
@@ -504,7 +623,11 @@
         "README.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T21:34:32Z"
+      "updated_at": "2026-10-25T19:41:59Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-026",
@@ -524,7 +647,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T22:12:00Z"
+      "updated_at": "2026-10-25T19:41:59Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-027",
@@ -543,7 +670,11 @@
         "dashboard/tests/unit/view.test.ts"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T22:14:09Z"
+      "updated_at": "2026-10-25T19:41:59Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-028",
@@ -564,7 +695,11 @@
         "dashboard/src/components/Minimap.svelte"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T22:16:51Z"
+      "updated_at": "2026-10-25T19:42:00Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-029",
@@ -584,7 +719,11 @@
         "README.md"
       ],
       "created_at": "2026-10-22T19:19:41Z",
-      "updated_at": "2026-10-22T22:17:16Z"
+      "updated_at": "2026-10-25T19:42:00Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-030",
@@ -604,9 +743,13 @@
         "dashboard/tests/unit/prefs.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:43:25Z",
+      "updated_at": "2026-10-25T19:42:00Z",
       "started_at": "2026-10-22T23:43:11Z",
-      "completed_at": "2026-10-22T23:43:25Z"
+      "completed_at": "2026-10-22T23:43:25Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-031",
@@ -631,9 +774,13 @@
         "dashboard/tests/unit/state.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:44:34Z",
+      "updated_at": "2026-10-25T19:42:00Z",
       "started_at": "2026-10-22T23:43:46Z",
-      "completed_at": "2026-10-22T23:44:34Z"
+      "completed_at": "2026-10-22T23:44:34Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-032",
@@ -653,9 +800,13 @@
         "dashboard/tests/unit/view.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:45:09Z",
+      "updated_at": "2026-10-25T19:42:00Z",
       "started_at": "2026-10-22T23:44:55Z",
-      "completed_at": "2026-10-22T23:45:09Z"
+      "completed_at": "2026-10-22T23:45:09Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-033",
@@ -678,9 +829,13 @@
         "dashboard/tests/e2e/graph-zoom.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:46:32Z",
+      "updated_at": "2026-10-25T19:42:01Z",
       "started_at": "2026-10-22T23:45:35Z",
-      "completed_at": "2026-10-22T23:46:32Z"
+      "completed_at": "2026-10-22T23:46:32Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-034",
@@ -702,9 +857,15 @@
         "dashboard/src/lib/types.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:47:08Z",
+      "updated_at": "2026-10-25T19:41:48Z",
       "started_at": "2026-10-22T23:46:38Z",
-      "completed_at": "2026-10-22T23:47:08Z"
+      "completed_at": "2026-10-22T23:47:08Z",
+      "labels": [
+        "dashboard",
+        "skills",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-035",
@@ -725,9 +886,13 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:47:38Z",
+      "updated_at": "2026-10-25T19:42:01Z",
       "started_at": "2026-10-22T23:47:13Z",
-      "completed_at": "2026-10-22T23:47:38Z"
+      "completed_at": "2026-10-22T23:47:38Z",
+      "labels": [
+        "skills"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-036",
@@ -749,9 +914,13 @@
         "dashboard/tests/fixtures/standard.json"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:48:03Z",
+      "updated_at": "2026-10-25T19:42:01Z",
       "started_at": "2026-10-22T23:47:49Z",
-      "completed_at": "2026-10-22T23:48:03Z"
+      "completed_at": "2026-10-22T23:48:03Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-037",
@@ -794,9 +963,13 @@
         "dashboard/tests/unit/changelog.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:49:22Z",
+      "updated_at": "2026-10-25T19:42:01Z",
       "started_at": "2026-10-22T23:49:08Z",
-      "completed_at": "2026-10-22T23:49:22Z"
+      "completed_at": "2026-10-22T23:49:22Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-039",
@@ -842,9 +1015,13 @@
         "dashboard/tests/unit/release-notes.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:50:41Z",
+      "updated_at": "2026-10-25T19:42:01Z",
       "started_at": "2026-10-22T23:50:08Z",
-      "completed_at": "2026-10-22T23:50:41Z"
+      "completed_at": "2026-10-22T23:50:41Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-041",
@@ -868,9 +1045,13 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:52:37Z",
+      "updated_at": "2026-10-25T19:42:02Z",
       "started_at": "2026-10-22T23:51:00Z",
-      "completed_at": "2026-10-22T23:52:37Z"
+      "completed_at": "2026-10-22T23:52:37Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-042",
@@ -892,9 +1073,13 @@
         "dashboard/tests/e2e/whats-new.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:54:32Z",
+      "updated_at": "2026-10-25T19:42:02Z",
       "started_at": "2026-10-22T23:53:11Z",
-      "completed_at": "2026-10-22T23:54:32Z"
+      "completed_at": "2026-10-22T23:54:32Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-043",
@@ -914,9 +1099,13 @@
         "plugin/skills/update-dashboard/SKILL.md"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:55:11Z",
+      "updated_at": "2026-10-25T19:42:02Z",
       "started_at": "2026-10-22T23:54:42Z",
-      "completed_at": "2026-10-22T23:55:11Z"
+      "completed_at": "2026-10-22T23:55:11Z",
+      "labels": [
+        "skills"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-044",
@@ -938,9 +1127,13 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-22T23:55:48Z",
+      "updated_at": "2026-10-25T19:42:02Z",
       "started_at": "2026-10-22T23:55:15Z",
-      "completed_at": "2026-10-22T23:55:48Z"
+      "completed_at": "2026-10-22T23:55:48Z",
+      "labels": [
+        "skills"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-045",
@@ -991,9 +1184,13 @@
         "dashboard/tests/unit/tabs.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:09:33Z",
+      "updated_at": "2026-10-25T19:42:09Z",
       "started_at": "2026-10-23T00:09:18Z",
-      "completed_at": "2026-10-23T00:09:33Z"
+      "completed_at": "2026-10-23T00:09:33Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-047",
@@ -1023,9 +1220,13 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:11:19Z",
+      "updated_at": "2026-10-25T19:42:09Z",
       "started_at": "2026-10-23T00:09:53Z",
-      "completed_at": "2026-10-23T00:11:19Z"
+      "completed_at": "2026-10-23T00:11:19Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-048",
@@ -1050,9 +1251,13 @@
         "dashboard/tests/unit/kanban.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:12:22Z",
+      "updated_at": "2026-10-25T19:42:09Z",
       "started_at": "2026-10-23T00:11:33Z",
-      "completed_at": "2026-10-23T00:12:22Z"
+      "completed_at": "2026-10-23T00:12:22Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-049",
@@ -1074,9 +1279,13 @@
         "dashboard/tests/fixtures/kanban.json"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:13:09Z",
+      "updated_at": "2026-10-25T19:42:10Z",
       "started_at": "2026-10-23T00:12:40Z",
-      "completed_at": "2026-10-23T00:13:09Z"
+      "completed_at": "2026-10-23T00:13:09Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-050",
@@ -1105,9 +1314,13 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:32:28Z",
+      "updated_at": "2026-10-25T19:42:10Z",
       "started_at": "2026-10-23T00:13:44Z",
-      "completed_at": "2026-10-23T00:32:28Z"
+      "completed_at": "2026-10-23T00:32:28Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-051",
@@ -1135,9 +1348,13 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:33:28Z",
+      "updated_at": "2026-10-25T19:42:10Z",
       "started_at": "2026-10-23T00:32:56Z",
-      "completed_at": "2026-10-23T00:33:28Z"
+      "completed_at": "2026-10-23T00:33:28Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-052",
@@ -1159,9 +1376,13 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:34:55Z",
+      "updated_at": "2026-10-25T19:42:10Z",
       "started_at": "2026-10-23T00:34:03Z",
-      "completed_at": "2026-10-23T00:34:55Z"
+      "completed_at": "2026-10-23T00:34:55Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-053",
@@ -1208,9 +1429,13 @@
         "dashboard/tests/fixtures/progress.json"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:36:14Z",
+      "updated_at": "2026-10-25T19:42:11Z",
       "started_at": "2026-10-23T00:35:57Z",
-      "completed_at": "2026-10-23T00:36:14Z"
+      "completed_at": "2026-10-23T00:36:14Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-055",
@@ -1233,9 +1458,13 @@
         "dashboard/tests/unit/forecast.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:37:31Z",
+      "updated_at": "2026-10-25T19:42:11Z",
       "started_at": "2026-10-23T00:36:59Z",
-      "completed_at": "2026-10-23T00:37:31Z"
+      "completed_at": "2026-10-23T00:37:31Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-056",
@@ -1256,9 +1485,13 @@
         "dashboard/tests/unit/burndown.test.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:38:21Z",
+      "updated_at": "2026-10-25T19:42:11Z",
       "started_at": "2026-10-23T00:38:02Z",
-      "completed_at": "2026-10-23T00:38:21Z"
+      "completed_at": "2026-10-23T00:38:21Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-057",
@@ -1284,9 +1517,13 @@
         "dashboard/tests/e2e/progress.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:40:09Z",
+      "updated_at": "2026-10-25T19:42:11Z",
       "started_at": "2026-10-23T00:39:06Z",
-      "completed_at": "2026-10-23T00:40:09Z"
+      "completed_at": "2026-10-23T00:40:09Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-058",
@@ -1313,9 +1550,13 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:43:24Z",
+      "updated_at": "2026-10-25T19:42:11Z",
       "started_at": "2026-10-23T00:41:05Z",
-      "completed_at": "2026-10-23T00:43:24Z"
+      "completed_at": "2026-10-23T00:43:24Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-059",
@@ -1336,9 +1577,13 @@
         "dashboard/tests/e2e/progress.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:44:20Z",
+      "updated_at": "2026-10-25T19:42:12Z",
       "started_at": "2026-10-23T00:43:32Z",
-      "completed_at": "2026-10-23T00:44:20Z"
+      "completed_at": "2026-10-23T00:44:20Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-060",
@@ -1361,9 +1606,13 @@
         "dashboard/tests/e2e/compat.spec.ts"
       ],
       "created_at": "2026-10-22T23:33:50Z",
-      "updated_at": "2026-10-23T00:45:45Z",
+      "updated_at": "2026-10-25T19:42:12Z",
       "started_at": "2026-10-23T00:44:34Z",
-      "completed_at": "2026-10-23T00:45:45Z"
+      "completed_at": "2026-10-23T00:45:45Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-061",
@@ -1410,9 +1659,14 @@
         "plugin/scripts/atm.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:46:13Z",
+      "updated_at": "2026-10-25T19:42:12Z",
       "started_at": "2026-10-23T16:45:00Z",
-      "completed_at": "2026-10-23T16:46:13Z"
+      "completed_at": "2026-10-23T16:46:13Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-063",
@@ -1437,9 +1691,13 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:47:59Z",
+      "updated_at": "2026-10-25T19:42:12Z",
       "started_at": "2026-10-23T16:46:29Z",
-      "completed_at": "2026-10-23T16:47:59Z"
+      "completed_at": "2026-10-23T16:47:59Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-064",
@@ -1465,9 +1723,13 @@
         "tests/scripts/scenarios/migrate-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:51:42Z",
+      "updated_at": "2026-10-25T19:42:12Z",
       "started_at": "2026-10-23T16:48:25Z",
-      "completed_at": "2026-10-23T16:51:42Z"
+      "completed_at": "2026-10-23T16:51:42Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-065",
@@ -1494,9 +1756,13 @@
         "plugin/scripts/atm.py"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:53:32Z",
+      "updated_at": "2026-10-25T19:42:13Z",
       "started_at": "2026-10-23T16:52:08Z",
-      "completed_at": "2026-10-23T16:53:32Z"
+      "completed_at": "2026-10-23T16:53:32Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-066",
@@ -1522,9 +1788,13 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:56:22Z",
+      "updated_at": "2026-10-25T19:42:13Z",
       "started_at": "2026-10-23T16:53:45Z",
-      "completed_at": "2026-10-23T16:56:22Z"
+      "completed_at": "2026-10-23T16:56:22Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-067",
@@ -1548,9 +1818,14 @@
         "plugin/scripts/serve-dashboard.sh"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T16:57:47Z",
+      "updated_at": "2026-10-25T19:42:13Z",
       "started_at": "2026-10-23T16:56:27Z",
-      "completed_at": "2026-10-23T16:57:47Z"
+      "completed_at": "2026-10-23T16:57:47Z",
+      "labels": [
+        "skills",
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-068",
@@ -1578,9 +1853,13 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T17:00:45Z",
+      "updated_at": "2026-10-25T19:42:13Z",
       "started_at": "2026-10-23T16:57:52Z",
-      "completed_at": "2026-10-23T17:00:45Z"
+      "completed_at": "2026-10-23T17:00:45Z",
+      "labels": [
+        "skills"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-069",
@@ -1602,9 +1881,13 @@
         "README.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T17:02:16Z",
+      "updated_at": "2026-10-25T19:42:13Z",
       "started_at": "2026-10-23T17:00:50Z",
-      "completed_at": "2026-10-23T17:02:16Z"
+      "completed_at": "2026-10-23T17:02:16Z",
+      "labels": [
+        "skills"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-070",
@@ -1674,9 +1957,14 @@
         "tests/scripts/lock.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T22:59:21Z",
+      "updated_at": "2026-10-25T19:42:14Z",
       "started_at": "2026-10-23T22:57:23Z",
-      "completed_at": "2026-10-23T22:59:21Z"
+      "completed_at": "2026-10-23T22:59:21Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-073",
@@ -1698,9 +1986,13 @@
         "tests/scripts/scenarios/status-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:01:06Z",
+      "updated_at": "2026-10-25T19:42:14Z",
       "started_at": "2026-10-23T22:59:47Z",
-      "completed_at": "2026-10-23T23:01:06Z"
+      "completed_at": "2026-10-23T23:01:06Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-074",
@@ -1722,9 +2014,14 @@
         "tests/scripts/claims.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:06:54Z",
+      "updated_at": "2026-10-25T19:42:14Z",
       "started_at": "2026-10-23T23:01:31Z",
-      "completed_at": "2026-10-23T23:06:54Z"
+      "completed_at": "2026-10-23T23:06:54Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-075",
@@ -1745,9 +2042,13 @@
         "tests/scripts/scenarios/next-*.json"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:09:05Z",
+      "updated_at": "2026-10-25T19:42:14Z",
       "started_at": "2026-10-23T23:06:59Z",
-      "completed_at": "2026-10-23T23:09:05Z"
+      "completed_at": "2026-10-23T23:09:05Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-076",
@@ -1767,9 +2068,13 @@
         "tests/scripts/stress.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:12:22Z",
+      "updated_at": "2026-10-25T19:42:14Z",
       "started_at": "2026-10-23T23:09:22Z",
-      "completed_at": "2026-10-23T23:12:22Z"
+      "completed_at": "2026-10-23T23:12:22Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-077",
@@ -1789,9 +2094,14 @@
         "plugin/scripts/atm.py"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:15:50Z",
+      "updated_at": "2026-10-25T19:42:15Z",
       "started_at": "2026-10-23T23:12:44Z",
-      "completed_at": "2026-10-23T23:15:50Z"
+      "completed_at": "2026-10-23T23:15:50Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-078",
@@ -1812,9 +2122,13 @@
         "tests/scripts/merge.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:18:04Z",
+      "updated_at": "2026-10-25T19:42:15Z",
       "started_at": "2026-10-23T23:16:29Z",
-      "completed_at": "2026-10-23T23:18:04Z"
+      "completed_at": "2026-10-23T23:18:04Z",
+      "labels": [
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-079",
@@ -1839,9 +2153,13 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:20:40Z",
+      "updated_at": "2026-10-25T19:42:15Z",
       "started_at": "2026-10-23T23:18:13Z",
-      "completed_at": "2026-10-23T23:20:40Z"
+      "completed_at": "2026-10-23T23:20:40Z",
+      "labels": [
+        "skills"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-080",
@@ -1868,9 +2186,13 @@
         "dashboard/tests/e2e/claims.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:24:26Z",
+      "updated_at": "2026-10-25T19:42:15Z",
       "started_at": "2026-10-23T23:20:50Z",
-      "completed_at": "2026-10-23T23:24:26Z"
+      "completed_at": "2026-10-23T23:24:26Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-081",
@@ -1891,8 +2213,13 @@
         "tests/scripts/remote.test.mjs"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:25:02Z",
-      "skip_reason": "Not cheap enough for this round: a safe version needs create-only pushes (--force-with-lease), leases on the remote (claim commits carrying the expiry, heartbeats that push, clearing expired refs) so a crashed machine can't block a task forever, and a network round-trip inside the lock. Open question for the maintainer (design §6 Q3: remote claims now or later); revisit when multi-machine work is needed."
+      "updated_at": "2026-10-25T19:42:15Z",
+      "skip_reason": "Not cheap enough for this round: a safe version needs create-only pushes (--force-with-lease), leases on the remote (claim commits carrying the expiry, heartbeats that push, clearing expired refs) so a crashed machine can't block a task forever, and a network round-trip inside the lock. Open question for the maintainer (design §6 Q3: remote claims now or later); revisit when multi-machine work is needed.",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-082",
@@ -1913,9 +2240,13 @@
         "README.md"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-23T23:26:57Z",
+      "updated_at": "2026-10-25T19:42:16Z",
       "started_at": "2026-10-23T23:25:02Z",
-      "completed_at": "2026-10-23T23:26:57Z"
+      "completed_at": "2026-10-23T23:26:57Z",
+      "labels": [
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-083",
@@ -1962,9 +2293,13 @@
         "dashboard/tests/unit/filters.test.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:13:46Z",
+      "updated_at": "2026-10-25T19:42:16Z",
       "started_at": "2026-10-24T01:10:57Z",
-      "completed_at": "2026-10-24T01:13:46Z"
+      "completed_at": "2026-10-24T01:13:46Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-085",
@@ -1989,9 +2324,13 @@
         "dashboard/tests/e2e/filters.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:16:16Z",
+      "updated_at": "2026-10-25T19:42:16Z",
       "started_at": "2026-10-24T01:13:50Z",
-      "completed_at": "2026-10-24T01:16:16Z"
+      "completed_at": "2026-10-24T01:16:16Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-086",
@@ -2015,9 +2354,13 @@
         "dashboard/tests/unit/view-store.test.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:18:32Z",
+      "updated_at": "2026-10-25T19:42:16Z",
       "started_at": "2026-10-24T01:16:21Z",
-      "completed_at": "2026-10-24T01:18:32Z"
+      "completed_at": "2026-10-24T01:18:32Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-087",
@@ -2045,9 +2388,15 @@
         "dashboard/tests/e2e/saved-view.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:22:21Z",
+      "updated_at": "2026-10-25T19:42:17Z",
       "started_at": "2026-10-24T01:18:39Z",
-      "completed_at": "2026-10-24T01:22:21Z"
+      "completed_at": "2026-10-24T01:22:21Z",
+      "labels": [
+        "dashboard",
+        "skills",
+        "cli"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-088",
@@ -2069,9 +2418,13 @@
         "dashboard/tests/e2e/saved-view.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:24:39Z",
+      "updated_at": "2026-10-25T19:42:17Z",
       "started_at": "2026-10-24T01:22:26Z",
-      "completed_at": "2026-10-24T01:24:39Z"
+      "completed_at": "2026-10-24T01:24:39Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-089",
@@ -2098,9 +2451,14 @@
         "dashboard/tests/unit/no-hardcoded-colours.test.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:28:05Z",
+      "updated_at": "2026-10-25T19:42:17Z",
       "started_at": "2026-10-24T01:24:55Z",
-      "completed_at": "2026-10-24T01:28:05Z"
+      "completed_at": "2026-10-24T01:28:05Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-090",
@@ -2127,9 +2485,14 @@
         "dashboard/tests/e2e/theme.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:34:49Z",
+      "updated_at": "2026-10-25T19:42:17Z",
       "started_at": "2026-10-24T01:30:47Z",
-      "completed_at": "2026-10-24T01:34:49Z"
+      "completed_at": "2026-10-24T01:34:49Z",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-091",
@@ -2152,9 +2515,13 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:37:06Z",
+      "updated_at": "2026-10-25T19:42:17Z",
       "started_at": "2026-10-24T01:35:11Z",
-      "completed_at": "2026-10-24T01:37:06Z"
+      "completed_at": "2026-10-24T01:37:06Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-092",
@@ -2179,9 +2546,13 @@
         "dashboard/tests/e2e/theme.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:42:23Z",
+      "updated_at": "2026-10-25T19:42:18Z",
       "started_at": "2026-10-24T01:37:44Z",
-      "completed_at": "2026-10-24T01:42:23Z"
+      "completed_at": "2026-10-24T01:42:23Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-093",
@@ -2205,9 +2576,13 @@
         "dashboard/src/lib/themes/high-contrast.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:46:11Z",
+      "updated_at": "2026-10-25T19:42:18Z",
       "started_at": "2026-10-24T01:43:02Z",
-      "completed_at": "2026-10-24T01:46:11Z"
+      "completed_at": "2026-10-24T01:46:11Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-094",
@@ -2232,9 +2607,13 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-23T16:41:18Z",
-      "updated_at": "2026-10-24T01:50:04Z",
+      "updated_at": "2026-10-25T19:42:18Z",
       "started_at": "2026-10-24T01:46:39Z",
-      "completed_at": "2026-10-24T01:50:04Z"
+      "completed_at": "2026-10-24T01:50:04Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-095",
@@ -2287,7 +2666,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-24T00:13:54Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:24Z",
       "started_at": "2026-10-24T21:55:04Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:01:01Z",
@@ -2296,7 +2675,11 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ]
     },
     {
       "id": "T-097",
@@ -2326,7 +2709,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:24Z",
       "started_at": "2026-10-24T22:42:03Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:46:37Z",
@@ -2335,7 +2718,11 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ]
     },
     {
       "id": "T-098",
@@ -2357,7 +2744,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:24Z",
       "started_at": "2026-10-24T22:46:37Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:49:08Z",
@@ -2366,7 +2753,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-099",
@@ -2392,7 +2782,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:24Z",
       "started_at": "2026-10-24T23:00:28Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:02:36Z",
@@ -2401,7 +2791,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-100",
@@ -2430,7 +2823,7 @@
         "dashboard/src/components/AboutDialog.svelte"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:25Z",
       "started_at": "2026-10-24T22:01:14Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:11:15Z",
@@ -2439,7 +2832,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-101",
@@ -2467,7 +2863,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:25Z",
       "started_at": "2026-10-24T22:11:19Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:17:37Z",
@@ -2476,7 +2872,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-102",
@@ -2502,7 +2901,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:25Z",
       "started_at": "2026-10-24T22:17:38Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:23:32Z",
@@ -2511,7 +2910,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-103",
@@ -2535,7 +2937,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:25Z",
       "started_at": "2026-10-24T22:23:33Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:25:27Z",
@@ -2544,7 +2946,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-104",
@@ -2569,10 +2974,14 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T07:42:32Z",
+      "updated_at": "2026-10-25T19:42:25Z",
       "started_at": "2026-10-24T07:33:20Z",
       "agent": "claude:8860b42b",
-      "completed_at": "2026-10-24T07:42:32Z"
+      "completed_at": "2026-10-24T07:42:32Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-105",
@@ -2598,7 +3007,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:26Z",
       "started_at": "2026-10-24T22:25:28Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:37:02Z",
@@ -2607,7 +3016,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-106",
@@ -2630,10 +3042,14 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T07:57:31Z",
+      "updated_at": "2026-10-25T19:42:26Z",
       "started_at": "2026-10-24T07:54:13Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T07:57:31Z"
+      "completed_at": "2026-10-24T07:57:31Z",
+      "labels": [
+        "dashboard"
+      ],
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-107",
@@ -2654,7 +3070,7 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:26Z",
       "started_at": "2026-10-24T22:49:09Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:50:03Z",
@@ -2663,7 +3079,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-108",
@@ -2688,7 +3107,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:26Z",
       "started_at": "2026-10-24T23:02:37Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:03:48Z",
@@ -2697,7 +3116,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-109",
@@ -2732,7 +3154,7 @@
         "dashboard/tests/fixtures/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:27Z",
       "started_at": "2026-10-25T01:22:48Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:26:26Z",
@@ -2741,7 +3163,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-110",
@@ -2803,7 +3228,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:27Z",
       "started_at": "2026-10-24T22:37:03Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:42:03Z",
@@ -2812,7 +3237,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-112",
@@ -2839,7 +3267,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:27Z",
       "started_at": "2026-10-24T22:50:03Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:00:27Z",
@@ -2848,7 +3276,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-113",
@@ -2872,7 +3303,7 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:27Z",
       "started_at": "2026-10-24T23:03:49Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:05:48Z",
@@ -2881,7 +3312,11 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "dashboard"
+      ]
     },
     {
       "id": "T-114",
@@ -2908,7 +3343,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:27Z",
       "started_at": "2026-10-24T23:05:49Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:10:21Z",
@@ -2917,7 +3352,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-115",
@@ -2945,7 +3383,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:28Z",
       "started_at": "2026-10-24T23:10:22Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:14:39Z",
@@ -2954,7 +3392,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-116",
@@ -2977,7 +3418,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:28Z",
       "started_at": "2026-10-24T23:14:39Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:18:44Z",
@@ -2986,7 +3427,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-117",
@@ -3011,7 +3455,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:28Z",
       "started_at": "2026-10-24T23:18:45Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:22:12Z",
@@ -3020,7 +3464,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-118",
@@ -3051,7 +3498,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:28Z",
       "started_at": "2026-10-24T23:22:12Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:27:41Z",
@@ -3060,7 +3507,11 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "architecture"
+      ]
     },
     {
       "id": "T-119",
@@ -3085,7 +3536,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:28Z",
       "started_at": "2026-10-24T23:27:41Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:35:51Z",
@@ -3094,7 +3545,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-120",
@@ -3119,7 +3573,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:29Z",
       "started_at": "2026-10-24T23:35:51Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:39:42Z",
@@ -3128,7 +3582,12 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard",
+        "cli",
+        "skills"
+      ]
     },
     {
       "id": "T-121",
@@ -3150,7 +3609,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:29Z",
       "started_at": "2026-10-24T23:39:44Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:41:51Z",
@@ -3159,7 +3618,11 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "skills"
+      ]
     },
     {
       "id": "T-122",
@@ -3185,7 +3648,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:29Z",
       "started_at": "2026-10-24T23:41:51Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:45:04Z",
@@ -3194,7 +3657,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-123",
@@ -3218,7 +3684,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:29Z",
       "started_at": "2026-10-24T23:45:11Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:11:37Z",
@@ -3227,7 +3693,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli"
+      ]
     },
     {
       "id": "T-124",
@@ -3251,7 +3720,7 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:30Z",
       "started_at": "2026-10-25T00:11:45Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:29:30Z",
@@ -3260,7 +3729,12 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "skills",
+        "architecture"
+      ]
     },
     {
       "id": "T-125",
@@ -3284,7 +3758,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:30Z",
       "started_at": "2026-10-25T00:31:36Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:35:10Z",
@@ -3293,7 +3767,11 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "cli",
+        "skills"
+      ]
     },
     {
       "id": "T-126",
@@ -3318,7 +3796,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:30Z",
       "started_at": "2026-10-25T00:35:11Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:36:41Z",
@@ -3327,7 +3805,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-127",
@@ -3355,7 +3836,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:30Z",
       "started_at": "2026-10-25T00:36:41Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:37:55Z",
@@ -3364,7 +3845,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-128",
@@ -3387,7 +3871,7 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:30Z",
       "started_at": "2026-10-25T00:37:55Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:41:56Z",
@@ -3396,7 +3880,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-129",
@@ -3419,7 +3906,7 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:31Z",
       "started_at": "2026-10-25T00:41:57Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:44:01Z",
@@ -3428,7 +3915,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-130",
@@ -3450,7 +3940,7 @@
         "README.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:31Z",
       "started_at": "2026-10-25T00:44:02Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:46:19Z",
@@ -3459,7 +3949,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-131",
@@ -3484,7 +3977,7 @@
         "plugin/skills/do-task/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:31Z",
       "started_at": "2026-10-25T00:46:20Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:46:58Z",
@@ -3493,7 +3986,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "skills"
+      ]
     },
     {
       "id": "T-132",
@@ -3543,7 +4039,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:37Z",
       "started_at": "2026-10-25T00:47:47Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:49:05Z",
@@ -3552,7 +4048,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-134",
@@ -3576,7 +4075,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:37Z",
       "started_at": "2026-10-25T00:49:06Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:53:38Z",
@@ -3585,7 +4084,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-135",
@@ -3609,7 +4111,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:37Z",
       "started_at": "2026-10-25T00:53:40Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:57:38Z",
@@ -3618,7 +4120,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-136",
@@ -3641,7 +4146,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:37Z",
       "started_at": "2026-10-25T00:57:39Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:59:13Z",
@@ -3650,7 +4155,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-137",
@@ -3677,7 +4185,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:38Z",
       "started_at": "2026-10-25T00:59:14Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:02:40Z",
@@ -3686,7 +4194,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-138",
@@ -3713,7 +4224,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:38Z",
       "started_at": "2026-10-25T01:02:45Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:05:48Z",
@@ -3722,7 +4233,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-139",
@@ -3743,7 +4257,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:38Z",
       "started_at": "2026-10-25T01:05:53Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:09:34Z",
@@ -3752,7 +4266,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-140",
@@ -3779,7 +4296,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:38Z",
       "started_at": "2026-10-25T01:09:35Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:22:10Z",
@@ -3788,7 +4305,10 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-141",
@@ -3815,7 +4335,7 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:24:58Z",
+      "updated_at": "2026-10-25T19:42:38Z",
       "started_at": "2026-10-25T01:26:33Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:29:54Z",
@@ -3824,7 +4344,12 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
-      "merged_at": "2026-10-25T05:19:44Z"
+      "merged_at": "2026-10-25T05:19:44Z",
+      "labels": [
+        "dashboard",
+        "cli",
+        "skills"
+      ]
     },
     {
       "id": "T-142",
@@ -3847,7 +4372,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:39Z",
       "updated_by": "claude:e5ea9db0",
       "notes": [
         {
@@ -3872,7 +4397,10 @@
         "number": 9,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
       },
-      "merged_at": "2026-10-25T07:37:43Z"
+      "merged_at": "2026-10-25T07:37:43Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-143",
@@ -3892,7 +4420,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:39Z",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:41:09Z",
       "started_by": "claude:e5ea9db0",
@@ -3911,7 +4439,10 @@
         "number": 9,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
       },
-      "merged_at": "2026-10-25T07:37:43Z"
+      "merged_at": "2026-10-25T07:37:43Z",
+      "labels": [
+        "dashboard"
+      ]
     },
     {
       "id": "T-144",
@@ -3920,7 +4451,8 @@
       "type": "bugfix",
       "priority": "P1",
       "labels": [
-        "activity"
+        "activity",
+        "dashboard"
       ],
       "description": "Bug: in the Activity details, choosing Week shows \"Tasks completed per 6 hours\": the headings use series.unitLabel (the bucket size picked by activitySeries in dashboard/src/lib/insights.ts, BUCKET_SIZES/MAX_ACTIVITY_BUCKETS), not the period the user selected. Fix both sides: (1) each preset gets a natural bucket (hour → 5 minutes, day → hour, week → day, month → day, all time/custom → the current automatic choice); (2) the headings name the period and the bucket, e.g. \"Tasks completed this week, per day\" / \"last week\" when stepped back with ‹ (rangeLabel already has the period text). Same for \"Agents working (1 = one agent busy the whole …)\". Unit tests in tests/unit/insights.test.ts for each preset's bucket and label; update the activity screenshots (light/dark) and their -linux baselines per CLAUDE.md.",
       "requirements": [],
@@ -3933,7 +4465,7 @@
         "dashboard/tests/unit/insights.test.ts"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:39Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -3986,7 +4518,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "progress"
+        "progress",
+        "dashboard"
       ],
       "description": "The Progress tab gets long with many phases (this repo has 15). Add a checkbox above the phase table, \"Active phases only\": an active phase is one with unfinished tasks (todo/active/review/blocked kinds), or a finished one whose last completion is within the last N days (N = 7 by default, editable next to the checkbox). With it on, the phase table and the burndown's phase list show only active phases (\"Show all phases\" focus still works; the overall burndown keeps all tasks). Remembered in the project's saved view (view-store.ts), like progressPhase. Logic in a lib function (e.g. activePhases(tasks, now, days, vocab) in forecast.ts or a new phases.ts) with unit tests; a component or e2e test for the toggle; screenshots in both modes.",
       "requirements": [],
@@ -4000,7 +4533,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:39Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:35:09Z",
@@ -4029,7 +4562,9 @@
       "type": "docs",
       "priority": "P2",
       "labels": [
-        "release-notes"
+        "release-notes",
+        "dashboard",
+        "skills"
       ],
       "description": "The What's new dialog and /atm:update-dashboard show plugin/CHANGELOG.md, which is written for developers and is too detailed for users (0.13.0 alone is ~25 bullets with command names). Add plugin/WHATS-NEW.md: per version, 3–6 short bullets in plain language about what a user notices (no command flags, no internals), e.g. \"Agents can ask you a question instead of guessing; the dashboard tells you when a task needs you.\" Write it for every released version from the changelog (summarize, newest first). The dashboard's What's new (build/changelog.ts → a whats-new module) and the /atm:update-dashboard skill show WHATS-NEW.md; CHANGELOG.md stays the detailed record. Inlining the short notes instead of the full changelog also frees room under the 256 KB budget (the build is ~1.9 KB under it). Keep the version check (scripts/check-versions.mjs) covering WHATS-NEW.md. Add to the root CLAUDE.md (Versions section): every release adds a short, end-user What's New entry next to the changelog entry, written for users, not developers.",
       "requirements": [],
@@ -4045,7 +4580,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:39Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:25:02Z",
@@ -4074,7 +4609,8 @@
       "type": "docs",
       "priority": "P2",
       "labels": [
-        "themes"
+        "themes",
+        "dashboard"
       ],
       "description": "Choose the 20 most popular VS Code colour themes (by Marketplace installs; note the date and source) that aren't already in the dashboard (it has Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast; see dashboard/src/themes/). For each: its name, licence (must allow reusing the palette), whether it has light and dark variants, and the source of its colours. Record the list in docs/theme-validation.md (or a new docs/themes.md), split into four batches of five for the next tasks. If the menu needs to change for 26 themes (grouping, light/dark pairs), note a proposal.",
       "requirements": [],
@@ -4085,7 +4621,7 @@
         "docs/themes.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:40Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:40:49Z",
@@ -4114,7 +4650,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "themes"
+        "themes",
+        "dashboard"
       ],
       "description": "Add GitHub, Ayu and Night Owl (docs/themes.md, Decision; light and dark variants only), as the existing ones are built (dashboard/src/themes/<name>.css + index.ts): every token for both variants, checked by tests/unit/theme-contrast.test.ts (readable contrast) and recorded in docs/theme-validation.md. A screenshot per theme and mode (visual.spec.ts' theme loop), with -linux baselines per CLAUDE.md. Mind the 256 KB size budget (about 7 KB left for six themes); if it doesn't fit, ask before raising it.",
       "requirements": [],
@@ -4129,7 +4666,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:40Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4164,7 +4701,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "themes"
+        "themes",
+        "dashboard"
       ],
       "description": "Add Noctis (dark Noctis, light Lux) and Sublime Material (docs/themes.md, Decision), as in T-148: tokens for both variants, contrast test (Sublime Material light's foreground is too pale and needs adjusting), docs/theme-validation.md, screenshots in both modes, size budget (about 3 KB left after T-148).",
       "requirements": [],
@@ -4179,7 +4717,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:40Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T07:18:19Z",
@@ -4208,7 +4746,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "themes"
+        "themes",
+        "dashboard"
       ],
       "description": "The third five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
       "requirements": [],
@@ -4223,7 +4762,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:01:38Z",
+      "updated_at": "2026-10-25T19:42:40Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4242,7 +4781,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "themes"
+        "themes",
+        "dashboard"
       ],
       "description": "The last five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
       "requirements": [],
@@ -4257,7 +4797,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:01:39Z",
+      "updated_at": "2026-10-25T19:42:41Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4276,7 +4816,8 @@
       "type": "polish",
       "priority": "P2",
       "labels": [
-        "themes"
+        "themes",
+        "dashboard"
       ],
       "description": "With 12 themes the Appearance menu (dashboard/src/components/AppearanceMenu.svelte) needs to stay usable: follow the proposal in docs/themes.md (a scrollable list with a swatch per theme, keyboard navigable, the current one visible on open). README and docs/help.md list the themes. e2e for choosing a theme by keyboard; screenshot of the open menu in both modes.",
       "requirements": [],
@@ -4292,7 +4833,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:41Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T07:20:04Z",
@@ -4321,7 +4862,8 @@
       "type": "bugfix",
       "priority": "P0",
       "labels": [
-        "atm-cli"
+        "atm-cli",
+        "cli"
       ],
       "description": "Two atm-cli gaps found while committing T-144. (1) atm commit refused a file already removed with 'git rm' (in neither the working tree nor the index); accept a path HEAD tracks, and stage only paths that still exist in the tree or the index. (2) A task marked done by mistake couldn't be taken back: add 'atm reopen <id> --reason TEXT' (done/skipped kind -> todo, clearing the attempt, the reason kept as a note). Tests: tests/scripts/git.test.mjs, scenarios/reopen.json; docs/v4/atm-cli.md and plugin/CLAUDE.md.",
       "requirements": [],
@@ -4340,7 +4882,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T05:55:52Z",
-      "updated_at": "2026-10-25T06:13:54Z",
+      "updated_at": "2026-10-25T19:42:41Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4423,7 +4965,9 @@
       "phase": 14,
       "type": "feature",
       "labels": [
-        "atm-cli"
+        "atm-cli",
+        "cli",
+        "skills"
       ],
       "description": "There is no way to skip a task through atm: the theme batches T-150/T-151 became unneeded and could only be repurposed. Add atm skip <id> --reason TEXT: a todo- or blocked-kind task moves to the skipped kind, the reason kept as a note ('Skipped: ...'), any claim dropped; reopen undoes it. Usage text, scenarios in tests/scripts/scenarios/skip.json, skills (do-task, loop-tasks) mention it, CHANGELOG.",
       "requirements": [],
@@ -4437,7 +4981,7 @@
         "tests/scripts/scenarios/skip.json"
       ],
       "created_at": "2026-10-25T06:57:56Z",
-      "updated_at": "2026-10-25T07:39:15Z",
+      "updated_at": "2026-10-25T19:42:41Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:58:00Z",
@@ -4466,7 +5010,8 @@
       "type": "bugfix",
       "priority": "P2",
       "labels": [
-        "progress"
+        "progress",
+        "dashboard"
       ],
       "description": "T-143 misread the request: it gave every ring its own border and background. What was meant: one card (border + background, theme tokens) around the whole By Phase group of rings, and a second card around the By Type group; the rings inside have no card of their own. Revert the per-ring card style (.ring-cell) to plain cells, add the group card in ProgressWidget.svelte / app.css, and check every theme in both modes. Update the agents-progress-panel and light-agents-progress-panel screenshots (darwin; delete the -linux.png ones per CLAUDE.md).",
       "requirements": [],
@@ -4479,7 +5024,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T08:01:19Z",
-      "updated_at": "2026-10-25T08:01:19Z",
+      "updated_at": "2026-10-25T19:42:42Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
@@ -4490,7 +5035,8 @@
       "type": "feature",
       "priority": "P3",
       "labels": [
-        "progress"
+        "progress",
+        "dashboard"
       ],
       "description": "The top bar's Progress panel lists every phase under By Phase (this repo has 15), while the Progress tab has an 'Active phases only' checkbox (T-145). Add the same option to the panel's By Phase group, sharing the Progress tab's setting (one saved choice per project, view-store progressActive, and its N days), so turning it on in either place applies to both. Reuse activePhases() from forecast.ts; when phases are hidden, say how many ('2 older phases hidden'). Overall and By Type stay unfiltered. e2e: the toggle in the panel, and that it follows the Progress tab's setting; screenshots of the panel in both modes. Depends on the By Phase card task, which changes the same markup.",
       "requirements": [],
@@ -4505,7 +5051,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:01:20Z",
-      "updated_at": "2026-10-25T08:01:20Z",
+      "updated_at": "2026-10-25T19:42:42Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
@@ -4516,7 +5062,9 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "details"
+        "details",
+        "cli",
+        "skills"
       ],
       "description": "tasks.json gets meta.repository: the repository's web address (e.g. https://github.com/o/r), which the dashboard uses to build commit and PR links. atm: a command to print or set it (e.g. 'atm repository [set URL]', --json), validating an http(s) URL and normalising a git remote (git@github.com:o/r.git, https://github.com/o/r.git -> https://github.com/o/r); 'atm init' fills it from 'git remote get-url origin' when meta has none. Skills: /atm:create-tasks detects it from origin and asks the user when there's no remote or it can't be turned into a web address (they can also skip); /atm:update-dashboard mentions how to set it when it's missing. Scenarios in tests/scripts/scenarios/ (set, normalise, refuse a non-URL, init from origin, no remote). plugin/CLAUDE.md and README document it.",
       "requirements": [],
@@ -4534,7 +5082,7 @@
         "README.md"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T08:21:58Z",
+      "updated_at": "2026-10-25T19:42:42Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
@@ -4545,7 +5093,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "details"
+        "details",
+        "dashboard"
       ],
       "description": "The details panel's Timestamps shows only Created and Updated, but atm already records started_at, completed_at, review_requested_at and blocked_at. Show them: Started (with who, if not already in Who), Sent for review, Finished, and Duration. Duration is the work time workSpan() in lib/work.ts already computes (start to review request or completion; for a task in progress, so far, marked as running), formatted like the rest of the dashboard (format.ts, e.g. '42 m', '2 h 5 m'). Leave out what a task doesn't have (a todo task shows only Created/Updated). Unit tests for the formatting of each state; e2e on the v4 fixture; detail panel screenshots in both modes (darwin; delete the -linux.png ones per CLAUDE.md).",
       "requirements": [],
@@ -4558,7 +5107,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T08:07:39Z",
+      "updated_at": "2026-10-25T19:42:42Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
@@ -4569,7 +5118,8 @@
       "type": "feature",
       "priority": "P2",
       "labels": [
-        "details"
+        "details",
+        "dashboard"
       ],
       "description": "Build the links in the dashboard from meta.repository (T-158), never stored per task: commit -> <repository>/commit/<sha>, PR -> <repository>/pull/<number>. In the details panel (DetailPanel.svelte #detail-commit, now plain text) and on the In PR and Merged stage chips (StageChip.svelte; Merged isn't a link today). GitHub only for now: a lib function (e.g. repoLinks(meta) in a new lib/repo.ts) that returns null for other hosts, which then show plain text. Open in a new tab (rel=noopener). When meta.repository isn't set, the commit and PR still look clickable, and clicking shows a hint instead of navigating: how to set it ('atm repository set <url>', or ask your agent). Unit tests (github URLs, trailing slash, other host -> null); e2e for both links and the hint; detail panel screenshots in both modes (darwin; delete the -linux.png ones per CLAUDE.md).",
       "requirements": [],
@@ -4585,7 +5135,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:21:58Z",
-      "updated_at": "2026-10-25T08:21:58Z",
+      "updated_at": "2026-10-25T19:42:42Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
@@ -4596,7 +5146,8 @@
       "type": "feature",
       "priority": "P3",
       "labels": [
-        "details"
+        "details",
+        "dashboard"
       ],
       "description": "T-160 builds commit and PR links for GitHub only. Add the other common hosts to lib/repo.ts: GitLab (<repo>/-/commit/<sha>, <repo>/-/merge_requests/<n>), Bitbucket (<repo>/commits/<sha>, <repo>/pull-requests/<n>), and self-hosted ones where the host can be recognised (or a meta.repository_type hint). Unit tests per host.",
       "requirements": [],
@@ -4610,8 +5161,90 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-25T08:22:05Z",
-      "updated_at": "2026-10-25T08:22:05Z",
+      "updated_at": "2026-10-25T19:42:43Z",
       "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-162",
+      "name": "Completion % leaves out skipped tasks; show them separately",
+      "phase": 15,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "progress",
+        "dashboard"
+      ],
+      "description": "Skipped tasks count in the total today, so completion never reaches 100% (completionRatio in src/lib/insights.ts divides done by tasks.length). They should count as neither done nor remaining: percentage = done / (total - skipped). Example: a phase of 10 tasks, 7 done and 3 skipped, shows 100%, not 70%. Apply it everywhere a completion percentage or done/total shows: the top bar's progress bar, the Progress panel's Overall, By Phase and By Type rings, and the Progress tab's phase table (its done/total column and bar). The burndown already leaves skipped tasks out (burndown.ts), and forecast.ts already treats a phase of done + skipped as finished. A group with only skipped tasks must not show 0% or divide by zero: show it as finished, or as a neutral 'all skipped' state, and say which in the review.\n\nShow the skipped count separately, so the 100% doesn't hide them. Try several indicators and compare them in screenshots before picking one, for example: (a) a small muted line under the ring ('3 skipped'); (b) a small badge next to the ring with the skipped icon (U+23ED) and the count, with a tooltip; (c) a thin muted outer arc on the ring for the skipped share; (d) '7/7 · 3 skipped' in the phase table's count column. Use theme tokens (the skipped status colour is var(--text-muted)), keep labels readable (3:1) in every theme and both modes, and don't rely on colour alone. Show nothing when a group has no skipped tasks.\n\nThen send it for review (atm review) with screenshots of the options in light and dark, so the user picks one, and implement the chosen one. Unit tests for the ratio (skipped left out, all skipped, none skipped); e2e: a fixture phase with done and skipped tasks shows 100% and the skipped count; update the affected screenshots (darwin; delete the matching -linux.png files per CLAUDE.md). Depends on T-156, which changes the Progress panel's markup.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-156"
+      ],
+      "files": [
+        "dashboard/src/lib/insights.ts",
+        "dashboard/src/components/ProgressWidget.svelte",
+        "dashboard/src/components/Ring.svelte",
+        "dashboard/src/components/PhaseTable.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T19:31:28Z",
+      "updated_at": "2026-10-25T19:42:43Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-163",
+      "name": "Appearance menu: theme picker as a combo box",
+      "phase": 15,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "themes",
+        "dashboard"
+      ],
+      "description": "The Appearance menu lists all 11 themes as a radio list (T-152), which makes the menu tall (it now scrolls at 60vh). Replace the list with a combo box: one closed control showing the current theme that opens the list of themes. Prefer a native <select> styled with the theme tokens (accessible and keyboard-friendly for free); if a native select can't be styled acceptably in every theme, use a custom listbox following the WAI-ARIA select-only combobox pattern (Enter/Space/Alt+Down opens, arrows move, Enter picks, Escape closes, typing a letter jumps). Choosing a theme applies it at once (dashboard.setTheme) and is remembered as today; the light/dark/system mode control stays as it is. Remove the now unused .theme-list styles and the radiogroup keyboard code in AppearanceMenu.svelte. Update tests/e2e/theme.spec.ts (pick a theme, keyboard), the appearance-menu screenshots in both modes (darwin; delete the matching -linux.png files per CLAUDE.md), and docs/help.md ('one of 11 themes (the arrow keys move through them)').",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/AppearanceMenu.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/theme.spec.ts",
+        "dashboard/tests/e2e/visual.spec.ts",
+        "docs/help.md"
+      ],
+      "created_at": "2026-10-25T19:31:28Z",
+      "updated_at": "2026-10-25T19:42:43Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-164",
+      "name": "Status filter lists every status in the project's vocabulary",
+      "phase": 15,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "filters",
+        "dashboard"
+      ],
+      "description": "The Status filter only offers statuses some task currently has (filterOptions in dashboard/src/lib/filters.ts builds them from new Set(tasks.map((t) => t.status))), so when every task is Done the list has no To Do, In Progress and so on. Build the options from the project's statuses instead: every status in vocab.statuses (the defaults when meta.statuses isn't set), in the vocabulary's order and with its labels, plus any status used by a task that isn't in the vocabulary (sorted after them, as today by statusRank then name). Options with no tasks show a count of 0 and can still be selected (the empty-filter message then shows). Leave the other groups (phase, type, priority, label, agent, stage) built from the data as today. A filter saved for a status that no task has must keep working. Unit tests in tests/unit/filters.test.ts: all vocabulary statuses listed when tasks use only one; custom meta.statuses; an unknown status used by a task is added at the end. e2e: with a fixture where all tasks are done, the Status filter still offers To Do. Update any screenshots that show the filter bar (darwin; delete the matching -linux.png files per CLAUDE.md).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/filters.ts",
+        "dashboard/tests/unit/filters.test.ts",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-25T19:36:02Z",
+      "updated_at": "2026-10-25T19:42:43Z",
+      "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     }
   ]

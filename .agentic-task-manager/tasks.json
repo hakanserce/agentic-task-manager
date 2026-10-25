@@ -4079,17 +4079,17 @@
     },
     {
       "id": "T-148",
-      "name": "Themes: add batch 1 (5 themes)",
+      "name": "Themes: add batch 1 (GitHub, Ayu, Night Owl)",
       "phase": 14,
       "type": "feature",
       "priority": "P2",
       "labels": [
         "themes"
       ],
-      "description": "Add the first five themes from docs/themes.md, as the existing ones are built (dashboard/src/themes/<name>.css + index.ts): every token for each variant (light and/or dark), checked by tests/unit/theme-contrast.test.ts (readable contrast) and recorded in docs/theme-validation.md. A screenshot per theme and mode (visual.spec.ts' theme loop), with -linux baselines per CLAUDE.md. Mind the 256 KB size budget.",
+      "description": "Add GitHub, Ayu and Night Owl (docs/themes.md, Decision; light and dark variants only), as the existing ones are built (dashboard/src/themes/<name>.css + index.ts): every token for both variants, checked by tests/unit/theme-contrast.test.ts (readable contrast) and recorded in docs/theme-validation.md. A screenshot per theme and mode (visual.spec.ts' theme loop), with -linux baselines per CLAUDE.md. Mind the 256 KB size budget (about 7 KB left for six themes); if it doesn't fit, ask before raising it.",
       "requirements": [],
       "use_cases": [],
-      "status": "blocked",
+      "status": "todo",
       "dependencies": [
         "T-147"
       ],
@@ -4099,26 +4099,28 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:51:30Z",
+      "updated_at": "2026-10-25T07:01:37Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "waiting_on": "user",
-      "questions": [
-        "Size: 20 more themes add about 24 KB, but only about 7 KB is left under the 256 KB budget. Raise the budget (e.g. to 320 KB), store themes more compactly (still ~8 KB), or add fewer themes?",
-        "Dark-only themes (12 of 20): derive a light variant from their accents, or always show them dark (the mode switch then says so)?"
-      ],
-      "blocked_at": "2026-10-25T06:51:30Z"
+      "notes": [
+        {
+          "at": "2026-10-25T07:01:13Z",
+          "kind": "answer",
+          "text": "Size: 20 more themes add about 24 KB, but only about 7 KB is left under the 256 KB budget. Raise the budget (e.g. to 320 KB), store themes more compactly (still ~8 KB), or add fewer themes? → Fewer themes: only light+dark ones (6 fit the budget).; Dark-only themes (12 of 20): derive a light variant from their accents, or always show them dark (the mode switch then says so)? → No dark-only themes; drop near-duplicates too (see docs/themes.md).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-149",
-      "name": "Themes: add batch 2 (5 themes)",
+      "name": "Themes: add batch 2 (Noctis, Gruvbox, Sublime Material)",
       "phase": 14,
       "type": "feature",
       "priority": "P2",
       "labels": [
         "themes"
       ],
-      "description": "The second five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
+      "description": "Add Noctis (dark Noctis, light Lux), Gruvbox and Sublime Material (docs/themes.md, Decision), as in T-148: tokens for both variants, contrast test (Sublime Material light's foreground is too pale and needs adjusting), docs/theme-validation.md, screenshots in both modes, size budget.",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -4131,9 +4133,9 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T07:01:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-150",
@@ -4147,7 +4149,7 @@
       "description": "The third five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "skipped",
       "dependencies": [
         "T-149"
       ],
@@ -4157,9 +4159,17 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T07:01:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T07:01:38Z",
+          "kind": "note",
+          "text": "Skipped: Dark-only themes and near-duplicates dropped (docs/themes.md, Decision): two batches are enough",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-151",
@@ -4173,7 +4183,7 @@
       "description": "The last five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "skipped",
       "dependencies": [
         "T-150"
       ],
@@ -4183,25 +4193,33 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T07:01:39Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T07:01:39Z",
+          "kind": "note",
+          "text": "Skipped: Dark-only themes and near-duplicates dropped (docs/themes.md, Decision): two batches are enough",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-152",
-      "name": "Appearance menu for 26 themes",
+      "name": "Appearance menu for 12 themes",
       "phase": 14,
       "type": "polish",
       "priority": "P2",
       "labels": [
         "themes"
       ],
-      "description": "With 26 themes the Appearance menu (dashboard/src/components/AppearanceMenu.svelte) needs to stay usable: follow the proposal in docs/themes.md (e.g. a scrollable list with a swatch per theme, grouped or sorted, keyboard navigable, the current one visible on open). README and docs/help.md list the themes. e2e for choosing a theme by keyboard; screenshot of the open menu in both modes.",
+      "description": "With 12 themes the Appearance menu (dashboard/src/components/AppearanceMenu.svelte) needs to stay usable: follow the proposal in docs/themes.md (a scrollable list with a swatch per theme, keyboard navigable, the current one visible on open). README and docs/help.md list the themes. e2e for choosing a theme by keyboard; screenshot of the open menu in both modes.",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
       "dependencies": [
-        "T-151"
+        "T-149"
       ],
       "files": [
         "dashboard/src/components/AppearanceMenu.svelte",
@@ -4210,9 +4228,9 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T07:01:39Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-153",
@@ -4323,7 +4341,7 @@
       "description": "There is no way to skip a task through atm: the theme batches T-150/T-151 became unneeded and could only be repurposed. Add atm skip <id> --reason TEXT: a todo- or blocked-kind task moves to the skipped kind, the reason kept as a note ('Skipped: ...'), any claim dropped; reopen undoes it. Usage text, scenarios in tests/scripts/scenarios/skip.json, skills (do-task, loop-tasks) mention it, CHANGELOG.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -4332,11 +4350,22 @@
         "tests/scripts/scenarios/skip.json"
       ],
       "created_at": "2026-10-25T06:57:56Z",
-      "updated_at": "2026-10-25T06:58:00Z",
+      "updated_at": "2026-10-25T07:01:00Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:58:00Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "de0ac09e942c6dd771408b3b1ad3e338ceefaea8",
+      "completed_at": "2026-10-25T07:01:00Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T07:01:00Z",
+          "kind": "outcome",
+          "text": "atm skip <id> --reason: todo/blocked to skipped, reason as a note; scenarios in skip.json",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

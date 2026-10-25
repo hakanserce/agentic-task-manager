@@ -1,8 +1,23 @@
 # More themes: the top 20 VS Code colour themes
 
-The dashboard has six themes (Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast). This picks the next
-twenty from the VS Code Marketplace (T-147), to add in four batches of five (T-148 to T-151), with a menu that
-works for 26 themes (T-152).
+The dashboard has six themes (Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast). This picks the top
+twenty from the VS Code Marketplace (T-147); of those, **six are added** (see [Decision](#decision)), in two batches
+of three (T-148, T-149), with a menu that works for 12 themes (T-152).
+
+## Decision
+
+Asked on 2026-10-25 (the open questions below):
+- **No dark-only themes.** Every dashboard theme has a light and a dark variant; a derived light variant wouldn't be
+  the theme people know. That also settles the size: six themes take about 7 KB, which the 256 KB budget has.
+- **No near-duplicates.** Atom One is dropped (its dark variant is One Dark Pro's palette), and Winter is Coming too
+  (its dark variant shares Night Owl's background and most accents).
+
+| Batch | Themes |
+|---|---|
+| 1 (T-148) | GitHub, Ayu, Night Owl |
+| 2 (T-149) | Noctis (Noctis + Lux), Gruvbox, Sublime Material |
+
+The dark-only themes in the tables below stay documented, in case the decision changes.
 
 ## How they were chosen
 
@@ -88,7 +103,7 @@ uses pink as red), the table uses its syntax colour of that hue. Every value is 
 (`tests/unit/theme-contrast.test.ts`, targets in `docs/theme-validation.md`) moves any that miss to the nearest
 passing shade, as for the existing themes.
 
-## Open questions before the batches
+## Open questions before the batches (answered: see [Decision](#decision))
 
 1. **Size.** Each theme adds about 1.2 KB to the built dashboard (two token sets of about 40 colours). The build is
    255,184 bytes against a 256 KB budget, so about 7 KB is left: room for five or six themes, not twenty. Options:
@@ -103,6 +118,5 @@ passing shade, as for the existing themes.
 
 ## The menu (T-152)
 
-A plain list of 26 names is too long for the Appearance menu. Proposal: a scrollable list, grouped "Light and dark" /
-"Dark only" (if dark-only themes don't get a light variant), each with its swatch, the current theme scrolled into
-view on open, arrow keys to move.
+Twelve names make the Appearance menu long. Proposal: a scrollable list, each theme with its swatch, the current
+theme scrolled into view on open, arrow keys to move.

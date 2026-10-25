@@ -3878,7 +3878,7 @@
       "description": "In the Progress panel's deep dive, give each ring under \"By Phase\" and \"By Type\" a border or a light background (theme tokens only, no hard-coded colours), so each ring reads as a separate item, like the Activity charts' cards. Check every theme and both modes; update the screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -3887,10 +3887,21 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T06:41:09Z",
+      "updated_at": "2026-10-25T06:42:26Z",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:41:09Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "ca5cab5c1f9ed07a5730052ba767d3c6aa869ab4",
+      "completed_at": "2026-10-25T06:42:26Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:42:26Z",
+          "kind": "outcome",
+          "text": "Each ring in the Progress panel is a card (theme tokens), like the Activity charts; light-mode screenshot added",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-144",

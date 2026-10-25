@@ -9,7 +9,8 @@ allowed-tools: Bash(atm *)
 # Serve the Dashboard
 
 You start, stop or report the background HTTP server that shows this project's `tasks-dashboard.html`.
-The plugin's `atm` helper does the work; you run it and relay what it prints.
+The plugin's `atm` command does the work; you run it and relay what it prints. Never read or edit `tasks.json` or
+`tasks-archive.json` directly: `atm status`, `atm show` and `atm list` answer questions about the tasks.
 
 ## Step 1: Parse arguments
 

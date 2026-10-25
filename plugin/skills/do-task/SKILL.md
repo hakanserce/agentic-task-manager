@@ -12,7 +12,21 @@ allowed-tools: Bash(atm *)
 You are a task execution agent. You pick up one task from `tasks.json`,
 implement it, verify it, and mark it done.
 
-## Step 1: Locate and load tasks.json
+**Never read or edit `tasks.json` or `tasks-archive.json` directly** (no Read, cat, grep, jq or scripts on them):
+every read and every change goes through `atm`, which knows the archive, the project's vocabulary and the locking.
+
+| To | Run |
+|---|---|
+| see the overview: counts, what's in progress, in review or blocked, what's next | `atm status` |
+| read tasks in full (description, dependencies, files, notes) | `atm show <id>...` |
+| see what a task waits for, and what waits for it | `atm deps <id>` |
+| find tasks | `atm list [--status S] [--phase N] [--ready] [--blocked] [--label L]` |
+| change a later task's definition | `atm edit <id> ...` |
+| change a status | `atm start`, `done`, `review`, `block`, `fail`, `release` (below) |
+
+Every command takes `--json`.
+
+## Step 1: Prepare the task folder
 
 From the project root, run atm-cli, the plugin's `atm` command:
 
@@ -32,11 +46,8 @@ It keeps the project's `.agentic-task-manager/` folder in order:
 Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
 atm needs it, so ask the user to install it and stop.
 
-The task file is `.agentic-task-manager/tasks.json` at the project root. If the helper said "No tasks.json found",
-tell the user:
+If it said "No tasks.json found", tell the user:
 > No tasks.json found. Run `/atm:create-tasks` first to generate tasks from your requirements.
-
-Read and parse the file. Build a map of task IDs to task objects.
 
 ## Step 2: Select and claim a task
 
@@ -50,7 +61,8 @@ kinds: `todo`, `active` (in progress), `review`, `blocked`, `done` and `skipped`
 `awaiting_user` and `awaiting_agent`, both `review`), pass `--status <id>` with the one whose name or label fits;
 otherwise atm uses the first one listed.
 
-If `$ARGUMENTS` specifies a task ID (e.g., `T-005` or `T-P1-03`), run `atm start <id>`. It refuses, with a message,
+If `$ARGUMENTS` specifies a task ID (e.g., `T-005` or `T-P1-03`), run `atm start <id> --json`; the JSON has the task
+under `"task"`, in full. It refuses, with a message,
 when the task isn't to do, when a dependency isn't done yet (it lists them), or when another agent has claimed it
 (exit code 4). Report the message and stop:
 > **Task $ID can't start:** (the message)
@@ -65,17 +77,17 @@ has the task under `"task"`.
 If the task has notes (`"notes"`), read them first: a `rejection` says what a reviewer wants changed, a `handoff` what
 the previous agent left unfinished, a `failure` why an earlier attempt failed.
 
-If it exits with code 3, no task is available; its `"reason"` says why. Report clearly:
+If it exits with code 3, no task is available; its `"reason"` says why. Run `atm status` and report clearly:
 > **No tasks available.** (the reason)
 >
-> Remaining tasks:
-> - (list any todo/in_progress tasks and what blocks them)
+> (what `atm status` says is in progress, in review, blocked or waiting, and on what)
 
 The dashboard shows the change immediately.
 
 ## Step 5: Execute the task
 
-Read the task's `description` carefully and implement exactly what it says.
+Read the task's `description` carefully and implement exactly what it says. When it builds on other tasks, read
+them with `atm show <id>` (`atm deps <id>` lists what it waits for and what waits for it).
 
 Execution approach by task type:
 
@@ -117,7 +129,8 @@ If verification passes, decide how the task ends:
   (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
   moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
   Commit your work as usual (Step 7b) and report the task as **waiting for review**.
-- **Otherwise**: run `atm done $TASK_ID`. It sets the status and `completed_at`, and drops your claim.
+- **Otherwise**: run `atm done $TASK_ID`. It sets the status and `completed_at`, drops your claim, and prints the
+  tasks it made ready ("Now ready:").
 
 If either says your lease expired and another agent holds the task, tell the user instead of committing.
 
@@ -155,4 +168,4 @@ Output a concise completion report:
 >
 > **Verification:** ✅ Build passed, tests passed
 >
-> **Now unblocked:** (list task IDs that were waiting on this task, if any; none while it waits for review)
+> **Now unblocked:** (the tasks `atm done` listed as now ready, if any; none while it waits for review)

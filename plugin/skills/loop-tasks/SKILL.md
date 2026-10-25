@@ -56,8 +56,7 @@ It keeps the project's `.agentic-task-manager/` folder in order:
 Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
 atm needs it, so ask the user to install it and stop.
 
-The task file is `.agentic-task-manager/tasks.json` at the project root. If the helper said "No tasks.json found",
-tell the user to run `/atm:create-tasks` and stop.
+If it said "No tasks.json found", tell the user to run `/atm:create-tasks` and stop.
 
 If it moved files and committing is on (no `--no-commit`, and not `--dry-run`), commit the move on its own before the
 first task:
@@ -69,7 +68,8 @@ the move is staged but not committed.
 
 If `--dry-run` is set, do NOT execute any tasks. Instead:
 
-1. Load tasks.json (`atm next --json` shows the first task the loop would take)
+1. `atm next --json [--phase N] [--type T]` shows the first task the loop would take; `atm list --ready` and
+   `atm list --blocked` show what is ready and what waits (with `atm deps <id>` for a task's chain)
 2. Walk through the selection logic and list tasks in the order they would execute
 3. Show the dependency chain and estimated execution order
 4. Report total count and exit
@@ -82,7 +82,10 @@ taking the same task. Its exit codes: 0 ok, 3 no task available, 4 the task is c
 errors (the message says what).
 
 **Rules:**
-1. Never edit `status`, `started_at`, `completed_at` or `updated_at` in tasks.json yourself; use `atm`.
+1. **Never read or edit `tasks.json` or `tasks-archive.json` directly** (no Read, cat, grep, jq or scripts on them);
+   every read and change goes through `atm`: `atm status` (the overview), `atm show <id>...` (tasks in full),
+   `atm deps <id>`, `atm list [--status S] [--phase N] [--ready] [--blocked]`, `atm edit <id> ...` (a later task's
+   definition), and the status commands. Every command takes `--json`.
 2. Get work only from `atm next --claim` (or `atm start <id>`).
 3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
    out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand).
@@ -118,8 +121,8 @@ while true:
        - Exit code 3 means no task is available ("reason" says why) → EXIT the loop
 
     3. EXECUTE the task:
-       - Read the task description carefully (re-read tasks.json if you need the other tasks: a human or another
-         agent may have changed it), and its notes: a `rejection` says what a reviewer wants changed, a `handoff`
+       - Read the task description carefully (read other tasks with `atm show <id>` / `atm deps <id>` when you need
+         them: a human or another agent may have changed them), and its notes: a `rejection` says what a reviewer wants changed, a `handoff`
          what the previous agent left unfinished
        - Implement what it describes (same approach as /atm:do-task Step 5)
        - Follow project conventions
@@ -161,7 +164,8 @@ while true:
 
 ## On Loop Exit
 
-When the loop ends (no more tasks, max reached, or user quit), output a final summary:
+When the loop ends (no more tasks, max reached, or user quit), run `atm status` (it has the counts, what is in
+review, blocked or waiting, and what's next) and output a final summary:
 
 > **Loop complete!**
 >
@@ -183,7 +187,7 @@ If `--batch-push` was set, run `git push` now.
 
 ## Error Handling
 
-- If tasks.json cannot be read → stop the loop, report the error
+- If `atm` can't read tasks.json (exit code 1 with a message) → stop the loop, report the error
 - If a task fails verification → `atm fail` it (back to todo), skip it, continue
 - If `atm` exits with code 4 (claimed by another agent) → leave that task alone and continue
 - If `atm` reports that your lease expired → another agent may have taken the task: stop working on it, don't

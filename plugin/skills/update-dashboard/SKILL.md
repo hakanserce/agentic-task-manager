@@ -9,7 +9,9 @@ allowed-tools: Bash(atm *)
 
 # Update Dashboard
 
-You update the project's `tasks-dashboard.html` to the latest version from the plugin.
+You update the project's `tasks-dashboard.html` to the latest version from the plugin. Never read or edit
+`tasks.json` or `tasks-archive.json` directly: `atm status`, `atm show` and `atm list` answer questions about the
+tasks.
 
 ## Step 1: Update the dashboard
 

@@ -29,11 +29,12 @@
 
   // One lane per agent: each task a bar from start to completion (or to now while in progress), in its type colour.
   // Tasks outside the search and filters stay, greyed out.
-  // The whole range is history: it includes archived work once the archive is loaded (D-5.2)
-  const narrowed = $derived(dashboard.historyFiltered.length < dashboard.history.length);
-  const matching = $derived(new Set(dashboard.historyFiltered.map((t) => t.id)));
+  // Archived work joins the timeline with "Include archived" (D-5.2), like the lists and the graph: a bar per task,
+  // so thousands of archived tasks would make every visit slow (D-6.3)
+  const narrowed = $derived(dashboard.filtered.length < dashboard.base.length);
+  const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
   const timeline = $derived(
-    agentTimeline(dashboard.history, dashboard.claims, now, narrowed ? matching : undefined, dashboard.vocab),
+    agentTimeline(dashboard.base, dashboard.claims, now, narrowed ? matching : undefined, dashboard.vocab),
   );
   const bounds = $derived<TimeWindow>(
     timeline
@@ -56,10 +57,6 @@
   const span = $derived(win.end - win.start);
   const zoomed = $derived(kept !== null);
   const fullSpan = $derived(bounds.end - bounds.start);
-  // The full range reaches back before tasks.json's oldest work when tasks were archived: load them
-  $effect(() => {
-    if (!zoomed && dashboard.archivedCount > 0) dashboard.wantArchive();
-  });
 
   const pos = (t: number) => ((t - win.start) / span) * 100;
   const overviewPos = (t: number) => ((t - bounds.start) / fullSpan) * 100;

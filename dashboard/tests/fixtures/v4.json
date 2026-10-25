@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "project": "V4 Project",
+    "id": "v4fixture",
+    "phases": [
+      { "id": 0, "name": "Foundations" },
+      { "id": 1, "name": "Core" },
+      { "id": 2, "name": "Polish" }
+    ],
+    "labels": [
+      { "id": "api", "label": "API" },
+      { "id": "ux", "label": "UX" }
+    ],
+    "workflow": { "type": "pull-request", "base": "main" },
+    "archived": 3
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Sign-in endpoint",
+      "phase": 0,
+      "type": "feature",
+      "priority": "P0",
+      "labels": ["api"],
+      "description": "POST /sign-in with email and password.",
+      "status": "done",
+      "dependencies": ["T-090"],
+      "files": ["src/routes/sign-in.ts"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "created_by": "Hakan",
+      "updated_at": "2026-04-09T10:00:00Z",
+      "updated_by": "claude:aaaa1111",
+      "started_at": "2026-04-08T10:00:00Z",
+      "started_by": "claude:aaaa1111",
+      "completed_at": "2026-04-08T11:30:00Z",
+      "completed_by": "claude:aaaa1111",
+      "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "pr": { "number": 3, "url": "https://example.com/pr/3" },
+      "merged_at": "2026-04-09T10:00:00Z",
+      "notes": [
+        { "at": "2026-04-08T11:30:00Z", "by": "claude:aaaa1111", "kind": "outcome", "text": "Endpoint and tests in." }
+      ]
+    },
+    {
+      "id": "T-002",
+      "name": "Session cookies",
+      "phase": 0,
+      "type": "feature",
+      "priority": "P1",
+      "labels": ["api", "ux"],
+      "description": "Keep the session in an HTTP-only cookie.",
+      "status": "done",
+      "dependencies": ["T-001"],
+      "files": ["src/session.ts"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "created_by": "Hakan",
+      "updated_at": "2026-04-09T15:00:00Z",
+      "updated_by": "Hakan",
+      "started_at": "2026-04-08T12:00:00Z",
+      "started_by": "claude:bbbb2222",
+      "review_requested_at": "2026-04-08T14:00:00Z",
+      "completed_at": "2026-04-09T15:00:00Z",
+      "completed_by": "Hakan",
+      "pr": { "number": 5, "url": "https://example.com/pr/5" },
+      "notes": [
+        {
+          "at": "2026-04-08T14:00:00Z",
+          "by": "claude:bbbb2222",
+          "kind": "review",
+          "text": "Check the cookie flags (SameSite)."
+        },
+        { "at": "2026-04-09T15:00:00Z", "by": "Hakan", "kind": "outcome", "text": "Approved." }
+      ]
+    },
+    {
+      "id": "T-003",
+      "name": "Password reset email",
+      "phase": 1,
+      "type": "feature",
+      "priority": "P2",
+      "labels": ["ux"],
+      "description": "Send a reset link that expires in an hour.",
+      "status": "done",
+      "dependencies": ["T-001"],
+      "files": ["src/reset.ts"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "created_by": "Hakan",
+      "updated_at": "2026-04-10T09:00:00Z",
+      "started_at": "2026-04-09T13:00:00Z",
+      "started_by": "claude:aaaa1111",
+      "completed_at": "2026-04-10T09:00:00Z",
+      "completed_by": "claude:aaaa1111",
+      "commit": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c",
+      "notes": [
+        {
+          "at": "2026-04-09T12:00:00Z",
+          "by": "claude:cccc3333",
+          "kind": "handoff",
+          "text": "Template done; the expiry check is left."
+        },
+        { "at": "2026-04-10T09:00:00Z", "by": "claude:aaaa1111", "kind": "outcome", "text": "Expiry checked." }
+      ]
+    },
+    {
+      "id": "T-004",
+      "name": "Account settings page",
+      "phase": 1,
+      "type": "feature",
+      "priority": "P1",
+      "labels": ["ux"],
+      "description": "Name, email and password on one page.",
+      "status": "in_review",
+      "dependencies": ["T-002"],
+      "files": ["src/pages/settings.svelte"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "updated_at": "2026-04-10T10:00:00Z",
+      "started_at": "2026-04-10T08:00:00Z",
+      "started_by": "claude:bbbb2222",
+      "review_requested_at": "2026-04-10T10:00:00Z",
+      "notes": [
+        {
+          "at": "2026-04-10T10:00:00Z",
+          "by": "claude:bbbb2222",
+          "kind": "review",
+          "text": "Please check the layout on narrow screens."
+        }
+      ]
+    },
+    {
+      "id": "T-005",
+      "name": "Choose the email provider",
+      "phase": 1,
+      "type": "infra",
+      "priority": "P1",
+      "description": "Pick a provider for transactional email.",
+      "status": "blocked",
+      "dependencies": [],
+      "created_at": "2026-04-08T09:00:00Z",
+      "updated_at": "2026-04-10T09:30:00Z",
+      "waiting_on": "user",
+      "blocked_at": "2026-04-10T09:30:00Z",
+      "questions": ["Which provider: SES or Postmark?", "Is a monthly cost of $20 fine?"]
+    },
+    {
+      "id": "T-006",
+      "name": "Rate limits",
+      "phase": 1,
+      "type": "feature",
+      "priority": "P2",
+      "labels": ["api"],
+      "description": "Limit sign-in attempts.",
+      "status": "blocked",
+      "dependencies": ["T-001"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "updated_at": "2026-04-10T11:00:00Z",
+      "waiting_on": "agent",
+      "blocked_at": "2026-04-10T11:00:00Z",
+      "questions": ["Per IP or per account?"]
+    },
+    {
+      "id": "T-007",
+      "name": "Two-factor sign-in",
+      "phase": 1,
+      "type": "feature",
+      "priority": "P1",
+      "labels": ["api"],
+      "description": "TOTP codes as a second factor.",
+      "status": "in_progress",
+      "dependencies": ["T-001"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "updated_at": "2026-04-10T11:00:00Z",
+      "started_at": "2026-04-10T11:00:00Z",
+      "started_by": "claude:aaaa1111"
+    },
+    {
+      "id": "T-008",
+      "name": "Spike: passkeys",
+      "phase": 2,
+      "type": "test",
+      "priority": "P3",
+      "labels": ["spike-1"],
+      "description": "Try WebAuthn passkeys in the sign-in flow.",
+      "status": "todo",
+      "dependencies": ["T-004"],
+      "created_at": "2026-04-08T09:00:00Z"
+    },
+    {
+      "id": "T-009",
+      "name": "Audit log",
+      "phase": 2,
+      "type": "feature",
+      "priority": "P2",
+      "description": "Record sign-ins and setting changes.",
+      "status": "todo",
+      "dependencies": ["T-091"],
+      "created_at": "2026-04-08T09:00:00Z",
+      "updated_at": "2026-04-10T07:00:00Z",
+      "notes": [
+        { "at": "2026-04-10T07:00:00Z", "by": "Hakan", "kind": "rejection", "text": "Log the IP address as well." }
+      ],
+      "last_failure": { "at": "2026-04-09T18:00:00Z", "reason": "lease expired (claude:dddd4444)" }
+    },
+    {
+      "id": "T-010",
+      "name": "Dark mode for emails",
+      "phase": 2,
+      "type": "polish",
+      "priority": "P3",
+      "labels": ["ux"],
+      "description": "Not needed after all.",
+      "status": "skipped",
+      "dependencies": [],
+      "created_at": "2026-04-08T09:00:00Z",
+      "updated_at": "2026-04-09T09:00:00Z"
+    }
+  ]
+}

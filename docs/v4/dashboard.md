@@ -50,7 +50,7 @@ version.
 | ID | P | Requirement |
 |---|---|---|
 | D-5.1 | P1 | **Conditional fetch:** no `?ts` cache-buster; fetches use `cache: 'no-cache'`, so the browser revalidates and the server answers `304 Not Modified` when nothing changed. Most 5-second polls transfer and parse nothing. |
-| D-5.2 | P1 | `tasks-archive.json` is loaded only when a view needs history: the Progress tab, the Activity widget and Agents tab for periods before the oldest task in `tasks.json`, search with "Include archived", and the graph's "Show archived". A 404 means no archive. |
+| D-5.2 | P1 | `tasks-archive.json` is loaded only when a view needs history: the Progress tab, the Activity details for periods before the oldest completion in `tasks.json`, and "Include archived" in the filter bar, which adds archived tasks to search, the lists, the graph and the Agents timeline. A 404 means no archive. *As built (T-140, T-109):* the Agents tab shows archived work only with "Include archived": it draws a bar per task, and with 5,000 archived tasks it took 650 ms to open, against the 200 ms budget (D-6.3). |
 | D-5.3 | P1 | A dependency on an archived task shows as a stub ("T-042 · archived, done") in the detail panel; the graph shows archived tasks only with "Show archived". |
 | D-5.4 | P1 | The header shows the archive count ("110 tasks · 600 archived"); the footer shows a small notice when the archive threshold is reached (DM-5.3). |
 | D-5.5 | P1 | The build injects `atm-dashboard-build`, a hash of the built file's contents, next to the version; `atm migrate` compares it (atm-cli §4.6). |

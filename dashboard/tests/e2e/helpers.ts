@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test as base, expect, type Page } from '@playwright/test';
+import type { FilterGroup } from '../../src/lib/filters';
 import { PREFS_KEY } from '../../src/lib/prefs';
 import type { ViewId } from '../../src/lib/tabs';
 
@@ -150,7 +151,7 @@ export async function openMenu(page: Page, button: string) {
   if ((await b.getAttribute('aria-expanded')) !== 'true') await b.click();
 }
 
-export function filterButton(page: Page, group: 'phase' | 'type' | 'status' | 'priority', value: string) {
+export function filterButton(page: Page, group: FilterGroup, value: string) {
   return page.locator(`.filter-btn[data-filter="${group}"][data-value="${value}"]`);
 }
 

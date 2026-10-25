@@ -106,6 +106,23 @@ exactly those.
 Your claim has a lease (30 minutes by default); if it runs out, the task goes back to `todo` for others. The plugin's
 hook renews it while you work, so you don't need to (`atm heartbeat $TASK_ID` does it by hand).
 
+While you work:
+- **A later task needs to change** (what you built changes its scope, its files or its dependencies): update it with
+  `atm edit <id>` (`--description`, `--add-dep`/`--remove-dep`, `--add-file`/`--remove-file`, `--add-label`, ...).
+  Its status changes only through the status commands.
+- **You can't go on without a decision** (two reasonable designs, a missing requirement, a credential): ask instead of
+  guessing. `atm block $TASK_ID --on user --question "<one question>" [--question ...]` releases your claim and shows
+  the task as waiting on the user, with the questions. Use `--on agent` when the project or the user hands such
+  decisions to a reviewer agent. Commit what is worth keeping (Step 7b) and report the questions.
+- **You have to stop before it's finished**: `atm release $TASK_ID --note "<what's done, what's left>"`. The note is a
+  `handoff` for whoever takes the task next.
+- **Something worth remembering** that isn't the outcome: `atm note $TASK_ID "<text>"` (notes are at most 500
+  characters; put longer text in a file in the repository).
+
+**Answering a block** (when the user or an agent decides): `atm unblock <id> --answer "<answer>" [--answer ...]`, one
+answer per question, in order. The task goes back to to do with the questions and answers kept as an `answer` note,
+which the next agent reads.
+
 ## Step 6: Verify
 
 After implementation, verify the work:
@@ -122,6 +139,8 @@ If verification fails:
 
 ## Step 7: Mark as done, or ask for a review
 
+(A task you blocked in Step 5 is already finished here: go to Step 7b.)
+
 If verification passes, decide how the task ends:
 
 - **A review is asked for** — by the task's description, the project's instructions (e.g. its `CLAUDE.md`) or the
@@ -129,8 +148,8 @@ If verification passes, decide how the task ends:
   (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
   moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
   Commit your work as usual (Step 7b) and report the task as **waiting for review**.
-- **Otherwise**: run `atm done $TASK_ID`. It sets the status and `completed_at`, drops your claim, and prints the
-  tasks it made ready ("Now ready:").
+- **Otherwise**: run `atm done $TASK_ID --note "<one-line outcome>"`. It sets the status and `completed_at`, records
+  the outcome as a note, drops your claim, and prints the tasks it made ready ("Now ready:").
 
 If either says your lease expired and another agent holds the task, tell the user instead of committing.
 
@@ -141,16 +160,20 @@ note, for the next agent to address.
 
 ## Step 7b: Git commit
 
-After marking the task as done (or in review), commit the changes.
-If the helper moved files in Step 1 and you are going to commit, first commit the move on its own:
+After marking the task as done (or in review, or blocked), commit the changes.
+If `atm migrate` moved files in Step 1 and you are going to commit, first commit the move on its own:
 `git commit -m "chore: move atm files to .agentic-task-manager/" -- <old tasks.json> .agentic-task-manager/tasks.json .agentic-task-manager/.gitignore`
-(add the old `tasks-dashboard.html` path too if it was removed). Then commit the task.
-- `git add -- <the files from your list> .agentic-task-manager/tasks.json` (`git add -A -- <path>` for a deleted
-  file; also add `.agentic-task-manager/.gitignore` and `.agentic-task-manager/.gitattributes` if `git status` shows
-  them staged by atm)
-- `git commit -m "feat($TASK_ID): $TASK_NAME"`
+(add the old `tasks-dashboard.html` path too if it was removed). Then commit the task:
 
-Never `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree.
+```bash
+atm commit $TASK_ID --file <path> --file <path> ...
+```
+
+Name **every** file from your list, deleted ones too (also `.agentic-task-manager/.gitignore` and
+`.agentic-task-manager/.gitattributes` if `git status` shows atm changed them). atm commits exactly those plus
+`tasks.json`, with the project's commit message (`feat($TASK_ID): $TASK_NAME` unless the project sets another), and
+records the commit on the task. It refuses `.`, `-A` and directories: another agent's unfinished work may be in the same
+working tree, so never `git add -A` or `git add .` either.
 
 This is the default behavior. Do NOT push — only commit locally.
 
@@ -158,7 +181,8 @@ This is the default behavior. Do NOT push — only commit locally.
 
 Output a concise completion report:
 
-> **Completed: $TASK_ID — $TASK_NAME** (or **Waiting for review: $TASK_ID — $TASK_NAME**, with who reviews it)
+> **Completed: $TASK_ID — $TASK_NAME** (or **Waiting for review: $TASK_ID — $TASK_NAME**, with who reviews it, or
+> **Blocked: $TASK_ID — $TASK_NAME**, with the questions and who answers them)
 >
 > **What was done:** (2-3 sentence summary)
 >

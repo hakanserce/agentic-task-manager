@@ -21,10 +21,12 @@ Every command takes `--json`; `atm help` lists them all.
 - Work: `atm next --claim`, `atm start <id>`, `atm done <id> [--note]`, `atm review <id> --note`,
   `atm block <id> --on user|agent --question ...`, `atm fail <id> --reason`, `atm release <id> --note`,
   `atm note <id> TEXT`
+- Answer: `atm unblock <id> --answer ...` (a block), `atm done <id>` / `atm reject <id> --reason` (a review)
+- Commit: `atm commit <id> --file F [--file F]...`, naming every file the task changed
 - Define: `atm add`, `atm edit <id>`, `atm check`, `atm archive`
 - atm locks the file, writes timestamps and actors, and records claims (which agent works on which task, with a
-  30-minute lease that the plugin's hook renews), shared by all git worktrees of a clone. Commit only the files a
-  task changed plus tasks.json; never `git add -A`
+  30-minute lease that the plugin's hook renews), shared by all git worktrees of a clone. `atm commit` commits only
+  the files a task changed plus tasks.json; never `git add -A`
 
 ## Task Schema
 Each task has: id, name, phase, type (feature/bugfix/test/infra/docs/refactor/polish),

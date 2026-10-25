@@ -89,10 +89,12 @@ errors (the message says what).
 2. Get work only from `atm next --claim` (or `atm start <id>`).
 3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
    out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand).
-4. Finish with `atm done <id>`, or with `atm review <id> --note "..."` when a review is asked for (step 5 below);
-   give up with `atm fail <id> --reason "..."`.
-5. Commit only the files you changed for the task, plus `.agentic-task-manager/tasks.json`. Never `git add -A`
-   or `git add .`: another agent's unfinished work may be in the same working tree.
+4. Finish with `atm done <id> --note "<one-line outcome>"`, or with `atm review <id> --note "..."` when a review is
+   asked for, or `atm block <id> --on user|agent --question "..."` when you can't go on without a decision (step 5
+   below); give up with `atm fail <id> --reason "..."`; stop early with `atm release <id> --note "<handoff>"`.
+5. Commit with `atm commit <id> --file <path> ...`, naming every file you changed for the task: it commits exactly
+   those plus `tasks.json`. Never `git add -A` or `git add .`: another agent's unfinished work may be in the same
+   working tree.
 6. **Statuses have kinds.** A project may name its own statuses; each has one of six kinds (`todo`, `active`,
    `review`, `blocked`, `done`, `skipped`) and atm works by kind, so "to do", "in review" and "done" below mean any
    status of that kind. When a kind has several statuses (e.g. `awaiting_user` and `awaiting_agent`, both `review`),
@@ -127,6 +129,8 @@ while true:
        - Implement what it describes (same approach as /atm:do-task Step 5)
        - Follow project conventions
        - Keep a list of the files you create, change or delete for this task
+       - If what you built changes a later task, update it with `atm edit <id>` (do-task Step 5)
+       - If you can't go on without a decision, don't guess: block it (step 5) and move on
 
     4. VERIFY the task:
        - Run build/test/lint if available (same as /atm:do-task Step 6)
@@ -140,16 +144,19 @@ while true:
          or by another agent): `atm review $TASK_ID --note "<what the reviewer should check>"` (with `--status`
          when one of several review statuses fits). The claim is released and the tasks that depend on it keep
          waiting; the loop goes on with other ready tasks. Count it as waiting for review, not completed.
-       - Otherwise: `atm done $TASK_ID`
+       - If it needs a decision: `atm block $TASK_ID --on user --question "<question>" [--question ...]`
+         (`--on agent` when the project or the user hands such decisions to a reviewer agent). The claim is
+         released and its dependents wait; the loop goes on with other ready tasks. Count it as blocked. Whoever
+         decides answers with `atm unblock <id> --answer "..."` (one per question), which puts it back to to do.
+       - Otherwise: `atm done $TASK_ID --note "<one-line outcome>"`
 
     6. completed_count += 1 (for done tasks)
 
-    7. GIT OPERATIONS (default: commit after each task):
+    7. GIT OPERATIONS (default: commit after each task, also after a review or block):
         - Unless --no-commit is set:
-          - `git add -- <the files from your list> .agentic-task-manager/tasks.json`
-            (`git add -A -- <path>` for a deleted file; also add `.agentic-task-manager/.gitignore` and
-            `.agentic-task-manager/.gitattributes` if `git status` shows them staged by atm)
-          - `git commit -m "feat($TASK_ID): $TASK_NAME"`
+          - `atm commit $TASK_ID --file <path> --file <path> ...` with every file from your list, deleted ones too
+            (also `.agentic-task-manager/.gitignore` and `.agentic-task-manager/.gitattributes` if `git status`
+            shows atm changed them); the message comes from the project (`feat($TASK_ID): $TASK_NAME` by default)
         - If --push:
           - git push
         - If --push-every <N> and completed_count % N == 0:
@@ -158,6 +165,7 @@ while true:
     8. BRIEF REPORT for this task:
         - "✅ $TASK_ID: $TASK_NAME — done ($completed_count completed so far)"
         - or "👀 $TASK_ID: $TASK_NAME — waiting for review by <who>"
+        - or "✋ $TASK_ID: $TASK_NAME — blocked, waiting on <user|agent>: <the questions>"
 
     9. Loop back to step 1
 ```
@@ -175,11 +183,13 @@ review, blocked or waiting, and what's next) and output a final summary:
 > - ...
 >
 > **Waiting for review:** N tasks (with who reviews each; their dependents wait until the review passes)
+> **Blocked on a decision:** N tasks (each with its questions and who answers them)
 > **Remaining:** N tasks still to do
 > **Blocked:** N tasks waiting on dependencies
 > **Failed:** N tasks that failed verification (if any)
 >
-> To pass a review: `atm done <id>`; to send it back: `atm reject <id> --reason "..."`.
+> To pass a review: `atm done <id>`; to send it back: `atm reject <id> --reason "..."`. To answer a block:
+> `atm unblock <id> --answer "..."` (one per question).
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
 

@@ -1196,6 +1196,22 @@ button.menu-trigger:hover,
   background: color-mix(in srgb, var(--cyan) 25%, transparent);
 }
 
+/* Labels (D-2.4): neutral, outlined, so they don't compete with the coloured type, status and priority badges */
+.label-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.label-chip {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .req-badge {
   font-size: 11px;
   padding: 2px 6px;

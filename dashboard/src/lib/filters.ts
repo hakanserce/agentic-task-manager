@@ -1,6 +1,9 @@
 import type { Task } from './types';
 import {
   DEFAULT_VOCABULARY,
+  labelOrder,
+  labelsOf,
+  labelText,
   priorityLabel,
   priorityOf,
   priorityRank,
@@ -10,8 +13,8 @@ import {
   type Vocabulary,
 } from './vocab';
 
-export type FilterGroup = 'phase' | 'type' | 'status' | 'priority';
-export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status', 'priority'];
+export type FilterGroup = 'phase' | 'type' | 'status' | 'priority' | 'label';
+export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status', 'priority', 'label'];
 
 /** Selected values per group; an empty set means "All". */
 export type Filters = Record<FilterGroup, ReadonlySet<string>>;
@@ -22,7 +25,7 @@ export interface FilterOption {
 }
 
 export function emptyFilters(): Filters {
-  return { phase: new Set(), type: new Set(), status: new Set(), priority: new Set() };
+  return { phase: new Set(), type: new Set(), status: new Set(), priority: new Set(), label: new Set() };
 }
 
 /** Filters from plain lists of values (as saved per project). */
@@ -32,6 +35,7 @@ export function filtersFrom(values: Record<FilterGroup, string[]>): Filters {
     type: new Set(values.type),
     status: new Set(values.status),
     priority: new Set(values.priority),
+    label: new Set(values.label),
   };
 }
 
@@ -41,11 +45,15 @@ function byVocabulary(ids: string[]) {
   return (a: string, b: string) => rank(a) - rank(b) || a.localeCompare(b);
 }
 
-/** The value a task has in each group. A task's priority is its effective one (missing or unknown: the default). */
-function valueOf(group: FilterGroup, t: Task, vocab: Vocabulary): string {
-  if (group === 'phase') return String(t.phase);
-  if (group === 'priority') return priorityOf(vocab, t);
-  return group === 'type' ? t.type : t.status;
+/**
+ * The values a task has in each group: one, except labels (none or several). A task's priority is its effective one
+ * (missing or unknown: the default).
+ */
+function valuesOf(group: FilterGroup, t: Task, vocab: Vocabulary): string[] {
+  if (group === 'label') return labelsOf(vocab, t);
+  if (group === 'phase') return [String(t.phase)];
+  if (group === 'priority') return [priorityOf(vocab, t)];
+  return [group === 'type' ? t.type : t.status];
 }
 
 /**
@@ -64,6 +72,7 @@ export function filterOptions(
   const priorities = [...new Set(tasks.map((t) => priorityOf(vocab, t)))].sort(
     (a, b) => priorityRank(vocab, a) - priorityRank(vocab, b),
   );
+  const labels = [...new Set(tasks.flatMap((t) => labelsOf(vocab, t)))].sort(labelOrder(vocab));
   return {
     phase: phases.map((p) => {
       const name = vocab.phaseNames.get(p);
@@ -72,13 +81,16 @@ export function filterOptions(
     type: types.map((t) => ({ value: t, label: typeLabel(vocab, t) })),
     status: statuses.map((s) => ({ value: s, label: statusLabel(vocab, s) })),
     priority: priorities.map((p) => ({ value: p, label: `${p} ${priorityLabel(vocab, p)}` })),
+    label: labels.map((l) => ({ value: l, label: labelText(vocab, l) })),
   };
 }
 
-/** OR within a group, AND across groups. */
+/** OR within a group (for labels: any of the selected ones), AND across groups. */
 export function filterTasks(tasks: Task[], filters: Filters, vocab: Vocabulary = DEFAULT_VOCABULARY): Task[] {
   return tasks.filter((t) =>
-    FILTER_GROUPS.every((group) => filters[group].size === 0 || filters[group].has(valueOf(group, t, vocab))),
+    FILTER_GROUPS.every(
+      (group) => filters[group].size === 0 || valuesOf(group, t, vocab).some((v) => filters[group].has(v)),
+    ),
   );
 }
 
@@ -116,8 +128,7 @@ export function facetCounts(
     const others = filterTasks(tasks, { ...filters, [group]: new Set<string>() }, vocab);
     const values = new Map<string, number>();
     for (const t of others) {
-      const v = valueOf(group, t, vocab);
-      values.set(v, (values.get(v) ?? 0) + 1);
+      for (const v of valuesOf(group, t, vocab)) values.set(v, (values.get(v) ?? 0) + 1);
     }
     result[group] = { all: others.length, values };
   }
@@ -125,14 +136,15 @@ export function facetCounts(
 }
 
 /**
- * Keyword search: every word of `query` must appear (case-insensitively) in the task's ID, name, description or type.
- * An empty query matches everything.
+ * Keyword search: every word of `query` must appear (case-insensitively) in the task's ID, name, description, type
+ * or labels. An empty query matches everything.
  */
 export function searchTasks(tasks: Task[], query: string): Task[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return tasks;
   return tasks.filter((t) => {
-    const text = `${t.id} ${t.name} ${t.description ?? ''} ${t.type}`.toLowerCase();
+    const labels = Array.isArray(t.labels) ? t.labels.join(' ') : '';
+    const text = `${t.id} ${t.name} ${t.description ?? ''} ${t.type} ${labels}`.toLowerCase();
     return terms.every((term) => text.includes(term));
   });
 }

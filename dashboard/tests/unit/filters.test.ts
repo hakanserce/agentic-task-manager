@@ -22,6 +22,7 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
   type: new Set(f.type),
   status: new Set(f.status),
   priority: new Set(f.priority),
+  label: new Set(f.label),
 });
 
 describe('filterOptions', () => {
@@ -66,7 +67,7 @@ describe('filterOptions', () => {
   });
 
   it('is empty for no tasks', () => {
-    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [], priority: [] });
+    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [], priority: [], label: [] });
   });
 
   it('offers the priorities in the data, most urgent first; a missing or unknown priority is the default', () => {
@@ -84,6 +85,44 @@ describe('filterOptions', () => {
     const p2 = filterTasks(tasks, filters({ priority: ['P2'] }));
     expect(ids(p2)).toEqual([standard[2].id, standard[3].id]);
     expect(facetCounts(tasks, filters({})).priority.values.get('P2')).toBe(2);
+  });
+});
+
+describe('labels', () => {
+  const withLabels = [
+    { ...standard[0], labels: ['ux', 'spike-2'] },
+    { ...standard[1], labels: ['ux'] },
+    { ...standard[2], labels: ['api', 'ux', 7 as unknown as string] },
+    standard[3],
+  ];
+
+  it('offers the labels in the data, alphabetically; meta.labels sets their text and order first', () => {
+    expect(filterOptions(withLabels).label).toEqual([
+      { value: 'api', label: 'api' },
+      { value: 'spike-2', label: 'spike-2' },
+      { value: 'ux', label: 'ux' },
+    ]);
+    const vocab = resolveVocabulary({ labels: [{ id: 'ux', label: 'UX' }, { id: 'nope' }] });
+    expect(filterOptions(withLabels, vocab).label.map((o) => o.label)).toEqual(['UX', 'api', 'spike-2']);
+  });
+
+  it('a task matches when it has any selected label; tasks without labels match only "All"', () => {
+    expect(ids(filterTasks(withLabels, filters({ label: ['spike-2', 'api'] })))).toEqual([
+      standard[0].id,
+      standard[2].id,
+    ]);
+    expect(filterTasks(withLabels, filters({}))).toHaveLength(4);
+  });
+
+  it('counts each label once per task that has it', () => {
+    const c = facetCounts(withLabels, filters({}));
+    expect(Object.fromEntries(c.label.values)).toEqual({ ux: 3, 'spike-2': 1, api: 1 });
+    expect(c.label.all).toBe(4);
+    expect(facetCounts(withLabels, filters({ label: ['api'] })).phase.all).toBe(1);
+  });
+
+  it('search matches labels', () => {
+    expect(ids(searchTasks(withLabels, 'spike-2'))).toEqual([standard[0].id]);
   });
 });
 

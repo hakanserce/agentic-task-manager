@@ -25,6 +25,8 @@ export interface Vocabulary {
   defaultPriority: string;
   /** Phase names, where meta gives them */
   phaseNames: ReadonlyMap<number, string>;
+  /** meta.labels: the text and order of labels it lists (others show as they are, after them) */
+  labels: Term[];
 }
 
 export const DEFAULT_STATUSES: StatusDef[] = [
@@ -52,6 +54,7 @@ export const DEFAULT_VOCABULARY: Vocabulary = {
   priorities: DEFAULT_PRIORITIES,
   defaultPriority: 'P2',
   phaseNames: new Map(),
+  labels: [],
 };
 
 function capitalize(s: string): string {
@@ -104,7 +107,25 @@ export function resolveVocabulary(meta: TasksFile['meta']): Vocabulary {
     priorities,
     defaultPriority,
     phaseNames,
+    labels: terms(m.labels) ?? [],
   };
+}
+
+/** A label's text: meta.labels' label for it, else the label itself (labels aren't humanized: they are tags) */
+export function labelText(vocab: Vocabulary, label: string): string {
+  return vocab.labels.find((l) => l.id === label)?.label ?? label;
+}
+
+/** A task's labels (only strings), in meta.labels' order, then the others alphabetically */
+export function labelsOf(vocab: Vocabulary, task: { labels?: unknown }): string[] {
+  const labels = Array.isArray(task.labels) ? task.labels.filter((l): l is string => typeof l === 'string') : [];
+  return [...new Set(labels)].sort(labelOrder(vocab));
+}
+
+export function labelOrder(vocab: Vocabulary) {
+  const ids = vocab.labels.map((l) => l.id);
+  const rank = (v: string) => (ids.includes(v) ? ids.indexOf(v) : ids.length);
+  return (a: string, b: string) => rank(a) - rank(b) || a.localeCompare(b);
 }
 
 /** The status's definition. A status the vocabulary doesn't list keeps its default kind if it is a default status. */

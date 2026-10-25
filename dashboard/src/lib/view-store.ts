@@ -8,7 +8,7 @@ import { getPref, readStored, writeStored } from './prefs';
 import { VIEWS, type ViewId } from './tabs';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
-import { DEFAULT_VOCABULARY, priorityOf, type Vocabulary } from './vocab';
+import { DEFAULT_VOCABULARY, labelsOf, priorityOf, type Vocabulary } from './vocab';
 
 export const VIEW_KEY_PREFIX = 'atm-dashboard:view:';
 
@@ -48,7 +48,7 @@ export function projectKey(meta: ProjectMeta | undefined): string {
 
 export function defaultView(): SavedView {
   return {
-    filters: { phase: [], type: [], status: [], priority: [] },
+    filters: { phase: [], type: [], status: [], priority: [], label: [] },
     query: '',
     tab: 'graph',
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
@@ -102,6 +102,7 @@ export function readView(key: string): SavedView {
       type: strings(filters.type),
       status: strings(filters.status),
       priority: strings(filters.priority),
+      label: strings(filters.label),
     },
     query: typeof stored.query === 'string' ? stored.query : '',
     tab: (VIEWS as readonly unknown[]).includes(stored.tab) ? (stored.tab as ViewId) : view.tab,
@@ -129,8 +130,8 @@ export function clearView(key: string): void {
 }
 
 /**
- * Drop what the tasks no longer have: filter values for removed phases, types, statuses or priorities, a removed
- * phase.
+ * Drop what the tasks no longer have: filter values for removed phases, types, statuses, priorities or labels, a
+ * removed phase.
  */
 export function sanitizeView(view: SavedView, tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): SavedView {
   const present: Record<FilterGroup, Set<string>> = {
@@ -138,11 +139,18 @@ export function sanitizeView(view: SavedView, tasks: Task[], vocab: Vocabulary =
     type: new Set(tasks.map((t) => t.type)),
     status: new Set(tasks.map((t) => t.status)),
     priority: new Set(tasks.map((t) => priorityOf(vocab, t))),
+    label: new Set(tasks.flatMap((t) => labelsOf(vocab, t))),
   };
   const keep = (group: FilterGroup) => view.filters[group].filter((v) => present[group].has(v));
   return {
     ...view,
-    filters: { phase: keep('phase'), type: keep('type'), status: keep('status'), priority: keep('priority') },
+    filters: {
+      phase: keep('phase'),
+      type: keep('type'),
+      status: keep('status'),
+      priority: keep('priority'),
+      label: keep('label'),
+    },
     progressPhase:
       view.progressPhase !== null && present.phase.has(String(view.progressPhase)) ? view.progressPhase : null,
   };

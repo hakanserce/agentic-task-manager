@@ -3,6 +3,7 @@
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
   import { reviewSummary, reviewWait } from '../lib/waiting';
+  import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
 
   const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
@@ -42,6 +43,7 @@
           >{phaseLabel(dashboard.vocab, task.phase)}</span
         >
         <PriorityBadge {task} />
+        <LabelChips {task} />
       </div>
       <div class="detail-section">
         <div class="label">Description</div>

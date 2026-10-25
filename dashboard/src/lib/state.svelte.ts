@@ -199,6 +199,7 @@ export class DashboardState {
         type: [...this.filters.type],
         status: [...this.filters.status],
         priority: [...this.filters.priority],
+        label: [...this.filters.label],
       },
       query: this.query,
       tab: this.tab,

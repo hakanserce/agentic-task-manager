@@ -4,14 +4,23 @@
   import Icon from './Icon.svelte';
 
   // Compact: a search box and what is selected, as chips. The ⌄ opens every filter, one group per line.
-  const LABELS: Record<FilterGroup, string> = { phase: 'Phase', type: 'Type', status: 'Status', priority: 'Priority' };
+  const LABELS: Record<FilterGroup, string> = {
+    phase: 'Phase',
+    type: 'Type',
+    status: 'Status',
+    priority: 'Priority',
+    label: 'Labels',
+  };
   const PLURALS: Record<FilterGroup, string> = {
     phase: 'phases',
     type: 'types',
     status: 'statuses',
     priority: 'priorities',
+    label: 'labels',
   };
   const options = $derived(filterOptions(dashboard.tasks, dashboard.vocab));
+  // The Labels group only when some task has a label
+  const groups = $derived(FILTER_GROUPS.filter((g) => g !== 'label' || options.label.length > 0));
   // How many tasks each button would show, given the search and the selections in the other groups
   const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab));
   let open = $state(false);
@@ -50,7 +59,7 @@
           type="search"
           id="task-search"
           placeholder="Search tasks"
-          aria-label="Search tasks by ID, name, description or type"
+          aria-label="Search tasks by ID, name, description, type or label"
           value={dashboard.query}
           oninput={(e) => (dashboard.query = e.currentTarget.value)}
         />
@@ -86,7 +95,7 @@
     </div>
     {#if open}
       <div class="filter-panel" id="filter-panel">
-        {#each FILTER_GROUPS as group (group)}
+        {#each groups as group (group)}
           <div class="filter-group" data-group={group}>
             <div class="filter-group-label">{LABELS[group]}</div>
             <div class="filter-group-buttons">

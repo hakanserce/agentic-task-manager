@@ -82,6 +82,20 @@ describe('Filters', () => {
     expect(button(container, 'type', 'all')).toHaveClass('active');
   });
 
+  it('shows a Labels group, with counts, once some task has a label', async () => {
+    const labelled = standard.tasks.map((t, i) => (i < 3 ? { ...t, labels: i === 0 ? ['ux', 'api'] : ['ux'] } : t));
+    loadIntoDashboard({ ...standard, tasks: labelled });
+    const { container } = render(Filters);
+    await openPanel(container);
+    expect(container.querySelector('.filter-group[data-group="label"] .filter-group-label')).toHaveTextContent(
+      'Labels',
+    );
+    expect(button(container, 'label', 'ux')).toHaveAttribute('aria-label', 'ux, 3 tasks');
+    await fireEvent.click(button(container, 'label', 'api'));
+    expect(dashboard.filtered.map((t) => t.id)).toEqual(['T-001']);
+    expect(container.querySelector('.filter-chip[data-filter="label"]')).toHaveTextContent('Labels: api');
+  });
+
   it('the search narrows the tasks and the filter counts, and can be cleared', async () => {
     const { container } = render(Filters);
     const input = container.querySelector('#task-search') as HTMLInputElement;

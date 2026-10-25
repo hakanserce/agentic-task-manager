@@ -5,6 +5,7 @@
   import { phaseColor, typeStyle } from '../lib/theme';
   import { kindOf } from '../lib/vocab';
   import { reviewSummary, reviewWait } from '../lib/waiting';
+  import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
 
   let { card }: { card: KanbanCard } = $props();
@@ -39,6 +40,7 @@
     >
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
     <PriorityBadge {task} />
+    <LabelChips {task} />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>
   <div class="kanban-card-name">{task.name}</div>

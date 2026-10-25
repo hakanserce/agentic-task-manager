@@ -14,6 +14,8 @@ export interface Task {
   status: Status;
   /** A priority ID from the vocabulary ("P0"…"P3" by default); missing means the default priority */
   priority?: string;
+  /** Free-form tags that group tasks across phases and types, e.g. ["spike-2", "ux"] (DM-4.6) */
+  labels?: string[];
   dependencies?: string[];
   requirements?: string[];
   use_cases?: string[];
@@ -64,6 +66,7 @@ export interface TasksFile {
     types?: unknown;
     priorities?: unknown;
     default_priority?: unknown;
+    labels?: unknown;
     workflow?: unknown;
   };
   tasks?: Task[];

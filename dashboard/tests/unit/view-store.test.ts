@@ -30,7 +30,7 @@ describe('reading and writing', () => {
 
   it('round-trips a view', () => {
     const view: SavedView = {
-      filters: { phase: ['1'], type: ['feature', 'test'], status: [], priority: ['P0'] },
+      filters: { phase: ['1'], type: ['feature', 'test'], status: [], priority: ['P0'], label: ['ux'] },
       query: 'login',
       tab: 'agents',
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
@@ -59,7 +59,10 @@ describe('reading and writing', () => {
       key,
       JSON.stringify({ tab: 'nope', filters: { phase: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
     );
-    expect(readView(key)).toEqual({ ...defaultView(), filters: { phase: ['2'], type: [], status: [], priority: [] } });
+    expect(readView(key)).toEqual({
+      ...defaultView(),
+      filters: { phase: ['2'], type: [], status: [], priority: [], label: [] },
+    });
   });
 
   it('a malformed graph position is ignored', () => {
@@ -93,18 +96,24 @@ describe('reading and writing', () => {
 });
 
 describe('sanitizeView', () => {
-  const tasks = [task(0, 'feature', 'done'), task(1, 'test', 'todo')];
+  const tasks = [{ ...task(0, 'feature', 'done'), labels: ['ux'] }, task(1, 'test', 'todo')];
 
   it('drops filter values and a focused phase the tasks no longer have', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['0', '5'], type: ['feature', 'docs'], status: ['todo', 'blocked'], priority: ['P2', 'P0'] },
+      filters: {
+        phase: ['0', '5'],
+        type: ['feature', 'docs'],
+        status: ['todo', 'blocked'],
+        priority: ['P2', 'P0'],
+        label: ['ux', 'gone'],
+      },
       progressPhase: 5,
     };
     // Neither task has a priority: both are the default, P2
     expect(sanitizeView(view, tasks)).toEqual({
       ...view,
-      filters: { phase: ['0'], type: ['feature'], status: ['todo'], priority: ['P2'] },
+      filters: { phase: ['0'], type: ['feature'], status: ['todo'], priority: ['P2'], label: ['ux'] },
       progressPhase: null,
     });
   });
@@ -112,7 +121,7 @@ describe('sanitizeView', () => {
   it('keeps everything that still exists', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['1'], type: [], status: [], priority: [] },
+      filters: { phase: ['1'], type: [], status: [], priority: [], label: [] },
       progressPhase: 0,
     };
     expect(sanitizeView(view, tasks)).toEqual(view);

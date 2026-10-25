@@ -101,8 +101,16 @@ describe('TaskCard', () => {
     expect(render(TaskCard, { task: task('T-005') }).container.querySelector('.review-wait')).toBeNull();
   });
 
-  it('has no dependency label or tags when there are none', () => {
+  it("shows the task's labels as chips, in meta.labels' order and text", () => {
+    loadIntoDashboard({ ...standard, meta: { labels: [{ id: 'ux', label: 'UX' }] } });
+    const { container } = render(TaskCard, { task: { ...task('T-001'), labels: ['spike-2', 'ux'] } });
+    expect([...container.querySelectorAll('.label-chip')].map((c) => c.textContent)).toEqual(['UX', 'spike-2']);
+    expect(container.querySelector('.label-chip[data-label="ux"]')).toHaveAttribute('title', 'Label: ux');
+  });
+
+  it('has no dependency label, label chips or tags when there are none', () => {
     const { container } = render(TaskCard, { task: task('T-001') });
+    expect(container.querySelector('.label-chips')).toBeNull();
     expect(container.querySelector('.deps-label')).toBeNull();
     expect(container.querySelector('.task-tags')).toBeEmptyDOMElement();
   });

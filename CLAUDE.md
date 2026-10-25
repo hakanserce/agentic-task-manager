@@ -83,3 +83,10 @@ git merges). CI runs the suite with Python 3.9 and a current version.
 ## Versions
 `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` versions must match. Bump both when the
 dashboard or skills change so `/atm:update-dashboard` detects the new dashboard.
+
+Every release gets **two** entries (`npm run check` fails without either):
+- `plugin/CHANGELOG.md` — the detailed record, for developers: every change, with command names and flags.
+- `plugin/WHATS-NEW.md` — what users see in the dashboard's What's new and in `/atm:update-dashboard`: 3–6 short
+  bullets in plain language about what a user notices. No command flags, internals or file names; one idea per
+  bullet; say what it does for them ("Agents can ask you a question instead of guessing"), not how it works. Write
+  it from the changelog entry, not instead of it.

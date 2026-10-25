@@ -1,0 +1,70 @@
+# What's new
+
+The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
+
+## [0.13.0] - 2026-10-24
+
+- Agents can ask you a question instead of guessing, or hand finished work to you for review. The dashboard tells
+  you when a task needs you.
+- Push your work and get CI green with `/atm:push`, straight to your main branch or through a pull request.
+- Tasks can have priorities and labels, and your project can name its own statuses, phases and types.
+- Each task shows who created, started and finished it, notes from the agents, and its pull request.
+- Old finished tasks can be archived, so big projects stay fast.
+- Help and About in the footer explain the dashboard.
+
+## [0.12.0] - 2026-10-24
+
+- Light and dark mode, and six colour themes.
+- A new top bar with your progress and recent activity; click either for the details.
+- Search tasks by keyword, and see how many tasks each filter would show.
+- An Agents tab shows who worked on what, and when.
+- The dashboard remembers your filters, tab and view for each project.
+
+## [0.11.0] - 2026-10-23
+
+- Several agents can work on one project at once without getting in each other's way.
+- The dashboard shows which agent is working on each task.
+- Branches that changed different tasks now merge cleanly.
+
+## [0.10.0] - 2026-10-23
+
+- `/atm:serve` starts the dashboard for you in the background.
+- Everything atm needs now lives in one folder in your project, `.agentic-task-manager/`.
+- atm now needs Python 3.9 or newer, which macOS already has with its developer tools.
+
+## [0.9.0] - 2026-10-23
+
+- A Progress tab with a burndown chart and an estimate of the work left in each phase.
+
+## [0.8.0] - 2026-10-23
+
+- A Kanban board, with a "Next up" marker on the task the agent will pick next.
+
+## [0.7.0] - 2026-10-22
+
+- This What's new panel.
+- The dashboard refreshes itself every 5 seconds by default.
+
+## [0.6.0] - 2026-10-22
+
+- Zoom and pan the dependency graph, with a minimap for large ones.
+
+## [0.5.0] - 2026-10-22
+
+- A rebuilt dashboard that looks the same, and is now tested automatically.
+
+## [0.4.0] - 2026-04-05
+
+- An activity timeline, and `/atm:update-dashboard` to get the latest dashboard.
+
+## [0.3.0] - 2026-04-04
+
+- Internal changes only.
+
+## [0.2.0] - 2026-04-04
+
+- The plugin is now called `atm`: `/atm:create-tasks`, `/atm:do-task`, `/atm:loop-tasks`.
+
+## [0.1.0] - 2026-04-03
+
+- First release: turn requirements into tasks, let agents work through them, and watch it all on a live dashboard.

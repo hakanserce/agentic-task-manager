@@ -6,7 +6,8 @@ import { expect, openDashboard, test } from './helpers';
 const pluginVersion: string = JSON.parse(
   readFileSync(new URL('../../../plugin/.claude-plugin/plugin.json', import.meta.url), 'utf8'),
 ).version;
-const entries = parseChangelog(readFileSync(new URL('../../../plugin/CHANGELOG.md', import.meta.url), 'utf8'));
+// What's new shows the short notes for users, not the changelog
+const entries = parseChangelog(readFileSync(new URL('../../../plugin/WHATS-NEW.md', import.meta.url), 'utf8'));
 
 const chip = (page: Page) => page.locator('#version-chip');
 const overlay = (page: Page) => page.locator('#whats-new-overlay');
@@ -35,13 +36,14 @@ test.describe("What's new", () => {
 
     const v060 = panel(page).locator('.release[data-version="0.6.0"]');
     await expect(v060.locator('h4')).toHaveText(/^v0\.6\.0\s*2026-10-22$/);
-    await expect(v060.locator('.release-section').first()).toHaveText('Added');
-    await expect(v060.locator('li').first()).toContainText('Dependency graph zoom and pan');
+    // Plain bullets: no Added / Changed / Fixed headings
+    await expect(v060.locator('.release-section')).toHaveCount(0);
+    await expect(v060.locator('li').first()).toContainText('Zoom and pan the dependency graph');
   });
 
   test('inline code is shown as code, as plain text', async ({ page }) => {
     await chip(page).click();
-    const code = panel(page).locator('.release[data-version="0.5.0"] code', { hasText: 'atm@hakanserce-plugins' });
+    const code = panel(page).locator('.release[data-version="0.10.0"] code', { hasText: '/atm:serve' });
     await expect(code).toHaveCount(1);
     await expect(panel(page)).not.toContainText('`');
   });

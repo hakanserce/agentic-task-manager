@@ -4,11 +4,23 @@ import { describe, expect, it } from 'vitest';
 import { parseChangelog } from '../../src/lib/changelog';
 import { dashboardVersion, releaseNotes } from '../../src/lib/release-notes';
 
+const read = (name: string) => readFileSync(new URL(`../../../plugin/${name}`, import.meta.url), 'utf8');
+
 describe('releaseNotes', () => {
-  it('is plugin/CHANGELOG.md, parsed at build time', () => {
-    const file = readFileSync(new URL('../../../plugin/CHANGELOG.md', import.meta.url), 'utf8');
-    expect(releaseNotes).toEqual(parseChangelog(file));
+  it("is plugin/WHATS-NEW.md (the users' notes, not the changelog), parsed at build time", () => {
+    expect(releaseNotes).toEqual(parseChangelog(read('WHATS-NEW.md')));
     expect(releaseNotes.length).toBeGreaterThan(5);
+  });
+
+  it('has a short entry for every release in the changelog, with the same date', () => {
+    const changelog = parseChangelog(read('CHANGELOG.md')).filter((e) => e.date);
+    expect(releaseNotes.map((e) => [e.version, e.date])).toEqual(changelog.map((e) => [e.version, e.date]));
+    for (const entry of releaseNotes) {
+      const items = entry.sections.flatMap((s) => s.items);
+      expect(items.length, entry.version).toBeGreaterThan(0);
+      expect(items.length, entry.version).toBeLessThanOrEqual(6);
+      for (const item of items) expect(item.length, `${entry.version}: ${item}`).toBeLessThanOrEqual(180);
+    }
   });
 });
 

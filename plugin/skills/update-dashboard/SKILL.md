@@ -53,25 +53,26 @@ The dashboard is not committed (`.agentic-task-manager/.gitignore` lists it), so
 
 ## Step 2: Read the release notes
 
-The plugin's release notes are `${CLAUDE_SKILL_DIR}/../../CHANGELOG.md`.
+The plugin's release notes for users are `${CLAUDE_SKILL_DIR}/../../WHATS-NEW.md`: a few short bullets per version.
+(`CHANGELOG.md` next to it has the detailed changes, for developers; don't use it here.)
 
 ## Step 3: Report
 
-Read the plugin's `CHANGELOG.md` (Step 2). It has one `## [x.y.z] - YYYY-MM-DD` section per version, newest
-first, each with `### Added` / `### Changed` / `### Fixed` bullet lists. Select every version that is **newer than
-$OLD_VERSION and not newer than $NEW_VERSION** (compare numerically: 0.10.0 is newer than 0.9.0). If the old
-dashboard had no version tag, treat $OLD_VERSION as 0.0.0. Ignore an `[Unreleased]` section.
+Read the plugin's `WHATS-NEW.md` (Step 2). It has one `## [x.y.z] - YYYY-MM-DD` section per version, newest first,
+each a short bullet list. Select every version that is **newer than $OLD_VERSION and not newer than $NEW_VERSION**
+(compare numerically: 0.10.0 is newer than 0.9.0). If the old dashboard had no version tag, treat $OLD_VERSION as
+0.0.0. Ignore an `[Unreleased]` section.
 
 > **Dashboard updated!** $OLD_VERSION → $NEW_VERSION
 >
-> Refresh your browser to see the new dashboard. Its version label (next to the title) opens the same release notes.
+> Refresh your browser to see the new dashboard. Its version label (next to the title) opens the same notes.
 >
 > **What's new:**
 >
 > **v$VERSION** ($DATE)
-> - (each bullet from that version's Added / Changed / Fixed lists, prefixed with "Added:", "Changed:" or "Fixed:")
+> - (each bullet from that version, as written)
 >
 > (repeat for each selected version, newest first)
 
-Copy the changelog bullets as written; don't summarize, merge or invent entries. If `CHANGELOG.md` is missing,
-say "Release notes are not available for this version" instead of describing changes.
+Copy the bullets as written; don't summarize, merge or invent entries. If `WHATS-NEW.md` is missing, say "Release
+notes are not available for this version" instead of describing changes.

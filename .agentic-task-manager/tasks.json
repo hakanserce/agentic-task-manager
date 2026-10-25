@@ -3837,7 +3837,8 @@
       "use_cases": [],
       "status": "todo",
       "dependencies": [
-        "T-105"
+        "T-105",
+        "T-146"
       ],
       "files": [
         "dashboard/src/lib/markdown.ts",
@@ -3846,7 +3847,16 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-24T22:03:56Z"
+      "updated_at": "2026-10-25T06:25:02Z",
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:25:02Z",
+          "kind": "handoff",
+          "text": "Done and tested (506 unit tests), uncommitted in the tree: detail panel renders descriptions as Markdown. Blocked by the 256 KB budget (263,107 bytes); T-146 frees space. Then: update detail-panel screenshots, commit, done.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-143",
@@ -3966,7 +3976,7 @@
       "description": "The What's new dialog and /atm:update-dashboard show plugin/CHANGELOG.md, which is written for developers and is too detailed for users (0.13.0 alone is ~25 bullets with command names). Add plugin/WHATS-NEW.md: per version, 3–6 short bullets in plain language about what a user notices (no command flags, no internals), e.g. \"Agents can ask you a question instead of guessing; the dashboard tells you when a task needs you.\" Write it for every released version from the changelog (summarize, newest first). The dashboard's What's new (build/changelog.ts → a whats-new module) and the /atm:update-dashboard skill show WHATS-NEW.md; CHANGELOG.md stays the detailed record. Inlining the short notes instead of the full changelog also frees room under the 256 KB budget (the build is ~1.9 KB under it). Keep the version check (scripts/check-versions.mjs) covering WHATS-NEW.md. Add to the root CLAUDE.md (Versions section): every release adds a short, end-user What's New entry next to the changelog entry, written for users, not developers.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "plugin/WHATS-NEW.md",
@@ -3977,9 +3987,11 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T06:25:02Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T06:25:02Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-147",
@@ -4206,7 +4218,7 @@
       "description": "do-task and loop-tasks mark a task done (atm done) before committing it (atm commit), so a failed commit leaves a task done with its work uncommitted (happened with T-144). Reorder: verify, atm commit <id> --file ... (the task still in progress), then atm done <id> --note; if the commit fails, the task stays in progress and the agent fixes the cause or releases it with a handoff note. For a review or a block, the same: commit first, then atm review / atm block. Check atm commit works on an in-progress task and records the SHA (atm done keeps it). Update plugin/skills/do-task and loop-tasks, plugin/CLAUDE.md, and README's do-task steps.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "plugin/skills/do-task/SKILL.md",
@@ -4215,11 +4227,22 @@
         "README.md"
       ],
       "created_at": "2026-10-25T05:55:53Z",
-      "updated_at": "2026-10-25T06:14:01Z",
+      "updated_at": "2026-10-25T06:16:06Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:14:01Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "cc3db38356cfd96853b1e2d8c97d9f336bb9f21f",
+      "completed_at": "2026-10-25T06:16:06Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:16:06Z",
+          "kind": "outcome",
+          "text": "do-task and loop-tasks commit while the task is in progress, then mark it done; a failed commit leaves it in progress",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

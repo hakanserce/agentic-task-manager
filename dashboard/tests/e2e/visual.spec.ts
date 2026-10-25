@@ -215,6 +215,19 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The Appearance menu with every theme, scrolled to the current one
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: appearance menu (${mode})`, async ({ page, tasksServer }) => {
+    await page.addInitScript(
+      (m) => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: 'gruvbox', mode: m, autoRefresh: false })),
+      mode,
+    );
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('#appearance-btn').click();
+    await expect(page.locator('#appearance-menu')).toHaveScreenshot(`appearance-menu-${mode}.png`);
+  });
+}
+
 // FR-3: one main view (the Kanban board) per theme and mode, to catch regressions in any palette.
 for (const theme of [
   'nord',

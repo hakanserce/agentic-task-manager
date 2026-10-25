@@ -823,6 +823,8 @@ button.menu-trigger:hover,
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 .theme-option {
   display: flex;

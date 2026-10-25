@@ -14,7 +14,7 @@ Jump to: [the views](#views), [filters and saved views](#filters-and-saved-views
   task and idle stretches, for a period you choose.
 - **N need you** — tasks waiting for your review or for your answer. Click it for the Kanban board.
 - **Refresh** — reload now, or change how often the dashboard reloads by itself.
-- **Appearance** — light or dark mode, and the theme.
+- **Appearance** — light or dark mode, and one of 11 themes (the arrow keys move through them).
 
 ## Views
 

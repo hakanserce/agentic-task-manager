@@ -1,0 +1,115 @@
+[
+  {
+    "name": "pr records the PR on each task, and moves a re-recorded task out of Merged",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-001", "status": "done" },
+            { "id": "T-002", "status": "done", "pr": { "number": 3, "url": "u3" }, "merged_at": "2026-04-01T00:00:00Z" }
+          ]
+        }
+      }
+    },
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T12:00:00Z" },
+    "args": ["pr", "T-001", "T-002", "--number", "7", "--url", "https://github.com/o/r/pull/7"],
+    "expect": {
+      "stdout": "T-001, T-002: in PR #7 (https://github.com/o/r/pull/7)\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-001",
+              "status": "done",
+              "pr": { "number": 7, "url": "https://github.com/o/r/pull/7" },
+              "updated_at": "2026-05-01T12:00:00Z",
+              "updated_by": "alice"
+            },
+            {
+              "id": "T-002",
+              "status": "done",
+              "pr": { "number": 7, "url": "https://github.com/o/r/pull/7" },
+              "updated_at": "2026-05-01T12:00:00Z",
+              "updated_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "pr with an unknown task changes nothing",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
+    "args": ["pr", "T-001", "T-009", "--number", "7", "--url", "u"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["T-009"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } }
+    }
+  },
+  {
+    "name": "pr needs --number and --url",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
+    "args": ["pr", "T-001", "--number", "7"],
+    "expect": { "exit": 2, "stderrIncludes": ["--url"] }
+  },
+  {
+    "name": "merged sets merged_at on that PR's tasks only",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-001", "status": "done", "pr": { "number": 7, "url": "u" } },
+            { "id": "T-002", "status": "done", "pr": { "number": 8, "url": "v" } }
+          ]
+        }
+      }
+    },
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T12:00:00Z" },
+    "args": ["merged", "--pr", "7", "--at", "2026-04-30T09:00:00Z", "--json"],
+    "expect": {
+      "json": { "pr": 7, "tasks": ["T-001"], "already": [] },
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-001",
+              "status": "done",
+              "pr": { "number": 7, "url": "u" },
+              "merged_at": "2026-04-30T09:00:00Z",
+              "updated_at": "2026-05-01T12:00:00Z",
+              "updated_by": "alice"
+            },
+            { "id": "T-002", "status": "done", "pr": { "number": 8, "url": "v" } }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "merged twice keeps the first merge time",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-001", "status": "done", "pr": { "number": 7, "url": "u" }, "merged_at": "2026-04-30T09:00:00Z" }
+          ]
+        }
+      }
+    },
+    "args": ["merged", "--pr", "7"],
+    "expect": { "stdout": "PR #7: already recorded as merged\n" }
+  },
+  {
+    "name": "merged for a PR no task records",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
+    "args": ["merged", "--pr", "7"],
+    "expect": { "exit": 1, "stderrIncludes": ["no task records PR #7"] }
+  },
+  {
+    "name": "merged --at needs an ISO time",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["merged", "--pr", "7", "--at", "yesterday"],
+    "expect": { "exit": 2, "stderrIncludes": ["--at needs a time like"] }
+  }
+]

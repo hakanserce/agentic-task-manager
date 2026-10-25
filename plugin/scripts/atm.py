@@ -2113,7 +2113,12 @@ def cmd_unarchive(args):
 
 # ==== git_ops.py ====
 # The project's workflow (meta.workflow: direct or pull-request, docs/v4/skills-and-workflows.md §1) and the git
-# side of tasks: atm workflow.
+# side of tasks: atm workflow, atm commit, atm pr, atm merged (docs/v4/atm-cli.md §4.5, data-model.md §4).
+
+# Pathspecs that stage more than the files named: another agent's work can be in the same tree
+WHOLE_TREE = {".", "-A", "--all", "-u", "--update", ":/", "*"}
+CO_AUTHORED = re.compile(r"^co-authored-by:", re.IGNORECASE)
+
 
 def default_base(root):
     """The remote's default branch (origin/HEAD), else main."""
@@ -2176,6 +2181,140 @@ def cmd_workflow(args):
         effective = workflow_of(data)  # validates before anything is written
         write_json_atomic(paths["tasks"], data)
     out(to_json(effective) if args.json else describe_workflow(effective, paths["root"]))
+
+
+def run_git(args, root):
+    """Run git; return stdout stripped, or raise AtmError with git's own message."""
+    result = subprocess.run(["git"] + args, cwd=root, capture_output=True, text=True)
+    if result.returncode != 0:
+        message = (result.stderr or result.stdout).strip()
+        raise AtmError(f"git {args[0]} failed: {message}")
+    return result.stdout.strip()
+
+
+def commit_paths(root, files):
+    """The files to commit, relative to the root; refuses anything that would stage more than the files named."""
+    picked = []
+    for name in files:
+        if name in WHOLE_TREE or name.startswith(":"):
+            raise AtmError(f"atm commit stages only the files you name; {name!r} would stage the whole tree", 2)
+        full = os.path.realpath(os.path.join(os.getcwd(), name))
+        relative = os.path.relpath(full, root)
+        if relative == "." or relative.startswith(".." + os.sep) or relative == "..":
+            raise AtmError(f"{name} is outside the repository", 2)
+        if os.path.isdir(full):
+            raise AtmError(f"{name} is a directory: name the files in it", 2)
+        if not os.path.exists(full) and git(["ls-files", "--error-unmatch", "--", relative], root) is None:
+            raise AtmError(f"{name}: no such file, and git doesn't track it")
+        if relative not in picked:
+            picked.append(relative)
+    return picked
+
+
+def commit_message(text, trailers):
+    """Apply the workflow's trailer rule: forbid removes Co-Authored-By lines, require adds the missing lines."""
+    if trailers == "forbid":
+        text = "\n".join(line for line in text.splitlines() if not CO_AUTHORED.match(line.strip())).rstrip()
+    elif isinstance(trailers, dict):
+        missing = [line for line in trailers["require"] if line not in text.splitlines()]
+        if missing:
+            text = text.rstrip() + "\n\n" + "\n".join(missing)
+    return text
+
+
+def cmd_commit(args):
+    """Commit exactly the files the agent names plus tasks.json, then record the commit on the task."""
+    agent = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    root = paths["root"]
+    if not in_git(root):
+        raise AtmError("atm commit needs a git repository")
+    data = load_tasks(paths)
+    task = find_task(data, args.id)
+    workflow = workflow_of(data) or WORKFLOW_DEFAULTS
+    template = args.message if args.message is not None else workflow["commit_template"]
+    message = template
+    for key in ("id", "name", "phase", "type"):
+        message = message.replace("{" + key + "}", str(task.get(key, "")))
+    message = commit_message(message, workflow.get("trailers"))
+    if not message.strip():
+        raise AtmError("the commit message is empty", 2)
+    files = commit_paths(root, args.file)
+    tasks_file = os.path.relpath(paths["tasks"], root)
+    if tasks_file not in files:
+        files.append(tasks_file)
+    run_git(["add", "-A", "--"] + files, root)
+    # With paths, git commits only those, so whatever else is staged stays staged and out of this commit
+    run_git(["commit", "-q", "-m", message, "--"] + files, root)
+    sha = run_git(["rev-parse", "HEAD"], root)
+    # The SHA is known only once the commit exists, so tasks.json records it as a change for the next commit
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        task = find_task(data, args.id)
+        task["commit"] = sha
+        touch(task, agent, now_iso())
+        write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json({"task": task["id"], "commit": sha, "message": message, "files": files}))
+    else:
+        out(f"{task['id']}: committed {sha[:7]} {message.splitlines()[0]}")
+        out("  " + ", ".join(files))
+
+
+def cmd_pr(args):
+    """Record the PR that contains the tasks (DM-4.3: the tasks are then In PR)."""
+    agent = agent_identity(args.agent)
+    if args.number <= 0:
+        raise AtmError("--number must be a positive whole number", 2)
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        found = [find_task(data, task_id) for task_id in args.ids]
+        stamp = now_iso()
+        for task in found:
+            task["pr"] = {"number": args.number, "url": args.url}
+            task.pop("merged_at", None)
+            touch(task, agent, stamp)
+        write_json_atomic(paths["tasks"], data)
+    ids = [t["id"] for t in found]
+    if args.json:
+        out(to_json({"tasks": ids, "pr": {"number": args.number, "url": args.url}}))
+    else:
+        out(f"{', '.join(ids)}: in PR #{args.number} ({args.url})")
+
+
+def cmd_merged(args):
+    """Record that a PR was merged, on every task that records it (DM-4.3: the tasks are then Merged)."""
+    agent = agent_identity(args.agent)
+    if args.at is not None:
+        try:
+            parse_iso(args.at)
+        except ValueError:
+            raise AtmError(f"--at needs a time like 2026-10-24T18:00:00Z, not {args.at!r}", 2)
+    paths = find_paths(os.getcwd())
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        tasks = [
+            t
+            for t in data["tasks"]
+            if isinstance(t, dict) and isinstance(t.get("pr"), dict) and t["pr"].get("number") == args.pr
+        ]
+        if not tasks:
+            raise AtmError(f"no task records PR #{args.pr} (atm pr records it)")
+        stamp = now_iso()
+        changed = [t for t in tasks if not t.get("merged_at")]
+        for task in changed:
+            task["merged_at"] = args.at or stamp
+            touch(task, agent, stamp)
+        if changed:
+            write_json_atomic(paths["tasks"], data)
+    ids = [t["id"] for t in changed]
+    if args.json:
+        out(to_json({"pr": args.pr, "tasks": ids, "already": [t["id"] for t in tasks if t not in changed]}))
+    elif ids:
+        out(f"PR #{args.pr} merged: {', '.join(ids)}")
+    else:
+        out(f"PR #{args.pr}: already recorded as merged")
 
 
 # ==== migrate.py ====
@@ -2586,6 +2725,13 @@ commands:
                  bring archived tasks back into tasks.json
   workflow [set direct|pull-request] [--base B] [--verify true|false] [--max-rounds N] ...
                  print the project's workflow (meta.workflow), or set it
+  commit <id> --file F [--file F]... [--message TEXT]
+                 commit exactly those files plus tasks.json (message from meta.workflow.commit_template),
+                 and record the commit on the task
+  pr <id>... --number N --url URL
+                 record the PR that contains the tasks
+  merged --pr N [--at TIME]
+                 record that PR N was merged, on its tasks
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -2776,6 +2922,25 @@ def build_parser():
         help="forbid Co-Authored-By lines, require the --trailer lines, or leave it to the agent",
     )
     workflow.add_argument("--trailer", action="append", default=[], metavar="LINE", help="a required trailer line")
+
+    commit = command("commit", cmd_commit, "commit exactly the named files plus tasks.json, and record the commit")
+    commit.add_argument("id", help="the task ID")
+    commit.add_argument(
+        "--file", action="append", required=True, metavar="F", help="a file the task changed (repeat for each)"
+    )
+    commit.add_argument("--message", metavar="TEXT", help="the message (default: meta.workflow.commit_template)")
+    agent_option(commit)
+
+    pr = command("pr", cmd_pr, "record the PR that contains the tasks")
+    pr.add_argument("ids", nargs="+", metavar="id", help="task IDs")
+    pr.add_argument("--number", type=int, required=True, help="the PR number")
+    pr.add_argument("--url", required=True, help="the PR's URL")
+    agent_option(pr)
+
+    merged = command("merged", cmd_merged, "record that a PR was merged, on the tasks it contains")
+    merged.add_argument("--pr", type=int, required=True, metavar="N", help="the PR number")
+    merged.add_argument("--at", metavar="TIME", help="when it was merged (ISO 8601 UTC; default: now)")
+    agent_option(merged)
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

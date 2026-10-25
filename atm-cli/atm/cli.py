@@ -16,7 +16,7 @@ from .paths import cmd_paths
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
-from .git_ops import cmd_workflow
+from .git_ops import cmd_commit, cmd_merged, cmd_pr, cmd_workflow
 from .query import cmd_deps, cmd_list, cmd_show, cmd_status
 from .tasks import cmd_note, cmd_status_change
 
@@ -64,6 +64,13 @@ commands:
                  bring archived tasks back into tasks.json
   workflow [set direct|pull-request] [--base B] [--verify true|false] [--max-rounds N] ...
                  print the project's workflow (meta.workflow), or set it
+  commit <id> --file F [--file F]... [--message TEXT]
+                 commit exactly those files plus tasks.json (message from meta.workflow.commit_template),
+                 and record the commit on the task
+  pr <id>... --number N --url URL
+                 record the PR that contains the tasks
+  merged --pr N [--at TIME]
+                 record that PR N was merged, on its tasks
   next [--phase N] [--type T] [--claim] [--json]
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
@@ -254,6 +261,25 @@ def build_parser():
         help="forbid Co-Authored-By lines, require the --trailer lines, or leave it to the agent",
     )
     workflow.add_argument("--trailer", action="append", default=[], metavar="LINE", help="a required trailer line")
+
+    commit = command("commit", cmd_commit, "commit exactly the named files plus tasks.json, and record the commit")
+    commit.add_argument("id", help="the task ID")
+    commit.add_argument(
+        "--file", action="append", required=True, metavar="F", help="a file the task changed (repeat for each)"
+    )
+    commit.add_argument("--message", metavar="TEXT", help="the message (default: meta.workflow.commit_template)")
+    agent_option(commit)
+
+    pr = command("pr", cmd_pr, "record the PR that contains the tasks")
+    pr.add_argument("ids", nargs="+", metavar="id", help="task IDs")
+    pr.add_argument("--number", type=int, required=True, help="the PR number")
+    pr.add_argument("--url", required=True, help="the PR's URL")
+    agent_option(pr)
+
+    merged = command("merged", cmd_merged, "record that a PR was merged, on the tasks it contains")
+    merged.add_argument("--pr", type=int, required=True, metavar="N", help="the PR number")
+    merged.add_argument("--at", metavar="TIME", help="when it was merged (ISO 8601 UTC; default: now)")
+    agent_option(merged)
 
     note = command("note", cmd_note, "add a note to a task (at most 500 characters)")
     note.add_argument("id", help="the task ID")

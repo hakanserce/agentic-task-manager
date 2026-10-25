@@ -325,6 +325,7 @@ def cmd_status(args):
         "tasks": len(tasks),
         "by_status": by_status,
         "by_phase": counts(lambda t: [t.get("phase")]),
+        "phase_names": {str(as_phase_id(p["id"])): p["name"] for p in vocab["phases"] if p.get("name")},
         "by_type": counts(lambda t: [t.get("type")]),
         "by_label": counts(lambda t: t.get("labels") or []),
         "in_progress": in_progress,
@@ -346,7 +347,8 @@ def cmd_status(args):
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
-    out(f"by phase: {pairs(result['by_phase'])}")
+    names = result["phase_names"]
+    out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
     out(f"by type: {pairs(result['by_type'])}")
     if result["by_label"]:
         out(f"by label: {pairs(result['by_label'])}")

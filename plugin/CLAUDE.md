@@ -30,8 +30,9 @@ Every command takes `--json`; `atm help` lists them all.
 - Commit: `atm commit <id> --file F [--file F]...`, naming every file the task changed, while the task is still in
   progress; only then `atm done` (or `review`/`block`). A task is never done with its work uncommitted
 - Push: `/atm:push` records the PR with `atm pr <id>... --number N --url U` and merges with `atm merged --pr N`
-- Define: `atm init --meta-file F` (project, phases, vocabularies), `atm add` (`--json-file` for many),
-  `atm edit <id>`, `atm check`, `atm workflow set`
+- Define: `atm init --meta-file F` (project, vocabularies), `atm phases` (the phases with names and counts),
+  `atm phases name <n> "<name>"` / `atm phases unname <n>`, `atm add` (`--json-file` for many), `atm edit <id>`,
+  `atm check`, `atm workflow set`
 - Archive: `atm archive` (when atm suggests it), `atm unarchive <id>...`
 - atm locks the file, writes timestamps and actors, and records claims (which agent works on which task, with a
   30-minute lease that the plugin's hook renews), shared by all git worktrees of a clone. `atm commit` commits only

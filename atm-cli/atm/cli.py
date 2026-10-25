@@ -13,6 +13,7 @@ from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
+from .phases import cmd_phases
 from .registry import cmd_projects
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
 from .archive import cmd_archive, cmd_unarchive
@@ -90,6 +91,8 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  phases [--archived] | phases name <n> "<name>" | phases unname <n>
+                 the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
                  the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
                  list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
@@ -335,6 +338,11 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
+    phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
+    phases.add_argument("number", nargs="?", help="the phase number")
+    phases.add_argument("name", nargs="?", help="name: the phase's name")
+    phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

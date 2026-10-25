@@ -26,6 +26,16 @@
         "id": "architecture",
         "label": "Architecture"
       }
+    ],
+    "phases": [
+      {
+        "id": 15,
+        "name": "One dashboard for all projects"
+      },
+      {
+        "id": 16,
+        "name": "Dashboard polish and worktrees"
+      }
     ]
   },
   "tasks": [
@@ -5788,7 +5798,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3 and §4.\n\n### Skills\n- **`/atm:serve`** (`plugin/skills/serve/SKILL.md`): one server for all projects; prints the project's URL; `--all` for the overview; `--open`.\n- **Delete `plugin/skills/update-dashboard/`**, and replace every mention of `/atm:update-dashboard` (skills, `plugin/CLAUDE.md`, README, `docs/help.md`, the dashboard's Help) with *update the plugin*.\n- **create-tasks:** the project is registered by `atm init`; mention that the dashboard shows all projects.\n- Skills no longer talk about installing the dashboard into the project (`migrate`'s output changed).\n\n### Docs\n- **README:** one dashboard for all projects; how updating works (plugin update, and the server restarts by itself); the registry (`~/.agentic-task-manager/`, `atm projects`, opting out); what the server exposes (localhost only, three files per registered project).\n- **`docs/help.md`:** the selector and the overview.\n- **Root `CLAUDE.md`:** the dev server and the test fixture serve the API.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-170",
         "T-171",
@@ -5807,11 +5817,22 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:44:58Z",
+      "updated_at": "2026-10-25T23:48:05Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:44:58Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "5e619cb367fb79af4f7f2fd8c8ff13336c2dfe5f",
+      "completed_at": "2026-10-25T23:48:05Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T23:48:05Z",
+          "kind": "outcome",
+          "text": "/atm:serve describes one server for all projects (--all, port 8765); update-dashboard skill deleted and every mention replaced; skills describe migrate's registration and cleanup; README (All your projects, what the server exposes, atm projects), Help (Your projects), plugin and root CLAUDE.md updated",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-178",
@@ -5884,7 +5905,7 @@
       "description": "Phase names live in `meta.phases` (`[{ id, name }]`), but:\n- the only way to set them is `atm init --meta-file`, which **replaces the whole list**;\n- **no command prints them**.\n\nSo an agent can't add a name without wiping the others.\n\n### Commands\nAdd a `phases` command to atm-cli (`atm-cli/atm/cli.py`; logic next to the vocabulary code in `model.py`, or a small module added to `build.py`'s `MODULES`):\n- **`atm phases [--json]`**: every phase that has tasks or a name, in numeric order: number, name (if any), and task counts by status kind (todo, active, review, blocked, done, skipped). Archived tasks count only with `--archived`, like `atm list`.\n- **`atm phases name <n> \"<name>\"`**: set or replace that one entry under the tasks lock (atomic write; other entries and their order untouched; keep the list sorted by id). Refuse an empty name.\n- **`atm phases unname <n>`**: remove the entry.\n\nBoth change commands print what changed and take `--json`.\n\n### Elsewhere\n- `atm status` shows names next to phase numbers in *by phase* (and, in `--json`, a names map). `atm list` stays as it is.\n- `atm check` **warns** (not errors) about a named phase with no tasks in `tasks.json` or the archive.\n\n### Tests\nScenarios in `tests/scripts/scenarios/phases.json`:\n- listing with and without names;\n- name, rename, unname;\n- other names kept;\n- an invalid number or an empty name refused;\n- `check`'s warning;\n- `status` output.\n\n### Docs\n- `plugin/skills/create-tasks/SKILL.md`: name phases with `atm phases name` (Step 4 no longer puts `phases` in `--meta-file`; read existing names with `atm phases`).\n- `plugin/CLAUDE.md`'s command list, `docs/v4/atm-cli.md`, and the CHANGELOG `[Unreleased]` notes if the release task hasn't run.\n\n### Finally\nName this repo's phases 15 and 16 with the new command. Suggested: **15** *One dashboard for all projects*, **16** *Dashboard polish and worktrees*. Check `atm phases` for existing names first.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/cli.py",
@@ -5898,9 +5919,11 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-25T21:18:54Z",
-      "updated_at": "2026-10-25T21:29:56Z",
+      "updated_at": "2026-10-25T23:48:09Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T23:48:09Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-181",

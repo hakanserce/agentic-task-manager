@@ -8,7 +8,7 @@ import re
 from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
-from .model import find_task, kind_of, load_archive, load_tasks, status_for, touch, vocabulary
+from .model import find_task, kind_of, load_archive, load_tasks, phase_of, status_for, touch, vocabulary
 from .paths import find_paths
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -326,6 +326,10 @@ def check_data(data, root, files=False, archived=()):
             for f in task.get("files") or []:
                 if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
                     warnings.append(f"{task_id}: the file {f} doesn't exist")
+    used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
+    for p in vocab["phases"]:
+        if p["id"] not in used:
+            warnings.append(f"phase {p['id']} is named ({p.get('name')!r}) but has no tasks (atm phases unname)")
     well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
     cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
     if cycle:

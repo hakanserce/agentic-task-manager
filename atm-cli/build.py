@@ -30,6 +30,7 @@ MODULES = [
     "query",
     "tasks",
     "edit",
+    "phases",
     "merge",
     "archive",
     "git_ops",

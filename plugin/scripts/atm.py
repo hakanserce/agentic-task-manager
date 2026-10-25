@@ -1707,6 +1707,7 @@ def cmd_status(args):
         "tasks": len(tasks),
         "by_status": by_status,
         "by_phase": counts(lambda t: [t.get("phase")]),
+        "phase_names": {str(as_phase_id(p["id"])): p["name"] for p in vocab["phases"] if p.get("name")},
         "by_type": counts(lambda t: [t.get("type")]),
         "by_label": counts(lambda t: t.get("labels") or []),
         "in_progress": in_progress,
@@ -1728,7 +1729,8 @@ def cmd_status(args):
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
-    out(f"by phase: {pairs(result['by_phase'])}")
+    names = result["phase_names"]
+    out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
     out(f"by type: {pairs(result['by_type'])}")
     if result["by_label"]:
         out(f"by label: {pairs(result['by_label'])}")
@@ -2158,6 +2160,10 @@ def check_data(data, root, files=False, archived=()):
             for f in task.get("files") or []:
                 if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
                     warnings.append(f"{task_id}: the file {f} doesn't exist")
+    used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
+    for p in vocab["phases"]:
+        if p["id"] not in used:
+            warnings.append(f"phase {p['id']} is named ({p.get('name')!r}) but has no tasks (atm phases unname)")
     well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
     cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
     if cycle:
@@ -2194,6 +2200,118 @@ def cmd_check(args):
             out(f"tasks.json is fine ({count} tasks" + (f", {len(warnings)} warnings)" if warnings else ")"))
     if errors:
         raise AtmExit(1)
+
+
+# ==== phases.py ====
+# `atm phases`: the project's phases, with their names (meta.phases) and how far along each one is; and naming one
+# phase at a time, so naming a phase never means rewriting (or first having to read) the whole list.
+
+def phase_number(text):
+    """A phase number from the command line: 15, or 1.5; an int when it is whole."""
+    try:
+        value = float(text)
+    except (TypeError, ValueError):
+        raise AtmError(f"{text!r} is not a phase number", 2)
+    return int(value) if value.is_integer() else value
+
+
+def phase_overview(data, archived=()):
+    """Every phase that has tasks or a name, in order: {id, name, tasks, by_kind}."""
+    vocab = vocabulary(data)
+    names = {p["id"]: p.get("name") for p in vocab["phases"]}
+    phases = {}
+    for task in list(data["tasks"]) + list(archived):
+        if not isinstance(task, dict):
+            continue
+        entry = phases.setdefault(phase_of(task), {kind: 0 for kind in KINDS})
+        kind = kind_of(vocab, task.get("status"))
+        if kind in entry:
+            entry[kind] += 1
+    for phase_id in names:
+        phases.setdefault(phase_id, {kind: 0 for kind in KINDS})
+    return [
+        {
+            "id": phase_number(phase_id),
+            "name": names.get(phase_id) or None,
+            "tasks": sum(counts.values()),
+            "by_kind": {kind: n for kind, n in counts.items() if n},
+        }
+        for phase_id, counts in sorted(phases.items())
+    ]
+
+
+def describe_phase(p):
+    counts = ", ".join(f"{kind} {n}" for kind, n in p["by_kind"].items())
+    title = f"phase {p['id']}" + (f" · {p['name']}" if p["name"] else "")
+    return f"{title}: {p['tasks']} task{'' if p['tasks'] == 1 else 's'}" + (f" ({counts})" if counts else "")
+
+
+def phases_list(paths, archived, as_json):
+    data = load_tasks(paths)
+    phases = phase_overview(data, load_archive(paths)["tasks"] if archived else ())
+    if as_json:
+        out(to_json(phases))
+        return
+    if not phases:
+        out("No phases yet: no task has a phase, and none is named.")
+    for p in phases:
+        out(describe_phase(p))
+
+
+def set_phase_name(paths, number, name):
+    """Set (name) or remove (None) the name of one phase under the lock, leaving the others as they are. Returns the
+    previous name."""
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        meta = data.setdefault("meta", {})
+        phases = [p for p in meta.get("phases") or [] if isinstance(p, dict)]
+        previous = next((p.get("name") for p in phases if p.get("id") == number), None)
+        if name is None and previous is None:
+            raise AtmError(f"phase {number} has no name")
+        phases = [p for p in phases if p.get("id") != number]
+        if name is not None:
+            phases.append({"id": number, "name": name})
+        phases.sort(key=lambda p: p["id"])
+        if phases:
+            meta["phases"] = phases
+        else:
+            meta.pop("phases", None)
+        vocabulary(data)
+        write_json_atomic(paths["tasks"], data)
+    return previous
+
+
+def cmd_phases(args):
+    paths = find_paths(os.getcwd())
+    if args.action in (None, "list"):
+        if args.number is not None:
+            raise AtmError(f"unexpected argument '{args.number}'", 2)
+        phases_list(paths, args.archived, args.json)
+        return
+    if args.number is None:
+        raise AtmError(f"atm phases {args.action} needs a phase number", 2)
+    number = phase_number(args.number)
+    if args.action == "name":
+        name = (args.name or "").strip()
+        if not name:
+            raise AtmError('atm phases name needs a name: atm phases name <n> "<name>"', 2)
+        previous = set_phase_name(paths, number, name)
+        if args.json:
+            out(to_json({"id": number, "name": name, "previous": previous}))
+        elif previous is None:
+            out(f"Phase {number} is now named “{name}”.")
+        elif previous == name:
+            out(f"Phase {number} was already named “{name}”.")
+        else:
+            out(f"Phase {number} renamed from “{previous}” to “{name}”.")
+        return
+    if args.name is not None:
+        raise AtmError(f"unexpected argument '{args.name}'", 2)
+    previous = set_phase_name(paths, number, None)
+    if args.json:
+        out(to_json({"id": number, "name": None, "previous": previous}))
+    else:
+        out(f"Phase {number} no longer has a name (it was “{previous}”).")
 
 
 # ==== merge.py ====
@@ -3460,6 +3578,8 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  phases [--archived] | phases name <n> "<name>" | phases unname <n>
+                 the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
                  the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
                  list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
@@ -3705,6 +3825,11 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
+    phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
+    phases.add_argument("number", nargs="?", help="the phase number")
+    phases.add_argument("name", nargs="?", help="name: the phase's name")
+    phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

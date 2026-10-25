@@ -1,0 +1,178 @@
+[
+  {
+    "name": "phases lists the phases in use with names and counts by kind",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "phases": [{ "id": 2, "name": "Polish" }] },
+          "tasks": [
+            { "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "done" },
+            { "id": "T-2", "name": "b", "phase": 1, "type": "feature", "status": "todo" },
+            { "id": "T-3", "name": "c", "phase": 2, "type": "feature", "status": "in_review" },
+            { "id": "T-4", "name": "d", "phase": 2, "type": "feature", "status": "skipped" }
+          ]
+        }
+      }
+    },
+    "args": ["phases"],
+    "expect": {
+      "stdout": "phase 1: 2 tasks (todo 1, done 1)\nphase 2 · Polish: 2 tasks (review 1, skipped 1)\n"
+    }
+  },
+  {
+    "name": "phases --json, with a named phase that has no tasks yet",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "phases": [{ "id": 3, "name": "Later" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "in_progress" }]
+        }
+      }
+    },
+    "args": ["phases", "--json"],
+    "expect": {
+      "json": [
+        { "id": 1, "name": null, "tasks": 1, "by_kind": { "active": 1 } },
+        { "id": 3, "name": "Later", "tasks": 0, "by_kind": {} }
+      ]
+    }
+  },
+  {
+    "name": "phases --archived counts the archive too",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-2", "name": "b", "phase": 1, "type": "feature", "status": "todo" }]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 0, "type": "feature", "status": "done" }]
+        }
+      }
+    },
+    "args": ["phases", "--archived"],
+    "expect": { "stdout": "phase 0: 1 task (done 1)\nphase 1: 1 task (todo 1)\n" }
+  },
+  {
+    "name": "phases name sets one name and keeps the others, in order",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "P",
+            "phases": [
+              { "id": 1, "name": "One" },
+              { "id": 3, "name": "Three" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 2, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["phases", "name", "2", "Two"],
+    "expect": {
+      "stdout": "Phase 2 is now named “Two”.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "project": "P",
+            "phases": [
+              { "id": 1, "name": "One" },
+              { "id": 2, "name": "Two" },
+              { "id": 3, "name": "Three" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 2, "type": "feature", "status": "todo" }]
+        }
+      }
+    }
+  },
+  {
+    "name": "phases name renames; --json says what it was",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "phases": [{ "id": 1, "name": "Old" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["phases", "name", "1", "New name", "--json"],
+    "expect": { "json": { "id": 1, "name": "New name", "previous": "Old" } }
+  },
+  {
+    "name": "phases unname removes one name; the last one takes meta.phases with it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "project": "P", "phases": [{ "id": 1, "name": "Old" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["phases", "unname", "1"],
+    "expect": {
+      "stdout": "Phase 1 no longer has a name (it was “Old”).\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "project": "P" },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo" }]
+        }
+      }
+    }
+  },
+  {
+    "name": "phases unname refuses a phase without a name",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["phases", "unname", "1"],
+    "expect": { "exit": 1, "stderrIncludes": ["phase 1 has no name"] }
+  },
+  {
+    "name": "phases name refuses an empty name",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["phases", "name", "1", "  "],
+    "expect": { "exit": 2, "stderrIncludes": ["needs a name"] }
+  },
+  {
+    "name": "phases name refuses a phase that isn't a number",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["phases", "name", "one", "One"],
+    "expect": { "exit": 2, "stderrIncludes": ["'one' is not a phase number"] }
+  },
+  {
+    "name": "check warns about a named phase without tasks",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "phases": [{ "id": 9, "name": "Ghost" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": {
+      "stdout": "warning: phase 9 is named ('Ghost') but has no tasks (atm phases unname)\ntasks.json is fine (1 tasks, 1 warnings)\n"
+    }
+  },
+  {
+    "name": "status shows phase names next to the numbers",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "phases": [{ "id": 1, "name": "Core" }] },
+          "tasks": [
+            { "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo" },
+            { "id": "T-2", "name": "b", "phase": 2, "type": "feature", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["status"],
+    "expect": { "stdoutIncludes": ["by phase: 1 (Core) 1, 2 1\n"] }
+  }
+]

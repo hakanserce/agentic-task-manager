@@ -2286,10 +2286,15 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-24T00:13:54Z",
-      "updated_at": "2026-10-24T22:01:01Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T21:55:04Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:01:01Z"
+      "completed_at": "2026-10-24T22:01:01Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-097",
@@ -2319,10 +2324,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:46:37Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:42:03Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:46:37Z"
+      "completed_at": "2026-10-24T22:46:37Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-098",
@@ -2344,10 +2354,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:49:08Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:46:37Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:49:08Z"
+      "completed_at": "2026-10-24T22:49:08Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-099",
@@ -2373,10 +2388,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T23:02:36Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:00:28Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:02:36Z"
+      "completed_at": "2026-10-24T23:02:36Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-100",
@@ -2405,10 +2425,15 @@
         "dashboard/src/components/AboutDialog.svelte"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:11:15Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:01:14Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:11:15Z"
+      "completed_at": "2026-10-24T22:11:15Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-101",
@@ -2436,10 +2461,15 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:17:37Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:11:19Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:17:37Z"
+      "completed_at": "2026-10-24T22:17:37Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-102",
@@ -2465,10 +2495,15 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:23:32Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:17:38Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:23:32Z"
+      "completed_at": "2026-10-24T22:23:32Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-103",
@@ -2492,10 +2527,15 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:25:27Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:23:33Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:25:27Z"
+      "completed_at": "2026-10-24T22:25:27Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-104",
@@ -2549,10 +2589,15 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:37:02Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:25:28Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:37:02Z"
+      "completed_at": "2026-10-24T22:37:02Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-106",
@@ -2599,10 +2644,15 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T22:50:03Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:49:09Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:50:03Z"
+      "completed_at": "2026-10-24T22:50:03Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-108",
@@ -2627,10 +2677,15 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-24T23:03:48Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:02:37Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:03:48Z"
+      "completed_at": "2026-10-24T23:03:48Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-109",
@@ -2665,10 +2720,15 @@
         "dashboard/tests/fixtures/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T01:26:26Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T01:22:48Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:26:26Z"
+      "completed_at": "2026-10-25T01:26:26Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-110",
@@ -2696,10 +2756,15 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T01:40:33Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T01:29:54Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:40:33Z"
+      "completed_at": "2026-10-25T01:40:33Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-111",
@@ -2724,10 +2789,15 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T22:42:03Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:37:03Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T22:42:03Z"
+      "completed_at": "2026-10-24T22:42:03Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-112",
@@ -2754,10 +2824,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:00:27Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T22:50:03Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:00:27Z"
+      "completed_at": "2026-10-24T23:00:27Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-113",
@@ -2781,10 +2856,15 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:05:48Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:03:49Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:05:48Z"
+      "completed_at": "2026-10-24T23:05:48Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-114",
@@ -2811,10 +2891,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:10:21Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:05:49Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:10:21Z"
+      "completed_at": "2026-10-24T23:10:21Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-115",
@@ -2842,10 +2927,15 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:14:39Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:10:22Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:14:39Z"
+      "completed_at": "2026-10-24T23:14:39Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-116",
@@ -2868,10 +2958,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:18:44Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:14:39Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:18:44Z"
+      "completed_at": "2026-10-24T23:18:44Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-117",
@@ -2896,10 +2991,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:22:12Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:18:45Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:22:12Z"
+      "completed_at": "2026-10-24T23:22:12Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-118",
@@ -2930,10 +3030,15 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:27:41Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:22:12Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:27:41Z"
+      "completed_at": "2026-10-24T23:27:41Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-119",
@@ -2958,10 +3063,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:35:51Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:27:41Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:35:51Z"
+      "completed_at": "2026-10-24T23:35:51Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-120",
@@ -2986,10 +3096,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:39:42Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:35:51Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:39:42Z"
+      "completed_at": "2026-10-24T23:39:42Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-121",
@@ -3011,10 +3126,15 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:41:51Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:39:44Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:41:51Z"
+      "completed_at": "2026-10-24T23:41:51Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-122",
@@ -3040,10 +3160,15 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T23:45:04Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:41:51Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-24T23:45:04Z"
+      "completed_at": "2026-10-24T23:45:04Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-123",
@@ -3067,10 +3192,15 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:11:37Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-24T23:45:11Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:11:37Z"
+      "completed_at": "2026-10-25T00:11:37Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-124",
@@ -3094,10 +3224,15 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:29:30Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:11:45Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:29:30Z"
+      "completed_at": "2026-10-25T00:29:30Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-125",
@@ -3121,10 +3256,15 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:35:10Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:31:36Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:35:10Z"
+      "completed_at": "2026-10-25T00:35:10Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-126",
@@ -3149,10 +3289,15 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:36:41Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:35:11Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:36:41Z"
+      "completed_at": "2026-10-25T00:36:41Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-127",
@@ -3180,10 +3325,15 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:37:55Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:36:41Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:37:55Z"
+      "completed_at": "2026-10-25T00:37:55Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-128",
@@ -3206,10 +3356,15 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:41:56Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:37:55Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:41:56Z"
+      "completed_at": "2026-10-25T00:41:56Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-129",
@@ -3232,10 +3387,15 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:44:01Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:41:57Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:44:01Z"
+      "completed_at": "2026-10-25T00:44:01Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-130",
@@ -3257,10 +3417,15 @@
         "README.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:46:19Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:44:02Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:46:19Z"
+      "completed_at": "2026-10-25T00:46:19Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-131",
@@ -3285,10 +3450,15 @@
         "plugin/skills/do-task/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:46:58Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:46:20Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:46:58Z"
+      "completed_at": "2026-10-25T00:46:58Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-132",
@@ -3308,10 +3478,15 @@
         ".agentic-task-manager/tasks.json"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:47:46Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:46:58Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:47:46Z"
+      "completed_at": "2026-10-25T00:47:46Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-133",
@@ -3332,10 +3507,15 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:49:05Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:47:47Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:49:05Z"
+      "completed_at": "2026-10-25T00:49:05Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-134",
@@ -3359,10 +3539,15 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:53:38Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:49:06Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:53:38Z"
+      "completed_at": "2026-10-25T00:53:38Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-135",
@@ -3386,10 +3571,15 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:57:38Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:53:40Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:57:38Z"
+      "completed_at": "2026-10-25T00:57:38Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-136",
@@ -3412,10 +3602,15 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T00:59:13Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:57:39Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T00:59:13Z"
+      "completed_at": "2026-10-25T00:59:13Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-137",
@@ -3442,10 +3637,15 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T01:02:40Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T00:59:14Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:02:40Z"
+      "completed_at": "2026-10-25T01:02:40Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-138",
@@ -3472,10 +3672,15 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T01:05:48Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T01:02:45Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:05:48Z"
+      "completed_at": "2026-10-25T01:05:48Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-139",
@@ -3496,10 +3701,15 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T01:09:34Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T01:05:53Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:09:34Z"
+      "completed_at": "2026-10-25T01:09:34Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-140",
@@ -3526,10 +3736,15 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T01:22:10Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T01:09:35Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:22:10Z"
+      "completed_at": "2026-10-25T01:22:10Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-141",
@@ -3556,10 +3771,15 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T01:29:54Z",
+      "updated_at": "2026-10-25T05:12:19Z",
       "started_at": "2026-10-25T01:26:33Z",
       "agent": "claude:e5ea9db0",
-      "completed_at": "2026-10-25T01:29:54Z"
+      "completed_at": "2026-10-25T01:29:54Z",
+      "pr": {
+        "number": 7,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+      },
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-142",

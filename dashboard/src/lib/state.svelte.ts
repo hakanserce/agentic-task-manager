@@ -199,6 +199,7 @@ export class DashboardState {
         type: [...this.filters.type],
         status: [...this.filters.status],
         priority: [...this.filters.priority],
+        stage: [...this.filters.stage],
         label: [...this.filters.label],
         agent: [...this.filters.agent],
       },

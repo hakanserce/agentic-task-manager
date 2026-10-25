@@ -1,5 +1,6 @@
 <script lang="ts">
   import { FILTER_GROUPS, facetCounts, filterOptions, isActive, type FilterGroup } from '../lib/filters';
+  import { hasStage } from '../lib/stages';
   import { dashboard } from '../lib/state.svelte';
   import Icon from './Icon.svelte';
 
@@ -9,6 +10,7 @@
     type: 'Type',
     status: 'Status',
     priority: 'Priority',
+    stage: 'Stage',
     label: 'Labels',
     agent: 'Started by',
   };
@@ -17,14 +19,20 @@
     type: 'types',
     status: 'statuses',
     priority: 'priorities',
+    stage: 'stages',
     label: 'labels',
     agent: 'agents',
   };
   const options = $derived(filterOptions(dashboard.tasks, dashboard.vocab));
-  // The Labels group only when some task has a label; Started by only when more than one actor started tasks
+  // Labels only when some task has a label; Stage only when some task is in a PR or merged; Started by only when
+  // more than one actor started tasks
+  const anyStage = $derived(dashboard.tasks.some(hasStage));
   const groups = $derived(
     FILTER_GROUPS.filter(
-      (g) => (g !== 'label' || options.label.length > 0) && (g !== 'agent' || options.agent.length > 1),
+      (g) =>
+        (g !== 'label' || options.label.length > 0) &&
+        (g !== 'stage' || anyStage) &&
+        (g !== 'agent' || options.agent.length > 1),
     ),
   );
   // How many tasks each button would show, given the search and the selections in the other groups

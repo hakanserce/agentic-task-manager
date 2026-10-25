@@ -7,6 +7,7 @@
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
+  import StageChip from './StageChip.svelte';
 
   let { card }: { card: KanbanCard } = $props();
   const task = $derived(card.task);
@@ -41,6 +42,7 @@
     >
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
     <PriorityBadge {task} />
+    <StageChip {task} />
     <LabelChips {task} />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>

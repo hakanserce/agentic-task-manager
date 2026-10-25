@@ -35,6 +35,7 @@ describe('reading and writing', () => {
         type: ['feature', 'test'],
         status: [],
         priority: ['P0'],
+        stage: ['in_pr'],
         label: ['ux'],
         agent: ['claude:a'],
       },
@@ -68,7 +69,7 @@ describe('reading and writing', () => {
     );
     expect(readView(key)).toEqual({
       ...defaultView(),
-      filters: { phase: ['2'], type: [], status: [], priority: [], label: [], agent: [] },
+      filters: { phase: ['2'], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
     });
   });
 
@@ -113,6 +114,7 @@ describe('sanitizeView', () => {
         type: ['feature', 'docs'],
         status: ['todo', 'blocked'],
         priority: ['P2', 'P0'],
+        stage: ['done', 'merged'],
         label: ['ux', 'gone'],
         agent: ['claude:a', 'claude:gone'],
       },
@@ -126,6 +128,7 @@ describe('sanitizeView', () => {
         type: ['feature'],
         status: ['todo'],
         priority: ['P2'],
+        stage: ['done'],
         label: ['ux'],
         agent: ['claude:a'],
       },
@@ -136,7 +139,7 @@ describe('sanitizeView', () => {
   it('keeps everything that still exists', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['1'], type: [], status: [], priority: [], label: [], agent: [] },
+      filters: { phase: ['1'], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
       progressPhase: 0,
     };
     expect(sanitizeView(view, tasks)).toEqual(view);

@@ -37,6 +37,10 @@ export interface Task {
   completed_by?: string;
   /** The SHA of the task's commit */
   commit?: string;
+  /** The PR that contains the task (`atm pr`): the task is In PR until merged_at (DM-4.3) */
+  pr?: { number: number; url?: string };
+  /** ISO 8601 UTC; when that PR was merged (`atm merged`) */
+  merged_at?: string;
   /** ISO 8601 UTC; when the task asked for a review (`atm review`). Its work ended here; review time isn't work */
   review_requested_at?: string;
   /** A blocked task waits on a decision by the user or by an agent (`atm block --on`) */

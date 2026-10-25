@@ -22,6 +22,7 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
   type: new Set(f.type),
   status: new Set(f.status),
   priority: new Set(f.priority),
+  stage: new Set(f.stage),
   label: new Set(f.label),
   agent: new Set(f.agent),
 });
@@ -68,7 +69,15 @@ describe('filterOptions', () => {
   });
 
   it('is empty for no tasks', () => {
-    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [], priority: [], label: [], agent: [] });
+    expect(filterOptions([])).toEqual({
+      phase: [],
+      type: [],
+      status: [],
+      priority: [],
+      stage: [],
+      label: [],
+      agent: [],
+    });
   });
 
   it('offers the priorities in the data, most urgent first; a missing or unknown priority is the default', () => {
@@ -124,6 +133,24 @@ describe('labels', () => {
 
   it('search matches labels', () => {
     expect(ids(searchTasks(withLabels, 'spike-2'))).toEqual([standard[0].id]);
+  });
+});
+
+describe('the stage group', () => {
+  it('offers the stages done tasks have, in order; filters by them; tasks not done have none', () => {
+    const done = standard.filter((t) => t.status === 'done');
+    const tasks = [
+      { ...done[0], merged_at: '2026-04-01T00:00:00Z', pr: { number: 2 } },
+      { ...done[1], pr: { number: 3, url: 'u' } },
+      done[2],
+      { ...standard.find((t) => t.status === 'todo')!, pr: { number: 3 } },
+    ];
+    expect(filterOptions(tasks).stage).toEqual([
+      { value: 'done', label: 'Done' },
+      { value: 'in_pr', label: 'In PR' },
+      { value: 'merged', label: 'Merged' },
+    ]);
+    expect(ids(filterTasks(tasks, filters({ stage: ['in_pr'] })))).toEqual([done[1].id]);
   });
 });
 

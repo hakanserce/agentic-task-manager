@@ -1,17 +1,13 @@
 <script lang="ts">
   import { pluginInfo } from '../lib/plugin-info';
+  import { workflowType } from '../lib/stages';
   import { dashboard } from '../lib/state.svelte';
   import Dialog from './Dialog.svelte';
 
   // The project's vocabularies, so a user can see what the agents will use (D-1.4)
   const vocab = $derived(dashboard.vocab);
   const phases = $derived([...vocab.phaseNames].sort(([a], [b]) => a - b));
-  const workflow = $derived.by(() => {
-    const w = dashboard.meta?.workflow;
-    return typeof w === 'object' && w !== null && typeof (w as { type?: unknown }).type === 'string'
-      ? (w as { type: string }).type
-      : null;
-  });
+  const workflow = $derived(workflowType(dashboard.meta));
 </script>
 
 <Dialog id="about" title="About" open={dashboard.dialog === 'about'} onclose={() => dashboard.closeDialog()}>

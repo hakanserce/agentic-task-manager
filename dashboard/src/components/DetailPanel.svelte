@@ -7,6 +7,7 @@
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
+  import StageChip from './StageChip.svelte';
 
   const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
   const claim = $derived(
@@ -49,6 +50,7 @@
           >{phaseLabel(dashboard.vocab, task.phase)}</span
         >
         <PriorityBadge {task} />
+        <StageChip {task} />
         <LabelChips {task} />
       </div>
       <div class="detail-section">

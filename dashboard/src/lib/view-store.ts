@@ -10,6 +10,7 @@ import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, labelsOf, priorityOf, type Vocabulary } from './vocab';
 import { startedBy } from './work';
+import { stageOf, type Stage } from './stages';
 
 export const VIEW_KEY_PREFIX = 'atm-dashboard:view:';
 
@@ -49,7 +50,7 @@ export function projectKey(meta: ProjectMeta | undefined): string {
 
 export function defaultView(): SavedView {
   return {
-    filters: { phase: [], type: [], status: [], priority: [], label: [], agent: [] },
+    filters: { phase: [], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
     query: '',
     tab: 'graph',
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
@@ -103,6 +104,7 @@ export function readView(key: string): SavedView {
       type: strings(filters.type),
       status: strings(filters.status),
       priority: strings(filters.priority),
+      stage: strings(filters.stage),
       label: strings(filters.label),
       agent: strings(filters.agent),
     },
@@ -141,6 +143,7 @@ export function sanitizeView(view: SavedView, tasks: Task[], vocab: Vocabulary =
     type: new Set(tasks.map((t) => t.type)),
     status: new Set(tasks.map((t) => t.status)),
     priority: new Set(tasks.map((t) => priorityOf(vocab, t))),
+    stage: new Set(tasks.map((t) => stageOf(t, vocab)).filter((s): s is Stage => !!s)),
     label: new Set(tasks.flatMap((t) => labelsOf(vocab, t))),
     agent: new Set(tasks.map(startedBy).filter((a): a is string => !!a)),
   };
@@ -152,6 +155,7 @@ export function sanitizeView(view: SavedView, tasks: Task[], vocab: Vocabulary =
       type: keep('type'),
       status: keep('status'),
       priority: keep('priority'),
+      stage: keep('stage'),
       label: keep('label'),
       agent: keep('agent'),
     },

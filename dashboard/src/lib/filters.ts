@@ -1,4 +1,5 @@
 import { shortAgent } from './claims';
+import { STAGE_LABELS, STAGES, stageOf, type Stage } from './stages';
 import type { Task } from './types';
 import { startedBy } from './work';
 import {
@@ -15,8 +16,8 @@ import {
   type Vocabulary,
 } from './vocab';
 
-export type FilterGroup = 'phase' | 'type' | 'status' | 'priority' | 'label' | 'agent';
-export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status', 'priority', 'label', 'agent'];
+export type FilterGroup = 'phase' | 'type' | 'status' | 'priority' | 'stage' | 'label' | 'agent';
+export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status', 'priority', 'stage', 'label', 'agent'];
 
 /** Selected values per group; an empty set means "All". */
 export type Filters = Record<FilterGroup, ReadonlySet<string>>;
@@ -32,6 +33,7 @@ export function emptyFilters(): Filters {
     type: new Set(),
     status: new Set(),
     priority: new Set(),
+    stage: new Set(),
     label: new Set(),
     agent: new Set(),
   };
@@ -44,6 +46,7 @@ export function filtersFrom(values: Record<FilterGroup, string[]>): Filters {
     type: new Set(values.type),
     status: new Set(values.status),
     priority: new Set(values.priority),
+    stage: new Set(values.stage),
     label: new Set(values.label),
     agent: new Set(values.agent),
   };
@@ -61,6 +64,10 @@ function byVocabulary(ids: string[]) {
  */
 function valuesOf(group: FilterGroup, t: Task, vocab: Vocabulary): string[] {
   if (group === 'label') return labelsOf(vocab, t);
+  if (group === 'stage') {
+    const stage = stageOf(t, vocab);
+    return stage ? [stage] : [];
+  }
   if (group === 'agent') {
     const actor = startedBy(t);
     return actor ? [actor] : [];
@@ -88,6 +95,7 @@ export function filterOptions(
   );
   const labels = [...new Set(tasks.flatMap((t) => labelsOf(vocab, t)))].sort(labelOrder(vocab));
   const agents = [...new Set(tasks.flatMap((t) => valuesOf('agent', t, vocab)))].sort((a, b) => a.localeCompare(b));
+  const stages = new Set(tasks.flatMap((t) => valuesOf('stage', t, vocab)));
   return {
     phase: phases.map((p) => {
       const name = vocab.phaseNames.get(p);
@@ -96,6 +104,7 @@ export function filterOptions(
     type: types.map((t) => ({ value: t, label: typeLabel(vocab, t) })),
     status: statuses.map((s) => ({ value: s, label: statusLabel(vocab, s) })),
     priority: priorities.map((p) => ({ value: p, label: `${p} ${priorityLabel(vocab, p)}` })),
+    stage: STAGES.filter((s: Stage) => stages.has(s)).map((s) => ({ value: s, label: STAGE_LABELS[s] })),
     label: labels.map((l) => ({ value: l, label: labelText(vocab, l) })),
     agent: agents.map((a) => ({ value: a, label: shortAgent(a) })),
   };

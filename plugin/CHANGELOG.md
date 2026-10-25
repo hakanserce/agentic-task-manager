@@ -4,6 +4,29 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
 
+## [0.14.0] - 2026-10-25
+
+### Added
+- **Five more themes**, each in light and dark and checked for readable contrast: Ayu, Night Owl, Gruvbox, Noctis
+  (with Noctis Lux) and Sublime Material.
+- **Appearance menu** for 11 themes: it opens on the current theme, the arrow keys and Home/End move through them, and
+  the list scrolls on small windows.
+- **Progress tab: "Active phases only"**, which hides phases finished more than N days ago (7 by default, editable;
+  remembered per project). The burndown still covers every phase.
+- **Markdown in task descriptions** in the details panel (headings, lists, code, links).
+- **What's new for users**: the dashboard's What's new and `/atm:update-dashboard` show `WHATS-NEW.md`, a short list
+  per release; this changelog stays the detailed record.
+- `atm skip <id> --reason TEXT`: a to-do or blocked task that isn't needed becomes skipped, with the reason as a note.
+- `atm reopen <id> --reason TEXT`: a done or skipped task goes back to to-do (done by mistake, or not finished).
+
+### Changed
+- The Progress panel's rings (by phase, by type) are separate cards.
+- `/atm:do-task` and `/atm:loop-tasks` commit a task's work while it is still in progress, and only then mark it done.
+
+### Fixed
+- `atm commit` accepts files removed with `git rm` (they were refused as unknown).
+- Activity titles name the period you picked ("this week, per day"); choosing Week showed "per 6 hours".
+
 ## [0.13.0] - 2026-10-24
 
 **Update the plugin for every agent before your first `atm archive`:** older versions see a dependency on an

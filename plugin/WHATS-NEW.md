@@ -2,6 +2,15 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.14.0] - 2026-10-25
+
+- Five more colour themes: Ayu, Night Owl, Gruvbox, Noctis and Sublime Material, each in light and dark.
+- Pick a theme with the arrow keys; the menu opens on the one you use.
+- The Progress tab can show only the phases you're working on, hiding ones finished a while ago.
+- Task descriptions show formatting: headings, lists, code and links.
+- Activity titles say which period you picked, such as "this week".
+- What's new (this list) is now short and written for you; the full details stay in the changelog.
+
 ## [0.13.0] - 2026-10-24
 
 - Agents can ask you a question instead of guessing, or hand finished work to you for review. The dashboard tells

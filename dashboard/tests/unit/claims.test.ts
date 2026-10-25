@@ -41,10 +41,10 @@ describe('parseClaims', () => {
 describe('loadClaims', () => {
   const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
 
-  it('fetches ./claims.json with a cache-busting timestamp', async () => {
+  it("fetches the project's claims.json with a cache-busting timestamp", async () => {
     const fetchFn = vi.fn().mockResolvedValue(json({ claims: [claim('T-1')] }));
-    const claims = await loadClaims(fetchFn, () => NOW);
-    expect(fetchFn).toHaveBeenCalledWith('./claims.json?' + NOW);
+    const claims = await loadClaims('abcd1234', fetchFn, () => NOW);
+    expect(fetchFn).toHaveBeenCalledWith('p/abcd1234/claims.json?' + NOW);
     expect(claims.has('T-1')).toBe(true);
   });
 
@@ -54,7 +54,7 @@ describe('loadClaims', () => {
       () => Promise.resolve(new Response('{', { status: 200 })),
       () => Promise.reject(new TypeError('offline')),
     ];
-    for (const respond of responses) expect((await loadClaims(vi.fn(respond), () => NOW)).size).toBe(0);
+    for (const respond of responses) expect((await loadClaims('p1', vi.fn(respond), () => NOW)).size).toBe(0);
   });
 });
 

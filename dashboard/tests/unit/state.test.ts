@@ -1,14 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DashboardState } from '../../src/lib/state.svelte';
+import { DashboardState, NO_PROJECTS } from '../../src/lib/state.svelte';
 import standard from '../fixtures/standard.json';
 
 const ok = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body)));
+const project = (id: string, missing = false) => ({ id, name: id, path: `/${id}`, missing, summary: null });
+const PROJECTS = { projects: [project('p1')] };
+/** Plays atm serve: the project list, and the standard fixture as each project's files */
+const server = (projects: unknown = PROJECTS) =>
+  vi.fn((url: string) => ok(String(url).startsWith('api/projects') ? projects : standard));
 
 describe('DashboardState', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    fetchMock = vi.fn(() => ok(standard));
+    fetchMock = server();
     vi.stubGlobal('fetch', fetchMock);
   });
   afterEach(() => {
@@ -32,6 +37,34 @@ describe('DashboardState', () => {
     expect(s.taskMap.get('T-004')?.name).toBe('User login');
     expect(s.projectName).toBe('Standard Project');
     expect(s.filtered).toHaveLength(12);
+  });
+
+  it('loads the project list, then the first project’s files from p/<id>/', async () => {
+    fetchMock = server({ projects: [project('gone', true), project('p2'), project('p3')] });
+    vi.stubGlobal('fetch', fetchMock);
+    const s = new DashboardState();
+    await s.load();
+    expect(s.projects.map((p) => p.id)).toEqual(['gone', 'p2', 'p3']);
+    expect(s.projectId).toBe('p2');
+    const urls = fetchMock.mock.calls.map(([url]) => String(url).split('?')[0]);
+    expect(urls).toEqual(['api/projects', 'p/p2/tasks.json', 'p/p2/claims.json']);
+  });
+
+  it('keeps showing the same project across reloads', async () => {
+    const s = new DashboardState();
+    await s.load();
+    s.projectId = 'p1';
+    fetchMock.mockClear();
+    await s.reload();
+    expect(String(fetchMock.mock.calls[1][0])).toBe('p/p1/tasks.json');
+  });
+
+  it('without a project to show, says how to add one', async () => {
+    vi.stubGlobal('fetch', server({ projects: [project('gone', true)] }));
+    const s = new DashboardState();
+    await s.load();
+    expect(s.loaded).toBe(false);
+    expect(s.loadError).toBe(NO_PROJECTS);
   });
 
   it('records an initial load failure', async () => {
@@ -114,10 +147,7 @@ describe('DashboardState saved view', () => {
   beforeEach(() => {
     localStorage.clear();
     history.replaceState(null, '', '/');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => ok(standard)),
-    );
+    vi.stubGlobal('fetch', server());
   });
   afterEach(() => vi.unstubAllGlobals());
 

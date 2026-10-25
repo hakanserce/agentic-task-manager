@@ -1,6 +1,39 @@
+// Loading from atm serve's API (docs/multi-project-api.md): the registered projects from api/projects, and each
+// project's files from p/<id>/. URLs are relative to the page, which the server serves at /.
 import type { Task, TasksFile } from './types';
 
 export const DEFAULT_PROJECT_NAME = 'Task Dashboard';
+export const PROJECTS_URL = 'api/projects';
+
+export type ProjectFile = 'tasks.json' | 'claims.json' | 'tasks-archive.json';
+
+/** Where a project's file is served */
+export function projectFileUrl(project: string, file: ProjectFile): string {
+  return `p/${encodeURIComponent(project)}/${file}`;
+}
+
+/** A project's numbers for the overview and the project selector, computed by the server */
+export interface ProjectSummary {
+  total: number;
+  done: number;
+  skipped: number;
+  percent: number;
+  current_phase: { id: number; name: string | null; done: number; total: number } | null;
+  agents_working: number;
+  needs_you: { review: number; blocked_on_user: number };
+  last_activity: string | null;
+  completions_14d: number[];
+}
+
+/** A registered project, as api/projects lists it */
+export interface ProjectEntry {
+  id: string;
+  name: string;
+  path: string;
+  /** Its folder or tasks.json is gone */
+  missing: boolean;
+  summary: ProjectSummary | null;
+}
 
 export interface LoadedTasks {
   tasks: Task[];
@@ -31,7 +64,7 @@ export interface Validators {
 type FileResult = { unchanged: true } | { unchanged: false; text: string; validators: Validators };
 
 /**
- * Fetches a file next to the dashboard (D-5.1). With the validators of the last load, the request is conditional
+ * Fetches a file from the server (D-5.1). With the validators of the last load, the request is conditional
  * (If-None-Match / If-Modified-Since): a 304 means unchanged. The browser's cache is bypassed so the 304 reaches us
  * instead of a cached copy; atm serve and the Vite dev server both answer it. `missing` is returned for a 404 when
  * given; other error responses reject with "HTTP <status>".
@@ -57,14 +90,42 @@ async function fetchFile(
   return { unchanged: false, text: await resp.text(), validators };
 }
 
+const isProject = (p: unknown): p is ProjectEntry =>
+  !!p && typeof p === 'object' && typeof (p as ProjectEntry).id === 'string' && !!(p as ProjectEntry).id;
+
+export type ProjectsResult =
+  { unchanged: true } | { unchanged: false; projects: ProjectEntry[]; validators: Validators };
+
+/**
+ * Fetches api/projects, conditionally when `since` is given. Entries without an id are left out; a missing name falls
+ * back to the id. Rejects with "HTTP <status>" for error responses and with the JSON error for invalid content.
+ */
+export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Validators): Promise<ProjectsResult> {
+  const file = await fetchFile(PROJECTS_URL, fetchFn, since);
+  if (file.unchanged) return file;
+  const list = (JSON.parse(file.text) as { projects?: unknown }).projects;
+  const projects = (Array.isArray(list) ? list : []).filter(isProject).map((p) => ({
+    id: p.id,
+    name: typeof p.name === 'string' && p.name ? p.name : p.id,
+    path: typeof p.path === 'string' ? p.path : '',
+    missing: p.missing === true,
+    summary: p.summary && typeof p.summary === 'object' ? p.summary : null,
+  }));
+  return { unchanged: false, projects, validators: file.validators };
+}
+
 export type LoadResult = { unchanged: true } | { unchanged: false; loaded: LoadedTasks; validators: Validators };
 
 /**
- * Fetches ./tasks.json, conditionally when `since` is given: a 304 means unchanged, and nothing is parsed.
+ * Fetches a project's tasks.json, conditionally when `since` is given: a 304 means unchanged, and nothing is parsed.
  * Rejects with "HTTP <status>" for error responses and with the JSON error for invalid content.
  */
-export async function loadTasks(fetchFn: typeof fetch = fetch, since?: Validators): Promise<LoadResult> {
-  const file = await fetchFile('./tasks.json', fetchFn, since);
+export async function loadTasks(
+  project: string,
+  fetchFn: typeof fetch = fetch,
+  since?: Validators,
+): Promise<LoadResult> {
+  const file = await fetchFile(projectFileUrl(project, 'tasks.json'), fetchFn, since);
   if (file.unchanged) return file;
   return {
     unchanged: false,
@@ -76,11 +137,15 @@ export async function loadTasks(fetchFn: typeof fetch = fetch, since?: Validator
 export type ArchiveResult = { unchanged: true } | { unchanged: false; tasks: Task[]; validators: Validators };
 
 /**
- * Fetches ./tasks-archive.json (DM-5), conditionally when `since` is given. A missing archive (404) is an empty one;
- * an unreadable one is an error, like tasks.json.
+ * Fetches a project's tasks-archive.json (DM-5), conditionally when `since` is given. A missing archive (404) is an
+ * empty one; an unreadable one is an error, like tasks.json.
  */
-export async function loadArchive(fetchFn: typeof fetch = fetch, since?: Validators): Promise<ArchiveResult> {
-  const file = await fetchFile('./tasks-archive.json', fetchFn, since, '{"tasks": []}');
+export async function loadArchive(
+  project: string,
+  fetchFn: typeof fetch = fetch,
+  since?: Validators,
+): Promise<ArchiveResult> {
+  const file = await fetchFile(projectFileUrl(project, 'tasks-archive.json'), fetchFn, since, '{"tasks": []}');
   if (file.unchanged) return file;
   const data = JSON.parse(file.text) as TasksFile;
   return { unchanged: false, tasks: Array.isArray(data.tasks) ? data.tasks : [], validators: file.validators };

@@ -36,19 +36,36 @@ test.describe('loading tasks.json', () => {
     await expect.poll(() => tasksServer.notModified).toBe(1);
   });
 
-  test('shows server instructions when tasks.json is missing', async ({ page, tasksServer }) => {
+  test('loads the project list, then the project’s files from p/<id>/', async ({ page, tasksServer }) => {
+    const projects = page.waitForRequest(/\/api\/projects$/);
+    const tasks = page.waitForRequest(/\/p\/fixture\/tasks\.json$/);
+    await openDashboard(page, tasksServer, 'minimal');
+    await projects;
+    await tasks;
+    await expect(page.locator('#subtitle')).toContainText('1 tasks across 1 phase');
+  });
+
+  test('shows how to start the server when tasks.json is missing', async ({ page, tasksServer }) => {
     tasksServer.fail(404);
     await page.goto('tasks-dashboard.html');
     const error = page.locator('#load-error');
     await expect(error).toContainText('Failed to load tasks.json');
     await expect(error).toContainText('HTTP 404');
-    await expect(error).toContainText('python3 -m http.server 8000');
-    await expect(error).toContainText('http://localhost:8000/tasks-dashboard.html');
+    await expect(error).toContainText('/atm:serve');
+    await expect(error).toContainText('atm serve --open');
   });
 
-  test('shows the error box for invalid JSON', async ({ page }) => {
+  test('says how to add a project when none is registered', async ({ page, tasksServer }) => {
+    tasksServer.noProjects();
+    await page.goto('tasks-dashboard.html');
+    await expect(page.locator('#load-error')).toContainText('No projects are registered yet');
+  });
+
+  test('shows the error box for invalid JSON', async ({ page, tasksServer }) => {
+    tasksServer.use('minimal');
     await page.route(/\/tasks\.json(\?.*)?$/, (route) => route.fulfill({ body: '{ not json' }));
     await page.goto('tasks-dashboard.html');
     await expect(page.locator('#load-error')).toContainText('Failed to load tasks.json');
+    await expect(page.locator('#load-error')).toContainText('JSON');
   });
 });

@@ -8,20 +8,33 @@ export { expect };
 
 export type TasksData = { meta?: Record<string, unknown>; tasks: Record<string, unknown>[] };
 
-const TASKS_JSON = /\/tasks\.json(\?.*)?$/;
-const CLAIMS_JSON = /\/claims\.json(\?.*)?$/;
-const ARCHIVE_JSON = /\/tasks-archive\.json(\?.*)?$/;
+// atm serve's API (docs/multi-project-api.md): the project list, and each project's files under p/<id>/
+const PROJECTS_JSON = /\/api\/projects(\?.*)?$/;
+const TASKS_JSON = /\/p\/([^/]+)\/tasks\.json(\?.*)?$/;
+const CLAIMS_JSON = /\/p\/([^/]+)\/claims\.json(\?.*)?$/;
+const ARCHIVE_JSON = /\/p\/([^/]+)\/tasks-archive\.json(\?.*)?$/;
+/** The id of the project the fixture serves by default */
+export const FIXTURE_PROJECT = 'fixture';
 
 export function loadFixture(name: string): TasksData {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
 }
 
-/** Controls what the dashboard gets when it fetches tasks.json (and the optional claims.json, a 404 by default). */
+const toBody = (data: string | TasksData) => JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
+
+/**
+ * Plays atm serve for the dashboard: api/projects lists one project (FIXTURE_PROJECT) by default, more with
+ * addProject(), and each project's tasks.json, claims.json (a 404 by default) and tasks-archive.json (a 404 by default)
+ * are served under p/<id>/.
+ */
 export class TasksServer {
   private body: string | null = null;
   private status = 200;
   private claimsBody: string | null = null;
   private archiveBody: string | null = null;
+  /** Projects besides the default one: their tasks.json, by id */
+  private others = new Map<string, { name: string; body: string }>();
+  private listed = true;
   /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
   archiveRequests = 0;
   // Like atm serve: each version of the file has an ETag, and a request that already has it gets a 304 (D-5.1)
@@ -32,8 +45,39 @@ export class TasksServer {
 
   constructor(private page: Page) {}
 
+  /** The project list api/projects answers with (summaries are null until a test needs them) */
+  projectList() {
+    if (!this.listed) return [];
+    const meta = (this.body && this.status === 200 ? (JSON.parse(this.body) as TasksData).meta : undefined) ?? {};
+    const project = (id: string, name: string) => ({
+      id,
+      name,
+      path: `/projects/${id}`,
+      missing: false,
+      summary: null,
+    });
+    return [
+      project(FIXTURE_PROJECT, typeof meta.project === 'string' ? meta.project : FIXTURE_PROJECT),
+      ...[...this.others].map(([id, p]) => project(id, p.name)),
+    ];
+  }
+
   async install() {
+    await this.page.route(PROJECTS_JSON, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ generated_at: '2026-01-01T00:00:00Z', projects: this.projectList() }),
+      }),
+    );
     await this.page.route(TASKS_JSON, (route) => {
+      const id = decodeURIComponent(TASKS_JSON.exec(route.request().url())![1]);
+      if (id !== FIXTURE_PROJECT) {
+        const other = this.others.get(id);
+        return other
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: other.body })
+          : route.fulfill({ status: 404, contentType: 'application/json', body: '{"error": "unknown project"}' });
+      }
       this.requests++;
       const etag = `"v${this.version}"`;
       if (this.status === 200 && route.request().headers()['if-none-match'] === etag) {
@@ -43,17 +87,31 @@ export class TasksServer {
       const headers = this.status === 200 ? { ETag: etag } : undefined;
       return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '', headers });
     });
+    const isDefault = (url: string, pattern: RegExp) => decodeURIComponent(pattern.exec(url)![1]) === FIXTURE_PROJECT;
     await this.page.route(ARCHIVE_JSON, (route) => {
-      this.archiveRequests++;
-      return this.archiveBody === null
+      const mine = isDefault(route.request().url(), ARCHIVE_JSON);
+      if (mine) this.archiveRequests++;
+      return this.archiveBody === null || !mine
         ? route.fulfill({ status: 404, body: 'not found' })
         : route.fulfill({ status: 200, contentType: 'application/json', body: this.archiveBody });
     });
     await this.page.route(CLAIMS_JSON, (route) =>
-      this.claimsBody === null
+      this.claimsBody === null || !isDefault(route.request().url(), CLAIMS_JSON)
         ? route.fulfill({ status: 404, body: 'not found' })
         : route.fulfill({ status: 200, contentType: 'application/json', body: this.claimsBody }),
     );
+  }
+
+  /** Register another project, served under p/<id>/ (a fixture by name or inline tasks). */
+  addProject(id: string, data: string | TasksData, name = id) {
+    this.others.set(id, { name, body: toBody(data) });
+    return this;
+  }
+
+  /** api/projects lists nothing, as for a user who hasn't registered a project yet. */
+  noProjects() {
+    this.listed = false;
+    return this;
   }
 
   /** Serve claims.json (the `atm` claims snapshot); null makes it a 404 again. */
@@ -64,13 +122,13 @@ export class TasksServer {
 
   /** Serve tasks-archive.json (a fixture by name or inline tasks); null makes it a 404 (no archive) again. */
   archive(data: string | TasksData | null) {
-    this.archiveBody = data === null ? null : JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
+    this.archiveBody = data === null ? null : toBody(data);
     return this;
   }
 
-  /** Serve a fixture by name (tests/fixtures/<name>.json) or an inline object. */
+  /** Serve a fixture by name (tests/fixtures/<name>.json) or an inline object, as the default project's tasks.json. */
   use(data: string | TasksData) {
-    this.body = JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
+    this.body = toBody(data);
     this.status = 200;
     this.version++;
     return this;

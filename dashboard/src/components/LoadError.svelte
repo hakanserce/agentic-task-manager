@@ -2,7 +2,7 @@
   import { dashboard } from '../lib/state.svelte';
 </script>
 
-<!-- Shown instead of the views when tasks.json could not be loaded at all -->
+<!-- Shown instead of the views when the project list or tasks.json could not be loaded at all -->
 {#if !dashboard.loaded && dashboard.loadError !== null}
   <div
     id="load-error"
@@ -11,9 +11,9 @@
   >
     <strong>Failed to load tasks.json</strong><br />
     <span style="color:var(--text-muted)"
-      >{dashboard.loadError}<br /><br />The dashboard must be served over HTTP. Start a local server:<br /><code
-        style="color:var(--text)">python3 -m http.server 8000</code
-      ><br />then open <code style="color:var(--accent)">http://localhost:8000/tasks-dashboard.html</code></span
+      >{dashboard.loadError}<br /><br />The dashboard is served by atm. Start it from a project with
+      <code style="color:var(--text)">/atm:serve</code>
+      (or <code style="color:var(--text)">atm serve --open</code>), and open the address it prints.</span
     >
   </div>
 {/if}

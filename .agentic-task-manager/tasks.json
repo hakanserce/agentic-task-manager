@@ -5412,7 +5412,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.2 and `docs/multi-project-api.md`. Rework `atm-cli/atm/server.py`.\n\n### One server per user\n- `atm serve [start|stop|status]` manages **one server per user**, recorded in `$ATM_HOME/server.json`: `{ pid, port, version, build, started_at }` (version and build from the plugin's `templates/tasks-dashboard.html` meta tags).\n- Ports: **8765 first**, then the next free one.\n- The server reads the plugin's `templates/tasks-dashboard.html` **once at start** and serves it from memory at `/`.\n\n### Routes (per the API doc)\n- `/p/<id>/tasks.json`, `claims.json` and `tasks-archive.json` **only**, and only for registered projects (reload the registry when `projects.json` changes), with the existing ETag/304 handling.\n- No directory listing; every other path is a 404.\n- `/__atm/whoami` returns `{ atm, pid, version, build }`.\n- **Refuse** any request whose `Host` header isn't `localhost:<port>` or `127.0.0.1:<port>`.\n\n### The command\n- `atm serve` in a project registers it and prints (or `--open` opens) `/#project=<id>`.\n- `--all` prints the overview URL `/`.\n- `stop` and `status` act on the user's server; `--dir` keeps working.\n- `/api/projects` can return entries without summaries until the next task.\n\n### Tests\nIn `tests/scripts/serve.test.mjs` (`ATM_HOME` and a test port range):\n- start, reuse, stop, status;\n- two projects served by one server;\n- an unregistered project and other file names give 404;\n- a bad `Host` header is refused;\n- the dashboard is still served after its file is deleted.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-165",
         "T-166"
@@ -5424,11 +5424,22 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:01:58Z",
+      "updated_at": "2026-10-25T22:08:09Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:01:58Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "06806adf2d5ad529d8bee6fdf54e3d9afd1df086",
+      "completed_at": "2026-10-25T22:08:09Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T22:08:09Z",
+          "kind": "outcome",
+          "text": "One server per user (ATM_HOME/server.json, port 8765+): dashboard from memory at /, /api/projects (summaries null until T-169), /p/<id>/ files, whoami, Host check, 405; serve --all; the dashboard itself loads the API from T-172",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-169",
@@ -5529,7 +5540,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3 (*No single-project mode*) and `docs/multi-project-api.md`.\n\n### Loading\n- `dashboard/src/lib/load.ts` loads `/api/projects`, and a project's files from `/p/<id>/` (`tasks.json`, `claims.json`, `tasks-archive.json`, keeping the conditional fetch), **instead of `./tasks.json`**.\n- The state holds the project list and the current project id (for now the first project; routing comes next).\n\n### Dev server and tests\n- `build/dev-data.ts` serves the same API, for one folder (`ATM_DEV_DATA`) or several.\n- The e2e `tasksServer` fixture (`tests/e2e/helpers.ts`) serves the API: **one project by default**, so existing specs keep working with only helper changes, and several when a test passes them.\n- Unit tests for `load.ts`.\n- The whole e2e suite and screenshots stay green.\n- Update `CLAUDE.md`'s testing notes.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-165"
       ],
@@ -5542,9 +5553,11 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:54Z",
+      "updated_at": "2026-10-25T22:08:12Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T22:08:12Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-173",

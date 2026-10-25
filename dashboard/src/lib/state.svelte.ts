@@ -1,6 +1,14 @@
 import { loadClaims, type ClaimMap } from './claims';
 import { DEFAULT_ACTIVE_DAYS } from './forecast';
-import { DEFAULT_PROJECT_NAME, loadArchive, loadTasks, type LoadedTasks, type Validators } from './load';
+import {
+  DEFAULT_PROJECT_NAME,
+  loadArchive,
+  loadProjects,
+  loadTasks,
+  type LoadedTasks,
+  type ProjectEntry,
+  type Validators,
+} from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
 import { dashboardVersion } from './release-notes';
@@ -31,7 +39,15 @@ function releaseNotesUnseen(): boolean {
   return !!version && storageAvailable() && (lastSeen === '' || compareVersions(version, lastSeen) > 0);
 }
 
+/** Shown when the server lists no project to open */
+export const NO_PROJECTS =
+  'No projects are registered yet. Run /atm:create-tasks in a project, or `atm projects add <path>` for one that has tasks.';
+
 export class DashboardState {
+  /** The projects the server lists (api/projects) */
+  projects = $state.raw<ProjectEntry[]>([]);
+  /** The project shown, by id; null until the first load picks one */
+  projectId = $state<string | null>(null);
   tasks = $state.raw<Task[]>([]);
   // Never mutated, only replaced on (re)load, so a plain Map in $state.raw is reactive enough
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -138,6 +154,7 @@ export class DashboardState {
 
   // The last tasks.json's ETag / Last-Modified: polls ask whether it changed, and skip the work when it hasn't
   #validators: Validators | undefined;
+  #projectsValidators: Validators | undefined;
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
 
@@ -157,7 +174,8 @@ export class DashboardState {
   }
 
   private async refreshArchive() {
-    const result = await loadArchive(fetch, this.archiveLoaded ? this.#archiveValidators : undefined);
+    if (!this.projectId) return;
+    const result = await loadArchive(this.projectId, fetch, this.archiveLoaded ? this.#archiveValidators : undefined);
     if (!result.unchanged) {
       this.#archiveValidators = result.validators;
       this.archive = result.tasks;
@@ -174,7 +192,7 @@ export class DashboardState {
     }
   }
 
-  /** Re-fetch tasks.json. Failures keep the current data (logged only), like the legacy dashboard. */
+  /** Re-fetch the project list and the project's files. Failures keep the current data (logged only). */
   async reload() {
     this.reloading = true;
     try {
@@ -186,10 +204,24 @@ export class DashboardState {
     setTimeout(() => (this.reloading = false), RELOAD_SPIN_MS);
   }
 
+  /** Re-fetch the project list; keep the project shown, or pick the first one that is there. */
+  private async refreshProjects(): Promise<string> {
+    const result = await loadProjects(fetch, this.#projectsValidators);
+    if (!result.unchanged) {
+      this.#projectsValidators = result.validators;
+      this.projects = result.projects;
+    }
+    const shown = this.projects.find((p) => p.id === this.projectId) ?? this.projects.find((p) => !p.missing);
+    if (!shown) throw new Error(NO_PROJECTS);
+    this.projectId = shown.id;
+    return shown.id;
+  }
+
   private async fetchAndApply() {
+    const project = await this.refreshProjects();
     const [result, claims] = await Promise.all([
-      loadTasks(fetch, this.loaded ? this.#validators : undefined),
-      loadClaims(),
+      loadTasks(project, fetch, this.loaded ? this.#validators : undefined),
+      loadClaims(project),
       this.#archiveWanted
         ? this.refreshArchive().catch((e) => console.error('Reloading the archive failed:', e))
         : undefined,

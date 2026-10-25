@@ -23,8 +23,9 @@ The pre-commit hook in `.githooks/` rebuilds and stages it when dashboard source
 The pre-port dashboard is frozen at `dashboard/tests/legacy/tasks-dashboard.v0.4.0.html` (see `docs/svelte-migration-plan.md`).
 
 Commands (run in `dashboard/`):
-- `npm run dev` — Vite dev server; it serves this repo's `.agentic-task-manager/` data, or another folder's with
-  `ATM_DEV_DATA=<path to .agentic-task-manager> npm run dev` (`build/dev-data.ts`)
+- `npm run dev` — Vite dev server; like `atm serve`, it serves the API the dashboard loads (`api/projects`,
+  `p/<id>/tasks.json`, …; see `docs/multi-project-api.md`) for this repo's `.agentic-task-manager/`, or for other
+  folders with `ATM_DEV_DATA=<path to .agentic-task-manager>[:<another>…] npm run dev` (`build/dev-data.ts`)
 - `npm run build` — single-file build
 - `npm test` / `npm run test:coverage` — Vitest unit tests (`tests/unit/`, 90% line threshold on `src/lib`)
 - `npm run test:e2e` — build, then the Playwright e2e suite
@@ -51,8 +52,10 @@ git merges). CI runs the suite with Python 3.9 and a current version.
 
 ## Testing conventions
 - e2e specs import `test`/`expect` from `tests/e2e/helpers.ts`. `tasks.json` is never served from disk: use the
-  `tasksServer` fixture (`openDashboard(page, tasksServer, 'standard')` or an inline object) — it can also swap the
-  response or return an error. Any non-localhost request fails the test.
+  `tasksServer` fixture (`openDashboard(page, tasksServer, 'standard')` or an inline object), which plays atm serve's
+  API: `api/projects` lists one project (`FIXTURE_PROJECT`) and its files are served under `p/<id>/`;
+  `addProject(id, data)` adds more, `noProjects()` lists none. It can also swap the response or return an error. Any
+  non-localhost request fails the test.
 - Fixtures live in `tests/fixtures/*.json`.
 - Unit tests for `src/lib/x.ts` are `tests/unit/x.test.ts`; component tests are `tests/unit/Name.component.test.ts`.
   The suffix matters: macOS file systems are case-insensitive, so `Filters.test.ts` would overwrite `filters.test.ts`.

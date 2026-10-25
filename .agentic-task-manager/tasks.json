@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 156
+    "next_id": 162
   },
   "tasks": [
     {
@@ -4458,6 +4458,161 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
+    },
+    {
+      "id": "T-156",
+      "name": "Progress panel: one card for By Phase, one for By Type",
+      "phase": 15,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "progress"
+      ],
+      "description": "T-143 misread the request: it gave every ring its own border and background. What was meant: one card (border + background, theme tokens) around the whole By Phase group of rings, and a second card around the By Type group; the rings inside have no card of their own. Revert the per-ring card style (.ring-cell) to plain cells, add the group card in ProgressWidget.svelte / app.css, and check every theme in both modes. Update the agents-progress-panel and light-agents-progress-panel screenshots (darwin; delete the -linux.png ones per CLAUDE.md).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProgressWidget.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-25T08:01:19Z",
+      "updated_at": "2026-10-25T08:01:19Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-157",
+      "name": "Progress panel: \"Active phases only\" for By Phase",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "progress"
+      ],
+      "description": "The top bar's Progress panel lists every phase under By Phase (this repo has 15), while the Progress tab has an 'Active phases only' checkbox (T-145). Add the same option to the panel's By Phase group, sharing the Progress tab's setting (one saved choice per project, view-store progressActive, and its N days), so turning it on in either place applies to both. Reuse activePhases() from forecast.ts; when phases are hidden, say how many ('2 older phases hidden'). Overall and By Type stay unfiltered. e2e: the toggle in the panel, and that it follows the Progress tab's setting; screenshots of the panel in both modes. Depends on the By Phase card task, which changes the same markup.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-156"
+      ],
+      "files": [
+        "dashboard/src/components/ProgressWidget.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T08:01:20Z",
+      "updated_at": "2026-10-25T08:01:20Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-158",
+      "name": "Record the git repository address in meta.repository",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "details"
+      ],
+      "description": "tasks.json gets meta.repository: the repository's web address (e.g. https://github.com/o/r), which the dashboard uses to build commit and PR links. atm: a command to print or set it (e.g. 'atm repository [set URL]', --json), validating an http(s) URL and normalising a git remote (git@github.com:o/r.git, https://github.com/o/r.git -> https://github.com/o/r); 'atm init' fills it from 'git remote get-url origin' when meta has none. Skills: /atm:create-tasks detects it from origin and asks the user when there's no remote or it can't be turned into a web address (they can also skip); /atm:update-dashboard mentions how to set it when it's missing. Scenarios in tests/scripts/scenarios/ (set, normalise, refuse a non-URL, init from origin, no remote). plugin/CLAUDE.md and README document it.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "tests/scripts/scenarios/",
+        "atm-cli/atm/cli.py",
+        "atm-cli/atm/model.py",
+        "plugin/scripts/atm.py",
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/update-dashboard/SKILL.md",
+        "plugin/CLAUDE.md",
+        "README.md"
+      ],
+      "created_at": "2026-10-25T08:07:39Z",
+      "updated_at": "2026-10-25T08:21:58Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-159",
+      "name": "Task details: started, finished and duration",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "details"
+      ],
+      "description": "The details panel's Timestamps shows only Created and Updated, but atm already records started_at, completed_at, review_requested_at and blocked_at. Show them: Started (with who, if not already in Who), Sent for review, Finished, and Duration. Duration is the work time workSpan() in lib/work.ts already computes (start to review request or completion; for a task in progress, so far, marked as running), formatted like the rest of the dashboard (format.ts, e.g. '42 m', '2 h 5 m'). Leave out what a task doesn't have (a todo task shows only Created/Updated). Unit tests for the formatting of each state; e2e on the v4 fixture; detail panel screenshots in both modes (darwin; delete the -linux.png ones per CLAUDE.md).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/lib/work.ts",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T08:07:39Z",
+      "updated_at": "2026-10-25T08:07:39Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-160",
+      "name": "Task details: commit and PR as GitHub links",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "details"
+      ],
+      "description": "Build the links in the dashboard from meta.repository (T-158), never stored per task: commit -> <repository>/commit/<sha>, PR -> <repository>/pull/<number>. In the details panel (DetailPanel.svelte #detail-commit, now plain text) and on the In PR and Merged stage chips (StageChip.svelte; Merged isn't a link today). GitHub only for now: a lib function (e.g. repoLinks(meta) in a new lib/repo.ts) that returns null for other hosts, which then show plain text. Open in a new tab (rel=noopener). When meta.repository isn't set, the commit and PR still look clickable, and clicking shows a hint instead of navigating: how to set it ('atm repository set <url>', or ask your agent). Unit tests (github URLs, trailing slash, other host -> null); e2e for both links and the hint; detail panel screenshots in both modes (darwin; delete the -linux.png ones per CLAUDE.md).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-158"
+      ],
+      "files": [
+        "dashboard/src/lib/repo.ts",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/StageChip.svelte",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T08:21:58Z",
+      "updated_at": "2026-10-25T08:21:58Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-161",
+      "name": "Commit and PR links for GitLab, Bitbucket and others",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "details"
+      ],
+      "description": "T-160 builds commit and PR links for GitHub only. Add the other common hosts to lib/repo.ts: GitLab (<repo>/-/commit/<sha>, <repo>/-/merge_requests/<n>), Bitbucket (<repo>/commits/<sha>, <repo>/pull-requests/<n>), and self-hosted ones where the host can be recognised (or a meta.repository_type hint). Unit tests per host.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-160"
+      ],
+      "files": [
+        "dashboard/src/lib/repo.ts",
+        "dashboard/tests/unit/"
+      ],
+      "created_at": "2026-10-25T08:22:05Z",
+      "updated_at": "2026-10-25T08:22:05Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0"
     }
   ]
 }

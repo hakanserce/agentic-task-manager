@@ -19,14 +19,24 @@ export class TasksServer {
   private body: string | null = null;
   private status = 200;
   private claimsBody: string | null = null;
+  // Like atm serve: each version of the file has an ETag, and a request that already has it gets a 304 (D-5.1)
+  private version = 0;
   requests = 0;
+  /** How many requests were answered 304 Not Modified */
+  notModified = 0;
 
   constructor(private page: Page) {}
 
   async install() {
     await this.page.route(TASKS_JSON, (route) => {
       this.requests++;
-      return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '' });
+      const etag = `"v${this.version}"`;
+      if (this.status === 200 && route.request().headers()['if-none-match'] === etag) {
+        this.notModified++;
+        return route.fulfill({ status: 304, headers: { ETag: etag } });
+      }
+      const headers = this.status === 200 ? { ETag: etag } : undefined;
+      return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '', headers });
     });
     await this.page.route(CLAIMS_JSON, (route) =>
       this.claimsBody === null
@@ -45,12 +55,14 @@ export class TasksServer {
   use(data: string | TasksData) {
     this.body = JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
     this.status = 200;
+    this.version++;
     return this;
   }
 
   fail(status = 404) {
     this.status = status;
     this.body = 'not found';
+    this.version++;
     return this;
   }
 }

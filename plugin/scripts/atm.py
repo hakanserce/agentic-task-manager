@@ -2710,6 +2710,19 @@ def cmd_serve(args):
         serve_status(paths, args.json)
 
 
+def json_etag(task_dir, path):
+    """A strong ETag for a .json file in the task folder (size and nanosecond mtime), or None. Last-Modified alone has
+    one-second resolution, so two atm changes in the same second would look unchanged to the dashboard."""
+    name = path.lstrip("/")
+    if not name.endswith(".json") or "/" in name or name.startswith("."):
+        return None
+    try:
+        st = os.stat(os.path.join(task_dir, name))
+    except OSError:
+        return None
+    return f'"{st.st_size:x}-{st.st_mtime_ns:x}"'
+
+
 def cmd_serve_child(args):
     """The detached server process: serve task_dir on the first free port from `port`, record it, run until stopped."""
     import http.server
@@ -2724,6 +2737,7 @@ def cmd_serve_child(args):
 
         def do_GET(self):
             path = self.path.split("?", 1)[0]
+            self.etag = None
             if path == WHOAMI:
                 body = json.dumps({"atm": True, "folder": task_dir, "pid": os.getpid()}).encode()
                 self.send_response(200)
@@ -2736,9 +2750,17 @@ def cmd_serve_child(args):
                 self.send_header("Location", "/" + DASHBOARD_FILE)
                 self.end_headers()
             else:
+                self.etag = json_etag(task_dir, path)
+                if self.etag and self.headers.get("If-None-Match") == self.etag:
+                    # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
+                    self.send_response(304)
+                    self.end_headers()
+                    return
                 super().do_GET()
 
         def end_headers(self):
+            if getattr(self, "etag", None):
+                self.send_header("ETag", self.etag)
             self.send_header("Cache-Control", "no-store")
             super().end_headers()
 

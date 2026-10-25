@@ -33,11 +33,32 @@ describe('parseTasksFile', () => {
 });
 
 describe('loadTasks', () => {
-  it('fetches ./tasks.json with a cache-busting timestamp', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(standard));
-    const loaded = await loadTasks(fetchFn, () => 1234);
-    expect(fetchFn).toHaveBeenCalledWith('./tasks.json?1234');
-    expect(loaded.tasks).toHaveLength(12);
+  it('fetches ./tasks.json past the browser cache, and keeps its validators', async () => {
+    const response = new Response(JSON.stringify(standard), {
+      headers: { ETag: '"abc"', 'Last-Modified': 'Sat, 24 Oct 2026 10:00:00 GMT' },
+    });
+    const fetchFn = vi.fn().mockResolvedValue(response);
+    const result = await loadTasks(fetchFn);
+    expect(fetchFn).toHaveBeenCalledWith('./tasks.json', { cache: 'no-store', headers: {} });
+    expect(result.unchanged).toBe(false);
+    if (result.unchanged) return;
+    expect(result.loaded.tasks).toHaveLength(12);
+    expect(result.validators).toEqual({ etag: '"abc"', lastModified: 'Sat, 24 Oct 2026 10:00:00 GMT' });
+  });
+
+  it('asks whether it changed; a 304 means unchanged, without parsing', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 304 }));
+    const since = { etag: '"abc"', lastModified: 'Sat, 24 Oct 2026 10:00:00 GMT' };
+    expect(await loadTasks(fetchFn, since)).toEqual({ unchanged: true });
+    expect(fetchFn).toHaveBeenCalledWith('./tasks.json', {
+      cache: 'no-store',
+      headers: { 'If-None-Match': '"abc"', 'If-Modified-Since': 'Sat, 24 Oct 2026 10:00:00 GMT' },
+    });
+  });
+
+  it('a 304 without having asked is an error', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 304 }));
+    await expect(loadTasks(fetchFn)).rejects.toThrow('HTTP 304');
   });
 
   it('rejects with the HTTP status', async () => {

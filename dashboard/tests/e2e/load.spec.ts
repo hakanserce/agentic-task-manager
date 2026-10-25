@@ -23,10 +23,17 @@ test.describe('loading tasks.json', () => {
     await expect(page.locator('#dashboard-title')).toHaveText('Task Dashboard — Task Dashboard');
   });
 
-  test('fetches tasks.json with a cache-busting query', async ({ page, tasksServer }) => {
-    const request = page.waitForRequest(/\/tasks\.json\?\d+$/);
+  test('fetches tasks.json without a cache-buster, then asks whether it changed (If-None-Match)', async ({
+    page,
+    tasksServer,
+  }) => {
+    const first = page.waitForRequest(/\/tasks\.json$/);
     await openDashboard(page, tasksServer, 'minimal');
-    await request;
+    expect((await first).headers()['if-none-match']).toBeUndefined();
+    const second = page.waitForRequest(/\/tasks\.json$/);
+    await page.locator('#reload-btn').click();
+    expect((await second).headers()['if-none-match']).toBe('"v1"');
+    await expect.poll(() => tasksServer.notModified).toBe(1);
   });
 
   test('shows server instructions when tasks.json is missing', async ({ page, tasksServer }) => {

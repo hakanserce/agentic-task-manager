@@ -1,5 +1,5 @@
 import { loadClaims, type ClaimMap } from './claims';
-import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks } from './load';
+import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks, type Validators } from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
 import { dashboardVersion } from './release-notes';
@@ -105,11 +105,12 @@ export class DashboardState {
   autoRefresh = $state(getPref('autoRefresh', true));
   autoRefreshSeconds = $state(getPref('autoRefreshSeconds', 5));
 
+  // The last tasks.json's ETag / Last-Modified: polls ask whether it changed, and skip the work when it hasn't
+  #validators: Validators | undefined;
+
   async load() {
     try {
-      this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
-      if (!this.loaded) this.restoreView();
-      this.loaded = true;
+      await this.fetchAndApply();
       this.loadError = null;
     } catch (e) {
       this.loadError = (e as Error).message;
@@ -120,14 +121,29 @@ export class DashboardState {
   async reload() {
     this.reloading = true;
     try {
-      this.apply(...(await Promise.all([loadTasks(), loadClaims()])));
-      if (!this.loaded) this.restoreView();
-      this.loaded = true;
+      await this.fetchAndApply();
       this.loadError = null;
     } catch (e) {
       console.error('Reload failed:', e);
     }
     setTimeout(() => (this.reloading = false), RELOAD_SPIN_MS);
+  }
+
+  private async fetchAndApply() {
+    const [result, claims] = await Promise.all([
+      loadTasks(fetch, this.loaded ? this.#validators : undefined),
+      loadClaims(),
+    ]);
+    if (result.unchanged) {
+      // tasks.json is as it was: keep the tasks (no re-parse, no re-render); claims and the clock still move
+      this.claims = claims;
+      this.loadedAt = Date.now();
+    } else {
+      this.#validators = result.validators;
+      this.apply(result.loaded, claims);
+    }
+    if (!this.loaded) this.restoreView();
+    this.loaded = true;
   }
 
   setAutoRefresh(on: boolean) {

@@ -4123,7 +4123,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:18:16Z",
+      "updated_at": "2026-10-25T07:25:03Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4144,7 +4144,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "a90f35c461770d70b734ab3b12aa95a4a6da33c8",
       "completed_at": "2026-10-25T07:18:16Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-149",
@@ -4168,7 +4172,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:20:04Z",
+      "updated_at": "2026-10-25T07:25:03Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T07:18:19Z",
@@ -4183,7 +4187,11 @@
           "text": "Noctis and Sublime Material added; contrast passes; 261.3 KB built (814 bytes under budget)",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-150",
@@ -4265,7 +4273,7 @@
       "description": "With 12 themes the Appearance menu (dashboard/src/components/AppearanceMenu.svelte) needs to stay usable: follow the proposal in docs/themes.md (a scrollable list with a swatch per theme, keyboard navigable, the current one visible on open). README and docs/help.md list the themes. e2e for choosing a theme by keyboard; screenshot of the open menu in both modes.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-149"
       ],
@@ -4276,11 +4284,26 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:20:04Z",
+      "updated_at": "2026-10-25T07:25:03Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T07:20:04Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "f95d7d05d61dced48eddb8850caed88aca855917",
+      "completed_at": "2026-10-25T07:24:57Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T07:24:57Z",
+          "kind": "outcome",
+          "text": "Theme list scrolls only on small windows, current theme focused on open, arrows/Home/End choose; 261.8 KB built",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 9,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+      }
     },
     {
       "id": "T-153",

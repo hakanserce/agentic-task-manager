@@ -31,8 +31,14 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 | `--push` | off | Git commit + push after each task |
 | `--batch-push` | off | Git commit after each task, single push at the end |
 | `--push-every <N>` | off | Git commit after each task, push every N completions |
+| `--no-watch` | off | With a push flag: don't watch CI after the last push either |
 
 If no arguments are provided, run all available tasks with no pausing and auto-commit after each task (default behavior).
+
+**Pushing goes through `/atm:push`** (the plugin's push skill: it follows the project's workflow, `direct` or
+`pull-request`, opens or updates the PR, records it on the tasks, and watches CI). Pushes in the middle of the loop
+run it as `/atm:push --no-watch`, so the loop isn't held up by CI; the **last** push (at the end of the loop) runs
+`/atm:push`, which watches CI and fixes failures, unless the loop has `--no-watch`.
 
 ## Locate tasks.json
 
@@ -161,10 +167,10 @@ while true:
           tasks, as /atm:do-task Step 7c says: `atm archive`, then its own commit
           (`chore: archive N finished tasks`); unless the hint's `auto` is false or the project says not to, in
           which case only mention it in the final summary. With --no-commit, run `atm archive` but don't commit it.
-        - If --push:
-          - git push
+        - If --push (except after the loop's last task, which is pushed on loop exit):
+          - `/atm:push --no-watch`
         - If --push-every <N> and completed_count % N == 0:
-          - git push
+          - `/atm:push --no-watch`
 
     8. BRIEF REPORT for this task:
         - "✅ $TASK_ID: $TASK_NAME — done ($completed_count completed so far)"
@@ -198,7 +204,9 @@ review, blocked or waiting, and what's next) and output a final summary:
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
 
-If `--batch-push` was set, run `git push` now.
+If any push flag was set (`--push`, `--batch-push`, `--push-every`), push the rest now with `/atm:push` (or
+`/atm:push --no-watch` if the loop has `--no-watch`): it watches CI and fixes failures, and its report goes into the
+summary. With `--push`, this is the last task's push, watched.
 
 ## Error Handling
 

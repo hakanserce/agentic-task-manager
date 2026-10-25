@@ -206,6 +206,10 @@ Type `/atm:` in Claude Code — you should see six skills in autocomplete:
 | `--push` | `git commit` + `git push` after each task |
 | `--batch-push` | `git commit` after each, single `git push` at the end |
 | `--push-every <N>` | `git commit` after each, `git push` every N tasks |
+| `--no-watch` | With a push flag: don't watch CI after the last push either |
+
+Pushes go through [`/atm:push`](#atmpush): those in the middle of the loop don't wait for CI (`--no-watch`); the last
+one watches CI and fixes failures.
 
 **Commit message format:** `feat(T-001): Short task name`
 

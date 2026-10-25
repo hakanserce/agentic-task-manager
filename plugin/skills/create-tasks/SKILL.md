@@ -107,8 +107,15 @@ The defaults:
 Also **propose a name for each phase** of your decomposition (e.g. `0 Foundations`, `1 Core features`), and the
 **labels** you plan to use, with the tasks each one groups.
 
-Then ask the user to confirm or change each list (statuses, phases, types, priorities, labels) before you write any
-task. If
+Also ask for the project's **workflow**, once (skip this if `atm workflow` already shows one, or if the project's
+`CLAUDE.md` says how it pushes):
+- **pull-request**: work happens on feature branches and reaches the base branch through PRs; `/atm:push` opens
+  them and watches CI. Suggest it when `git remote -v` shows a GitHub remote and the repository has
+  `.github/workflows/`.
+- **direct**: commits go straight to the base branch (usually `main`). Suggest it otherwise.
+
+Then ask the user to confirm or change each list (statuses, phases, types, priorities, labels) and the workflow before
+you write any task. If
 they define their own:
 - every status needs an `id`, a `label` and one of the six kinds; there must be at least one status of the kinds
   `todo`, `active` and `done`; IDs are unique. A kind may have several statuses (e.g. `awaiting_user` and
@@ -147,6 +154,9 @@ names, say). It creates `.agentic-task-manager/tasks.json` if there is none, mer
 `meta.id`, and adding one if missing), and checks the vocabularies before writing: if it reports a problem (for
 example `meta.statuses needs at least one status of the kind 'done'`), fix the file as it says and run it again.
 It also registers atm's merge driver in a git repository.
+
+Then save the confirmed workflow (unless one was already set): `atm workflow set <direct|pull-request>`, with
+`--base <branch>` when the base isn't the remote's default branch.
 
 ## Step 5: Add the tasks
 

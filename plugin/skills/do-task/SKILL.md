@@ -175,7 +175,7 @@ Name **every** file from your list, deleted ones too (also `.agentic-task-manage
 records the commit on the task. It refuses `.`, `-A` and directories: another agent's unfinished work may be in the same
 working tree, so never `git add -A` or `git add .` either.
 
-This is the default behavior. Do NOT push — only commit locally.
+This is the default behavior. Do NOT push — only commit locally (`/atm:push` pushes, when the user asks for it).
 
 ## Step 7c: Archive when atm suggests it
 
@@ -210,3 +210,6 @@ Output a concise completion report:
 > **Verification:** ✅ Build passed, tests passed
 >
 > **Now unblocked:** (the tasks `atm done` listed as now ready, if any; none while it waits for review)
+
+If the branch now has task commits that aren't pushed (`git status` says "ahead of"), end with one line:
+> `/atm:push` pushes them (and opens or updates the PR, in a pull-request project) and watches CI.

@@ -5302,16 +5302,18 @@
       "description": "First task of `docs/multi-project-dashboard-proposal.md` §5, so the atm-cli and dashboard work can run **in parallel**.\n\n### Write `docs/multi-project-api.md`\nThe routes:\n- `/`: the dashboard\n- `/api/projects`\n- `/p/<id>/tasks.json`, `claims.json`, `tasks-archive.json`\n- `/__atm/whoami`\n\nFor each: the method, status codes (`200`; `304` with `ETag` / `If-None-Match`; `404` for an unknown project or file; `403`/`421` for a bad `Host` header), headers (`Cache-Control: no-store`, `ETag`) and the exact JSON.\n\n### `/api/projects`\nA list of `{ id, name, path, missing, summary }`, where `missing` means the folder or `tasks.json` is gone, and `summary` has:\n- `total`, `done`, `skipped`\n- `percent`: `done / (total - skipped)`; a group with only skipped tasks counts as finished\n- `current_phase`: `{ id, name, done, total }`\n- `agents_working`: live claims\n- `needs_you`: `{ review, blocked_on_user }`\n- `last_activity`: the newest timestamp\n- `completions_14d`: 14 daily counts\n\nProject `<id>` is `meta.id`; registry entries without one use a stable hash of the path (say which).\n\n### Also\n- `/__atm/whoami`: `{ atm: true, pid, version, build }`.\n- The formats of `~/.agentic-task-manager/server.json` and `projects.json`.\n- Link the doc from the proposal.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/multi-project-api.md",
         "docs/multi-project-dashboard-proposal.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:53Z",
+      "updated_at": "2026-10-25T21:51:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T21:51:38Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-166",

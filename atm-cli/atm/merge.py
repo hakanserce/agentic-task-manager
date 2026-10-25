@@ -4,11 +4,12 @@ Registered as a git merge driver (`tasks.json merge=atm`), so branches that chan
 instead of line by line. Design: docs/parallel-agents-design.md, option E and layer L3.
 """
 
+import contextlib
 import os
 import re
 import sys
 
-from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, out, read_json, rel, to_json, write_json_atomic
+from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, now, out, read_json, rel, to_json, write_json_atomic
 from .lock import locked
 from .model import kind_of, load_tasks, vocabulary
 from .paths import find_paths
@@ -261,8 +262,33 @@ def ensure_project_id(paths):
     return meta["id"]
 
 
+def apply_meta(paths, meta_file):
+    """`init --meta-file F`: merge F's keys into tasks.json's meta (project, description, phases, vocabularies),
+    creating tasks.json if there is none, so /atm:create-tasks never writes the file itself. The vocabularies are
+    checked before anything is written; meta.id is kept. Returns (created, keys)."""
+    new = read_json(meta_file)
+    if not isinstance(new, dict):
+        raise AtmError(f"{meta_file} must hold a JSON object: the meta keys to set", 2)
+    new.pop("id", None)
+    with locked(paths["dir"]) if os.path.isdir(paths["dir"]) else contextlib.nullcontext():
+        created = not os.path.isfile(paths["tasks"])
+        data = {"meta": {"created": now().strftime("%Y-%m-%d")}, "tasks": []} if created else load_tasks(paths)
+        if not isinstance(data.get("meta"), dict):
+            data["meta"] = {}
+        data["meta"].update(new)
+        vocabulary(data)  # raises, naming the problem, before anything is written
+        os.makedirs(paths["dir"], exist_ok=True)
+        write_json_atomic(paths["tasks"], data)
+    return created, sorted(new)
+
+
 def cmd_init(args):
     paths = find_paths(os.getcwd())
+    if args.meta_file:
+        created, keys = apply_meta(paths, args.meta_file)
+        paths = find_paths(os.getcwd())
+        if not args.json:
+            out(("Created tasks.json; meta: " if created else "Updated tasks.json meta: ") + (", ".join(keys) or "-"))
     project_id = ensure_project_id(paths)
     git_repo = in_git(paths["root"])
     changed = ensure_merge_driver(paths) if git_repo else False

@@ -75,8 +75,10 @@ commands:
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
-  init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
-                 clone (migrate registers the driver too)
+  init [--meta-file F]
+                 give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
+                 clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
+                 from a JSON object, creating tasks.json if there is none
   merge-driver <base> <ours> <theirs>
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
@@ -295,7 +297,12 @@ def build_parser():
     )
     agent_option(heartbeat)
 
-    command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
+    init = command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
+    init.add_argument(
+        "--meta-file",
+        metavar="F",
+        help="set tasks.json meta from a JSON object (project, phases, vocabularies); creates tasks.json if needed",
+    )
     merge = command("merge-driver", cmd_merge_driver, "git merge driver for tasks.json")
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)

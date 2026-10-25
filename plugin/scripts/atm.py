@@ -2063,8 +2063,33 @@ def ensure_project_id(paths):
     return meta["id"]
 
 
+def apply_meta(paths, meta_file):
+    """`init --meta-file F`: merge F's keys into tasks.json's meta (project, description, phases, vocabularies),
+    creating tasks.json if there is none, so /atm:create-tasks never writes the file itself. The vocabularies are
+    checked before anything is written; meta.id is kept. Returns (created, keys)."""
+    new = read_json(meta_file)
+    if not isinstance(new, dict):
+        raise AtmError(f"{meta_file} must hold a JSON object: the meta keys to set", 2)
+    new.pop("id", None)
+    with locked(paths["dir"]) if os.path.isdir(paths["dir"]) else contextlib.nullcontext():
+        created = not os.path.isfile(paths["tasks"])
+        data = {"meta": {"created": now().strftime("%Y-%m-%d")}, "tasks": []} if created else load_tasks(paths)
+        if not isinstance(data.get("meta"), dict):
+            data["meta"] = {}
+        data["meta"].update(new)
+        vocabulary(data)  # raises, naming the problem, before anything is written
+        os.makedirs(paths["dir"], exist_ok=True)
+        write_json_atomic(paths["tasks"], data)
+    return created, sorted(new)
+
+
 def cmd_init(args):
     paths = find_paths(os.getcwd())
+    if args.meta_file:
+        created, keys = apply_meta(paths, args.meta_file)
+        paths = find_paths(os.getcwd())
+        if not args.json:
+            out(("Created tasks.json; meta: " if created else "Updated tasks.json meta: ") + (", ".join(keys) or "-"))
     project_id = ensure_project_id(paths)
     git_repo = in_git(paths["root"])
     changed = ensure_merge_driver(paths) if git_repo else False
@@ -2802,8 +2827,10 @@ commands:
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
-  init           give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
-                 clone (migrate registers the driver too)
+  init [--meta-file F]
+                 give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
+                 clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
+                 from a JSON object, creating tasks.json if there is none
   merge-driver <base> <ours> <theirs>
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
@@ -3022,7 +3049,12 @@ def build_parser():
     )
     agent_option(heartbeat)
 
-    command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
+    init = command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
+    init.add_argument(
+        "--meta-file",
+        metavar="F",
+        help="set tasks.json meta from a JSON object (project, phases, vocabularies); creates tasks.json if needed",
+    )
     merge = command("merge-driver", cmd_merge_driver, "git merge driver for tasks.json")
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)

@@ -135,7 +135,8 @@ Existing commands are marked *(exists)*.
 |---|---|
 | `atm migrate` *(exists)* | compares the dashboard's **build ID** (a second meta tag, `atm-dashboard-build`, a hash the dashboard build computes once) instead of only the version, so a new build with the same version is installed. It reads only the head of both files, as today, and hashes nothing at run time. Adds `meta.next_id` when missing. |
 | `atm serve --dir <path>` *(exists, new option)* | acts on another project's server without a `cd` |
-| `atm init`, `paths`, `version`, `claims`, `merge-driver` *(exist)* | unchanged; the merge driver also handles the archive |
+| `atm init --meta-file F` *(exists, new option)* | merges a JSON object into `meta` (project, description, phases, vocabularies), creating `tasks.json` if there is none, after checking the vocabularies; keeps `meta.id`. `/atm:create-tasks` uses it so it never writes `tasks.json` itself (added with T-128) |
+| `atm paths`, `version`, `claims`, `merge-driver` *(exist)* | unchanged; the merge driver also handles the archive |
 
 ## 5. Hints
 

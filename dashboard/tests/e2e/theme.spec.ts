@@ -81,6 +81,8 @@ test.describe('themes', () => {
       'Ayu',
       'Night Owl',
       'Gruvbox',
+      'Noctis',
+      'Sublime Material',
       'High contrast',
     ]);
     const before = await tokens(page);

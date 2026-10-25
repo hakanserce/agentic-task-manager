@@ -42,6 +42,10 @@ below.
 | Night Owl | light | 8.7 | 4.5 | 7.7 | 3.0 (orange) | 5.5 | 3.6 |
 | Gruvbox | dark | 8.5 | 5.3 | 7.2 | 3.0 (purple) | 6.1 | 3.8 |
 | Gruvbox | light | 8.5 | 4.6 | 7.9 | 3.0 (yellow) | 5.8 | 3.3 |
+| Noctis | dark | 7.2 | 4.6 | 6.7 | 3.0 (purple) | 6.9 | 4.1 |
+| Noctis | light | 6.8 | 4.5 | 6.2 | 3.0 (green) | 5.3 | 3.6 |
+| Sublime Material | dark | 12.3 | 4.5 | 9.2 | 4.0 (red) | 9.1 | 3.9 |
+| Sublime Material | light | 4.9 | 4.5 | 4.5 | 3.0 (green) | 5.2 | 3.4 |
 | High contrast | dark | 17.0 | 15.9 | 13.4 | 5.9 (red) | 11.6 | 5.1 |
 | High contrast | light | 18.4 | 15.1 | 14.9 | 5.3 (green) | 8.4 | 5.2 |
 
@@ -147,6 +151,37 @@ below.
 **Gruvbox, light**:
 - text-muted: #7c6f64 -> #776b60 (muted text contrast)
 - yellow: #b57614 -> #ae7113 (label contrast)
+- burndown series #1a5ad8/#e0580a (the Catppuccin light pair)
+
+**Noctis, dark**:
+- text-muted: #5b858b -> #688f94 (muted text contrast)
+- burndown series #3987e5/#d95926 (the Default dark pair)
+
+**Noctis, light** (Noctis Lux):
+- text-muted: #8ca6a6 -> #637676 (muted text contrast)
+- accent: #0094f0 -> #0087da (label contrast)
+- green: #00b368 -> #009657 (label contrast)
+- yellow: #f49725 -> #b9731c (label contrast)
+- pink: #ff5792 -> #de4c7f (label contrast)
+- orange: #fa8900 -> #c66c00 (label contrast)
+- cyan: #00bdd6 -> #008ea1 (label contrast)
+- on-accent: #fef8ec -> #03050a (text on accent)
+- burndown series #1a5ad8/#e0580a (the Catppuccin light pair)
+
+**Sublime Material, dark**:
+- text-muted: #546e7a -> #7b8f99 (muted text contrast)
+- burndown series #3987e5/#d95926 (the Default dark pair)
+
+**Sublime Material, light**:
+- text: the Lighter foreground (#80cbc4) is too pale for text; Material's #546e7a -> #4d6570 (text contrast)
+- text-muted: #90a4ae -> #637178 (muted text contrast)
+- accent: #6182b8 -> #6081b6 (label contrast)
+- green: #91b859 -> #6d8a43 (label contrast)
+- yellow: #ffb62c -> #a8781d (label contrast)
+- pink: #ff5370 -> #de4861 (label contrast)
+- orange: #f76d47 -> #cf5c3c (label contrast)
+- cyan: #39adb5 -> #2e8c93 (label contrast)
+- on-accent: #ffffff -> #03050a (text on accent)
 - burndown series #1a5ad8/#e0580a (the Catppuccin light pair)
 
 **High contrast, dark**:

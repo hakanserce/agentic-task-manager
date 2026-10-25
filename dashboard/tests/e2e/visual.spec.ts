@@ -224,6 +224,8 @@ for (const theme of [
   'ayu',
   'night-owl',
   'gruvbox',
+  'noctis',
+  'sublime-material',
   'high-contrast',
 ]) {
   for (const mode of ['dark', 'light']) {

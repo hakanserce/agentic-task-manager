@@ -11,5 +11,7 @@ export const THEMES: ThemeInfo[] = [
   { id: 'ayu', name: 'Ayu', swatch: ['#0b0e14', '#e6b450', '#70bf56', '#d95757'] },
   { id: 'night-owl', name: 'Night Owl', swatch: ['#010e1a', '#82aaff', '#22da6e', '#ef5350'] },
   { id: 'gruvbox', name: 'Gruvbox', swatch: ['#1d2021', '#83a598', '#b8bb26', '#fb4934'] },
+  { id: 'noctis', name: 'Noctis', swatch: ['#031e22', '#49ace9', '#49e9a6', '#e66533'] },
+  { id: 'sublime-material', name: 'Sublime Material', swatch: ['#1c1c1d', '#80cbc4', '#c3e88d', '#ff5370'] },
   { id: 'high-contrast', name: 'High contrast', swatch: ['#000000', '#66ccff', '#5df07f', '#ff6b6b'] },
 ];

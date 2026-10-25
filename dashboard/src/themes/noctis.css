@@ -1,0 +1,75 @@
+/* Noctis theme. Palette: https://github.com/liviuschera/noctis (Noctis for dark, Noctis Lux for light); MIT.
+   Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the surface. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #5b858b -> #688f94 (muted text contrast)
+   - burndown series #3987e5/#d95926 (the Default dark pair), which passes the chart validator on this surface */
+:root[data-theme='noctis'] {
+  color-scheme: dark;
+  --bg: #031e22;
+  --surface: #052529;
+  --surface2: #0b3a3f;
+  --border: #0f4a50;
+  --text: #b2cacd;
+  --text-muted: #688f94;
+  --accent: #49ace9;
+  --green: #49e9a6;
+  --yellow: #e4b781;
+  --red: #e66533;
+  --purple: #7060eb;
+  --pink: #df769b;
+  --orange: #d5971a;
+  --cyan: #49d6e9;
+  --on-accent: #031e22;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #134c42;
+  --node-bugfix: #32322b;
+  --node-test: #1a3150;
+  --node-infra: #2f3c26;
+  --node-docs: #13484f;
+  --node-refactor: #32423b;
+  --node-polish: #313540;
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #8ca6a6 -> #637676 (muted text contrast)
+   - accent: #0094f0 -> #0087da (label contrast)
+   - green: #00b368 -> #009657 (label contrast)
+   - yellow: #f49725 -> #b9731c (label contrast)
+   - pink: #ff5792 -> #de4c7f (label contrast)
+   - orange: #fa8900 -> #c66c00 (label contrast)
+   - cyan: #00bdd6 -> #008ea1 (label contrast)
+   - on-accent: #fef8ec -> #03050a (text on accent)
+   - burndown series #1a5ad8/#e0580a (the Catppuccin light pair), which passes the chart validator on this surface */
+:root[data-theme='noctis'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #f6edda;
+  --surface: #fef8ec;
+  --surface2: #f2e6ce;
+  --border: #e0d5bd;
+  --text: #005661;
+  --text-muted: #637676;
+  --accent: #0087da;
+  --green: #009657;
+  --yellow: #b9731c;
+  --red: #e34e1c;
+  --purple: #5842ff;
+  --pink: #de4c7f;
+  --orange: #c66c00;
+  --cyan: #008ea1;
+  --on-accent: #03050a;
+  --overlay: rgba(0, 86, 97, 0.25);
+  --node-feature: #c6e2cb;
+  --node-bugfix: #f8d3be;
+  --node-test: #d9d0f0;
+  --node-infra: #f2d9b8;
+  --node-docs: #c6e1dc;
+  --node-refactor: #efdbbe;
+  --node-polish: #f7d2d4;
+  --series-remaining: #1a5ad8;
+  --series-scope: #e0580a;
+}

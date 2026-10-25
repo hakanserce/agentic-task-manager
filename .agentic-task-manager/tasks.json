@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 165,
+    "next_id": 181,
     "labels": [
       {
         "id": "dashboard",
@@ -5006,7 +5006,7 @@
     {
       "id": "T-156",
       "name": "Progress panel: one card for By Phase, one for By Type",
-      "phase": 15,
+      "phase": 16,
       "type": "bugfix",
       "priority": "P2",
       "labels": [
@@ -5024,14 +5024,14 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T08:01:19Z",
-      "updated_at": "2026-10-25T19:42:42Z",
+      "updated_at": "2026-10-25T20:33:19Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-157",
       "name": "Progress panel: \"Active phases only\" for By Phase",
-      "phase": 15,
+      "phase": 16,
       "type": "feature",
       "priority": "P3",
       "labels": [
@@ -5051,14 +5051,14 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:01:20Z",
-      "updated_at": "2026-10-25T19:42:42Z",
+      "updated_at": "2026-10-25T20:33:19Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-158",
       "name": "Record the git repository address in meta.repository",
-      "phase": 15,
+      "phase": 16,
       "type": "feature",
       "priority": "P2",
       "labels": [
@@ -5082,14 +5082,14 @@
         "README.md"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T19:42:42Z",
+      "updated_at": "2026-10-25T20:33:20Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-159",
       "name": "Task details: started, finished and duration",
-      "phase": 15,
+      "phase": 16,
       "type": "feature",
       "priority": "P2",
       "labels": [
@@ -5107,14 +5107,14 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T19:42:42Z",
+      "updated_at": "2026-10-25T20:33:20Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-160",
       "name": "Task details: commit and PR as GitHub links",
-      "phase": 15,
+      "phase": 16,
       "type": "feature",
       "priority": "P2",
       "labels": [
@@ -5135,14 +5135,14 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:21:58Z",
-      "updated_at": "2026-10-25T19:42:42Z",
+      "updated_at": "2026-10-25T20:33:20Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-161",
       "name": "Commit and PR links for GitLab, Bitbucket and others",
-      "phase": 15,
+      "phase": 16,
       "type": "feature",
       "priority": "P3",
       "labels": [
@@ -5161,14 +5161,14 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-25T08:22:05Z",
-      "updated_at": "2026-10-25T19:42:43Z",
+      "updated_at": "2026-10-25T20:33:20Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-162",
       "name": "Completion % leaves out skipped tasks; show them separately",
-      "phase": 15,
+      "phase": 16,
       "type": "bugfix",
       "priority": "P2",
       "labels": [
@@ -5191,14 +5191,14 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-25T19:42:43Z",
+      "updated_at": "2026-10-25T20:33:20Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-163",
       "name": "Appearance menu: theme picker as a combo box",
-      "phase": 15,
+      "phase": 16,
       "type": "polish",
       "priority": "P2",
       "labels": [
@@ -5218,14 +5218,14 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-25T19:42:43Z",
+      "updated_at": "2026-10-25T20:33:21Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-164",
       "name": "Status filter lists every status in the project's vocabulary",
-      "phase": 15,
+      "phase": 16,
       "type": "bugfix",
       "priority": "P2",
       "labels": [
@@ -5243,9 +5243,472 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T19:36:02Z",
-      "updated_at": "2026-10-25T19:42:43Z",
+      "updated_at": "2026-10-25T20:33:21Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-165",
+      "name": "Multi-project API: write down the server's routes and formats",
+      "phase": 15,
+      "type": "docs",
+      "priority": "P0",
+      "labels": [
+        "architecture",
+        "cli",
+        "dashboard"
+      ],
+      "description": "First task of docs/multi-project-dashboard-proposal.md §5, so the atm-cli and dashboard work can run in parallel. Write docs/multi-project-api.md: the routes (/ the dashboard; /api/projects; /p/<id>/tasks.json, claims.json, tasks-archive.json; /__atm/whoami), and for each the method, status codes (200, 304 with ETag/If-None-Match, 404 for an unknown project or file, 403/421 for a bad Host header), headers (Cache-Control: no-store, ETag) and the exact JSON. /api/projects: a list of { id, name, path, missing (folder or tasks.json gone), summary } where summary has total, done, skipped, percent (done / (total - skipped); a group with only skipped tasks counts as finished), current_phase { id, name, done, total }, agents_working (live claims), needs_you { review, blocked_on_user }, last_activity (newest timestamp), completions_14d (14 daily counts). Project <id> is meta.id (registry entries without one use a stable hash of the path; say which). /__atm/whoami: { atm: true, pid, version, build }. ~/.agentic-task-manager/server.json and projects.json formats. Link it from the proposal.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/multi-project-api.md",
+        "docs/multi-project-dashboard-proposal.md"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-166",
+      "name": "atm-cli: project registry and atm projects",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.1. New module atm-cli/atm/registry.py (add it to atm-cli/build.py's MODULES in dependency order). Registry at $ATM_HOME/projects.json, ATM_HOME defaulting to ~/.agentic-task-manager; written under locked(ATM_HOME) with write_json_atomic, never while holding a project's lock. Entries keyed by project root path: { id: meta.id, name: meta.project, path, added_at, seen_at }. In a linked git worktree, register the main worktree (the parent of `git rev-parse --git-common-dir`). A project with meta.dashboard.listed false is never registered (and removed if present). An unreadable projects.json is renamed to projects.json.damaged-<UTC time> and replaced by an empty registry, and `atm projects` says so. Commands: `atm projects [--json]` (each entry, marking missing folders or tasks.json), `atm projects add [PATH]`, `atm projects remove <id|PATH>`, `atm projects prune` (drops missing ones). A register(paths, wait=True) function for the next task; with wait=False it tries the lock once and returns without registering if it's taken. Scenarios in tests/scripts/scenarios/projects.json with ATM_HOME in the temp folder: add, list, remove, prune, opt-out, damaged file, linked worktree registers the main one (that one may need a *.test.mjs for git worktrees), and concurrent registration from several processes leaves a valid file with every project.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-165"
+      ],
+      "files": [
+        "atm-cli/atm/registry.py",
+        "atm-cli/atm/cli.py",
+        "atm-cli/build.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/projects.json",
+        "tests/scripts/registry.test.mjs"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-167",
+      "name": "atm-cli: register projects automatically",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.1 'Filled automatically'. `atm init`, `atm migrate` and `atm serve` (including --dir) register the project they act on (registry.register, waiting for the lock). `atm heartbeat --auto` (the PostToolUse hook) also registers the current project when it has .agentic-task-manager/tasks.json and isn't listed yet, with wait=False so a hook never waits on the lock; it must stay cheap: one read of projects.json, a write only when the project is new or its seen_at is more than a day old. Update name/id in the entry when meta.project or meta.id changed. Scenarios: each command registers; the hook registers once and doesn't rewrite on the next call; a held registry lock makes the hook skip without error or delay; seen_at refreshes after a day (ATM_NOW).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-166"
+      ],
+      "files": [
+        "atm-cli/atm/registry.py",
+        "atm-cli/atm/migrate.py",
+        "atm-cli/atm/merge.py",
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/server.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-168",
+      "name": "atm-cli: one dashboard server per user",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "cli",
+        "architecture"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.2 and docs/multi-project-api.md. Rework atm-cli/atm/server.py: `atm serve [start|stop|status]` manages one server per user, recorded in $ATM_HOME/server.json { pid, port, version, build, started_at } (version and build from the plugin's templates/tasks-dashboard.html meta tags). Ports: 8765 first, then the next free one. The server reads the plugin's templates/tasks-dashboard.html once at start and serves it from memory at /. Routes per the API doc: /p/<id>/tasks.json, claims.json and tasks-archive.json only, only for registered projects (reload the registry when projects.json changes), with the existing ETag/304 handling; no directory listing, every other path 404; /__atm/whoami returns { atm, pid, version, build }. Refuse any request whose Host header isn't localhost:<port> or 127.0.0.1:<port>. `atm serve` in a project registers it and prints (or --open opens) /#project=<id>; `--all` prints the overview URL /; stop and status act on the user's server; --dir keeps working. /api/projects can return entries without summaries until the next task. Tests in tests/scripts/serve.test.mjs (ATM_HOME and a test port range): start/reuse/stop/status, two projects served by one server, an unregistered project and other file names give 404, a bad Host header is refused, the dashboard still served after its file is deleted.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-165",
+        "T-166"
+      ],
+      "files": [
+        "atm-cli/atm/server.py",
+        "atm-cli/atm/cli.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/serve.test.mjs"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-169",
+      "name": "atm-cli: project summaries in /api/projects",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.5 and the summary format in docs/multi-project-api.md. The server fills each /api/projects entry's summary with atm-cli's own logic (status kinds and counts as in query.py's status; claims from the claims store, live ones only), not a second implementation: percent = done / (total - skipped), current phase = lowest phase with unfinished tasks, needs_you = review-kind and blocked-kind waiting_on user, last_activity = newest timestamp in tasks.json, completions_14d = completions per day for the last 14 days. Cache each project's summary until its tasks.json (or claims) size or mtime changes; the response has an ETag and answers 304 when nothing changed. Missing folders appear with missing: true and no summary. Tests: summaries for a fixture project (including skipped tasks and an all-skipped project), caching (no re-read when unchanged), 304.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-168"
+      ],
+      "files": [
+        "atm-cli/atm/server.py",
+        "atm-cli/atm/query.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/serve.test.mjs"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-170",
+      "name": "Restart an outdated server: serve --refresh and hooks",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli",
+        "skills"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.3. `atm serve --refresh`: if server.json names a live atm server (whoami) whose version or build differs from this plugin's dashboard, restart it on the same port (stop, start); if none runs or it is current, do nothing; never start one that isn't running. Add a SessionStart hook to plugin/hooks/hooks.json running \"${CLAUDE_PLUGIN_ROOT}/bin/atm\" serve --refresh (short timeout). `atm heartbeat --auto` (PostToolUse) and every other atm command make the same check cheaply (one read of server.json, compare to this plugin's version and build; no network call unless they differ) and refresh when outdated. Tests: an older server is restarted on the same port; a current one is left alone; no server means nothing starts; the hook path doesn't slow down when nothing changed.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-168"
+      ],
+      "files": [
+        "atm-cli/atm/server.py",
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/cli.py",
+        "plugin/hooks/hooks.json",
+        "plugin/scripts/atm.py",
+        "tests/scripts/serve.test.mjs"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-171",
+      "name": "atm migrate: stop copying the dashboard; clean up old ones",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.3 ('atm migrate stays'). atm migrate no longer installs tasks-dashboard.html into the task folder (remove ensure_dashboard's copy and the dashboard actions from its output and --json; keep the version/build reading the server needs). Once per project it cleans up: deletes .agentic-task-manager/tasks-dashboard.html if present, stops the project's old per-project server if .agentic-task-manager/.server.json names one and whoami confirms it is that folder's server (as the old serve stop did), and removes .server.json and .server.log. Keep the .gitignore entries so old files stay ignored. Everything else (legacy move, .gitignore, merge driver, archive hint) unchanged. Scenarios: a project with an old copy and a stale or live per-project server is cleaned up; a second run does nothing; a legacy docs/tasks.json still moves.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-167",
+        "T-168"
+      ],
+      "files": [
+        "atm-cli/atm/migrate.py",
+        "atm-cli/atm/server.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/",
+        "tests/scripts/serve.test.mjs"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-172",
+      "name": "Dashboard: load data from the server's API",
+      "phase": 15,
+      "type": "refactor",
+      "priority": "P0",
+      "labels": [
+        "dashboard",
+        "architecture"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.3 ('No single-project mode') and docs/multi-project-api.md. dashboard/src/lib/load.ts loads /api/projects and a project's files from /p/<id>/ (tasks.json, claims.json, tasks-archive.json, keeping the conditional fetch) instead of ./tasks.json; the state holds the project list and the current project id (for now the first project, routing comes next). build/dev-data.ts serves the same API for one folder (ATM_DEV_DATA) or several. The e2e tasksServer fixture (tests/e2e/helpers.ts) serves the API: one project by default, so existing specs keep working with only helper changes, and several when a test passes them. Unit tests for load.ts. The whole e2e suite and screenshots stay green; update CLAUDE.md's testing notes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-165"
+      ],
+      "files": [
+        "dashboard/src/lib/load.ts",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/build/dev-data.ts",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/unit/",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-173",
+      "name": "Dashboard: project routing and the landing page",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.2 (per-project URLs) and §3.5 (landing page). #project=<id> selects the project and combines with #view=... (dashboard/src/lib/tabs.ts' hash handling); back/forward work. Without #project: two or more projects -> the overview (a placeholder component until the overview task); one -> that project; none -> a short page explaining /atm:create-tasks and `atm projects add <path>`. An unknown or missing project id shows a message with a link to the overview. Switching projects restores that project's saved view (view-store.ts, keyed by meta.id) and resets per-project state (filters, graph view, archive). Unit tests for the routing and landing rules; e2e with two projects.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-172"
+      ],
+      "files": [
+        "dashboard/src/lib/tabs.ts",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/App.svelte",
+        "dashboard/src/components/",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-174",
+      "name": "Dashboard: project selector next to the title",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.4. The title becomes a button 'project name ▾' opening a listbox: 'All projects' first, then each project with its name, a small progress bar (summary.percent) and a dot when something needs you (summary.needs_you); keyboard (arrows, Enter, Escape, type to filter) per the WAI-ARIA select-only combobox pattern; theme tokens only. The header's attention count is this project's; a small badge on the selector shows the other projects' total. Auto-refresh polls the open project's files plus /api/projects (both conditional). The selector is shown even with one project, so the overview stays reachable. Component tests, e2e (switching, keyboard, badge), screenshots in both modes (darwin; delete the matching -linux.png files per CLAUDE.md).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-173"
+      ],
+      "files": [
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/ProjectSelector.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-175",
+      "name": "Dashboard: All projects overview",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.5, from /api/projects summaries (docs/multi-project-api.md). A responsive grid of cards: name (path on hover), progress bar with 'done / total · N skipped', current phase and its progress, agents working now, needs you (review, blocked on you), last activity ('12 min ago'), a 14-day completions sparkline (reuse the Activity widget's sparkline and the Ring/progress styles). Order: needs you first, then last activity. 'Active only' toggle (on by default, remembered per browser) hides projects with no open work and no activity in 14 days. Missing projects show 'not found' with the `atm projects remove` command to copy. Click a card -> the project; click its needs-you count -> that project's Kanban filtered to review and blocked kinds. Follow the dataviz skill for the sparkline and bars. Unit tests for ordering and filtering; e2e with several projects; screenshots in both modes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-173"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectsOverview.svelte",
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/lib/projects.ts",
+        "dashboard/src/app.css",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-176",
+      "name": "Dashboard: 'new version ready' notice",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.3. On each auto-refresh (or when a poll fails and then recovers), compare /__atm/whoami's build with the page's atm-dashboard-build meta tag. When they differ, show a small non-blocking bar: 'A new version of the dashboard is ready' with a Reload button; never reload by itself. What's new keeps its current 'new' marker logic after the reload. Unit test for the comparison; e2e where the fixture's whoami changes build mid-test.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-172"
+      ],
+      "files": [
+        "dashboard/src/lib/load.ts",
+        "dashboard/src/components/UpdateNotice.svelte",
+        "dashboard/src/App.svelte",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-177",
+      "name": "Skills and docs for one dashboard; remove update-dashboard",
+      "phase": 15,
+      "type": "docs",
+      "priority": "P1",
+      "labels": [
+        "skills"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.3 and §4. /atm:serve (plugin/skills/serve/SKILL.md): one server for all projects, prints the project's URL, --all for the overview, --open. Delete plugin/skills/update-dashboard/ and replace every mention of /atm:update-dashboard (skills, plugin/CLAUDE.md, README, docs/help.md, the dashboard's Help) with 'update the plugin'. create-tasks: the project is registered by atm init; mention the dashboard shows all projects. Skills no longer talk about installing the dashboard into the project (migrate's output changed). README: one dashboard for all projects, how updating works (plugin update; the server restarts by itself), the registry (~/.agentic-task-manager/, atm projects, opting out) and what the server exposes (localhost only, three files per registered project). docs/help.md: the selector and the overview. Root CLAUDE.md: dev server and test fixture serve the API.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-170",
+        "T-171",
+        "T-174",
+        "T-175"
+      ],
+      "files": [
+        "plugin/skills/serve/SKILL.md",
+        "plugin/skills/update-dashboard/SKILL.md",
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/CLAUDE.md",
+        "README.md",
+        "docs/help.md",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-178",
+      "name": "Release 0.15.0: one dashboard for all projects",
+      "phase": 15,
+      "type": "docs",
+      "priority": "P1",
+      "description": "Bump plugin.json and marketplace.json to 0.15.0; CHANGELOG.md entry (registry and atm projects, the per-user server on 8765 and its API, serve --refresh and the SessionStart hook, migrate's cleanup, the selector and overview, update-dashboard removed, no single-project mode); WHATS-NEW.md entry saying plainly that the dashboard now shows all projects in one place, updates with the plugin, and opens with /atm:serve. Update the footer-version screenshots per CLAUDE.md. npm run verify and the atm-cli suite green. Ship through /atm:push.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-169",
+        "T-176",
+        "T-177",
+        "T-180"
+      ],
+      "files": [
+        "plugin/.claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+        "plugin/CHANGELOG.md",
+        "plugin/WHATS-NEW.md",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T21:18:56Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-179",
+      "name": "Dashboard: git worktrees of a project",
+      "phase": 16,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "cli",
+        "architecture"
+      ],
+      "description": "docs/multi-project-dashboard-proposal.md §3.6. Today only the main worktree is registered, and its dashboard doesn't see agents working in other worktrees until their branches merge (each worktree has its own tasks.json and claims.json snapshot; only the claims store in .git/atm/ is shared). Design first, then implement: list a project's worktrees (git worktree list) in /api/projects; make claims from every worktree visible (e.g. the server reads the shared claims store instead of the per-worktree snapshot); and in the dashboard either switch between worktrees on the project page or show all of them on one Kanban with a branch chip per card. Ask the user to choose between those two before building it (atm block --on user).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-178"
+      ],
+      "files": [
+        "atm-cli/atm/server.py",
+        "atm-cli/atm/registry.py",
+        "dashboard/src/",
+        "docs/multi-project-api.md"
+      ],
+      "created_at": "2026-10-25T20:34:31Z",
+      "updated_at": "2026-10-25T20:34:31Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-180",
+      "name": "atm phases: list and name phases one at a time",
+      "phase": 15,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli",
+        "skills"
+      ],
+      "description": "Phase names live in meta.phases ([{id, name}]) but the only way to set them is `atm init --meta-file`, which replaces the whole list, and no command prints them, so an agent can't add a name without wiping the others. Add to atm-cli (a new phases command in atm-cli/atm/cli.py, logic next to the vocabulary code in model.py or a small module added to build.py's MODULES):\n- `atm phases [--json]`: every phase that has tasks or a name, in numeric order: number, name (if any), and task counts by status kind (todo, active, review, blocked, done, skipped). Archived tasks count only with --archived, like `atm list`.\n- `atm phases name <n> \"<name>\"`: set or replace that one entry under the tasks lock (atomic write, other entries and their order untouched; keep the list sorted by id); refuse an empty name. `atm phases unname <n>` removes the entry. Both print what changed and take --json.\n- `atm status` shows names next to phase numbers in 'by phase' (and in --json, a names map); `atm list` stays as it is.\n- `atm check` warns (not errors) about a named phase with no tasks in tasks.json or the archive.\nScenarios in tests/scripts/scenarios/phases.json: listing with and without names, name/rename/unname, other names kept, invalid number or empty name refused, check's warning, status output. Update plugin/skills/create-tasks/SKILL.md: name phases with `atm phases name` (Step 4 no longer puts `phases` in --meta-file; read existing names with `atm phases`), plugin/CLAUDE.md's command list, docs/v4/atm-cli.md, and the CHANGELOG [Unreleased] notes if the release task hasn't run. Finally name this repo's phases 15 and 16 with the new command (suggested: 15 'One dashboard for all projects', 16 'Dashboard polish and worktrees'; check `atm phases` for existing names first).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/cli.py",
+        "atm-cli/atm/model.py",
+        "atm-cli/atm/query.py",
+        "atm-cli/atm/edit.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/phases.json",
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/CLAUDE.md",
+        "docs/v4/atm-cli.md"
+      ],
+      "created_at": "2026-10-25T21:18:54Z",
+      "updated_at": "2026-10-25T21:18:54Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

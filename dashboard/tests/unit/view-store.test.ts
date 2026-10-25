@@ -44,6 +44,7 @@ describe('reading and writing', () => {
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
       listSort: 'priority',
       progressPhase: 2,
+      progressActive: { only: true, days: 14 },
       graphFiltered: 'dim',
       graph: { k: 1.5, x: -120, y: 40 },
       agents: { start: 1000, end: 61_000, followEnd: true },
@@ -52,6 +53,11 @@ describe('reading and writing', () => {
     };
     writeView(key, view);
     expect(readView(key)).toEqual(view);
+  });
+
+  it('"Active phases only" falls back to off and 7 days when malformed', () => {
+    localStorage.setItem(key, JSON.stringify({ progressActive: { only: 'yes', days: 0 } }));
+    expect(readView(key).progressActive).toEqual({ only: false, days: 7 });
   });
 
   it('projects are kept apart', () => {

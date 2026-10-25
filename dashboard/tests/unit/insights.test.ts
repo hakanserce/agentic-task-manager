@@ -5,6 +5,8 @@ import {
   MAX_ACTIVITY_BUCKETS,
   median,
   progressBreakdown,
+  periodPhrase,
+  PRESET_BUCKET_MS,
   rangeLabel,
   rangeWindow,
 } from '../../src/lib/insights';
@@ -155,7 +157,7 @@ describe('activitySeries', () => {
       task('f', { created_at: iso(T0 + 2.5 * H) }),
     ];
     const s = activitySeries(tasks)!;
-    expect(s.unitLabel).toBe('1 hour');
+    expect(s.unitLabel).toBe('hour');
     expect(s.bucketMs).toBe(H);
     expect(s.totalCompleted).toBe(4);
     expect(s.buckets.map((b) => b.completed.length)).toEqual([2, 0, 1, 1]);
@@ -185,7 +187,7 @@ describe('activitySeries', () => {
 
   it('picks longer buckets for longer spans, never more than the maximum', () => {
     const days = activitySeries([worked('a', 0, 1), worked('b', 0, 24 * 20)])!;
-    expect(days.unitLabel).toBe('1 day');
+    expect(days.unitLabel).toBe('day');
     const months = activitySeries([worked('a', 0, 1), worked('b', 0, 24 * 365 * 5)])!;
     expect(months.unitLabel).toBe('30 days');
     for (const s of [days]) expect(s.buckets.length).toBeLessThanOrEqual(MAX_ACTIVITY_BUCKETS);
@@ -244,6 +246,39 @@ describe('rangeWindow and activity in a period', () => {
     expect(s.totalCompleted).toBe(2);
     expect(s.cycleTimes.map((c) => c.id)).toEqual(['b', 'c']);
     expect(s.buckets.at(-1)!.cumulativeDone).toBe(3);
+  });
+
+  it('each stepped period has its natural bucket: an hour per 5 minutes, a day per hour, a week or month per day', () => {
+    const tasks = [worked('a', 0, 0.5), worked('b', 1, 2.5)];
+    const bucketOf = (preset: 'hour' | 'day' | 'week' | 'month') => {
+      const s = activitySeries(tasks, rangeWindow({ preset }, now), now, undefined, PRESET_BUCKET_MS[preset])!;
+      return [s.unitLabel, s.buckets.length];
+    };
+    expect(bucketOf('hour')).toEqual(['5 minutes', 12]);
+    expect(bucketOf('day')).toEqual(['hour', 16]); // midnight to 15:30
+    expect(bucketOf('week')).toEqual(['day', 3]); // Monday to Wednesday (the bug: "per 6 hours")
+    expect(bucketOf('month')).toEqual(['day', 1]);
+    // All time and custom periods still pick the smallest size that fits
+    expect(PRESET_BUCKET_MS.all).toBeUndefined();
+    expect(PRESET_BUCKET_MS.custom).toBeUndefined();
+  });
+
+  it('periodPhrase names the period inside a heading', () => {
+    const phrase = (preset: 'hour' | 'day' | 'week' | 'month', offset = 0) => periodPhrase({ preset, offset }, now);
+    expect([phrase('hour'), phrase('day'), phrase('day', -1), phrase('week'), phrase('week', -1)]).toEqual([
+      'in the last hour',
+      'today',
+      'yesterday',
+      'this week',
+      'last week',
+    ]);
+    expect([phrase('month'), phrase('month', -1)]).toEqual(['this month', 'last month']);
+    expect(phrase('week', -2)).toMatch(/^in the week of /);
+    expect(phrase('month', -2)).toMatch(/^in February 2026$/);
+    expect(phrase('day', -3)).toMatch(/^on /);
+    expect(phrase('hour', -1)).toMatch(/^from /);
+    expect(periodPhrase({ preset: 'all' }, now)).toBe('over all time');
+    expect(periodPhrase({ preset: 'custom', from: 1, to: 5 }, now)).toBe('in the chosen period');
   });
 });
 

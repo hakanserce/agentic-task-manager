@@ -5,6 +5,11 @@ import './themes/nord.css';
 import './themes/solarized.css';
 import './themes/catppuccin.css';
 import './themes/tokyo-night.css';
+import './themes/ayu.css';
+import './themes/night-owl.css';
+import './themes/gruvbox.css';
+import './themes/noctis.css';
+import './themes/sublime-material.css';
 import './themes/high-contrast.css';
 import App from './App.svelte';
 

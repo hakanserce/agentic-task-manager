@@ -7,7 +7,8 @@
 
   // Three charts on one time axis, each answering one question: what got done (completions by type), who was
   // working (agents busy, stacked per agent), and how long tasks took. One hover reads a period across all three.
-  let { series }: { series: ActivitySeries } = $props();
+  // `period` names the selected period for the headings: "this week", "today", "over all time" (periodPhrase)
+  let { series, period }: { series: ActivitySeries; period: string } = $props();
 
   const W = 640;
   const PAD_L = 34;
@@ -109,7 +110,7 @@
 <div class="deep-dive">
   <section class="dive-chart" id="dive-completed">
     <header>
-      <h4>Tasks completed per {series.unitLabel}, by type</h4>
+      <h4>Tasks completed {period}, per {series.unitLabel}, by type</h4>
       <div class="type-legend">
         {#each series.types as t (t.type)}
           <span class="type-chip"
@@ -144,7 +145,7 @@
 
   <section class="dive-chart" id="dive-agents">
     <header>
-      <h4>Agents working <span>(1 = one agent busy the whole {series.unitLabel})</span></h4>
+      <h4>Agents working {period} <span>(1 = one agent busy the whole {series.unitLabel})</span></h4>
       <div class="type-legend">
         {#each series.agents as a (a)}
           <span class="type-chip"

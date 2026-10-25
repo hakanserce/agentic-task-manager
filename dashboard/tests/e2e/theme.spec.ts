@@ -78,6 +78,11 @@ test.describe('themes', () => {
       'Solarized',
       'Catppuccin',
       'Tokyo Night',
+      'Ayu',
+      'Night Owl',
+      'Gruvbox',
+      'Noctis',
+      'Sublime Material',
       'High contrast',
     ]);
     const before = await tokens(page);
@@ -102,6 +107,30 @@ test.describe('themes', () => {
     await expect(theme(page, 'default')).toHaveAttribute('aria-checked', 'true');
     await expect(html(page)).toHaveAttribute('data-theme', 'default');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(DARK_BG);
+  });
+
+  test('the keyboard: the current theme is focused on open, arrows and Home/End choose', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.addInitScript(() => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: 'noctis' })));
+    await openDashboard(page, tasksServer, 'standard');
+    await menu(page);
+    await expect(theme(page, 'noctis')).toBeFocused();
+    await expect(theme(page, 'noctis')).toBeInViewport();
+    await page.keyboard.press('ArrowDown');
+    await expect(theme(page, 'sublime-material')).toBeFocused();
+    await expect(html(page)).toHaveAttribute('data-theme', 'sublime-material');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await expect(html(page)).toHaveAttribute('data-theme', 'gruvbox');
+    await page.keyboard.press('End');
+    await expect(theme(page, 'high-contrast')).toBeFocused();
+    await page.keyboard.press('ArrowDown'); // stays on the last one
+    await expect(html(page)).toHaveAttribute('data-theme', 'high-contrast');
+    await page.keyboard.press('Home');
+    await expect(theme(page, 'default')).toHaveAttribute('aria-checked', 'true');
+    await expect(theme(page, 'default')).toBeFocused();
   });
 
   test('the menu button previews the theme and closes the menu on Escape', async ({ page, tasksServer }) => {

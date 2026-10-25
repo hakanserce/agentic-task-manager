@@ -59,6 +59,6 @@ version.
 
 | ID | Requirement |
 |---|---|
-| D-6.1 | One self-contained file within its size budget (256 KB). |
+| D-6.1 | One self-contained file within its size budget (256 KiB; raised to 320 KiB on 2026-10-25). |
 | D-6.2 | Strict screenshots cover the footer, both dialogs, priority badges, label chips, the In Review and Blocked columns, stages, the notes list and actors, in both modes. |
 | D-6.3 | Tab switches and reloads stay within the existing budgets with 500 tasks in `tasks.json`, however large the archive. |

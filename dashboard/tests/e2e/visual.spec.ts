@@ -142,6 +142,13 @@ test.describe('visual: light mode', () => {
     await expect(page.locator('#activity-panel')).toHaveScreenshot('light-agents-activity-panel.png');
   });
 
+  test('progress details', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(AGENTS_NOW);
+    await openDashboard(page, tasksServer, 'agents');
+    await page.locator('#progress-card').click();
+    await expect(page.locator('#progress-panel')).toHaveScreenshot('light-agents-progress-panel.png');
+  });
+
   test('detail panel', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     await page.locator('.task-card[data-id="T-004"] .task-name').click();
@@ -208,8 +215,32 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The Appearance menu with every theme, scrolled to the current one
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: appearance menu (${mode})`, async ({ page, tasksServer }) => {
+    await page.addInitScript(
+      (m) => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: 'gruvbox', mode: m, autoRefresh: false })),
+      mode,
+    );
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('#appearance-btn').click();
+    await expect(page.locator('#appearance-menu')).toHaveScreenshot(`appearance-menu-${mode}.png`);
+  });
+}
+
 // FR-3: one main view (the Kanban board) per theme and mode, to catch regressions in any palette.
-for (const theme of ['nord', 'solarized', 'catppuccin', 'tokyo-night', 'high-contrast']) {
+for (const theme of [
+  'nord',
+  'solarized',
+  'catppuccin',
+  'tokyo-night',
+  'ayu',
+  'night-owl',
+  'gruvbox',
+  'noctis',
+  'sublime-material',
+  'high-contrast',
+]) {
   for (const mode of ['dark', 'light']) {
     test(`visual: theme ${theme} (${mode})`, async ({ page, tasksServer }) => {
       await page.addInitScript(

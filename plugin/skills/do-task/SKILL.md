@@ -100,7 +100,7 @@ Execution approach by task type:
 - **polish**: Make the UI/UX improvements described.
 
 Use the `files` array as hints for which files to create or modify, but also create
-any additional files that are needed. Keep a list of every file you create, change or delete: Step 7b commits
+any additional files that are needed. Keep a list of every file you create, change or delete: Step 7 commits
 exactly those.
 
 Your claim has a lease (30 minutes by default); if it runs out, the task goes back to `todo` for others. The plugin's
@@ -113,7 +113,8 @@ While you work:
 - **You can't go on without a decision** (two reasonable designs, a missing requirement, a credential): ask instead of
   guessing. `atm block $TASK_ID --on user --question "<one question>" [--question ...]` releases your claim and shows
   the task as waiting on the user, with the questions. Use `--on agent` when the project or the user hands such
-  decisions to a reviewer agent. Commit what is worth keeping (Step 7b) and report the questions.
+  decisions to a reviewer agent. Commit what is worth keeping first (Step 7), then block it, and report the
+  questions.
 - **You have to stop before it's finished**: `atm release $TASK_ID --note "<what's done, what's left>"`. The note is a
   `handoff` for whoever takes the task next.
 - **Something worth remembering** that isn't the outcome: `atm note $TASK_ID "<text>"` (notes are at most 500
@@ -137,31 +138,12 @@ If verification fails:
 - If still failing after 2 attempts, run `atm fail $TASK_ID --reason "<one line on what failed>"` (the task goes back
   to `todo` and the reason is recorded) and report the failure
 
-## Step 7: Mark as done, or ask for a review
+## Step 7: Commit, while the task is still in progress
 
-(A task you blocked in Step 5 is already finished here: go to Step 7b.)
+**Commit first, then mark the task done** (Step 7b): a task is done only once its work is committed. If you marked it
+done first and the commit failed, the task would show as done with its work uncommitted.
 
-If verification passes, decide how the task ends:
-
-- **A review is asked for** — by the task's description, the project's instructions (e.g. its `CLAUDE.md`) or the
-  user, whether by the user or by another agent: run `atm review $TASK_ID --note "<what the reviewer should check>"`
-  (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
-  moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
-  Commit your work as usual (Step 7b) and report the task as **waiting for review**.
-- **Otherwise**: run `atm done $TASK_ID --note "<one-line outcome>"`. It sets the status and `completed_at`, records
-  the outcome as a note, drops your claim, and prints the tasks it made ready ("Now ready:").
-
-If either says your lease expired and another agent holds the task, tell the user instead of committing.
-
-**Reviewing a task** (when the user or another agent asks you to review one that is in review): read its `review`
-note and the commit, then either pass it with `atm done <id>`, or send it back with
-`atm reject <id> --reason "<what needs to change>"`. A rejected task returns to to do with the reason as a `rejection`
-note, for the next agent to address.
-
-## Step 7b: Git commit
-
-After marking the task as done (or in review, or blocked), commit the changes.
-If `atm migrate` moved files in Step 1 and you are going to commit, first commit the move on its own:
+If `atm migrate` moved files in Step 1, first commit the move on its own:
 `git commit -m "chore: move atm files to .agentic-task-manager/" -- <old tasks.json> .agentic-task-manager/tasks.json .agentic-task-manager/.gitignore`
 (add the old `tasks-dashboard.html` path too if it was removed). Then commit the task:
 
@@ -170,12 +152,44 @@ atm commit $TASK_ID --file <path> --file <path> ...
 ```
 
 Name **every** file from your list, deleted ones too (also `.agentic-task-manager/.gitignore` and
-`.agentic-task-manager/.gitattributes` if `git status` shows atm changed them). atm commits exactly those plus
-`tasks.json`, with the project's commit message (`feat($TASK_ID): $TASK_NAME` unless the project sets another), and
-records the commit on the task. It refuses `.`, `-A` and directories: another agent's unfinished work may be in the same
-working tree, so never `git add -A` or `git add .` either.
+`.agentic-task-manager/.gitattributes` if `git status` shows atm changed them); paths are relative to where you run
+it. atm commits exactly those plus `tasks.json`, with the project's commit message (`feat($TASK_ID): $TASK_NAME`
+unless the project sets another), and records the commit on the task. It refuses `.`, `-A` and directories: another
+agent's unfinished work may be in the same working tree, so never `git add -A` or `git add .` either.
+
+**If the commit fails**, the task stays in progress: fix the cause (a hook, a file you forgot) and commit again. If
+you can't, don't mark it done: `atm release $TASK_ID --note "<what's done; why the commit failed>"`, or block it on
+what it waits for, and tell the user.
+
+The same goes for a task you are about to send for review or block (Step 5): commit what is worth keeping first.
 
 This is the default behavior. Do NOT push — only commit locally (`/atm:push` pushes, when the user asks for it).
+
+## Step 7b: Mark as done, or ask for a review
+
+(A task you blocked in Step 5 is already finished here.)
+
+Once the commit is in, decide how the task ends:
+
+- **A review is asked for** — by the task's description, the project's instructions (e.g. its `CLAUDE.md`) or the
+  user, whether by the user or by another agent: run `atm review $TASK_ID --note "<what the reviewer should check>"`
+  (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
+  moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
+  Report the task as **waiting for review**.
+- **Otherwise**: run `atm done $TASK_ID --note "<one-line outcome>"`. It sets the status and `completed_at`, records
+  the outcome as a note (the commit atm recorded stays), drops your claim, and prints the tasks it made ready
+  ("Now ready:").
+
+This status change is written to `tasks.json` after the commit, so it goes in with the next commit, like the commit's
+SHA. If either command says your lease expired and another agent holds the task, tell the user.
+
+**Reviewing a task** (when the user or another agent asks you to review one that is in review): read its `review`
+note and the commit, then either pass it with `atm done <id>`, or send it back with
+`atm reject <id> --reason "<what needs to change>"`. A rejected task returns to to do with the reason as a `rejection`
+note, for the next agent to address.
+
+**A task marked done by mistake** (its work isn't finished or committed): `atm reopen <id> --reason "<why>"` takes it
+back to to do. Never change its status by editing `tasks.json`.
 
 ## Step 7c: Archive when atm suggests it
 

@@ -1,0 +1,76 @@
+/* Sublime Material theme. Palette: https://github.com/jprestidge/vscode-material-theme (Material dark and Lighter);
+   MIT. Colours that missed the contrast targets were moved to the nearest passing shade, as noted per block; the
+   graph node fills are the type colours mixed into the surface. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #546e7a -> #7b8f99 (muted text contrast)
+   - burndown series #3987e5/#d95926 (the Default dark pair), which passes the chart validator on this surface */
+:root[data-theme='sublime-material'] {
+  color-scheme: dark;
+  --bg: #1c1c1d;
+  --surface: #252526;
+  --surface2: #333334;
+  --border: #444446;
+  --text: #eeffff;
+  --text-muted: #7b8f99;
+  --accent: #80cbc4;
+  --green: #c3e88d;
+  --yellow: #ffcb6b;
+  --red: #ff5370;
+  --purple: #c792ea;
+  --pink: #f07178;
+  --orange: #f78c6c;
+  --cyan: #89ddff;
+  --on-accent: #1c1c1d;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #454c3b;
+  --node-bugfix: #512e35;
+  --node-test: #453b4d;
+  --node-infra: #4f3a34;
+  --node-docs: #394a51;
+  --node-refactor: #514634;
+  --node-polish: #4e3436;
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text: the Lighter foreground (#80cbc4) is too pale for text; Material's #546e7a -> #4d6570 (text contrast)
+   - text-muted: #90a4ae -> #637178 (muted text contrast)
+   - accent: #6182b8 -> #6081b6 (label contrast)
+   - green: #91b859 -> #6d8a43 (label contrast)
+   - yellow: #ffb62c -> #a8781d (label contrast)
+   - pink: #ff5370 -> #de4861 (label contrast)
+   - orange: #f76d47 -> #cf5c3c (label contrast)
+   - cyan: #39adb5 -> #2e8c93 (label contrast)
+   - on-accent: #ffffff -> #03050a (text on accent)
+   - burndown series #1a5ad8/#e0580a (the Catppuccin light pair), which passes the chart validator on this surface */
+:root[data-theme='sublime-material'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #eaeaea;
+  --surface: #f3f3f3;
+  --surface2: #e5e5e5;
+  --border: #d3d3d3;
+  --text: #4d6570;
+  --text-muted: #637178;
+  --accent: #6081b6;
+  --green: #6d8a43;
+  --yellow: #a8781d;
+  --red: #e53935;
+  --purple: #7c4dff;
+  --pink: #de4861;
+  --orange: #cf5c3c;
+  --cyan: #2e8c93;
+  --on-accent: #03050a;
+  --overlay: rgba(84, 110, 122, 0.25);
+  --node-feature: #d6dccc;
+  --node-bugfix: #f0cac9;
+  --node-test: #d9cef6;
+  --node-infra: #ebd2cb;
+  --node-docs: #c8dcde;
+  --node-refactor: #e3d8c4;
+  --node-polish: #eecdd3;
+  --series-remaining: #1a5ad8;
+  --series-scope: #e0580a;
+}

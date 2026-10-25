@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { forecastPhases, pace, percentile, taskDurations } from '../../src/lib/forecast';
+import {
+  activePhases,
+  forecastPhases,
+  pace,
+  percentile,
+  taskDurations,
+  type PhaseForecast,
+} from '../../src/lib/forecast';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
 import progress from '../fixtures/progress.json';
@@ -115,6 +122,38 @@ describe('forecastPhases', () => {
     const withHistory = forecastPhases(phase2, NOW, tasks);
     expect(withHistory.pace?.likely).toBe(8.5);
     expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
+  });
+});
+
+describe('activePhases', () => {
+  const NOW = Date.parse('2026-04-20T12:00:00Z');
+  const DAY = 86_400_000;
+  const phase = (n: number, state: PhaseForecast['state'], completedAt?: number): PhaseForecast => ({
+    phase: n,
+    total: 2,
+    done: state === 'done' ? 2 : 0,
+    remaining: state === 'done' ? 0 : 2,
+    blocked: 0,
+    inReview: 0,
+    state,
+    ...(completedAt === undefined ? {} : { completedAt }),
+  });
+  const phases = [
+    phase(0, 'done', NOW - 30 * DAY),
+    phase(1, 'done', NOW - 3 * DAY),
+    phase(2, 'done'),
+    phase(3, 'in_progress'),
+    phase(4, 'not_started'),
+  ];
+
+  it('keeps unfinished phases and those finished within the last N days (7 by default)', () => {
+    expect(activePhases(phases, NOW).map((p) => p.phase)).toEqual([1, 3, 4]);
+    expect(activePhases(phases, NOW, 2).map((p) => p.phase)).toEqual([3, 4]);
+    expect(activePhases(phases, NOW, 31).map((p) => p.phase)).toEqual([0, 1, 3, 4]);
+  });
+
+  it('a finished phase without completion times is not active', () => {
+    expect(activePhases([phase(2, 'done')], NOW)).toEqual([]);
   });
 });
 

@@ -5,7 +5,9 @@
   import { actorsLine, earlierAttempts } from '../lib/actors';
   import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
+  import { parseMarkdown } from '../lib/markdown';
   import LabelChips from './LabelChips.svelte';
+  import Markdown from './Markdown.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
   import StageChip from './StageChip.svelte';
 
@@ -69,7 +71,10 @@
       </div>
       <div class="detail-section">
         <div class="label">Description</div>
-        <div class="value">{task.description}</div>
+        <!-- Markdown, like Help; every piece of text stays escaped. Heading IDs are prefixed per task -->
+        <div class="value detail-description" id="detail-description">
+          <Markdown blocks={parseMarkdown(task.description ?? '')} idPrefix="desc-{task.id}-" />
+        </div>
       </div>
       {@render badges('Use Cases', task.use_cases ?? [], 'uc-badge')}
       {@render badges('Requirements', task.requirements ?? [], 'req-badge')}

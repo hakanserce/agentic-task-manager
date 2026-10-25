@@ -1,6 +1,6 @@
 <script lang="ts">
   import { burndown } from '../lib/burndown';
-  import { forecastPhases } from '../lib/forecast';
+  import { activePhases, forecastPhases } from '../lib/forecast';
   import { dashboard } from '../lib/state.svelte';
   import BurndownChart from './BurndownChart.svelte';
   import PhaseTable from './PhaseTable.svelte';
@@ -23,6 +23,17 @@
   const chart = $derived(burndown(tasks, forecast, now, focus, dashboard.vocab));
 
   const toggle = (phase: number) => (dashboard.progressPhase = focus === phase ? null : phase);
+
+  // With many phases the table gets long: "Active phases only" keeps unfinished phases and those finished in the
+  // last N days (saved with the project's view). The burndown still covers every task.
+  const active = $derived(dashboard.progressActive);
+  const shownPhases = $derived(
+    active.only ? { ...forecast, phases: activePhases(forecast.phases, now, active.days) } : forecast,
+  );
+  const hidden = $derived(forecast.phases.length - shownPhases.phases.length);
+  function setDays(value: number) {
+    if (Number.isFinite(value) && value >= 1) dashboard.progressActive = { ...active, days: Math.round(value) };
+  }
 </script>
 
 <div class="progress-view" id="progress">
@@ -36,7 +47,34 @@
       {/if}
     </div>
     <BurndownChart data={chart} {now} />
-    <PhaseTable {forecast} {now} selected={focus} onselect={toggle} />
+    <div class="phase-filter" id="phase-filter">
+      <label>
+        <input
+          type="checkbox"
+          id="active-phases-only"
+          checked={active.only}
+          onchange={(e) => (dashboard.progressActive = { ...active, only: e.currentTarget.checked })}
+        />
+        Active phases only
+      </label>
+      <label class="phase-filter-days" class:disabled={!active.only}>
+        (finished within the last
+        <input
+          type="number"
+          id="active-phases-days"
+          min="1"
+          max="365"
+          value={active.days}
+          disabled={!active.only}
+          onchange={(e) => setDays(e.currentTarget.valueAsNumber)}
+        />
+        days)
+      </label>
+      {#if active.only && hidden > 0}
+        <span class="phase-filter-hidden" id="phases-hidden">{hidden} older phase{hidden === 1 ? '' : 's'} hidden</span>
+      {/if}
+    </div>
+    <PhaseTable forecast={shownPhases} {now} selected={focus} onselect={toggle} />
     <UtilizationPanel {now} />
   {/if}
 </div>

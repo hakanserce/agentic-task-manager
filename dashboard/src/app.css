@@ -140,7 +140,14 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
-/* Rendered Markdown (Markdown.svelte): Help, and later task descriptions */
+/* A task's description in the detail panel: Markdown that starts flush with its label */
+.detail-description .markdown > :first-child {
+  margin-top: 0;
+}
+.detail-description .markdown > :last-child {
+  margin-bottom: 0;
+}
+/* Rendered Markdown (Markdown.svelte): Help and task descriptions */
 .markdown {
   font-size: 14px;
   line-height: 1.6;
@@ -529,14 +536,19 @@ h1 {
 }
 .ring-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-  gap: 12px 8px;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
 }
+/* Each ring is a card of its own, like the Activity charts (.dive-chart): theme tokens only (T-143) */
 .ring-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  padding: 8px 4px 6px;
+  background: color-mix(in srgb, var(--surface2) 60%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 .ring-label {
   font-size: 12px;
@@ -811,6 +823,8 @@ button.menu-trigger:hover,
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 .theme-option {
   display: flex;
@@ -2091,6 +2105,32 @@ svg.graph-minimap.hidden {
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;
+}
+/* "Active phases only" above the phase table (T-145) */
+.phase-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 16px 0 4px;
+  font-size: 13px;
+}
+.phase-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.phase-filter-days {
+  color: var(--text-muted);
+}
+.phase-filter-days.disabled {
+  opacity: 0.6;
+}
+.phase-filter-days input {
+  width: 3.5em;
+}
+.phase-filter-hidden {
+  color: var(--text-muted);
 }
 .burndown-focus {
   font-size: 13px;

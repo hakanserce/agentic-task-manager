@@ -23,8 +23,10 @@ Every command takes `--json`; `atm help` lists them all.
   `atm block <id> --on user|agent --question ...`, `atm fail <id> --reason`, `atm release <id> --note`,
   `atm note <id> TEXT`
 - Answer: `atm unblock <id> --answer ...` (a block), `atm done <id>` / `atm reject <id> --reason` (a review)
+- Not needed: `atm skip <id> --reason ...` (a to-do or blocked task)
 - Undo: `atm reopen <id> --reason ...` takes a done or skipped task back to to-do (never edit its status by hand)
-- Commit: `atm commit <id> --file F [--file F]...`, naming every file the task changed
+- Commit: `atm commit <id> --file F [--file F]...`, naming every file the task changed, while the task is still in
+  progress; only then `atm done` (or `review`/`block`). A task is never done with its work uncommitted
 - Push: `/atm:push` records the PR with `atm pr <id>... --number N --url U` and merges with `atm merged --pr N`
 - Define: `atm init --meta-file F` (project, phases, vocabularies), `atm add` (`--json-file` for many),
   `atm edit <id>`, `atm check`, `atm workflow set`

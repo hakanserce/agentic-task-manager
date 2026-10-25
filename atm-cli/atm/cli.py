@@ -49,6 +49,8 @@ commands:
                  back to todo, with the questions and answers kept as a note
   reopen <id> --reason TEXT
                  a done or skipped task back to todo (done by mistake, or not finished after all)
+  skip <id> --reason TEXT
+                 a todo or blocked task that isn't needed: skipped, with the reason as a note
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
   release <id> [--note TEXT]
@@ -152,6 +154,7 @@ def build_parser():
         ("block", "a task that can't go on until someone decides: blocked, with the questions; claim released"),
         ("unblock", "a blocked task goes back to todo, with the answers as a note"),
         ("reopen", "a done or skipped task goes back to todo, with the reason as a note"),
+        ("skip", "a todo or blocked task that isn't needed: skipped, with the reason as a note"),
     ):
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
@@ -167,6 +170,8 @@ def build_parser():
             sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
         if name == "reopen":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't done after all (a note)")
+        if name == "skip":
+            sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't needed (a note)")
         if name == "block":
             sub.add_argument("--on", required=True, choices=["user", "agent"], help="who has to decide")
             sub.add_argument("--question", action="append", default=[], metavar="TEXT", help="an open question")

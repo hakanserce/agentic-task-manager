@@ -12,6 +12,8 @@ import { renameHtmlOutput } from './build/rename-output.ts';
 
 const pluginJson = fileURLToPath(new URL('../plugin/.claude-plugin/plugin.json', import.meta.url));
 const changelog = fileURLToPath(new URL('../plugin/CHANGELOG.md', import.meta.url));
+// What's new shows the short, end-user notes; the changelog (for developers) only dates the copyright
+const whatsNew = fileURLToPath(new URL('../plugin/WHATS-NEW.md', import.meta.url));
 const help = fileURLToPath(new URL('../docs/help.md', import.meta.url));
 const ownTasks = fileURLToPath(new URL('../.agentic-task-manager', import.meta.url));
 
@@ -20,7 +22,7 @@ export default defineConfig({
     // Dev server: reload the whole page on component changes. In-place component swaps can miss changes to the
     // shared dashboard state; a reload restores everything from storage anyway.
     svelte({ compilerOptions: { hmr: false } }),
-    changelogModule(changelog),
+    changelogModule(whatsNew),
     helpModule(help),
     pluginInfoModule(pluginJson, changelog),
     devData(ownTasks),

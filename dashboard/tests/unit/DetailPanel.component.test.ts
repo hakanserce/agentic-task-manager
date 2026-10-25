@@ -92,6 +92,29 @@ describe('DetailPanel', () => {
     expect(container.querySelector('#detail-archived')).toHaveTextContent('archived');
   });
 
+  it('renders the description as Markdown, with HTML kept as text and external links in a new tab', () => {
+    const container = open({
+      description:
+        '## Goal\n\nLog **every** sign-in.\n\n- the IP\n- the time\n\n```\natm show T-005\n```\n\n' +
+        'See [the spec](https://example.com/spec). <b>not bold</b>',
+    });
+    const desc = container.querySelector('#detail-description')!;
+    expect(desc.querySelector('h4')).toHaveTextContent('Goal');
+    expect(desc.querySelector('h4')!.id).toBe('desc-T-005-goal');
+    expect(desc.querySelector('strong')).toHaveTextContent('every');
+    expect([...desc.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['the IP', 'the time']);
+    expect(desc.querySelector('pre code')).toHaveTextContent('atm show T-005');
+    expect(desc.querySelector('a')).toHaveAttribute('target', '_blank');
+    expect(desc.querySelector('b')).toBeNull();
+    expect(desc).toHaveTextContent('<b>not bold</b>');
+  });
+
+  it('a plain description is one paragraph, as before', () => {
+    const container = open({ description: 'Add the editor.' });
+    const paragraphs = container.querySelectorAll('#detail-description .markdown > *');
+    expect([...paragraphs].map((p) => [p.tagName, p.textContent])).toEqual([['P', 'Add the editor.']]);
+  });
+
   it('has no notes, commit or blocked section when the task has none', () => {
     const container = open({});
     expect(container.querySelector('#detail-actors')).toBeNull();

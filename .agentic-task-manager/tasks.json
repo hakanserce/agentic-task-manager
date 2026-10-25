@@ -5381,7 +5381,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.1, *Filled automatically*.\n\n### Commands that register\n`atm init`, `atm migrate` and `atm serve` (including `--dir`) register the project they act on (`registry.register`, waiting for the lock).\n\n### The hook\n`atm heartbeat --auto` (the PostToolUse hook) also registers the current project when it has `.agentic-task-manager/tasks.json` and isn't listed yet:\n- with `wait=False`, so **a hook never waits on the lock**;\n- it must stay cheap: one read of `projects.json`, and a write only when the project is new or its `seen_at` is more than a day old.\n\nUpdate `name` / `id` in the entry when `meta.project` or `meta.id` changed.\n\n### Tests\nScenarios:\n- each command registers;\n- the hook registers once and doesn't rewrite on the next call;\n- a held registry lock makes the hook skip, without error or delay;\n- `seen_at` refreshes after a day (`ATM_NOW`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-166"
       ],
@@ -5395,11 +5395,22 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:13:38Z",
+      "updated_at": "2026-10-25T22:17:21Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:13:38Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6383678196d450796d68c0a874c8d421ac09c0ad",
+      "completed_at": "2026-10-25T22:17:21Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T22:17:21Z",
+          "kind": "outcome",
+          "text": "init and migrate register the project (silently); the PostToolUse hook registers once (one registry read per call, never waits for the lock), refreshing seen_at/name daily",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-168",
@@ -5455,7 +5466,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.5 and the summary format in `docs/multi-project-api.md`.\n\n### One implementation\nThe server fills each `/api/projects` entry's `summary` with **atm-cli's own logic** (status kinds and counts as in `query.py`'s status; claims from the claims store, live ones only), not a second implementation:\n- `percent` = `done / (total - skipped)`\n- current phase = the lowest phase with unfinished tasks\n- `needs_you` = review-kind tasks, and blocked-kind tasks with `waiting_on: user`\n- `last_activity` = the newest timestamp in `tasks.json`\n- `completions_14d` = completions per day for the last 14 days\n\n### Caching\n- Cache each project's summary until its `tasks.json` (or claims) size or mtime changes.\n- The response has an `ETag` and answers `304` when nothing changed.\n- Missing folders appear with `missing: true` and no summary.\n\n### Tests\n- Summaries for a fixture project, including skipped tasks and an all-skipped project.\n- Caching: no re-read when unchanged.\n- `304`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-168"
       ],
@@ -5466,9 +5477,11 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:53Z",
+      "updated_at": "2026-10-25T22:17:25Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T22:17:25Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-170",

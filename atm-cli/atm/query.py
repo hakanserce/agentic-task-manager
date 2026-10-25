@@ -8,7 +8,7 @@ import json
 import os
 
 from .claims import next_task, read_store
-from .core import out, to_json
+from .core import now, out, parse_iso, to_json
 from .model import (
     archive_hint,
     archive_path,
@@ -198,6 +198,82 @@ def cmd_deps(args):
     line = lambda items: ", ".join(f"{i['id']} ({i['status']})" for i in items) or "nothing"
     out(f"{args.id} waits for: {line(waits_for)}")
     out(f"{args.id} is waited on by: {line(waited_on_by)}")
+
+
+ACTIVITY_FIELDS = ("updated_at", "started_at", "completed_at", "review_requested_at", "blocked_at", "skipped_at")
+SUMMARY_DAYS = 14
+
+
+def as_phase_id(phase):
+    return int(phase) if isinstance(phase, float) and phase.is_integer() else phase
+
+
+def parse_time(text):
+    try:
+        return parse_iso(text) if isinstance(text, str) else None
+    except ValueError:
+        return None
+
+
+def project_summary(paths):
+    """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
+    status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
+    needs the user, the latest activity and the completions of the last 14 days."""
+    data = load_tasks(paths)
+    vocab = vocabulary(data)
+    tasks = data["tasks"]
+    kinds = [kind_of(vocab, t.get("status")) for t in tasks]
+    done, skipped = kinds.count("done"), kinds.count("skipped")
+    counted = len(tasks) - skipped
+    percent = round(100 * done / counted) if counted else (100 if skipped else 0)
+
+    current_phase = None
+    open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
+    if open_phases:
+        phase = open_phases[0]
+        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
+        names = {p.get("id"): p.get("name") for p in vocab["phases"]}
+        current_phase = {
+            "id": as_phase_id(phase),
+            "name": names.get(phase) or None,
+            "done": in_phase.count("done"),
+            "total": len(in_phase) - in_phase.count("skipped"),
+        }
+
+    current = now()
+    claims = read_store(paths)["claims"].values()
+    agents_working = sum(
+        1 for c in claims if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+    )
+
+    times = [parse_time(t.get(f)) for t in tasks for f in ACTIVITY_FIELDS]
+    times += [parse_time(n.get("at")) for t in tasks for n in t.get("notes") or [] if isinstance(n, dict)]
+    times = [t for t in times if t]
+    last = max(times) if times else None
+
+    completions = [0] * SUMMARY_DAYS
+    today = current.date()
+    for t, k in zip(tasks, kinds):
+        finished = parse_time(t.get("completed_at")) if k == "done" else None
+        if finished:
+            age = (today - finished.date()).days
+            if 0 <= age < SUMMARY_DAYS:
+                completions[SUMMARY_DAYS - 1 - age] += 1
+
+    return {
+        "total": len(tasks),
+        "done": done,
+        "skipped": skipped,
+        "percent": percent,
+        "current_phase": current_phase,
+        "agents_working": agents_working,
+        "needs_you": {
+            "review": kinds.count("review"),
+            "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
+        },
+        "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
+        "completions_14d": completions,
+    }
 
 
 def cmd_status(args):

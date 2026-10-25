@@ -1568,6 +1568,82 @@ def cmd_deps(args):
     out(f"{args.id} is waited on by: {line(waited_on_by)}")
 
 
+ACTIVITY_FIELDS = ("updated_at", "started_at", "completed_at", "review_requested_at", "blocked_at", "skipped_at")
+SUMMARY_DAYS = 14
+
+
+def as_phase_id(phase):
+    return int(phase) if isinstance(phase, float) and phase.is_integer() else phase
+
+
+def parse_time(text):
+    try:
+        return parse_iso(text) if isinstance(text, str) else None
+    except ValueError:
+        return None
+
+
+def project_summary(paths):
+    """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
+    status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
+    needs the user, the latest activity and the completions of the last 14 days."""
+    data = load_tasks(paths)
+    vocab = vocabulary(data)
+    tasks = data["tasks"]
+    kinds = [kind_of(vocab, t.get("status")) for t in tasks]
+    done, skipped = kinds.count("done"), kinds.count("skipped")
+    counted = len(tasks) - skipped
+    percent = round(100 * done / counted) if counted else (100 if skipped else 0)
+
+    current_phase = None
+    open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
+    if open_phases:
+        phase = open_phases[0]
+        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
+        names = {p.get("id"): p.get("name") for p in vocab["phases"]}
+        current_phase = {
+            "id": as_phase_id(phase),
+            "name": names.get(phase) or None,
+            "done": in_phase.count("done"),
+            "total": len(in_phase) - in_phase.count("skipped"),
+        }
+
+    current = now()
+    claims = read_store(paths)["claims"].values()
+    agents_working = sum(
+        1 for c in claims if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+    )
+
+    times = [parse_time(t.get(f)) for t in tasks for f in ACTIVITY_FIELDS]
+    times += [parse_time(n.get("at")) for t in tasks for n in t.get("notes") or [] if isinstance(n, dict)]
+    times = [t for t in times if t]
+    last = max(times) if times else None
+
+    completions = [0] * SUMMARY_DAYS
+    today = current.date()
+    for t, k in zip(tasks, kinds):
+        finished = parse_time(t.get("completed_at")) if k == "done" else None
+        if finished:
+            age = (today - finished.date()).days
+            if 0 <= age < SUMMARY_DAYS:
+                completions[SUMMARY_DAYS - 1 - age] += 1
+
+    return {
+        "total": len(tasks),
+        "done": done,
+        "skipped": skipped,
+        "percent": percent,
+        "current_phase": current_phase,
+        "agents_working": agents_working,
+        "needs_you": {
+            "review": kinds.count("review"),
+            "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
+        },
+        "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
+        "completions_14d": completions,
+    }
+
+
 def cmd_status(args):
     paths = find_paths(os.getcwd())
     data = load_tasks(paths)
@@ -3081,24 +3157,59 @@ def task_file(entry, name):
     return os.path.join(entry["path"], TASK_DIR, name)
 
 
-def api_projects(registry):
-    """(body, ETag) of /api/projects. The ETag changes with the registry and each project's tasks.json and claims."""
+class Summaries:
+    """Each project's summary (query.project_summary), computed again only when its tasks.json or claims store
+    changed, or the day did (the completions count by day)."""
+
+    def __init__(self):
+        self.paths = {}  # project folder -> (atm paths, claims store path): finding them runs git
+        self.cache = {}  # project folder -> (stamp, summary or None)
+
+    def stamp(self, entry):
+        """What the summary depends on, or None when the project is missing."""
+        tasks = file_stamp(task_file(entry, TASKS_FILE))
+        if tasks is None:
+            return None
+        if entry["path"] not in self.paths:
+            paths = find_paths(entry["path"])
+            self.paths[entry["path"]] = (paths, claims_store_path(paths))
+        return (tasks, file_stamp(self.paths[entry["path"]][1]), now().date().isoformat())
+
+    def summary(self, entry, stamp):
+        cached = self.cache.get(entry["path"])
+        if cached and cached[0] == stamp:
+            return cached[1]
+        try:
+            summary = project_summary(self.paths[entry["path"]][0])
+        except AtmError:
+            summary = None  # unreadable tasks.json or an unusable vocabulary: listed as missing
+        self.cache[entry["path"]] = (stamp, summary)
+        return summary
+
+
+def api_projects(registry, summaries):
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
+    and the day."""
     entries = registry.entries()
-    stamps = [registry.stamp] + [
-        (file_stamp(task_file(e, TASKS_FILE)), file_stamp(task_file(e, "claims.json"))) for e in entries
-    ]
-    etag = '"' + hashlib.sha1(repr(stamps).encode("utf-8")).hexdigest()[:16] + '"'
-    projects = [
-        {
-            "id": e.get("id"),
-            "name": e.get("name"),
-            "path": e["path"],
-            "missing": not os.path.isfile(task_file(e, TASKS_FILE)),
-            "summary": None,
-        }
-        for e in entries
-    ]
-    return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8"), etag
+    stamps = [summaries.stamp(e) for e in entries]
+    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps).encode("utf-8")).hexdigest()[:16] + '"'
+
+    def body():
+        projects = []
+        for entry, stamp in zip(entries, stamps):
+            summary = summaries.summary(entry, stamp) if stamp else None
+            projects.append(
+                {
+                    "id": entry.get("id"),
+                    "name": entry.get("name"),
+                    "path": entry["path"],
+                    "missing": summary is None,
+                    "summary": summary,
+                }
+            )
+        return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
+
+    return body, etag
 
 
 def cmd_serve_child(args):
@@ -3112,6 +3223,7 @@ def cmd_serve_child(args):
         page = f.read()
     version, build = dashboard_head(TEMPLATE)
     registry = Registry(home)
+    summaries = Summaries()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
@@ -3151,8 +3263,8 @@ def cmd_serve_child(args):
                 info = {"atm": True, "pid": os.getpid(), "port": port_now, "version": version, "build": build}
                 self.send(200, to_json(info).encode("utf-8"))
             elif path == "/api/projects":
-                body, etag = api_projects(registry)
-                self.send_conditional(lambda: body, etag)
+                body, etag = api_projects(registry, summaries)
+                self.send_conditional(body, etag)
             else:
                 self.serve_project_file(path)
 

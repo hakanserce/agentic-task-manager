@@ -22,6 +22,7 @@ from .core import (
     TASKS_FILE,
     AtmError,
     format_duration,
+    now,
     now_iso,
     out,
     parse_iso,
@@ -30,8 +31,10 @@ from .core import (
     to_json,
     write_json_atomic,
 )
+from .claims import claims_store_path
 from .migrate import TEMPLATE, dashboard_head, describe_migration, migrate
 from .paths import find_paths
+from .query import project_summary
 from .registry import REGISTRY_FILE, atm_home, listed, main_worktree, project_id, project_meta, register
 
 SERVER_RECORD = "server.json"
@@ -225,24 +228,59 @@ def task_file(entry, name):
     return os.path.join(entry["path"], TASK_DIR, name)
 
 
-def api_projects(registry):
-    """(body, ETag) of /api/projects. The ETag changes with the registry and each project's tasks.json and claims."""
+class Summaries:
+    """Each project's summary (query.project_summary), computed again only when its tasks.json or claims store
+    changed, or the day did (the completions count by day)."""
+
+    def __init__(self):
+        self.paths = {}  # project folder -> (atm paths, claims store path): finding them runs git
+        self.cache = {}  # project folder -> (stamp, summary or None)
+
+    def stamp(self, entry):
+        """What the summary depends on, or None when the project is missing."""
+        tasks = file_stamp(task_file(entry, TASKS_FILE))
+        if tasks is None:
+            return None
+        if entry["path"] not in self.paths:
+            paths = find_paths(entry["path"])
+            self.paths[entry["path"]] = (paths, claims_store_path(paths))
+        return (tasks, file_stamp(self.paths[entry["path"]][1]), now().date().isoformat())
+
+    def summary(self, entry, stamp):
+        cached = self.cache.get(entry["path"])
+        if cached and cached[0] == stamp:
+            return cached[1]
+        try:
+            summary = project_summary(self.paths[entry["path"]][0])
+        except AtmError:
+            summary = None  # unreadable tasks.json or an unusable vocabulary: listed as missing
+        self.cache[entry["path"]] = (stamp, summary)
+        return summary
+
+
+def api_projects(registry, summaries):
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
+    and the day."""
     entries = registry.entries()
-    stamps = [registry.stamp] + [
-        (file_stamp(task_file(e, TASKS_FILE)), file_stamp(task_file(e, "claims.json"))) for e in entries
-    ]
-    etag = '"' + hashlib.sha1(repr(stamps).encode("utf-8")).hexdigest()[:16] + '"'
-    projects = [
-        {
-            "id": e.get("id"),
-            "name": e.get("name"),
-            "path": e["path"],
-            "missing": not os.path.isfile(task_file(e, TASKS_FILE)),
-            "summary": None,
-        }
-        for e in entries
-    ]
-    return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8"), etag
+    stamps = [summaries.stamp(e) for e in entries]
+    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps).encode("utf-8")).hexdigest()[:16] + '"'
+
+    def body():
+        projects = []
+        for entry, stamp in zip(entries, stamps):
+            summary = summaries.summary(entry, stamp) if stamp else None
+            projects.append(
+                {
+                    "id": entry.get("id"),
+                    "name": entry.get("name"),
+                    "path": entry["path"],
+                    "missing": summary is None,
+                    "summary": summary,
+                }
+            )
+        return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
+
+    return body, etag
 
 
 def cmd_serve_child(args):
@@ -256,6 +294,7 @@ def cmd_serve_child(args):
         page = f.read()
     version, build = dashboard_head(TEMPLATE)
     registry = Registry(home)
+    summaries = Summaries()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
@@ -295,8 +334,8 @@ def cmd_serve_child(args):
                 info = {"atm": True, "pid": os.getpid(), "port": port_now, "version": version, "build": build}
                 self.send(200, to_json(info).encode("utf-8"))
             elif path == "/api/projects":
-                body, etag = api_projects(registry)
-                self.send_conditional(lambda: body, etag)
+                body, etag = api_projects(registry, summaries)
+                self.send_conditional(body, etag)
             else:
                 self.serve_project_file(path)
 

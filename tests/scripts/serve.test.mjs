@@ -132,13 +132,70 @@ describe('serve', () => {
     assert.match(second.stdout, new RegExp(`already running: http://localhost:${port}/#project=bbbb2222`));
     const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
     assert.match(api.generated_at, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
-    assert.deepEqual(api.projects, [
-      { id: 'abcd1234', name: 'Serve', path: a, missing: false, summary: null },
-      { id: 'bbbb2222', name: 'Second', path: b, missing: false, summary: null },
-    ]);
+    assert.deepEqual(
+      api.projects.map((p) => [p.id, p.name, p.path, p.missing, p.summary.total]),
+      [
+        ['abcd1234', 'Serve', a, false, 0],
+        ['bbbb2222', 'Second', b, false, 0],
+      ],
+    );
     const secondTasks = await (await fetch(`http://localhost:${port}/p/bbbb2222/tasks.json`)).json();
     assert.equal(secondTasks.meta.project, 'Second');
     atm(['serve', 'stop'], a);
+  });
+
+  test('/api/projects summarizes each project by status kind; skipped tasks count as neither done nor open', async () => {
+    const atmHome = home();
+    const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
+    const atm = (args, cwd) => runAtm(args, cwd, env);
+    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const root = project({
+      meta: { id: 'abcd1234', project: 'Summary', phases: [{ id: 2, name: 'Two' }] },
+      tasks: [
+        task('T-1', 1, 'done', { completed_at: '2026-03-15T10:00:00Z' }),
+        task('T-2', 1, 'done', { completed_at: '2026-03-13T10:00:00Z' }),
+        task('T-3', 1, 'skipped', { updated_at: '2026-03-14T09:00:00Z' }),
+        task('T-4', 2, 'done', { completed_at: '2026-02-01T10:00:00Z' }),
+        task('T-5', 2, 'in_review', { review_requested_at: '2026-03-15T09:00:00Z' }),
+        task('T-6', 2, 'blocked', { waiting_on: 'user', questions: ['?'], blocked_at: '2026-03-15T11:00:00Z' }),
+        task('T-7', 3, 'todo'),
+      ],
+    });
+    const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
+    const gone = project({ meta: { id: 'ffff6666', project: 'Gone' }, tasks: [] });
+    const port = ports();
+    for (const p of [root, skippedOnly, gone]) assert.equal(atm(['projects', 'add'], p).code, 0);
+    removeDir(gone);
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const url = `http://localhost:${port}/api/projects`;
+    const first = await fetch(url);
+    const byId = Object.fromEntries((await first.json()).projects.map((p) => [p.id, p]));
+    assert.deepEqual(byId.abcd1234.summary, {
+      total: 7,
+      done: 3,
+      skipped: 1,
+      percent: 50,
+      current_phase: { id: 2, name: 'Two', done: 1, total: 3 },
+      agents_working: 0,
+      needs_you: { review: 1, blocked_on_user: 1 },
+      last_activity: '2026-03-15T11:00:00Z',
+      completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+    });
+    assert.deepEqual(
+      [byId.eeee5555.summary.percent, byId.eeee5555.summary.current_phase, byId.eeee5555.summary.last_activity],
+      [100, null, null],
+    );
+    assert.deepEqual([byId.ffff6666.missing, byId.ffff6666.summary], [true, null]);
+
+    // A claim (an agent at work) changes the summary and the ETag
+    const etag = first.headers.get('etag');
+    assert.equal((await fetch(url, { headers: { 'If-None-Match': etag } })).status, 304);
+    assert.equal(atm(['start', 'T-7', '--agent', 'claude:test'], root).code, 0);
+    const changed = await fetch(url, { headers: { 'If-None-Match': etag } });
+    assert.equal(changed.status, 200);
+    const summary = (await changed.json()).projects.find((p) => p.id === 'abcd1234').summary;
+    assert.deepEqual([summary.agents_working, summary.last_activity], [1, '2026-03-15T12:00:00Z']);
+    atm(['serve', 'stop'], root);
   });
 
   test('files and /api/projects have ETags; a poll with one gets 304 until something changes', async () => {

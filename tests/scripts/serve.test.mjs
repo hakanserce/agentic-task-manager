@@ -434,6 +434,42 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
+  /** A stand-in for a 0.10.0-0.14.0 per-project server: answers whoami with `folder` and its own pid. */
+  async function oldServer(folder) {
+    const port = ports();
+    const script = `require('http').createServer((q, s) => s.end(JSON.stringify({ atm: true, folder: ${JSON.stringify(
+      folder,
+    )}, pid: process.pid }))).listen(${port}, '127.0.0.1')`;
+    const child = spawn(process.execPath, ['-e', script], { stdio: 'ignore' });
+    cleanups.push(() => child.kill());
+    for (let i = 0; i < 100 && !(await fetch(`http://localhost:${port}/__atm/whoami`).catch(() => null)); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return { pid: child.pid, port };
+  }
+
+  test("migrate stops a project's old per-project server, and only that project's", async () => {
+    const atm = atmIn(home());
+    const root = project();
+    const taskDir = path.join(root, '.agentic-task-manager');
+    const mine = await oldServer(taskDir);
+    fs.writeFileSync(path.join(taskDir, '.server.json'), JSON.stringify({ ...mine, folder: taskDir }));
+    fs.writeFileSync(path.join(taskDir, 'tasks-dashboard.html'), 'old copy');
+    const r = atm(['migrate'], root);
+    assert.match(r.stdout, new RegExp(`stopped its old dashboard server \\(pid ${mine.pid}\\)`));
+    for (let i = 0; i < 50 && alive(mine.pid); i++) await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(alive(mine.pid), false);
+    assert.equal(fs.existsSync(path.join(taskDir, '.server.json')), false);
+    assert.equal(fs.existsSync(path.join(taskDir, 'tasks-dashboard.html')), false);
+
+    // A record pointing at another project's server: the record goes, the server stays
+    const theirs = await oldServer('/somewhere/else/.agentic-task-manager');
+    fs.writeFileSync(path.join(taskDir, '.server.json'), JSON.stringify({ ...theirs, folder: taskDir }));
+    assert.doesNotMatch(atm(['migrate'], root).stdout, /stopped/);
+    assert.equal(alive(theirs.pid), true);
+    assert.equal(fs.existsSync(path.join(taskDir, '.server.json')), false);
+  });
+
   test('migrates an old docs/tasks.json before serving', () => {
     const atm = atmIn(home());
     const root = makeProject({ commit: true, files: { 'docs/tasks.json': TASKS } });

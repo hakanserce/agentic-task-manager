@@ -157,3 +157,18 @@ def pid_alive(pid):
     except PermissionError:
         return True
     return not is_zombie(pid)
+
+
+WHOAMI = "/__atm/whoami"
+
+
+def whoami(port):
+    """Ask the atm server on this port who it is; None if nothing (or not an atm server) answers."""
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f"http://localhost:{port}{WHOAMI}", timeout=1) as response:
+            info = json.loads(response.read().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+    return info if isinstance(info, dict) and info.get("atm") else None

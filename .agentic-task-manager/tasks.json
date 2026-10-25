@@ -5507,7 +5507,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3.\n\n### `atm serve --refresh`\n- If `server.json` names a live atm server (`whoami`) whose version or build differs from this plugin's dashboard, **restart it on the same port** (stop, start).\n- If none runs, or it is current, do nothing.\n- **Never start** one that isn't running.\n\n### Hooks\nAdd a SessionStart hook to `plugin/hooks/hooks.json` (short timeout):\n\n```\n\"${CLAUDE_PLUGIN_ROOT}/bin/atm\" serve --refresh\n```\n\n`atm heartbeat --auto` (PostToolUse) and every other atm command make **the same check cheaply**: one read of `server.json`, compared with this plugin's version and build; no network call unless they differ. Refresh when outdated.\n\n### Tests\n- An older server is restarted on the same port.\n- A current one is left alone.\n- No server means nothing starts.\n- The hook path doesn't slow down when nothing changed.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-168"
       ],
@@ -5520,11 +5520,22 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:19:25Z",
+      "updated_at": "2026-10-25T22:24:45Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:19:25Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "30d2e0818ed12b469601cc5cf6e5c06f96d4fa38",
+      "completed_at": "2026-10-25T22:24:45Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T22:24:45Z",
+          "kind": "outcome",
+          "text": "serve --refresh restarts a running server with an older dashboard (never a newer one) on the same port; a SessionStart hook runs it, and every atm command (so the PostToolUse hook too) checks first, cheaply",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-171",
@@ -5538,7 +5549,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3 (*`atm migrate` stays*).\n\n### Stop copying\n`atm migrate` no longer installs `tasks-dashboard.html` into the task folder: remove `ensure_dashboard`'s copy and the dashboard actions from its output and `--json`. Keep the version/build reading the server needs.\n\n### Clean up, once per project\n- Delete `.agentic-task-manager/tasks-dashboard.html` if present.\n- Stop the project's old per-project server if `.agentic-task-manager/.server.json` names one **and `whoami` confirms it is that folder's server** (as the old `serve stop` did).\n- Remove `.server.json` and `.server.log`.\n- Keep the `.gitignore` entries, so old files stay ignored.\n\nEverything else (legacy move, `.gitignore`, merge driver, archive hint) is unchanged.\n\n### Tests\nScenarios:\n- a project with an old copy and a stale or live per-project server is cleaned up;\n- a second run does nothing;\n- a legacy `docs/tasks.json` still moves.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-167",
         "T-168"
@@ -5551,9 +5562,11 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:54Z",
+      "updated_at": "2026-10-25T22:24:48Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T22:24:48Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-172",

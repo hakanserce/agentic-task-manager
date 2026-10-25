@@ -5,7 +5,6 @@ Its routes and record are described in docs/multi-project-api.md.
 """
 
 import hashlib
-import json
 import os
 import re
 import signal
@@ -13,7 +12,6 @@ import socket
 import subprocess
 import sys
 import time
-import urllib.request
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
@@ -21,6 +19,7 @@ from .core import (
     PLUGIN_ROOT,
     TASK_DIR,
     TASKS_FILE,
+    WHOAMI,
     AtmError,
     format_duration,
     now,
@@ -31,6 +30,7 @@ from .core import (
     pid_alive,
     read_json,
     to_json,
+    whoami,
     write_json_atomic,
 )
 from .claims import claims_store_path
@@ -43,24 +43,12 @@ SERVER_RECORD = "server.json"
 SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
-WHOAMI = "/__atm/whoami"
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json")
 PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
 
 
 def server_url(port, project=None):
     return f"http://localhost:{port}/" + (f"#project={project}" if project else "")
-
-
-def whoami(port):
-    """Ask the server on this port who it is; None if nothing (or not an atm server) answers."""
-    try:
-        request = urllib.request.Request(f"http://localhost:{port}{WHOAMI}")
-        with urllib.request.urlopen(request, timeout=1) as response:
-            info = json.loads(response.read().decode("utf-8"))
-    except (OSError, ValueError):
-        return None
-    return info if isinstance(info, dict) and info.get("atm") else None
 
 
 def live_server(home):

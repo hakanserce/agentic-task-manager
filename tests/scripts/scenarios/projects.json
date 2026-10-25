@@ -70,8 +70,7 @@
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] },
-        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\">"
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n"
       }
     },
     "args": ["migrate"],

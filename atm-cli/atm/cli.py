@@ -29,8 +29,9 @@ commands:
   migrate [--json]
                  move tasks.json from docs/ or the root into .agentic-task-manager/,
                  and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--port N] [--dir PATH]
-                 run the dashboard server for this project (or the one at PATH) in the background
+  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH]
+                 run the dashboard server in the background: one per user, for all registered projects
+                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
@@ -142,11 +143,12 @@ def build_parser():
     command("paths", cmd_paths, "print where this project's task files are")
     command("migrate", cmd_migrate, "move an old tasks.json into .agentic-task-manager/ and set the folder up")
 
-    serve = command("serve", cmd_serve, "run the dashboard server for this project in the background")
+    serve = command("serve", cmd_serve, "run the dashboard server, one for all your projects, in the background")
     serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
     serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
+    serve.add_argument("--all", action="store_true", help="show the overview of all projects, not this project")
     serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
-    serve.add_argument("--dir", metavar="PATH", help="the project to act on (default: the current directory's)")
+    serve.add_argument("--dir", metavar="PATH", help="the project to show (default: the current directory's)")
 
     for name, description in (
         ("start", "mark a task in_progress and claim it (its dependencies must be done)"),
@@ -327,7 +329,7 @@ def build_parser():
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")
 
     child = command("_serve-child", cmd_serve_child, "the detached server process", hidden=True)
-    child.add_argument("task_dir")
+    child.add_argument("home")
     child.add_argument("port", type=int)
     lock_test = command("_lock-test", cmd_lock_test, "test hook: hold the lock", hidden=True)
     lock_test.add_argument("seconds", type=float, nargs="?", default=0.0)

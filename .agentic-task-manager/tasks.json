@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 182,
+    "next_id": 184,
     "labels": [
       {
         "id": "dashboard",
@@ -5780,6 +5780,55 @@
       ],
       "created_at": "2026-10-25T21:35:18Z",
       "updated_at": "2026-10-25T21:35:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-182",
+      "name": "Task details: scroll to the top when another task opens",
+      "phase": 16,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "details"
+      ],
+      "description": "Opening another task while the details panel is open (a dependency link, *Required By*, a graph node or a card) **keeps the previous task's scroll position**, so the new task opens partway down its description.\n\n### Fix\n- In `DetailPanel.svelte`, reset the scroll container (`#detail-panel`, or whichever element scrolls) to the top whenever the shown task's id changes, e.g. an `$effect` on `task.id`.\n- Re-rendering the **same** task (auto-refresh, a reload) must **not** reset the scroll.\n- Keyboard focus stays where it is today.\n\n### Tests\n- e2e: open a task with a long description, scroll down, follow a dependency link → the panel is at the top.\n- e2e: scroll down, let auto-refresh re-render the same task (swap the fixture response) → the position is kept.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/tests/e2e/detail.spec.ts"
+      ],
+      "created_at": "2026-10-25T21:49:53Z",
+      "updated_at": "2026-10-25T21:49:53Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-183",
+      "name": "Task details: set the Markdown description apart",
+      "phase": 16,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "details"
+      ],
+      "description": "Since descriptions render as Markdown (T-142), their `###` headings look like the details panel's own sections (*Dependencies*, *Files*, *Notes*, …), so it's hard to tell **where the description ends and the task's attributes begin**.\n\n### Make the description read as one block\n- Give `#detail-description` a container: for example a subtle border and/or a `surface2` background, rounded corners, inner padding, using **theme tokens only** (no hard-coded colours).\n- Keep its *Description* label outside the box, like the other sections.\n- Scale the Markdown headings inside it down so they stay below the panel's section labels in the visual hierarchy (smaller, muted, or both).\n- Long code blocks scroll horizontally inside the box, not the panel.\n\nTry one or two variants and pick the clearest; check every theme in both modes, and that contrast stays readable (text 4.5:1, borders visible).\n\n### Tests\n- Update the detail panel screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n- The theme screenshots that show the details panel, if any.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/__screenshots__/"
+      ],
+      "created_at": "2026-10-25T21:49:53Z",
+      "updated_at": "2026-10-25T21:49:53Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

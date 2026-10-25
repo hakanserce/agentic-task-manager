@@ -47,6 +47,9 @@ def cmd_status_change(command):
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose
+            elif command == "reopen":
+                claims.pop(task_id, None)
+                store["completed"].pop(task_id, None)  # not done any more, in any worktree
             else:
                 claims.pop(task_id, None)
             if command == "done":

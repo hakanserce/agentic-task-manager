@@ -100,7 +100,12 @@ def commit_paths(root, files):
             raise AtmError(f"{name} is outside the repository", 2)
         if os.path.isdir(full):
             raise AtmError(f"{name} is a directory: name the files in it", 2)
-        if not os.path.exists(full) and git(["ls-files", "--error-unmatch", "--", relative], root) is None:
+        # A deleted file is fine as long as git knows it: still in the index (deleted by hand) or in HEAD (`git rm`)
+        if (
+            not os.path.exists(full)
+            and git(["ls-files", "--error-unmatch", "--", relative], root) is None
+            and git(["cat-file", "-e", f"HEAD:{relative}"], root) is None
+        ):
             raise AtmError(f"{name}: no such file, and git doesn't track it")
         if relative not in picked:
             picked.append(relative)
@@ -139,7 +144,10 @@ def cmd_commit(args):
     tasks_file = os.path.relpath(paths["tasks"], root)
     if tasks_file not in files:
         files.append(tasks_file)
-    run_git(["add", "-A", "--"] + files, root)
+    # A deletion already staged with `git rm` is in neither the tree nor the index: there is nothing to add for it
+    to_add = [f for f in files if git(["ls-files", "--error-unmatch", "--", f], root) is not None or os.path.lexists(os.path.join(root, f))]
+    if to_add:
+        run_git(["add", "-A", "--"] + to_add, root)
     # With paths, git commits only those, so whatever else is staged stays staged and out of this commit
     run_git(["commit", "-q", "-m", message, "--"] + files, root)
     sha = run_git(["rev-parse", "HEAD"], root)

@@ -61,6 +61,21 @@ describe('atm commit', () => {
     }
   });
 
+  test('a file already removed with git rm can be named too, alongside changed files', () => {
+    const root = project();
+    try {
+      git(['rm', '-q', 'src/b.txt'], root);
+      write(root, 'src/a.txt', 'a2\n');
+      const result = runAtm(['commit', 'T-001', '--file', 'src/a.txt', '--file', 'src/b.txt'], root, ENV);
+      assert.equal(result.code, 0, result.stderr);
+      assert.deepEqual(committedFiles(root), ['src/a.txt', 'src/b.txt']);
+      // Only the recorded SHA is left over (git() trims the status line's leading space)
+      assert.equal(git(['status', '--porcelain'], root), 'M .agentic-task-manager/tasks.json');
+    } finally {
+      removeDir(root);
+    }
+  });
+
   test('refuses whole-tree pathspecs, directories, paths outside the repository, and a missing --file', () => {
     const root = project();
     try {

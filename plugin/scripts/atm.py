@@ -369,6 +369,8 @@ STATUS_CHANGES = {
     "reject": (("review",), "todo"),
     "block": (("todo", "active"), "blocked"),
     "unblock": (("blocked",), "todo"),
+    # Undo a done (or skipped) by mistake, or work that turns out unfinished; the reason is kept as a note
+    "reopen": (("done", "skipped"), "todo"),
 }
 WAITING_ON = ("user", "agent")
 
@@ -760,6 +762,8 @@ def change_status(
             add_note(task, "failure", reason or "verification failed", agent, stamp)
         elif command == "reject":
             add_note(task, "rejection", reason, agent, stamp)
+        elif command == "reopen":
+            add_note(task, "note", f"Reopened: {reason}", agent, stamp)
         elif note:
             add_note(task, "handoff", note, agent, stamp)
         return current
@@ -1407,6 +1411,9 @@ def cmd_status_change(command):
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
                 store["completed"].pop(task_id, None)  # starting a task again on purpose
+            elif command == "reopen":
+                claims.pop(task_id, None)
+                store["completed"].pop(task_id, None)  # not done any more, in any worktree
             else:
                 claims.pop(task_id, None)
             if command == "done":
@@ -2312,7 +2319,12 @@ def commit_paths(root, files):
             raise AtmError(f"{name} is outside the repository", 2)
         if os.path.isdir(full):
             raise AtmError(f"{name} is a directory: name the files in it", 2)
-        if not os.path.exists(full) and git(["ls-files", "--error-unmatch", "--", relative], root) is None:
+        # A deleted file is fine as long as git knows it: still in the index (deleted by hand) or in HEAD (`git rm`)
+        if (
+            not os.path.exists(full)
+            and git(["ls-files", "--error-unmatch", "--", relative], root) is None
+            and git(["cat-file", "-e", f"HEAD:{relative}"], root) is None
+        ):
             raise AtmError(f"{name}: no such file, and git doesn't track it")
         if relative not in picked:
             picked.append(relative)
@@ -2351,7 +2363,10 @@ def cmd_commit(args):
     tasks_file = os.path.relpath(paths["tasks"], root)
     if tasks_file not in files:
         files.append(tasks_file)
-    run_git(["add", "-A", "--"] + files, root)
+    # A deletion already staged with `git rm` is in neither the tree nor the index: there is nothing to add for it
+    to_add = [f for f in files if git(["ls-files", "--error-unmatch", "--", f], root) is not None or os.path.lexists(os.path.join(root, f))]
+    if to_add:
+        run_git(["add", "-A", "--"] + to_add, root)
     # With paths, git commits only those, so whatever else is staged stays staged and out of this commit
     run_git(["commit", "-q", "-m", message, "--"] + files, root)
     sha = run_git(["rev-parse", "HEAD"], root)
@@ -2838,6 +2853,8 @@ commands:
                  a task that can't go on until someone decides: blocked, its claim released
   unblock <id> [--answer TEXT]...
                  back to todo, with the questions and answers kept as a note
+  reopen <id> --reason TEXT
+                 a done or skipped task back to todo (done by mistake, or not finished after all)
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
   release <id> [--note TEXT]
@@ -2940,6 +2957,7 @@ def build_parser():
         ("reject", "send a task in review back to todo, recording why"),
         ("block", "a task that can't go on until someone decides: blocked, with the questions; claim released"),
         ("unblock", "a blocked task goes back to todo, with the answers as a note"),
+        ("reopen", "a done or skipped task goes back to todo, with the reason as a note"),
     ):
         sub = command(name, cmd_status_change(name), description)
         sub.add_argument("id", help="the task ID")
@@ -2953,6 +2971,8 @@ def build_parser():
             sub.add_argument("--note", metavar="TEXT", help="what the reviewer should look at")
         if name == "reject":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
+        if name == "reopen":
+            sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't done after all (a note)")
         if name == "block":
             sub.add_argument("--on", required=True, choices=["user", "agent"], help="who has to decide")
             sub.add_argument("--question", action="append", default=[], metavar="TEXT", help="an open question")

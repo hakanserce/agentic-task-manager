@@ -7,7 +7,8 @@
     "workflow": {
       "type": "pull-request",
       "base": "main"
-    }
+    },
+    "next_id": 155
   },
   "tasks": [
     {
@@ -2286,7 +2287,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-24T00:13:54Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T21:55:04Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:01:01Z",
@@ -2294,7 +2295,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-097",
@@ -2324,7 +2326,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:42:03Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:46:37Z",
@@ -2332,7 +2334,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-098",
@@ -2354,7 +2357,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:46:37Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:49:08Z",
@@ -2362,7 +2365,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-099",
@@ -2388,7 +2392,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:00:28Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:02:36Z",
@@ -2396,7 +2400,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-100",
@@ -2425,7 +2430,7 @@
         "dashboard/src/components/AboutDialog.svelte"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:01:14Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:11:15Z",
@@ -2433,7 +2438,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-101",
@@ -2461,7 +2467,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:11:19Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:17:37Z",
@@ -2469,7 +2475,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-102",
@@ -2495,7 +2502,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:17:38Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:23:32Z",
@@ -2503,7 +2510,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-103",
@@ -2527,7 +2535,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:23:33Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:25:27Z",
@@ -2535,7 +2543,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-104",
@@ -2589,7 +2598,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:25:28Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:37:02Z",
@@ -2597,7 +2606,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-106",
@@ -2644,7 +2654,7 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:49:09Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:50:03Z",
@@ -2652,7 +2662,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-108",
@@ -2677,7 +2688,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:02:37Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:03:48Z",
@@ -2685,7 +2696,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-109",
@@ -2720,7 +2732,7 @@
         "dashboard/tests/fixtures/"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T01:22:48Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:26:26Z",
@@ -2728,7 +2740,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-110",
@@ -2756,7 +2769,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T07:23:07Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T01:29:54Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:40:33Z",
@@ -2764,7 +2777,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-111",
@@ -2789,7 +2803,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:37:03Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T22:42:03Z",
@@ -2797,7 +2811,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-112",
@@ -2824,7 +2839,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T22:50:03Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:00:27Z",
@@ -2832,7 +2847,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-113",
@@ -2856,7 +2872,7 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:03:49Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:05:48Z",
@@ -2864,7 +2880,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-114",
@@ -2891,7 +2908,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:05:49Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:10:21Z",
@@ -2899,7 +2916,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-115",
@@ -2927,7 +2945,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:10:22Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:14:39Z",
@@ -2935,7 +2953,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-116",
@@ -2958,7 +2977,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:14:39Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:18:44Z",
@@ -2966,7 +2985,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-117",
@@ -2991,7 +3011,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:18:45Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:22:12Z",
@@ -2999,7 +3019,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-118",
@@ -3030,7 +3051,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:22:12Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:27:41Z",
@@ -3038,7 +3059,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-119",
@@ -3063,7 +3085,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:27:41Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:35:51Z",
@@ -3071,7 +3093,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-120",
@@ -3096,7 +3119,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:35:51Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:39:42Z",
@@ -3104,7 +3127,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-121",
@@ -3126,7 +3150,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:39:44Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:41:51Z",
@@ -3134,7 +3158,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-122",
@@ -3160,7 +3185,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:41:51Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-24T23:45:04Z",
@@ -3168,7 +3193,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-123",
@@ -3192,7 +3218,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-24T23:45:11Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:11:37Z",
@@ -3200,7 +3226,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-124",
@@ -3224,7 +3251,7 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:11:45Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:29:30Z",
@@ -3232,7 +3259,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-125",
@@ -3256,7 +3284,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:31:36Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:35:10Z",
@@ -3264,7 +3292,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-126",
@@ -3289,7 +3318,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:35:11Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:36:41Z",
@@ -3297,7 +3326,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-127",
@@ -3325,7 +3355,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:36:41Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:37:55Z",
@@ -3333,7 +3363,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-128",
@@ -3356,7 +3387,7 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:37:55Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:41:56Z",
@@ -3364,7 +3395,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-129",
@@ -3387,7 +3419,7 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:41:57Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:44:01Z",
@@ -3395,7 +3427,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-130",
@@ -3417,7 +3450,7 @@
         "README.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:44:02Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:46:19Z",
@@ -3425,7 +3458,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-131",
@@ -3450,7 +3484,7 @@
         "plugin/skills/do-task/SKILL.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:46:20Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:46:58Z",
@@ -3458,7 +3492,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-132",
@@ -3478,7 +3513,7 @@
         ".agentic-task-manager/tasks.json"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:46:58Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:47:46Z",
@@ -3486,7 +3521,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-133",
@@ -3507,7 +3543,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:47:47Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:49:05Z",
@@ -3515,7 +3551,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-134",
@@ -3539,7 +3576,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:49:06Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:53:38Z",
@@ -3547,7 +3584,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-135",
@@ -3571,7 +3609,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:53:40Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:57:38Z",
@@ -3579,7 +3617,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-136",
@@ -3602,7 +3641,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:57:39Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T00:59:13Z",
@@ -3610,7 +3649,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-137",
@@ -3637,7 +3677,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T00:59:14Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:02:40Z",
@@ -3645,7 +3685,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-138",
@@ -3672,7 +3713,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T01:02:45Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:05:48Z",
@@ -3680,7 +3721,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-139",
@@ -3701,7 +3743,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T01:05:53Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:09:34Z",
@@ -3709,7 +3751,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-140",
@@ -3736,7 +3779,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T01:09:35Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:22:10Z",
@@ -3744,7 +3787,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-141",
@@ -3771,7 +3815,7 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-25T05:12:19Z",
+      "updated_at": "2026-10-25T05:24:58Z",
       "started_at": "2026-10-25T01:26:33Z",
       "agent": "claude:e5ea9db0",
       "completed_at": "2026-10-25T01:29:54Z",
@@ -3779,7 +3823,8 @@
         "number": 7,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
       },
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "merged_at": "2026-10-25T05:19:44Z"
     },
     {
       "id": "T-142",
@@ -3822,6 +3867,329 @@
       ],
       "created_at": "2026-10-24T22:03:56Z",
       "updated_at": "2026-10-24T22:03:56Z"
+    },
+    {
+      "id": "T-144",
+      "name": "Activity: titles name the selected period",
+      "phase": 14,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "activity"
+      ],
+      "description": "Bug: in the Activity details, choosing Week shows \"Tasks completed per 6 hours\": the headings use series.unitLabel (the bucket size picked by activitySeries in dashboard/src/lib/insights.ts, BUCKET_SIZES/MAX_ACTIVITY_BUCKETS), not the period the user selected. Fix both sides: (1) each preset gets a natural bucket (hour → 5 minutes, day → hour, week → day, month → day, all time/custom → the current automatic choice); (2) the headings name the period and the bucket, e.g. \"Tasks completed this week, per day\" / \"last week\" when stepped back with ‹ (rangeLabel already has the period text). Same for \"Agents working (1 = one agent busy the whole …)\". Unit tests in tests/unit/insights.test.ts for each preset's bucket and label; update the activity screenshots (light/dark) and their -linux baselines per CLAUDE.md.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "blocked",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/insights.ts",
+        "dashboard/src/components/ActivityDeepDive.svelte",
+        "dashboard/tests/unit/insights.test.ts"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T06:01:10Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T05:50:48Z",
+          "kind": "outcome",
+          "text": "Each period has its natural bucket (week per day); headings name the period: 'Tasks completed this week, per day'",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:01:09Z",
+          "kind": "note",
+          "text": "Reopened: Marked done before its commit; atm commit couldn't commit the two git-rm'd Linux screenshots (fixed by T-153)",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:01:10Z",
+          "kind": "note",
+          "text": "Waiting for T-153 (atm commit with git-rm'd files) before its commit",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "waiting_on": "agent",
+      "questions": [],
+      "blocked_at": "2026-10-25T06:01:10Z"
+    },
+    {
+      "id": "T-145",
+      "name": "Progress tab: show all phases or only active ones",
+      "phase": 14,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "progress"
+      ],
+      "description": "The Progress tab gets long with many phases (this repo has 15). Add a checkbox above the phase table, \"Active phases only\": an active phase is one with unfinished tasks (todo/active/review/blocked kinds), or a finished one whose last completion is within the last N days (N = 7 by default, editable next to the checkbox). With it on, the phase table and the burndown's phase list show only active phases (\"Show all phases\" focus still works; the overall burndown keeps all tasks). Remembered in the project's saved view (view-store.ts), like progressPhase. Logic in a lib function (e.g. activePhases(tasks, now, days, vocab) in forecast.ts or a new phases.ts) with unit tests; a component or e2e test for the toggle; screenshots in both modes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProgressTab.svelte",
+        "dashboard/src/components/PhaseTable.svelte",
+        "dashboard/src/lib/view-store.ts",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-146",
+      "name": "Short, end-user What's New, separate from the changelog",
+      "phase": 14,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "release-notes"
+      ],
+      "description": "The What's new dialog and /atm:update-dashboard show plugin/CHANGELOG.md, which is written for developers and is too detailed for users (0.13.0 alone is ~25 bullets with command names). Add plugin/WHATS-NEW.md: per version, 3–6 short bullets in plain language about what a user notices (no command flags, no internals), e.g. \"Agents can ask you a question instead of guessing; the dashboard tells you when a task needs you.\" Write it for every released version from the changelog (summarize, newest first). The dashboard's What's new (build/changelog.ts → a whats-new module) and the /atm:update-dashboard skill show WHATS-NEW.md; CHANGELOG.md stays the detailed record. Inlining the short notes instead of the full changelog also frees room under the 256 KB budget (the build is ~1.9 KB under it). Keep the version check (scripts/check-versions.mjs) covering WHATS-NEW.md. Add to the root CLAUDE.md (Versions section): every release adds a short, end-user What's New entry next to the changelog entry, written for users, not developers.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "plugin/WHATS-NEW.md",
+        "dashboard/build/changelog.ts",
+        "dashboard/src/components/WhatsNew.svelte",
+        "plugin/skills/update-dashboard/SKILL.md",
+        "dashboard/scripts/check-versions.mjs",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-147",
+      "name": "Themes: pick the top 20 VS Code themes",
+      "phase": 14,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "themes"
+      ],
+      "description": "Choose the 20 most popular VS Code colour themes (by Marketplace installs; note the date and source) that aren't already in the dashboard (it has Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast; see dashboard/src/themes/). For each: its name, licence (must allow reusing the palette), whether it has light and dark variants, and the source of its colours. Record the list in docs/theme-validation.md (or a new docs/themes.md), split into four batches of five for the next tasks. If the menu needs to change for 26 themes (grouping, light/dark pairs), note a proposal.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/themes.md"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-148",
+      "name": "Themes: add batch 1 (5 themes)",
+      "phase": 14,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "themes"
+      ],
+      "description": "Add the first five themes from docs/themes.md, as the existing ones are built (dashboard/src/themes/<name>.css + index.ts): every token for each variant (light and/or dark), checked by tests/unit/theme-contrast.test.ts (readable contrast) and recorded in docs/theme-validation.md. A screenshot per theme and mode (visual.spec.ts' theme loop), with -linux baselines per CLAUDE.md. Mind the 256 KB size budget.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-147"
+      ],
+      "files": [
+        "dashboard/src/themes/",
+        "dashboard/tests/",
+        "docs/theme-validation.md"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-149",
+      "name": "Themes: add batch 2 (5 themes)",
+      "phase": 14,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "themes"
+      ],
+      "description": "The second five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-148"
+      ],
+      "files": [
+        "dashboard/src/themes/",
+        "dashboard/tests/",
+        "docs/theme-validation.md"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-150",
+      "name": "Themes: add batch 3 (5 themes)",
+      "phase": 14,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "themes"
+      ],
+      "description": "The third five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-149"
+      ],
+      "files": [
+        "dashboard/src/themes/",
+        "dashboard/tests/",
+        "docs/theme-validation.md"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-151",
+      "name": "Themes: add batch 4 (5 themes)",
+      "phase": 14,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "themes"
+      ],
+      "description": "The last five themes from docs/themes.md, as in the batch 1 task: tokens per variant, contrast test, docs/theme-validation.md, screenshots in both modes, size budget.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-150"
+      ],
+      "files": [
+        "dashboard/src/themes/",
+        "dashboard/tests/",
+        "docs/theme-validation.md"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-152",
+      "name": "Appearance menu for 26 themes",
+      "phase": 14,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "themes"
+      ],
+      "description": "With 26 themes the Appearance menu (dashboard/src/components/AppearanceMenu.svelte) needs to stay usable: follow the proposal in docs/themes.md (e.g. a scrollable list with a swatch per theme, grouped or sorted, keyboard navigable, the current one visible on open). README and docs/help.md list the themes. e2e for choosing a theme by keyboard; screenshot of the open menu in both modes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-151"
+      ],
+      "files": [
+        "dashboard/src/components/AppearanceMenu.svelte",
+        "README.md",
+        "docs/help.md",
+        "dashboard/tests/"
+      ],
+      "created_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T05:46:06Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-153",
+      "name": "atm commit: accept git-rm'd files; atm reopen",
+      "phase": 14,
+      "type": "bugfix",
+      "priority": "P0",
+      "labels": [
+        "atm-cli"
+      ],
+      "description": "Two atm-cli gaps found while committing T-144. (1) atm commit refused a file already removed with 'git rm' (in neither the working tree nor the index); accept a path HEAD tracks, and stage only paths that still exist in the tree or the index. (2) A task marked done by mistake couldn't be taken back: add 'atm reopen <id> --reason TEXT' (done/skipped kind -> todo, clearing the attempt, the reason kept as a note). Tests: tests/scripts/git.test.mjs, scenarios/reopen.json; docs/v4/atm-cli.md and plugin/CLAUDE.md.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/git_ops.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/git.test.mjs",
+        "atm-cli/atm/model.py",
+        "atm-cli/atm/tasks.py",
+        "atm-cli/atm/cli.py",
+        "tests/scripts/scenarios/reopen.json",
+        "docs/v4/atm-cli.md",
+        "plugin/CLAUDE.md"
+      ],
+      "created_at": "2026-10-25T05:55:52Z",
+      "updated_at": "2026-10-25T06:01:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:01:10Z",
+          "kind": "outcome",
+          "text": "atm commit takes files removed with git rm; new atm reopen <id> --reason undoes a done or skipped task",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:01:18Z",
+          "kind": "note",
+          "text": "Reopened: Marked done before its commit (the order T-154 fixes)",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "started_at": "2026-10-25T06:01:18Z",
+      "started_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-154",
+      "name": "Skills: commit before marking a task done",
+      "phase": 14,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "skills"
+      ],
+      "description": "do-task and loop-tasks mark a task done (atm done) before committing it (atm commit), so a failed commit leaves a task done with its work uncommitted (happened with T-144). Reorder: verify, atm commit <id> --file ... (the task still in progress), then atm done <id> --note; if the commit fails, the task stays in progress and the agent fixes the cause or releases it with a handoff note. For a review or a block, the same: commit first, then atm review / atm block. Check atm commit works on an in-progress task and records the SHA (atm done keeps it). Update plugin/skills/do-task and loop-tasks, plugin/CLAUDE.md, and README's do-task steps.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/CLAUDE.md",
+        "README.md"
+      ],
+      "created_at": "2026-10-25T05:55:53Z",
+      "updated_at": "2026-10-25T05:55:53Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

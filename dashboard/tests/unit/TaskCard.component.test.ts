@@ -101,6 +101,22 @@ describe('TaskCard', () => {
     expect(render(TaskCard, { task: task('T-005') }).container.querySelector('.review-wait')).toBeNull();
   });
 
+  it('a blocked task says who it waits on, for how long, and how many questions (listed on hover)', () => {
+    dashboard.loadedAt = Date.parse('2026-04-03T13:00:00Z');
+    const blocked = {
+      ...task('T-008'),
+      status: 'blocked',
+      waiting_on: 'user',
+      blocked_at: '2026-04-03T12:00:00Z',
+      questions: ['REST or GraphQL?', 'Which DB?'],
+    };
+    const { container } = render(TaskCard, { task: blocked });
+    const line = container.querySelector('.block-wait')!;
+    expect(line).toHaveTextContent('Waiting on you · 1 h · 2 questions');
+    expect(line).toHaveClass('on-user');
+    expect(line).toHaveAttribute('title', 'REST or GraphQL?\nWhich DB?');
+  });
+
   it("shows the task's labels as chips, in meta.labels' order and text", () => {
     loadIntoDashboard({ ...standard, meta: { labels: [{ id: 'ux', label: 'UX' }] } });
     const { container } = render(TaskCard, { task: { ...task('T-001'), labels: ['spike-2', 'ux'] } });

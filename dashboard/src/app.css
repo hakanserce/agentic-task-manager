@@ -1749,6 +1749,37 @@ svg.graph-minimap.hidden {
   margin-top: 4px;
   white-space: pre-wrap;
 }
+/* Blocked on a decision (D-3.2): waiting on you stands out; waiting on an agent stays quiet */
+.block-wait {
+  color: var(--text-muted);
+}
+.block-wait.on-user {
+  color: var(--orange);
+  font-weight: 600;
+}
+.block-wait::before {
+  content: '✋ ';
+}
+.block-questions {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.block-questions li {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+}
+/* The header's "need you" count (D-3.3) */
+.attention-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 8px;
+  margin-left: 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--yellow) 50%, transparent);
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
+  color: var(--yellow);
+  cursor: pointer;
+}
 .kanban-empty {
   font-size: 12px;
   color: var(--text-muted);

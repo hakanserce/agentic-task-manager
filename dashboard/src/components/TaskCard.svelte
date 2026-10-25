@@ -5,7 +5,7 @@
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import type { Task } from '../lib/types';
   import { kindOf, phaseLabel, statusLabel, typeLabel } from '../lib/vocab';
-  import { reviewSummary, reviewWait } from '../lib/waiting';
+  import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
 
@@ -18,6 +18,7 @@
   const deps = $derived(task.dependencies ?? []);
   const claim = $derived(kind === 'active' ? dashboard.claims.get(task.id) : undefined);
   const review = $derived(reviewWait(task, dashboard.loadedAt, dashboard.vocab));
+  const block = $derived(blockWait(task, dashboard.loadedAt, dashboard.vocab));
 </script>
 
 <div class="task-card status-{task.status} kind-{kind ?? 'none'}" id="task-{task.id}" data-id={task.id}>
@@ -51,6 +52,11 @@
     {/if}
     {#if review}
       <div class="task-waiting review-wait" title={review.note?.text}>{reviewSummary(review)}</div>
+    {/if}
+    {#if block}
+      <div class="task-waiting block-wait" class:on-user={block.on === 'user'} title={block.questions.join('\n')}>
+        {blockSummary(block)}
+      </div>
     {/if}
   </div>
   <div class="task-tags">

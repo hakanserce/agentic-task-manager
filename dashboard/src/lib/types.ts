@@ -39,6 +39,12 @@ export interface Task {
   commit?: string;
   /** ISO 8601 UTC; when the task asked for a review (`atm review`). Its work ended here; review time isn't work */
   review_requested_at?: string;
+  /** A blocked task waits on a decision by the user or by an agent (`atm block --on`) */
+  waiting_on?: string;
+  /** The open questions of a blocked task */
+  questions?: string[];
+  /** ISO 8601 UTC; when it was blocked */
+  blocked_at?: string;
   /** Handoffs, outcomes, review requests, answers, rejections (docs/v4/data-model.md §4) */
   notes?: Note[];
 }

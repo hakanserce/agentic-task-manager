@@ -47,6 +47,8 @@ export interface Task {
   blocked_at?: string;
   /** Handoffs, outcomes, review requests, answers, rejections (docs/v4/data-model.md §4) */
   notes?: Note[];
+  /** Before v4: the last failed attempt (now a `failure` note; still read, see notes.ts) */
+  last_failure?: { at?: string; reason?: string };
 }
 
 export interface Note {

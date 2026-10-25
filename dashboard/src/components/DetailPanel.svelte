@@ -2,6 +2,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
+  import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
@@ -13,6 +14,7 @@
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
   const review = $derived(task ? reviewWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const block = $derived(task ? blockWait(task, dashboard.loadedAt, dashboard.vocab) : null);
+  const notes = $derived(task ? taskNotes(task) : []);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
 
   function onOverlayClick(e: MouseEvent) {
@@ -112,6 +114,30 @@
             <div style="color:var(--text-muted)">Since {since} · lease until {until}</div>
             {#if claim.worktree}<div style="color:var(--text-muted)">{claim.worktree}</div>{/if}
           </div>
+        </div>
+      {/if}
+      {#if notes.length}
+        <div class="detail-section" id="detail-notes">
+          <div class="label">Notes</div>
+          <ul class="detail-notes">
+            {#each notes as note, i (i)}
+              <li class="detail-note note-{note.kind}" data-kind={note.kind}>
+                <div class="note-head">
+                  <span class="note-kind">{noteKindLabel(note.kind)}</span>
+                  <span class="note-meta"
+                    >{note.by ? `${note.by} · ` : ''}{note.at ? new Date(note.at).toLocaleString() : ''}</span
+                  >
+                </div>
+                <div class="note-text">{note.text}</div>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
+      {#if task.commit}
+        <div class="detail-section" id="detail-commit">
+          <div class="label">Commit</div>
+          <div class="value"><code title={task.commit}>{shortSha(task.commit)}</code></div>
         </div>
       {/if}
       {#if task.created_at || task.updated_at}

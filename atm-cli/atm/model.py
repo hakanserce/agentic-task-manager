@@ -43,6 +43,8 @@ STATUS_CHANGES = {
     "unblock": (("blocked",), "todo"),
     # Undo a done (or skipped) by mistake, or work that turns out unfinished; the reason is kept as a note
     "reopen": (("done", "skipped"), "todo"),
+    # A task that turns out not to be needed; reopen undoes it
+    "skip": (("todo", "blocked"), "skipped"),
 }
 WAITING_ON = ("user", "agent")
 
@@ -453,6 +455,10 @@ def change_status(
         task["review_requested_at"] = stamp
         if note:
             add_note(task, "review", note, agent, stamp)
+    elif command == "skip":
+        for field in ("waiting_on", "questions", "blocked_at"):
+            task.pop(field, None)
+        add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
         task.pop("completed_at", None)

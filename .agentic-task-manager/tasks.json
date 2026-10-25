@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 155
+    "next_id": 156
   },
   "tasks": [
     {
@@ -4054,17 +4054,28 @@
       "description": "Choose the 20 most popular VS Code colour themes (by Marketplace installs; note the date and source) that aren't already in the dashboard (it has Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast; see dashboard/src/themes/). For each: its name, licence (must allow reusing the palette), whether it has light and dark variants, and the source of its colours. Record the list in docs/theme-validation.md (or a new docs/themes.md), split into four batches of five for the next tasks. If the menu needs to change for 26 themes (grouping, light/dark pairs), note a proposal.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/themes.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:40:49Z",
+      "updated_at": "2026-10-25T06:51:30Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:40:49Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "0f626120f6e2502db868eb551161df12f01c12c7",
+      "completed_at": "2026-10-25T06:51:30Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:51:30Z",
+          "kind": "outcome",
+          "text": "docs/themes.md: 20 MIT/Apache themes by installs (2026-10-24), colours, batches; open: size budget and dark-only themes",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-148",
@@ -4078,7 +4089,7 @@
       "description": "Add the first five themes from docs/themes.md, as the existing ones are built (dashboard/src/themes/<name>.css + index.ts): every token for each variant (light and/or dark), checked by tests/unit/theme-contrast.test.ts (readable contrast) and recorded in docs/theme-validation.md. A screenshot per theme and mode (visual.spec.ts' theme loop), with -linux baselines per CLAUDE.md. Mind the 256 KB size budget.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "blocked",
       "dependencies": [
         "T-147"
       ],
@@ -4088,9 +4099,15 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T06:51:30Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "waiting_on": "user",
+      "questions": [
+        "Size: 20 more themes add about 24 KB, but only about 7 KB is left under the 256 KB budget. Raise the budget (e.g. to 320 KB), store themes more compactly (still ~8 KB), or add fewer themes?",
+        "Dark-only themes (12 of 20): derive a light variant from their accents, or always show them dark (the mode switch then says so)?"
+      ],
+      "blocked_at": "2026-10-25T06:51:30Z"
     },
     {
       "id": "T-149",
@@ -4294,6 +4311,32 @@
           "by": "claude:e5ea9db0"
         }
       ]
+    },
+    {
+      "id": "T-155",
+      "name": "atm skip: drop a to-do or blocked task that isn't needed",
+      "phase": 14,
+      "type": "feature",
+      "labels": [
+        "atm-cli"
+      ],
+      "description": "There is no way to skip a task through atm: the theme batches T-150/T-151 became unneeded and could only be repurposed. Add atm skip <id> --reason TEXT: a todo- or blocked-kind task moves to the skipped kind, the reason kept as a note ('Skipped: ...'), any claim dropped; reopen undoes it. Usage text, scenarios in tests/scripts/scenarios/skip.json, skills (do-task, loop-tasks) mention it, CHANGELOG.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/model.py",
+        "atm-cli/atm/cli.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/skip.json"
+      ],
+      "created_at": "2026-10-25T06:57:56Z",
+      "updated_at": "2026-10-25T06:58:00Z",
+      "created_by": "claude:e5ea9db0",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T06:58:00Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

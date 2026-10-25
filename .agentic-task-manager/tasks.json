@@ -5302,18 +5302,29 @@
       "description": "First task of `docs/multi-project-dashboard-proposal.md` §5, so the atm-cli and dashboard work can run **in parallel**.\n\n### Write `docs/multi-project-api.md`\nThe routes:\n- `/`: the dashboard\n- `/api/projects`\n- `/p/<id>/tasks.json`, `claims.json`, `tasks-archive.json`\n- `/__atm/whoami`\n\nFor each: the method, status codes (`200`; `304` with `ETag` / `If-None-Match`; `404` for an unknown project or file; `403`/`421` for a bad `Host` header), headers (`Cache-Control: no-store`, `ETag`) and the exact JSON.\n\n### `/api/projects`\nA list of `{ id, name, path, missing, summary }`, where `missing` means the folder or `tasks.json` is gone, and `summary` has:\n- `total`, `done`, `skipped`\n- `percent`: `done / (total - skipped)`; a group with only skipped tasks counts as finished\n- `current_phase`: `{ id, name, done, total }`\n- `agents_working`: live claims\n- `needs_you`: `{ review, blocked_on_user }`\n- `last_activity`: the newest timestamp\n- `completions_14d`: 14 daily counts\n\nProject `<id>` is `meta.id`; registry entries without one use a stable hash of the path (say which).\n\n### Also\n- `/__atm/whoami`: `{ atm: true, pid, version, build }`.\n- The formats of `~/.agentic-task-manager/server.json` and `projects.json`.\n- Link the doc from the proposal.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/multi-project-api.md",
         "docs/multi-project-dashboard-proposal.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:51:38Z",
+      "updated_at": "2026-10-25T21:55:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:51:38Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "d00f249998a3f99470714793e042f422de9e3d33",
+      "completed_at": "2026-10-25T21:55:28Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T21:55:28Z",
+          "kind": "outcome",
+          "text": "docs/multi-project-api.md: routes, Host check, ETags, /api/projects summary fields, whoami, projects.json and server.json formats",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-166",
@@ -5328,7 +5339,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.1. New module `atm-cli/atm/registry.py` (add it to `atm-cli/build.py`'s `MODULES` in dependency order).\n\n### The registry\n- At `$ATM_HOME/projects.json`, `ATM_HOME` defaulting to `~/.agentic-task-manager`.\n- Written under `locked(ATM_HOME)` with `write_json_atomic`, **never while holding a project's lock**.\n- Entries keyed by project root path: `{ id: meta.id, name: meta.project, path, added_at, seen_at }`.\n- In a **linked git worktree**, register the main worktree (the parent of `git rev-parse --git-common-dir`).\n- A project with `meta.dashboard.listed: false` is never registered (and removed if present).\n- An **unreadable** `projects.json` is renamed to `projects.json.damaged-<UTC time>` and replaced by an empty registry, and `atm projects` says so.\n\n### Commands\n- `atm projects [--json]`: each entry, marking missing folders or `tasks.json`.\n- `atm projects add [PATH]`\n- `atm projects remove <id|PATH>`\n- `atm projects prune`: drops missing ones.\n\nA `register(paths, wait=True)` function for the next task; with `wait=False` it tries the lock once and returns without registering if it's taken.\n\n### Tests\nScenarios in `tests/scripts/scenarios/projects.json`, with `ATM_HOME` in the temp folder:\n- add, list, remove, prune, opt-out, damaged file;\n- a linked worktree registers the main one (may need a `*.test.mjs` for git worktrees);\n- concurrent registration from several processes leaves a valid file with every project.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-165"
       ],
@@ -5341,9 +5352,11 @@
         "tests/scripts/registry.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:53Z",
+      "updated_at": "2026-10-25T21:55:32Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T21:55:32Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-167",

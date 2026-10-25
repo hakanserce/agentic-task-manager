@@ -24,6 +24,7 @@ MODULES = [
     "core",
     "paths",
     "lock",
+    "registry",
     "model",
     "claims",
     "query",

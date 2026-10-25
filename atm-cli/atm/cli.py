@@ -13,6 +13,7 @@ from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
+from .registry import cmd_projects
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
@@ -87,6 +88,9 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  projects [add [PATH] | remove <id|PATH> | prune]
+                 the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
+                 list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
                  (status commands and heartbeat take --agent NAME and --json; status commands and next --claim
                  take --status ID to pick a status when the project has several of that kind)
   help           show this help
@@ -318,6 +322,9 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
+    projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
+    projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")
 
     child = command("_serve-child", cmd_serve_child, "the detached server process", hidden=True)
     child.add_argument("task_dir")

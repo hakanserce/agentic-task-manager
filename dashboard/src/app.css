@@ -140,7 +140,14 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
-/* Rendered Markdown (Markdown.svelte): Help, and later task descriptions */
+/* A task's description in the detail panel: Markdown that starts flush with its label */
+.detail-description .markdown > :first-child {
+  margin-top: 0;
+}
+.detail-description .markdown > :last-child {
+  margin-bottom: 0;
+}
+/* Rendered Markdown (Markdown.svelte): Help and task descriptions */
 .markdown {
   font-size: 14px;
   line-height: 1.6;

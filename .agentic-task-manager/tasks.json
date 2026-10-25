@@ -3835,7 +3835,7 @@
       "description": "Render the description field as Markdown wherever it is shown: at least the detail panel, possibly the cards (decide whether cards show a plain-text excerpt instead). No new library, like the changelog and Help: reuse the Markdown renderer T-105 builds for Help (move it to src/lib if it only exists at build time, since descriptions are rendered in the browser). HTML in descriptions must stay escaped (the edge-cases fixture's HTML-in-description test must keep passing). Unit tests for the renderer on descriptions (headings, lists, code, links opening in a new tab), component test for the detail panel, screenshot update.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-105",
         "T-146"
@@ -3847,7 +3847,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T06:25:02Z",
+      "updated_at": "2026-10-25T06:33:44Z",
       "updated_by": "claude:e5ea9db0",
       "notes": [
         {
@@ -3856,7 +3856,9 @@
           "text": "Done and tested (506 unit tests), uncommitted in the tree: detail panel renders descriptions as Markdown. Blocked by the 256 KB budget (263,107 bytes); T-146 frees space. Then: update detail-panel screenshots, commit, done.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "started_at": "2026-10-25T06:33:44Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-143",
@@ -3976,7 +3978,7 @@
       "description": "The What's new dialog and /atm:update-dashboard show plugin/CHANGELOG.md, which is written for developers and is too detailed for users (0.13.0 alone is ~25 bullets with command names). Add plugin/WHATS-NEW.md: per version, 3–6 short bullets in plain language about what a user notices (no command flags, no internals), e.g. \"Agents can ask you a question instead of guessing; the dashboard tells you when a task needs you.\" Write it for every released version from the changelog (summarize, newest first). The dashboard's What's new (build/changelog.ts → a whats-new module) and the /atm:update-dashboard skill show WHATS-NEW.md; CHANGELOG.md stays the detailed record. Inlining the short notes instead of the full changelog also frees room under the 256 KB budget (the build is ~1.9 KB under it). Keep the version check (scripts/check-versions.mjs) covering WHATS-NEW.md. Add to the root CLAUDE.md (Versions section): every release adds a short, end-user What's New entry next to the changelog entry, written for users, not developers.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "plugin/WHATS-NEW.md",
@@ -3987,11 +3989,22 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:25:02Z",
+      "updated_at": "2026-10-25T06:33:43Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T06:25:02Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "a7439ce1b9dab1543dae6dc6bb2c2450e94abc80",
+      "completed_at": "2026-10-25T06:33:43Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T06:33:43Z",
+          "kind": "outcome",
+          "text": "plugin/WHATS-NEW.md: short user notes for every release, shown in What's new and /atm:update-dashboard; the dashboard is 9 KB under budget again",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-147",

@@ -57,7 +57,8 @@ test.describe('Activity widget', () => {
   test('the deep dive: key numbers, and charts by type, by agent and per task', async ({ page }) => {
     await activityPill(page).click();
     const panel = page.locator('#activity-panel');
-    await expect(panel.locator('.activity-heading')).toContainText('Activity per 1 hour');
+    await expect(panel.locator('.activity-heading')).toContainText('Activity per hour');
+    await expect(panel.locator('#dive-completed h4')).toHaveText('Tasks completed over all time, per hour, by type');
     // 6 done in 4 h (08:00–12:00); 1.4 agents busy on average; idle 11:00–11:30 (see fixtures/agents.md)
     await expect(panel.locator('.kpi')).toHaveText([
       '6tasks completed',
@@ -121,8 +122,12 @@ test.describe('Activity widget', () => {
     await page.locator('[data-range="hour"]').click();
     await expect(page.locator('.activity-heading')).toContainText('per 5 minutes');
     await page.locator('[data-range="week"]').click();
+    // A week reads per day, and the headings say which week (it used to say "per 6 hours")
+    await expect(page.locator('.activity-heading')).toContainText('Activity per day');
+    await expect(page.locator('#dive-completed h4')).toHaveText('Tasks completed this week, per day, by type');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last week');
+    await expect(page.locator('#dive-agents h4')).toContainText('Agents working last week');
     await page.locator('[data-range="month"]').click();
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last month');

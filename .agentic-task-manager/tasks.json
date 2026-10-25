@@ -3880,7 +3880,7 @@
       "description": "Bug: in the Activity details, choosing Week shows \"Tasks completed per 6 hours\": the headings use series.unitLabel (the bucket size picked by activitySeries in dashboard/src/lib/insights.ts, BUCKET_SIZES/MAX_ACTIVITY_BUCKETS), not the period the user selected. Fix both sides: (1) each preset gets a natural bucket (hour → 5 minutes, day → hour, week → day, month → day, all time/custom → the current automatic choice); (2) the headings name the period and the bucket, e.g. \"Tasks completed this week, per day\" / \"last week\" when stepped back with ‹ (rangeLabel already has the period text). Same for \"Agents working (1 = one agent busy the whole …)\". Unit tests in tests/unit/insights.test.ts for each preset's bucket and label; update the activity screenshots (light/dark) and their -linux baselines per CLAUDE.md.",
       "requirements": [],
       "use_cases": [],
-      "status": "blocked",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/insights.ts",
@@ -3888,7 +3888,7 @@
         "dashboard/tests/unit/insights.test.ts"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T06:01:10Z",
+      "updated_at": "2026-10-25T06:13:42Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -3909,11 +3909,16 @@
           "kind": "note",
           "text": "Waiting for T-153 (atm commit with git-rm'd files) before its commit",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:13:41Z",
+          "kind": "answer",
+          "text": "T-153 is committed (fe75775); atm commit now takes git-rm'd files",
+          "by": "claude:e5ea9db0"
         }
       ],
-      "waiting_on": "agent",
-      "questions": [],
-      "blocked_at": "2026-10-25T06:01:10Z"
+      "started_at": "2026-10-25T06:13:42Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-145",
@@ -4132,7 +4137,7 @@
       "description": "Two atm-cli gaps found while committing T-144. (1) atm commit refused a file already removed with 'git rm' (in neither the working tree nor the index); accept a path HEAD tracks, and stage only paths that still exist in the tree or the index. (2) A task marked done by mistake couldn't be taken back: add 'atm reopen <id> --reason TEXT' (done/skipped kind -> todo, clearing the attempt, the reason kept as a note). Tests: tests/scripts/git.test.mjs, scenarios/reopen.json; docs/v4/atm-cli.md and plugin/CLAUDE.md.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/git_ops.py",
@@ -4146,7 +4151,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T05:55:52Z",
-      "updated_at": "2026-10-25T06:01:18Z",
+      "updated_at": "2026-10-25T06:13:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4161,10 +4166,24 @@
           "kind": "note",
           "text": "Reopened: Marked done before its commit (the order T-154 fixes)",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:01:26Z",
+          "kind": "outcome",
+          "text": "atm commit takes files removed with git rm; new atm reopen <id> --reason undoes a done or skipped task",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-25T06:01:18Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "fe7577539d760118204171b1e67d9a105e2d1102",
+      "completed_at": "2026-10-25T06:01:26Z",
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 8,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/8"
+      },
+      "merged_at": "2026-10-25T06:11:27Z"
     },
     {
       "id": "T-154",

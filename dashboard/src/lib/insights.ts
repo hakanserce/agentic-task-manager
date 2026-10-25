@@ -136,20 +136,32 @@ export function gaps(intervals: { start: number; end: number }[], from: number, 
 
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
+// Labels read after "per" and "the whole": "per hour", "the whole 6 hours"
 const BUCKET_SIZES: [number, string][] = [
   [5 * MINUTE, '5 minutes'],
   [15 * MINUTE, '15 minutes'],
   [30 * MINUTE, '30 minutes'],
-  [HOUR, '1 hour'],
+  [HOUR, 'hour'],
   [3 * HOUR, '3 hours'],
   [6 * HOUR, '6 hours'],
   [12 * HOUR, '12 hours'],
-  [24 * HOUR, '1 day'],
+  [24 * HOUR, 'day'],
   [2 * 24 * HOUR, '2 days'],
-  [7 * 24 * HOUR, '1 week'],
+  [7 * 24 * HOUR, 'week'],
   [30 * 24 * HOUR, '30 days'],
 ];
 export const MAX_ACTIVITY_BUCKETS = 36;
+
+/**
+ * The bucket each stepped period reads naturally in: an hour per 5 minutes, a day per hour, a week or a month per
+ * day. All time and custom periods pick the smallest size that fits (activitySeries).
+ */
+export const PRESET_BUCKET_MS: Partial<Record<ActivityPreset, number>> = {
+  hour: 5 * MINUTE,
+  day: HOUR,
+  week: 24 * HOUR,
+  month: 24 * HOUR,
+};
 
 const ms = (iso: string | undefined) => {
   const t = iso ? Date.parse(iso) : NaN;
@@ -255,14 +267,39 @@ export function rangeLabel(range: ActivityRange, now: number): string {
 }
 
 /**
- * Activity bucketed by the smallest of a few natural lengths that fits the time span; null without completions.
- * With `period`, only that period is shown (completions, cycle times and type counts inside it).
+ * How a heading names the period: "today", "this week", "in the last hour", "in the week of Oct 5", "over all time"…
+ * ("Tasks completed this week, per day").
+ */
+export function periodPhrase(range: ActivityRange, now: number): string {
+  const label = rangeLabel(range, now);
+  const offset = Math.min(0, range.offset ?? 0);
+  switch (range.preset) {
+    case 'hour':
+      return offset === 0 ? 'in the last hour' : `from ${label}`;
+    case 'day':
+      return offset >= -1 ? label.toLowerCase() : `on ${label}`;
+    case 'week':
+      return offset >= -1 ? label.toLowerCase() : `in the ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+    case 'month':
+      return offset >= -1 ? label.toLowerCase() : `in ${label}`;
+    case 'custom':
+      return 'in the chosen period';
+    default:
+      return 'over all time';
+  }
+}
+
+/**
+ * Activity bucketed by `bucketMs` (one of the sizes above; a preset's own, PRESET_BUCKET_MS) or else by the smallest
+ * of a few natural lengths that fits the time span; null without completions. With `period`, only that period is
+ * shown (completions, cycle times and type counts inside it).
  */
 export function activitySeries(
   tasks: Task[],
   period?: { start: number; end: number } | null,
   now = Date.now(),
   vocab: Vocabulary = DEFAULT_VOCABULARY,
+  bucket?: number,
 ): ActivitySeries | null {
   const kind = (t: Task) => kindOf(vocab, t.status);
   const all = completions(tasks, vocab);
@@ -273,6 +310,7 @@ export function activitySeries(
   const last = period ? period.end - 1 : Math.max(all[all.length - 1].time, ...starts);
 
   const [bucketMs, unitLabel] =
+    BUCKET_SIZES.find(([size]) => size === bucket) ??
     // Buckets under an hour only for a chosen period (e.g. the last hour); all time starts at hours
     BUCKET_SIZES.find(([size]) => (period || size >= HOUR) && (last - first) / size < MAX_ACTIVITY_BUCKETS) ??
     BUCKET_SIZES[BUCKET_SIZES.length - 1];

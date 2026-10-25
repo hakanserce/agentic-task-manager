@@ -3,6 +3,8 @@
     ACTIVITY_PRESET_LABELS,
     ACTIVITY_PRESETS,
     activitySeries,
+    periodPhrase,
+    PRESET_BUCKET_MS,
     rangeLabel,
     rangeWindow,
     STEPPED_PRESETS,
@@ -20,9 +22,13 @@
   // The panel shows the chosen period (saved with the view); the pill always shows all time
   const range = $derived(dashboard.activityRange);
   const period = $derived(rangeWindow(range, dashboard.loadedAt));
+  // Each stepped period in its natural bucket: a week per day, a day per hour (PRESET_BUCKET_MS)
   const detail = $derived(
-    range.preset === 'all' ? series : activitySeries(dashboard.history, period, dashboard.loadedAt, dashboard.vocab),
+    range.preset === 'all'
+      ? series
+      : activitySeries(dashboard.history, period, dashboard.loadedAt, dashboard.vocab, PRESET_BUCKET_MS[range.preset]),
   );
+  const phrase = $derived(periodPhrase(range, dashboard.loadedAt));
 
   // A period reaching back before tasks.json's oldest completion needs the archive (D-5.2)
   const oldest = $derived(
@@ -168,7 +174,7 @@
           </div>
         {/if}
         {#if detail}
-          <ActivityDeepDive series={detail} />
+          <ActivityDeepDive series={detail} period={phrase} />
         {/if}
       </div>
     {/if}

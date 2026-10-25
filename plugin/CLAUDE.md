@@ -4,12 +4,14 @@ This plugin provides file-based task management for agentic development workflow
 
 ## Key Files
 - `.agentic-task-manager/tasks.json` at the project root holds all task definitions (committed)
-- `.agentic-task-manager/tasks-dashboard.html` is a self-contained HTML dashboard served via local HTTP
-  (`/atm:serve`). It is a copy of the plugin's template, listed in `.agentic-task-manager/.gitignore`, not committed
+- The dashboard comes with the plugin: one local server per user (`/atm:serve`, `atm serve`) shows every project atm
+  runs in, with a project selector and an overview of all projects. Projects are listed in
+  `~/.agentic-task-manager/projects.json` (`atm projects`); a project opts out with `meta.dashboard.listed: false`
 - `atm` (atm-cli, the plugin's `bin/atm`, on the Bash tool's PATH while the plugin is enabled) is the command the
   skills run: `atm migrate` moves an old `docs/tasks.json` or root
-  `tasks.json` into `.agentic-task-manager/` (staged with `git mv`, not committed) and keeps the dashboard current;
-  `atm serve` runs the dashboard server. It needs Python 3.9+ (standard library only)
+  `tasks.json` into `.agentic-task-manager/` (staged with `git mv`, not committed), lists the project on the
+  dashboard and cleans up per-project dashboards from older versions; `atm serve` runs the dashboard server. It needs
+  Python 3.9+ (standard library only)
 - `tasks.json` merges task by task through atm's git merge driver (`.agentic-task-manager/.gitattributes`)
 
 ## Never read or edit the task files directly
@@ -66,12 +68,13 @@ atm-cli writes these fields; this is for reading `atm show --json` output, not f
   whoever decides answers with `atm unblock --answer ...`
 - The project's `CLAUDE.md` comes first on how to push, branch and handle CI; `meta.workflow` is the default
 - Finished tasks move to `tasks-archive.json` with `atm archive` when atm suggests it, at a break between tasks
-- The dashboard reloads tasks.json over HTTP (not file://), and the archive only when a view needs history
+- The dashboard reloads tasks.json from the atm server (not file://), and the archive only when a view needs history.
+  Updating the plugin updates it; the server restarts on the new version by itself (`atm serve --refresh`)
 
 ## Available Skills
 - `/atm:create-tasks` — Analyze requirements and create tasks.json
 - `/atm:do-task` — Execute a single task and update its status
 - `/atm:loop-tasks` — Loop through all available tasks automatically
 - `/atm:push` — Push (direct) or open/update the PR (pull-request), watch CI and fix failures until it's green
-- `/atm:update-dashboard` — Update the project's dashboard HTML to the latest version
-- `/atm:serve` — Start, stop or check the dashboard's local server (`start`, `stop`, `status`, `--open`)
+- `/atm:serve` — Start, stop or check the dashboard server, one for all projects (`start`, `stop`, `status`, `--open`,
+  `--all` for the overview)

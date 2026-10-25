@@ -43,7 +43,7 @@ Then run `/reload-plugins` so the skills load (no restart needed).
 
 The agent searches your project for requirement documents (PRD, use cases, ADRs, roadmap) and decomposes them into granular tasks. If it can't find any, it asks you where to look or lets you describe requirements directly.
 
-Tasks go to `.agentic-task-manager/tasks.json` in your project, next to a copy of the dashboard.
+Tasks go to `.agentic-task-manager/tasks.json` in your project.
 
 ### Start the dashboard
 
@@ -51,9 +51,10 @@ Tasks go to `.agentic-task-manager/tasks.json` in your project, next to a copy o
 /atm:serve --open
 ```
 
-This starts a small local server in the background and opens the dashboard in your browser. It refreshes every
-5 seconds, so it stays live while agents work. `/atm:serve stop` stops it; it otherwise keeps running after you close
-Claude Code.
+This starts a small local server in the background and opens the dashboard in your browser. One dashboard shows all
+your projects: switch with the arrow next to the title, or open **All projects** for an overview of what each one is
+doing and what needs you. It refreshes every 5 seconds, so it stays live while agents work. `/atm:serve stop` stops
+it; it otherwise keeps running after you close Claude Code.
 
 ### Execute tasks
 
@@ -99,8 +100,9 @@ Then run `/reload-plugins` to load the skills. To get a new version later:
 /reload-plugins
 ```
 
-No restart is needed. Your project's dashboard is updated automatically the next time a skill runs (or with
-`/atm:update-dashboard`, which also shows what's new).
+No restart is needed. The dashboard comes with the plugin, so this updates it too: a running dashboard server
+restarts on the new version by itself (at the next tool call, or the next session), and the open dashboard offers a
+**Reload**. Its version label opens what's new.
 
 ### Method 2: Local development
 
@@ -114,13 +116,12 @@ claude --plugin-dir /path/to/agentic-task-manager/plugin
 
 ### Verify installation
 
-Type `/atm:` in Claude Code — you should see six skills in autocomplete:
+Type `/atm:` in Claude Code — you should see five skills in autocomplete:
 - `/atm:create-tasks`
 - `/atm:do-task`
 - `/atm:loop-tasks`
 - `/atm:push`
 - `/atm:serve`
-- `/atm:update-dashboard`
 
 ---
 
@@ -245,36 +246,40 @@ is none yet, `/atm:push` asks once and saves your answer.
 **Never, without asking you:** skip or weaken a test, raise a budget, edit the CI workflow to pass, force-push or
 rewrite pushed history, or merge the PR. Without `gh` or a GitHub remote it only pushes.
 
-### `/atm:update-dashboard`
-
-**Update the dashboard HTML to the latest version.**
-
-```
-/atm:update-dashboard
-```
-
-**What it does:**
-1. Compares `.agentic-task-manager/tasks-dashboard.html` with the plugin's latest version
-2. If it's outdated (or missing), copies the latest version over it
-3. Prints the release notes since your previous version
-
-The other skills (`do-task`, `loop-tasks`, `create-tasks`, `serve`) also bring the dashboard up to date when they
-start; this skill is the way to see what changed.
-
 ### `/atm:serve`
 
-**Run the dashboard server.**
+**Run the dashboard server, one for all your projects.**
 
 ```
-/atm:serve              # start it (or show the one already running)
+/atm:serve              # start it (or show the one already running), and give this project's address
 /atm:serve --open       # start it and open the browser
+/atm:serve --all        # the overview of all projects
 /atm:serve status       # is it running, and where?
 /atm:serve stop         # stop it
 ```
 
-The server serves `.agentic-task-manager/` on `localhost`, port 8000 or the next free port, in the background, and
-keeps running after the session ends. Each project gets its own server; `stop` only stops the one started for this
-project. Its port and process ID are kept in `.agentic-task-manager/.server.json` (not committed).
+The server runs in the background on `localhost`, port 8765 or the next free port, and keeps running after the
+session ends. It serves the dashboard that comes with the plugin, so updating the plugin updates it: the server
+restarts on the new version by itself. It shows every project atm has run in (see [All your projects](#all-your-projects)).
+
+---
+
+## All your projects
+
+One dashboard shows every project you use atm in. A project is added the first time atm runs there (any skill), and
+the dashboard's project selector, next to the title, switches between them. **All projects** is an overview with a
+card per project: its progress, current phase, agents at work, what needs you, and recent activity. With two or more
+projects the dashboard opens on it.
+
+- **The list:** `~/.agentic-task-manager/projects.json` (set `ATM_HOME` to keep it elsewhere). `atm projects` lists the
+  projects, `atm projects add [path]` adds one, `atm projects remove <id|path>` removes one, and `atm projects prune`
+  drops those whose folder is gone.
+- **Opting out:** a project with `"dashboard": { "listed": false }` in its `tasks.json` meta isn't listed.
+- **What the server exposes:** it listens on `127.0.0.1` only and answers only requests addressed to `localhost`. For
+  each listed project it serves just three files from `.agentic-task-manager/`: `tasks.json`, `claims.json` and
+  `tasks-archive.json`. Nothing else in your projects is reachable through it. The routes are documented in
+  [docs/multi-project-api.md](docs/multi-project-api.md).
+- **Git worktrees:** the project's main worktree is listed; work in other worktrees shows once it's merged.
 
 ---
 
@@ -287,18 +292,19 @@ atm keeps everything in one folder at the root of your project (the top of the g
 ├── tasks.json             # the task list — committed
 ├── .gitignore             # written by atm — committed
 ├── .gitattributes         # merges tasks.json task by task (see below) — committed
-├── tasks-dashboard.html   # copy of the plugin's dashboard — not committed, updated automatically
 ├── claims.json            # who works on what, for the dashboard — not committed
-└── .server.json, .server.log, .lock/   # server state and the write lock — not committed
+└── .lock/                 # the write lock — not committed
 ```
 
-The dashboard isn't committed because it is the same file for every project; atm copies the current version in when
-it's missing or outdated, so plugin updates don't produce large diffs in your repository.
+The dashboard isn't in your project at all: it comes with the plugin and is served by `/atm:serve` for all your
+projects.
 
 **Upgrading from an earlier version:** projects that keep `tasks.json` in `docs/` (or the project root) are moved
 automatically the first time any atm skill runs. The move uses `git mv`, so history is kept; the old
 `tasks-dashboard.html` is removed from git. The change is staged for you to commit — `/atm:loop-tasks` commits it on
-its own (`chore: move atm files to .agentic-task-manager/`) before its first task.
+its own (`chore: move atm files to .agentic-task-manager/`) before its first task. Projects set up by 0.10.0–0.14.0
+had their own copy of the dashboard and their own server; atm deletes the copy and stops that server the next time
+it runs there (both were never committed).
 
 ---
 
@@ -426,10 +432,12 @@ them, and `atm unarchive <id>` brings one back. The dashboard loads the archive 
 
 ## Dashboard
 
-The dashboard is a single self-contained HTML file with no external dependencies. It reads `tasks.json` via HTTP fetch and renders an interactive view.
+The dashboard is a single self-contained HTML file with no external dependencies, served by atm for all your
+projects. It reads each project's `tasks.json` from the server and renders an interactive view.
 
 ### Features
 
+- **All your projects** — A selector next to the title switches projects (a badge counts what needs you in the others); **All projects** shows a card per project with its progress, current phase, agents at work, what needs you (click it for that project's Kanban, filtered) and recent activity. **Active only** hides projects with nothing open and nothing done in two weeks
 - **Top bar** — Stays in view while you scroll. A progress ring (click for completion overall, by phase and by type) and an activity sparkline (click for tasks completed by type, agents working, time per task and idle stretches, over a period you pick: hour, day, week, month, all time or custom, with ‹ › to step back); reload, auto-refresh, mode and theme menus on the right
 - **Needs you** — The header counts the tasks waiting for you: in review, or blocked on a question for you. Click it for the Kanban board
 - **Search and filters** — Keyword search over ID, name, description, type and labels, and filters by phase, type, status, priority, stage, label and who started the task (multi-select) in one line that shows what's selected and how many tasks match. Every filter button shows how many tasks it would show given the other filters, and empty choices are dimmed. **Include archived** adds the archived tasks
@@ -441,7 +449,7 @@ The dashboard is a single self-contained HTML file with no external dependencies
 - **Task List** — Task cards, color-coded by status and type, with dependency links
 - **Agents** — A timeline with a lane per agent (🤖) or person (👤) and a bar per task (start to completion or to the review request, colored by type; work in progress runs to now). A green mark at the end of a bar means someone else completed it, usually a reviewer. Zoom with the buttons, Ctrl/⌘ + scroll or "last hour" presets, drag to move in time, or pick a range on the overview; **Live** keeps it at the current time. Tasks outside the search and filters are greyed out. Agents are recorded by `atm` since 0.12.0; older tasks show as "Unattributed"
 - **Progress** — Burndown chart (remaining vs. scope, with a forecast) and per-phase completion estimates in agent working time; click a phase to focus the chart. Agent utilisation compares agent work time with calendar time (24/7) and working time (8 h, Monday to Friday), overall and per agent. Estimates are most accurate with `started_at`/`completed_at`, which `/atm:do-task` and `/atm:loop-tasks` write since 0.7.0
-- **Saved view per project** — Filters and search, the tab, each tab's options (Kanban, Progress focus, graph hide/grey out) and the zoom of the graph and the Agents timeline come back when you reopen the dashboard. Each project keeps its own (by `meta.id` in `tasks.json`, else the project name); **Reset view** clears it. A `#view=` link still opens that tab
+- **Saved view per project** — Filters and search, the tab, each tab's options (Kanban, Progress focus, graph hide/grey out) and the zoom of the graph and the Agents timeline come back when you reopen the dashboard. Each project keeps its own (by `meta.id` in `tasks.json`); **Reset view** clears it. A `#view=` link still opens that tab
 - **Light and dark mode** — Follows your system by default; switch between System, Light and Dark in the menu at the top right
 - **Themes** — Default, Nord, Solarized, Catppuccin, Tokyo Night, Ayu, Night Owl, Gruvbox, Noctis, Sublime Material and High contrast, each in light and dark, checked for readable contrast (see [docs/theme-validation.md](docs/theme-validation.md)). Theme and mode are remembered per browser
 - **Live claims** — In-progress tasks show which agent works on them, on which branch, and since when
@@ -452,14 +460,8 @@ The dashboard is a single self-contained HTML file with no external dependencies
 
 ### Starting the dashboard
 
-The dashboard must be served over HTTP (not `file://`) because it fetches `tasks.json`. The easiest way is
-`/atm:serve` (see [Skills Reference](#atmserve)). Any static server works too, for example:
-
-```bash
-cd .agentic-task-manager && python3 -m http.server 8000
-```
-
-Then open [http://localhost:8000/tasks-dashboard.html](http://localhost:8000/tasks-dashboard.html).
+Run `/atm:serve --open` (see [Skills Reference](#atmserve)). The dashboard needs atm's server: it loads the list of
+projects and their files from it, so opening the HTML file another way doesn't work.
 
 ### Watching live progress
 
@@ -576,6 +578,8 @@ plugin's `bin/atm` on its Bash tool's PATH; in your own terminal, use the full p
 | `atm archive`, `atm unarchive <id>...` | Move finished tasks to `tasks-archive.json`, or bring them back |
 | `atm claims`, `atm heartbeat <id>` | Who works on what, with time left on each lease; extend your claim's lease |
 | `atm init` | Register the `tasks.json` merge driver (the skills do this automatically) |
+| `atm serve [start\|stop\|status] [--open] [--all]` | The dashboard server, one for all your projects |
+| `atm projects [add [PATH] \| remove <id\|PATH> \| prune]` | The projects the dashboard lists |
 
 The design is in [docs/v4/atm-cli.md](docs/v4/atm-cli.md).
 
@@ -606,14 +610,14 @@ agentic-task-manager/
 │   │   ├── create-tasks/SKILL.md      # /atm:create-tasks
 │   │   ├── do-task/SKILL.md           # /atm:do-task
 │   │   ├── loop-tasks/SKILL.md        # /atm:loop-tasks
-│   │   ├── serve/SKILL.md             # /atm:serve
-│   │   └── update-dashboard/SKILL.md  # /atm:update-dashboard
+│   │   ├── push/SKILL.md              # /atm:push
+│   │   └── serve/SKILL.md             # /atm:serve
 │   ├── scripts/
 │   │   ├── atm                  # Helper launcher: checks for Python 3.9+, runs atm.py
 │   │   └── atm.py               # The helper (standard library only)
 │   ├── templates/
 │   │   ├── tasks.json           # Example tasks.json schema
-│   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, copied to projects)
+│   │   └── tasks-dashboard.html # Dashboard (build output of dashboard/, served by atm serve)
 │   └── CLAUDE.md                # Plugin context for Claude Code
 ├── dashboard/                   # Dashboard source: Svelte 5 + TypeScript (development only)
 ├── .agentic-task-manager/       # This repo's own atm task list (we dogfood atm)
@@ -647,7 +651,8 @@ npm run verify       # check + unit tests with coverage + build + e2e — run be
 | `npm run test:e2e` | Build, then the Playwright regression suite (`tests/e2e/`) |
 | `npm run check` | Version consistency, svelte-check, ESLint, Prettier |
 
-**Tests.** e2e specs serve fixtures from `tests/fixtures/` as `tasks.json` per test and fail on any external request.
+**Tests.** e2e specs play atm serve's API with fixtures from `tests/fixtures/` as each project's `tasks.json`, and
+fail on any external request.
 They run against the build, with strict screenshot baselines per platform; CI runs them in the pinned Playwright
 container and generates any missing Linux baselines for you to commit.
 
@@ -655,7 +660,7 @@ container and generates any missing Linux baselines for you to commit.
 it when dashboard sources change, and CI fails if the committed file doesn't match a fresh build.
 
 **Releasing.** Bump `version` in both `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`
-(`npm run check` enforces that they match) and rebuild, so `/atm:update-dashboard` picks up the new dashboard.
+(`npm run check` enforces that they match) and rebuild, so running dashboard servers restart on the new dashboard.
 
 ---
 

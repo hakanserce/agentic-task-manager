@@ -5,7 +5,8 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 
 ## Layout
 - `plugin/skills/*/SKILL.md` — the `/atm:*` skills
-- `plugin/templates/tasks-dashboard.html` — the dashboard that skills copy into user projects
+- `plugin/templates/tasks-dashboard.html` — the dashboard, served by `atm serve` (one server per user, for all
+  projects; routes in `docs/multi-project-api.md`)
 - `plugin/scripts/atm` — atm-cli, the `atm` command the skills call (launcher for `atm.py`, see below)
 - `atm-cli/` — atm-cli's source modules and the build that writes `plugin/scripts/atm.py` (dev only, not shipped)
 - `dashboard/` — Svelte 5 + TypeScript source for the dashboard (dev only, not shipped)
@@ -85,11 +86,12 @@ git merges). CI runs the suite with Python 3.9 and a current version.
 
 ## Versions
 `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` versions must match. Bump both when the
-dashboard or skills change so `/atm:update-dashboard` detects the new dashboard.
+dashboard or skills change, so `/plugin marketplace update` delivers them and running dashboard servers restart on the
+new dashboard (`atm serve --refresh`).
 
 Every release gets **two** entries (`npm run check` fails without either):
 - `plugin/CHANGELOG.md` — the detailed record, for developers: every change, with command names and flags.
-- `plugin/WHATS-NEW.md` — what users see in the dashboard's What's new and in `/atm:update-dashboard`: 3–6 short
+- `plugin/WHATS-NEW.md` — what users see in the dashboard's What's new: 3–6 short
   bullets in plain language about what a user notices. No command flags, internals or file names; one idea per
   bullet; say what it does for them ("Agents can ask you a question instead of guessing"), not how it works. Write
   it from the changelog entry, not instead of it.

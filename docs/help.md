@@ -1,11 +1,22 @@
-This dashboard shows your project's tasks from `.agentic-task-manager/tasks.json`, live: it reloads every 5 seconds
-while agents work through the tasks (and does nothing when the file hasn't changed). It only reads the file; agents
-and the `atm` command change it.
+This dashboard shows the tasks of every project you use atm in, from each project's
+`.agentic-task-manager/tasks.json`, live: it reloads every 5 seconds while agents work through the tasks (and does
+nothing when nothing changed). It only reads the files; agents and the `atm` command change them.
 
-Jump to: [the views](#views), [filters and saved views](#filters-and-saved-views),
+Jump to: [your projects](#your-projects), [the views](#views), [filters and saved views](#filters-and-saved-views),
 [statuses](#statuses-and-kinds), [waiting on you](#waiting-on-you), [priorities and labels](#priorities-and-labels),
 [the task details](#the-task-details), [workflows and stages](#workflows-and-stages), [the archive](#the-archive),
 [the skills](#the-skills), [agents in parallel](#running-agents-in-parallel).
+
+## Your projects
+
+- **The arrow next to the title** switches projects. Type to filter the list; a bar shows each project's progress and
+  a dot marks the ones with something waiting for you. A badge on the arrow counts what waits for you in the other
+  projects.
+- **All projects** (first in that list) shows a card per project: its progress, the phase it is in, the agents at work,
+  what needs you and when it last moved. Click a card to open the project, or its "need you" to see those tasks on its
+  Kanban board. **Active only** hides projects with nothing open and nothing done in the last two weeks.
+- A project appears here once atm has run in it. `atm projects` lists them, and `atm projects remove` takes one off.
+- Updating the plugin updates this dashboard: when a new version is ready, a bar offers to reload.
 
 ## The top bar
 
@@ -114,8 +125,7 @@ Run these in Claude Code:
 - `/atm:do-task` — do one task: the next available one, or the one you name.
 - `/atm:loop-tasks` — keep doing tasks until none is left.
 - `/atm:push` — push the work (or open its pull request), watch CI and fix what fails.
-- `/atm:serve` — start or stop this dashboard's server.
-- `/atm:update-dashboard` — update this dashboard to the plugin's latest version.
+- `/atm:serve` — start or stop this dashboard's server, one for all your projects.
 
 ## Running agents in parallel
 

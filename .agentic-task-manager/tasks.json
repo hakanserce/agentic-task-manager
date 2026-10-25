@@ -5720,7 +5720,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.5, from the `/api/projects` summaries (`docs/multi-project-api.md`).\n\n### The cards\nA responsive grid, one card per project:\n- **name** (the path on hover);\n- a **progress bar** with `done / total · N skipped`;\n- the **current phase** and its progress;\n- **agents working** now;\n- **needs you**: in review, blocked on you;\n- **last activity** (*\"12 min ago\"*);\n- a **14-day completions sparkline** (reuse the Activity widget's sparkline and the `Ring` / progress styles).\n\nFollow the dataviz skill for the sparkline and bars.\n\n### Behaviour\n- **Order:** needs you first, then last activity.\n- **Active only** toggle (on by default, remembered per browser) hides projects with no open work and no activity in 14 days.\n- Missing projects show *not found*, with the `atm projects remove` command to copy.\n- Click a card → the project. Click its needs-you count → that project's Kanban, filtered to the review and blocked kinds.\n\n### Tests\n- Unit tests for ordering and filtering.\n- e2e with several projects.\n- Screenshots in both modes.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-173"
       ],
@@ -5732,11 +5732,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:39:51Z",
+      "updated_at": "2026-10-25T23:44:55Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:39:51Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "3e28ba3db8950f09dfdc9e834075409eb86c11b5",
+      "completed_at": "2026-10-25T23:44:55Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T23:44:55Z",
+          "kind": "outcome",
+          "text": "Overview cards from the server summaries: progress (done/(total-skipped), skipped shown), current phase, agents working, last activity, 14-day sparkline, needs-you chip opening the Kanban filtered to review/blocked; needs-you first then recent; Active only toggle (remembered); gone projects say how to remove them",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-176",
@@ -5777,7 +5788,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3 and §4.\n\n### Skills\n- **`/atm:serve`** (`plugin/skills/serve/SKILL.md`): one server for all projects; prints the project's URL; `--all` for the overview; `--open`.\n- **Delete `plugin/skills/update-dashboard/`**, and replace every mention of `/atm:update-dashboard` (skills, `plugin/CLAUDE.md`, README, `docs/help.md`, the dashboard's Help) with *update the plugin*.\n- **create-tasks:** the project is registered by `atm init`; mention that the dashboard shows all projects.\n- Skills no longer talk about installing the dashboard into the project (`migrate`'s output changed).\n\n### Docs\n- **README:** one dashboard for all projects; how updating works (plugin update, and the server restarts by itself); the registry (`~/.agentic-task-manager/`, `atm projects`, opting out); what the server exposes (localhost only, three files per registered project).\n- **`docs/help.md`:** the selector and the overview.\n- **Root `CLAUDE.md`:** the dev server and the test fixture serve the API.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-170",
         "T-171",
@@ -5796,9 +5807,11 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:55Z",
+      "updated_at": "2026-10-25T23:44:58Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T23:44:58Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-178",

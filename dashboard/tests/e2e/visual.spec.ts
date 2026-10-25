@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { expect, openDashboard, test } from './helpers';
+import { expect, openDashboard, summary, test } from './helpers';
 
 // The version chip and the footer's version are masked: they show the version (and a "new" marker) and would
 // otherwise change every page baseline on each release; whats-new.spec and footer.spec cover them. They also get a
@@ -225,6 +225,22 @@ for (const mode of ['dark', 'light'] as const) {
     await openDashboard(page, tasksServer, 'standard');
     await page.locator('#appearance-btn').click();
     await expect(page.locator('#appearance-menu')).toHaveScreenshot(`appearance-menu-${mode}.png`);
+  });
+}
+
+// The project selector, open, with progress, a "needs you" dot and a project that is gone
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: project selector (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    const third = summary({ percent: 20, needs_you: { review: 1, blocked_on_user: 0 } });
+    tasksServer
+      .addProject('second', 'minimal', 'Second Project', summary({ percent: 75 }))
+      .addProject('third', 'minimal', 'Third Project', third);
+    await openDashboard(page, tasksServer, 'standard');
+    await page.evaluate(() => (location.hash = '#project=second'));
+    await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
+    await page.locator('#project-selector').click();
+    await expect(page.locator('#project-menu')).toHaveScreenshot(`project-selector-${mode}.png`);
   });
 }
 

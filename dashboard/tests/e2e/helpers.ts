@@ -16,6 +16,22 @@ const ARCHIVE_JSON = /\/p\/([^/]+)\/tasks-archive\.json(\?.*)?$/;
 /** The id of the project the fixture serves by default */
 export const FIXTURE_PROJECT = 'fixture';
 
+/** A project summary as api/projects gives it (docs/multi-project-api.md 3.2), with chosen fields */
+export function summary(fields: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    total: 10,
+    done: 4,
+    skipped: 0,
+    percent: 40,
+    current_phase: { id: 1, name: null, done: 2, total: 5 },
+    agents_working: 0,
+    needs_you: { review: 0, blocked_on_user: 0 },
+    last_activity: '2026-01-01T00:00:00Z',
+    completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
+    ...fields,
+  };
+}
+
 export function loadFixture(name: string): TasksData {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
 }
@@ -32,8 +48,8 @@ export class TasksServer {
   private status = 200;
   private claimsBody: string | null = null;
   private archiveBody: string | null = null;
-  /** Projects besides the default one: their tasks.json, by id */
-  private others = new Map<string, { name: string; body: string }>();
+  /** Projects besides the default one: their tasks.json and summary, by id */
+  private others = new Map<string, { name: string; body: string; summary: Record<string, unknown> | null }>();
   private listed = true;
   /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
   archiveRequests = 0;
@@ -57,16 +73,16 @@ export class TasksServer {
   /** The project list api/projects answers with (summaries are null until a test needs them) */
   projectList() {
     if (!this.listed) return [];
-    const project = (id: string, name: string) => ({
+    const project = (id: string, name: string, summary: Record<string, unknown> | null = null) => ({
       id,
       name,
       path: `/projects/${id}`,
       missing: false,
-      summary: null,
+      summary,
     });
     return [
       project(this.projectId, typeof this.meta.project === 'string' ? this.meta.project : this.projectId),
-      ...[...this.others].map(([id, p]) => project(id, p.name)),
+      ...[...this.others].map(([id, p]) => project(id, p.name, p.summary)),
     ];
   }
 
@@ -110,9 +126,10 @@ export class TasksServer {
     );
   }
 
-  /** Register another project, served under p/<id>/ (a fixture by name or inline tasks). */
-  addProject(id: string, data: string | TasksData, name = id) {
-    this.others.set(id, { name, body: toBody(data) });
+  /** Register another project, served under p/<id>/ (a fixture by name or inline tasks), with an optional summary
+   * (summary() makes one) for api/projects. */
+  addProject(id: string, data: string | TasksData, name = id, summary: Record<string, unknown> | null = null) {
+    this.others.set(id, { name, body: toBody(data), summary });
     return this;
   }
 

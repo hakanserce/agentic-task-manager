@@ -5639,7 +5639,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.2 (per-project URLs) and §3.5 (landing page).\n\n### Routing\n- `#project=<id>` selects the project and combines with `#view=...` (`dashboard/src/lib/tabs.ts`' hash handling); back/forward work.\n- An unknown or missing project id shows a message with a link to the overview.\n- Switching projects restores that project's saved view (`view-store.ts`, keyed by `meta.id`) and resets per-project state (filters, graph view, archive).\n\n### Landing page (no `#project`)\n- **Two or more projects:** the overview (a placeholder component until the overview task).\n- **One:** that project.\n- **None:** a short page explaining `/atm:create-tasks` and `atm projects add <path>`.\n\n### Tests\n- Unit tests for the routing and landing rules.\n- e2e with two projects.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-172"
       ],
@@ -5651,11 +5651,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:30:37Z",
+      "updated_at": "2026-10-25T23:35:46Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:30:37Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "c4d83d1a1a062f6061603bb8ef17d14f66985455",
+      "completed_at": "2026-10-25T23:35:46Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T23:35:46Z",
+          "kind": "outcome",
+          "text": "#project=<id> and #overview routes; landing: overview with 2+ projects, the project with 1, how to add one with none; unknown-project page; switching resets per-project state and restores that project's view (keyed by the server's id)",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-174",
@@ -5669,7 +5680,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.4.\n\n### The selector\nThe title becomes a button, **project name ▾**, opening a listbox:\n- **All projects** first;\n- then each project with its name, a small progress bar (`summary.percent`), and a dot when something needs you (`summary.needs_you`).\n\nKeyboard per the WAI-ARIA *select-only combobox* pattern: arrows, `Enter`, `Escape`, type to filter. Theme tokens only. The selector is shown even with one project, so the overview stays reachable.\n\n### Attention counts and polling\n- The header's attention count is **this project's**; a small badge on the selector shows the **other projects'** total.\n- Auto-refresh polls the open project's files plus `/api/projects` (both conditional).\n\n### Tests\n- Component tests.\n- e2e: switching, keyboard, badge.\n- Screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-173"
       ],
@@ -5680,9 +5691,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:54Z",
+      "updated_at": "2026-10-25T23:35:50Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T23:35:50Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-175",

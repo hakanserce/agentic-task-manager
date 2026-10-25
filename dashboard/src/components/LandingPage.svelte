@@ -3,6 +3,7 @@
   // project the URL names but the server doesn't list (lib/routes.ts)
   import { dashboard } from '../lib/state.svelte';
   import AppearanceMenu from './AppearanceMenu.svelte';
+  import ProjectSelector from './ProjectSelector.svelte';
   import RefreshMenu from './RefreshMenu.svelte';
 
   const present = $derived(dashboard.projects.filter((p) => !p.missing));
@@ -17,6 +18,7 @@
   <div class="title-block">
     <div class="title-row">
       <h1 id="dashboard-title">{title}</h1>
+      {#if dashboard.projects.length}<ProjectSelector />{/if}
     </div>
     <p class="subtitle" id="subtitle">
       {#if !dashboard.projectsLoaded}

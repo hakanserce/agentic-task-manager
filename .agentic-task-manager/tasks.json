@@ -3835,7 +3835,7 @@
       "description": "Render the description field as Markdown wherever it is shown: at least the detail panel, possibly the cards (decide whether cards show a plain-text excerpt instead). No new library, like the changelog and Help: reuse the Markdown renderer T-105 builds for Help (move it to src/lib if it only exists at build time, since descriptions are rendered in the browser). HTML in descriptions must stay escaped (the edge-cases fixture's HTML-in-description test must keep passing). Unit tests for the renderer on descriptions (headings, lists, code, links opening in a new tab), component test for the detail panel, screenshot update.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-105",
         "T-146"
@@ -3847,7 +3847,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-24T22:03:56Z",
-      "updated_at": "2026-10-25T06:33:44Z",
+      "updated_at": "2026-10-25T06:35:08Z",
       "updated_by": "claude:e5ea9db0",
       "notes": [
         {
@@ -3855,10 +3855,19 @@
           "kind": "handoff",
           "text": "Done and tested (506 unit tests), uncommitted in the tree: detail panel renders descriptions as Markdown. Blocked by the 256 KB budget (263,107 bytes); T-146 frees space. Then: update detail-panel screenshots, commit, done.",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-25T06:35:08Z",
+          "kind": "outcome",
+          "text": "The detail panel renders descriptions as Markdown (headings, lists, code, links in a new tab), every piece of text escaped",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-25T06:33:44Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "14fbed0e3bbfaa91600691a831a18085e5b3de14",
+      "completed_at": "2026-10-25T06:35:08Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-143",
@@ -3953,7 +3962,7 @@
       "description": "The Progress tab gets long with many phases (this repo has 15). Add a checkbox above the phase table, \"Active phases only\": an active phase is one with unfinished tasks (todo/active/review/blocked kinds), or a finished one whose last completion is within the last N days (N = 7 by default, editable next to the checkbox). With it on, the phase table and the burndown's phase list show only active phases (\"Show all phases\" focus still works; the overall burndown keeps all tasks). Remembered in the project's saved view (view-store.ts), like progressPhase. Logic in a lib function (e.g. activePhases(tasks, now, days, vocab) in forecast.ts or a new phases.ts) with unit tests; a component or e2e test for the toggle; screenshots in both modes.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressTab.svelte",
@@ -3962,9 +3971,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T05:46:06Z",
+      "updated_at": "2026-10-25T06:35:09Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T06:35:09Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-146",

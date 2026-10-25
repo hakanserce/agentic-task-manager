@@ -167,3 +167,14 @@ export function forecastPhases(
     }),
   };
 }
+
+export const DEFAULT_ACTIVE_DAYS = 7;
+
+/**
+ * The phases worth showing with "Active phases only": every unfinished phase, and a finished one whose last
+ * completion is within the last `days` days. A finished phase without completion times is left out.
+ */
+export function activePhases(phases: PhaseForecast[], now: number, days = DEFAULT_ACTIVE_DAYS): PhaseForecast[] {
+  const since = now - days * 86_400_000;
+  return phases.filter((p) => p.state !== 'done' || (p.completedAt !== undefined && p.completedAt >= since));
+}

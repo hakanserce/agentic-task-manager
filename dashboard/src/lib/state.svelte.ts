@@ -1,4 +1,5 @@
 import { loadClaims, type ClaimMap } from './claims';
+import { DEFAULT_ACTIVE_DAYS } from './forecast';
 import { DEFAULT_PROJECT_NAME, loadArchive, loadTasks, type LoadedTasks, type Validators } from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
@@ -101,6 +102,8 @@ export class DashboardState {
   listSort = $state<ListSort>('file');
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
+  /** The Progress tab lists only active phases (unfinished, or finished within the last `days` days) */
+  progressActive = $state.raw<{ only: boolean; days: number }>({ only: false, days: DEFAULT_ACTIVE_DAYS });
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */
@@ -285,6 +288,7 @@ export class DashboardState {
       },
       listSort: this.listSort,
       progressPhase: this.progressPhase,
+      progressActive: this.progressActive,
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
       agents: this.agentsWindow,
@@ -318,6 +322,7 @@ export class DashboardState {
     this.kanbanShowAllDone = view.kanban.showAllDone;
     this.listSort = view.listSort;
     this.progressPhase = view.progressPhase;
+    this.progressActive = view.progressActive;
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
     this.agentsWindow = view.agents;

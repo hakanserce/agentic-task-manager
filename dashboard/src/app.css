@@ -2099,6 +2099,32 @@ svg.graph-minimap.hidden {
   gap: 10px;
   margin-bottom: 4px;
 }
+/* "Active phases only" above the phase table (T-145) */
+.phase-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 16px 0 4px;
+  font-size: 13px;
+}
+.phase-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.phase-filter-days {
+  color: var(--text-muted);
+}
+.phase-filter-days.disabled {
+  opacity: 0.6;
+}
+.phase-filter-days input {
+  width: 3.5em;
+}
+.phase-filter-hidden {
+  color: var(--text-muted);
+}
 .burndown-focus {
   font-size: 13px;
   font-weight: 600;

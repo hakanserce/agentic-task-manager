@@ -41,6 +41,32 @@ test.describe('Progress tab: phase table', () => {
     await expect(cells(page, 2).nth(5)).toContainText('If the loop keeps running: 12:51 PM');
   });
 
+  test('"Active phases only" hides phases finished more than N days ago, and is remembered', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await expect(page.locator('#active-phases-only')).not.toBeChecked();
+    await expect(page.locator('#active-phases-days')).toBeDisabled();
+    // Phase 0 was finished on Apr 1, five days before now: still within the default 7 days
+    await page.locator('#active-phases-only').check();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+    await expect(page.locator('#phases-hidden')).toHaveCount(0);
+    await page.locator('#active-phases-days').fill('3');
+    await page.locator('#active-phases-days').press('Tab');
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
+    await expect(row(page, 0)).toHaveCount(0);
+    await expect(page.locator('#phases-hidden')).toHaveText('1 older phase hidden');
+    // The burndown still covers every phase
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+
+    await page.reload();
+    await page.locator('#tab-progress').click();
+    await expect(page.locator('#active-phases-only')).toBeChecked();
+    await expect(page.locator('#active-phases-days')).toHaveValue('3');
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
+  });
+
   test('progress bars show each phase', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
     const width = (phase: number) =>

@@ -39,7 +39,7 @@ def started_by(task):
 
 def summary(vocab, task):
     """The fields `list` shows, as a dict for --json."""
-    return {
+    fields = {
         "id": task.get("id"),
         "status": task.get("status"),
         "kind": kind_of(vocab, task.get("status")),
@@ -48,6 +48,15 @@ def summary(vocab, task):
         "labels": task.get("labels", []),
         "name": task.get("name", ""),
     }
+    if isinstance(task.get("pr"), dict):
+        fields["pr"] = task["pr"]
+        fields["merged_at"] = task.get("merged_at")
+    return fields
+
+
+def in_open_pr(task):
+    """In PR: a recorded PR, not merged yet (DM-4.3)."""
+    return isinstance(task.get("pr"), dict) and not task.get("merged_at")
 
 
 def ready_tasks(data):
@@ -143,6 +152,8 @@ def cmd_list(args):
         if args.ready and t.get("id") not in ready:
             continue
         if args.blocked and not (kind == "blocked" or (kind == "todo" and t.get("id") not in ready)):
+            continue
+        if args.in_pr and not in_open_pr(t):
             continue
         tasks.append(t)
     if args.json:

@@ -112,10 +112,11 @@ claude --plugin-dir /path/to/agentic-task-manager/plugin
 
 ### Verify installation
 
-Type `/atm:` in Claude Code — you should see five skills in autocomplete:
+Type `/atm:` in Claude Code — you should see six skills in autocomplete:
 - `/atm:create-tasks`
 - `/atm:do-task`
 - `/atm:loop-tasks`
+- `/atm:push`
 - `/atm:serve`
 - `/atm:update-dashboard`
 
@@ -209,6 +210,36 @@ Type `/atm:` in Claude Code — you should see five skills in autocomplete:
 **Commit message format:** `feat(T-001): Short task name`
 
 **The loop re-reads tasks.json every iteration**, so you can edit tasks, change priorities, or mark tasks as done/skipped from the dashboard or another editor while the agent runs.
+
+### `/atm:push`
+
+**Push the work and get CI green.**
+
+```
+/atm:push                    # push (or open/update the PR), watch CI, fix failures
+/atm:push --draft            # open the PR as a draft
+/atm:push --no-watch         # push and open the PR, don't watch CI
+/atm:push --no-verify        # skip the local verify before pushing
+/atm:push --max-rounds 5     # allow up to 5 rounds of CI fixes (default 3)
+```
+
+It follows the project's **workflow**: `direct` (push straight to the base branch) or `pull-request` (push a feature
+branch and open or update its PR). Your project's `CLAUDE.md` comes first if it says how to push; otherwise the
+workflow saved in `tasks.json` (`atm workflow` shows it, `atm workflow set direct|pull-request` changes it); if there
+is none yet, `/atm:push` asks once and saves your answer.
+
+**What it does:**
+1. Checks the branch fits the workflow and nothing uncommitted belongs to someone else, and runs your verify
+2. Pushes, and in `pull-request` opens the PR (body: the task commits, grouped by phase) and records it on the tasks
+   (`atm pr`): the dashboard shows them as **In PR**
+3. Watches CI with plain `gh` calls and fixes failures by kind: test, lint and build failures are fixed and pushed
+   again; budget overruns are measured and fixed, never just retried; flaky jobs are re-run once; infrastructure
+   problems stop it
+4. Records merged PRs on their tasks (`atm merged`): the dashboard shows them as **Merged**
+5. Reports in three lines when CI is green, in detail when it stopped
+
+**Never, without asking you:** skip or weaken a test, raise a budget, edit the CI workflow to pass, force-push or
+rewrite pushed history, or merge the PR. Without `gh` or a GitHub remote it only pushes.
 
 ### `/atm:update-dashboard`
 

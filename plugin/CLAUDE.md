@@ -54,5 +54,6 @@ to todo).
 - `/atm:create-tasks` — Analyze requirements and create tasks.json
 - `/atm:do-task` — Execute a single task and update its status
 - `/atm:loop-tasks` — Loop through all available tasks automatically
+- `/atm:push` — Push (direct) or open/update the PR (pull-request), watch CI and fix failures until it's green
 - `/atm:update-dashboard` — Update the project's dashboard HTML to the latest version
 - `/atm:serve` — Start, stop or check the dashboard's local server (`start`, `stop`, `status`, `--open`)

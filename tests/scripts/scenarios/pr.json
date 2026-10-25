@@ -107,6 +107,42 @@
     "expect": { "exit": 1, "stderrIncludes": ["no task records PR #7"] }
   },
   {
+    "name": "list --in-pr: tasks in a PR not recorded as merged, with the PR in --json",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-001", "name": "a", "status": "done", "pr": { "number": 7, "url": "u7" } },
+            {
+              "id": "T-002",
+              "name": "b",
+              "status": "done",
+              "pr": { "number": 6, "url": "u6" },
+              "merged_at": "2026-04-30T09:00:00Z"
+            },
+            { "id": "T-003", "name": "c", "status": "done" }
+          ]
+        }
+      }
+    },
+    "args": ["list", "--in-pr", "--json"],
+    "expect": {
+      "json": [
+        {
+          "id": "T-001",
+          "status": "done",
+          "kind": "done",
+          "phase": null,
+          "priority": "P2",
+          "labels": [],
+          "name": "a",
+          "pr": { "number": 7, "url": "u7" },
+          "merged_at": null
+        }
+      ]
+    }
+  },
+  {
     "name": "merged --at needs an ISO time",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
     "args": ["merged", "--pr", "7", "--at", "yesterday"],

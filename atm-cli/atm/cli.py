@@ -32,7 +32,7 @@ commands:
                  run the dashboard server for this project (or the one at PATH) in the background
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
-  list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked]
+  list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
                  one line per task: ID, status, phase, priority, labels, name
   deps <id>      what a task waits for, and what waits for it
   start <id>     mark a task in_progress and claim it (its dependencies must be done); prints the task
@@ -190,6 +190,7 @@ def build_parser():
     list_.add_argument("--agent", metavar="NAME", help="only tasks started by this agent")
     list_.add_argument("--ready", action="store_true", help="only to-do tasks whose dependencies are done")
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
+    list_.add_argument("--in-pr", action="store_true", help="only tasks in a PR that isn't recorded as merged")
     list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
     command(
         "status",

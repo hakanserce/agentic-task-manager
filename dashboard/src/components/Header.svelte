@@ -12,6 +12,7 @@
 
   const title = $derived(dashboard.loaded ? dashboard.projectName + ' — Task Dashboard' : 'Task Dashboard');
   const phaseCount = $derived(new Set(dashboard.tasks.map((t) => t.phase)).size);
+  const counts = $derived(`${dashboard.tasks.length} tasks across ${phaseCount} phase${phaseCount !== 1 ? 's' : ''}`);
   // Tasks that need the user: in review, or blocked on a question for the user (D-3.3)
   const needYou = $derived(needingUser(dashboard.tasks, dashboard.vocab));
 
@@ -42,7 +43,12 @@
     </div>
     <p class="subtitle" id="subtitle">
       {#if dashboard.loaded}
-        {dashboard.tasks.length} tasks across {phaseCount} phase{phaseCount !== 1 ? 's' : ''} — loaded from tasks.json
+        <!-- One text node when nothing is archived, as before the archive existed (screenshots compare glyphs exactly) -->
+        {#if dashboard.archivedCount}
+          {counts} · <span id="archived-count">{dashboard.archivedCount} archived</span> — loaded from tasks.json
+        {:else}
+          {counts} — loaded from tasks.json
+        {/if}
         {#if needYou.length}
           <button
             class="attention-chip"

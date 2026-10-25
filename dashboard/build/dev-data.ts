@@ -1,4 +1,4 @@
-// Dev server only: serve tasks.json and claims.json from a project's task folder, so `npm run dev` shows real data
+// Dev server only: serve tasks.json, claims.json and tasks-archive.json from a project's task folder, so `npm run dev` shows real data
 // with hot reload. ATM_DEV_DATA picks the folder; the default is this repo's own .agentic-task-manager/.
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -13,7 +13,7 @@ export function devData(defaultDir: string): Plugin {
       server.config.logger.info(`  atm: serving tasks.json and claims.json from ${dir}`);
       server.middlewares.use(async (req, res, next) => {
         const name = req.url?.split('?')[0].replace(/^\/+/, '');
-        if (name !== 'tasks.json' && name !== 'claims.json') return next();
+        if (name !== 'tasks.json' && name !== 'claims.json' && name !== 'tasks-archive.json') return next();
         try {
           const file = path.join(dir, name);
           // Like atm serve: an ETag from size and mtime, and a 304 when the dashboard already has this version (D-5.1)

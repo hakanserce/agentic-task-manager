@@ -12,6 +12,19 @@ describe('Footer', () => {
     dashboard.whatsNewOpen = false;
   });
 
+  it('has no archive notice below the threshold', () => {
+    expect(render(Footer).container.querySelector('#archive-notice')).toBeNull();
+  });
+
+  it('says when tasks.json has grown past the archive threshold', () => {
+    loadIntoDashboard({ ...standard, meta: { ...standard.meta, archive: { threshold_tasks: 2, keep_days: 0 } } });
+    dashboard.loadedAt = Date.parse('2026-10-24T00:00:00Z');
+    const { container } = render(Footer);
+    expect(container.querySelector('#archive-notice')).toHaveTextContent(
+      /^tasks\.json is \d+ KB: `atm archive` would move 6 finished tasks to tasks-archive\.json$/,
+    );
+  });
+
   it('shows the copyright from plugin.json', () => {
     render(Footer);
     expect(screen.getByText(`© ${pluginInfo.year} Hakan Serce · MIT License`)).toBeInTheDocument();

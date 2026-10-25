@@ -1,10 +1,17 @@
 <script lang="ts">
+  import { archiveNotice } from '../lib/archive';
   import { copyright, pluginInfo } from '../lib/plugin-info';
   import { dashboard } from '../lib/state.svelte';
+
+  // tasks.json has grown past the archive threshold (D-5.4); agents act on the same hint from atm
+  const notice = $derived(
+    archiveNotice(dashboard.tasks, dashboard.meta, dashboard.tasksBytes, dashboard.loadedAt, dashboard.vocab),
+  );
 </script>
 
 <footer class="site-footer" id="site-footer">
   <span class="footer-copyright">{copyright(pluginInfo)}</span>
+  {#if notice}<span class="archive-notice" id="archive-notice">{notice}</span>{/if}
   <nav class="footer-links" aria-label="About this dashboard">
     <button class="footer-link" id="footer-version" title="What's new" onclick={() => dashboard.openWhatsNew()}
       >v{pluginInfo.version}</button

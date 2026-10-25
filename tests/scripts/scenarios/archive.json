@@ -35,7 +35,7 @@
             },
             { "id": "T-005", "status": "todo", "dependencies": ["T-001"] }
           ],
-          "meta": { "next_id": 6 }
+          "meta": { "next_id": 6, "archived": 2 }
         },
         ".agentic-task-manager/tasks-archive.json": {
           "meta": { "archived_at": "2026-05-01T00:00:00Z" },
@@ -171,7 +171,8 @@
           "tasks": [
             { "id": "T-2", "status": "todo" },
             { "id": "T-1", "status": "done" }
-          ]
+          ],
+          "meta": { "archived": 1 }
         },
         ".agentic-task-manager/tasks-archive.json": {
           "meta": { "archived_at": "x" },
@@ -208,7 +209,7 @@
       "files": {
         ".agentic-task-manager/tasks.json": {
           "tasks": [{ "id": "T-1", "status": "done", "completed_at": "2026-04-30T00:00:00Z" }],
-          "meta": { "next_id": 2 }
+          "meta": { "next_id": 2, "archived": 0 }
         },
         ".agentic-task-manager/tasks-archive.json": { "tasks": [], "meta": { "archived_at": "2026-05-01T00:00:00Z" } }
       }

@@ -9,7 +9,18 @@
   import PriorityBadge from './PriorityBadge.svelte';
   import StageChip from './StageChip.svelte';
 
-  const task = $derived(dashboard.detailId ? dashboard.taskMap.get(dashboard.detailId) : undefined);
+  // An archived task opens too (listed with "Include archived")
+  const task = $derived(
+    dashboard.detailId
+      ? (dashboard.taskMap.get(dashboard.detailId) ?? dashboard.archiveMap.get(dashboard.detailId))
+      : undefined,
+  );
+  const archived = $derived(!!task && !dashboard.taskMap.has(task.id));
+  // A dependency missing from tasks.json may be archived: load the archive to show it as a stub (D-5.3)
+  $effect(() => {
+    if (task && dashboard.archivedCount > 0 && (task.dependencies ?? []).some((d) => !dashboard.taskMap.has(d)))
+      dashboard.wantArchive();
+  });
   const claim = $derived(
     task && kindOf(dashboard.vocab, task.status) === 'active' ? dashboard.claims.get(task.id) : undefined,
   );
@@ -40,7 +51,10 @@
       {@const ss = statusStyle(task.status)}
       {@const pc = phaseColor(task.phase)}
       <button class="detail-close" onclick={() => dashboard.closeDetail()}>&times;</button>
-      <h3><span style="color:var(--text-muted)">{task.id}</span> {task.name}</h3>
+      <h3>
+        <span style="color:var(--text-muted)">{task.id}</span>
+        {task.name}{#if archived}<span class="archived-tag" id="detail-archived"> · archived</span>{/if}
+      </h3>
       <div class="task-meta" style="margin-bottom:16px">
         <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
         <span class="badge" style="background:{ss.bg};color:{ss.color}"
@@ -65,7 +79,18 @@
           <div class="detail-deps">
             {#each task.dependencies ?? [] as depId (depId)}
               {@const dep = dashboard.taskMap.get(depId)}
-              {@render depItem('←', depId, dep?.name ?? '', dep?.status)}
+              {@const old = dep ? undefined : dashboard.archiveMap.get(depId)}
+              {#if old}
+                <div class="detail-dep-item archived" data-archived={depId} title={old.name}>
+                  <span class="detail-dep-arrow">←</span>
+                  <strong>{depId}</strong>
+                  <span style="color:var(--text-muted)"
+                    >· archived, {statusLabel(dashboard.vocab, old.status).toLowerCase()}</span
+                  >
+                </div>
+              {:else}
+                {@render depItem('←', depId, dep?.name ?? '', dep?.status)}
+              {/if}
             {/each}
           </div>
         </div>

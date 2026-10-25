@@ -9,6 +9,7 @@ export type TasksData = { meta?: Record<string, unknown>; tasks: Record<string, 
 
 const TASKS_JSON = /\/tasks\.json(\?.*)?$/;
 const CLAIMS_JSON = /\/claims\.json(\?.*)?$/;
+const ARCHIVE_JSON = /\/tasks-archive\.json(\?.*)?$/;
 
 export function loadFixture(name: string): TasksData {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
@@ -19,6 +20,9 @@ export class TasksServer {
   private body: string | null = null;
   private status = 200;
   private claimsBody: string | null = null;
+  private archiveBody: string | null = null;
+  /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
+  archiveRequests = 0;
   // Like atm serve: each version of the file has an ETag, and a request that already has it gets a 304 (D-5.1)
   private version = 0;
   requests = 0;
@@ -38,6 +42,12 @@ export class TasksServer {
       const headers = this.status === 200 ? { ETag: etag } : undefined;
       return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '', headers });
     });
+    await this.page.route(ARCHIVE_JSON, (route) => {
+      this.archiveRequests++;
+      return this.archiveBody === null
+        ? route.fulfill({ status: 404, body: 'not found' })
+        : route.fulfill({ status: 200, contentType: 'application/json', body: this.archiveBody });
+    });
     await this.page.route(CLAIMS_JSON, (route) =>
       this.claimsBody === null
         ? route.fulfill({ status: 404, body: 'not found' })
@@ -48,6 +58,12 @@ export class TasksServer {
   /** Serve claims.json (the `atm` claims snapshot); null makes it a 404 again. */
   claims(claims: Record<string, unknown>[] | null) {
     this.claimsBody = claims === null ? null : JSON.stringify({ generated_at: '2026-01-01T00:00:00Z', claims });
+    return this;
+  }
+
+  /** Serve tasks-archive.json (a fixture by name or inline tasks); null makes it a 404 (no archive) again. */
+  archive(data: string | TasksData | null) {
+    this.archiveBody = data === null ? null : JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
     return this;
   }
 

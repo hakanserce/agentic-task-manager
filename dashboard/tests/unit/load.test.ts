@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PROJECT_NAME, loadTasks, parseTasksFile } from '../../src/lib/load';
+import { DEFAULT_PROJECT_NAME, loadArchive, loadTasks, parseTasksFile } from '../../src/lib/load';
+import archive from '../fixtures/archive.json';
 import standard from '../fixtures/standard.json';
 import noMeta from '../fixtures/no-meta.json';
 
@@ -56,6 +57,12 @@ describe('loadTasks', () => {
     });
   });
 
+  it('measures the file, for the archive notice', async () => {
+    const body = JSON.stringify(standard);
+    const result = await loadTasks(vi.fn().mockResolvedValue(new Response(body)));
+    expect(!result.unchanged && result.loaded.bytes).toBe(body.length);
+  });
+
   it('a 304 without having asked is an error', async () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 304 }));
     await expect(loadTasks(fetchFn)).rejects.toThrow('HTTP 304');
@@ -69,5 +76,25 @@ describe('loadTasks', () => {
   it('rejects on invalid JSON', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse('{ not json'));
     await expect(loadTasks(fetchFn)).rejects.toThrow(SyntaxError);
+  });
+});
+
+describe('loadArchive', () => {
+  it("fetches ./tasks-archive.json's tasks, conditionally once it has validators", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify(archive), { headers: { ETag: '"a1"' } }));
+    const result = await loadArchive(fetchFn);
+    expect(fetchFn).toHaveBeenCalledWith('./tasks-archive.json', { cache: 'no-store', headers: {} });
+    expect(!result.unchanged && result.tasks.map((t) => t.id)).toEqual(['T-090', 'T-091', 'T-092']);
+    expect(!result.unchanged && result.validators).toEqual({ etag: '"a1"' });
+    const again = vi.fn().mockResolvedValue(new Response(null, { status: 304 }));
+    expect(await loadArchive(again, { etag: '"a1"' })).toEqual({ unchanged: true });
+  });
+
+  it('a missing archive (404) is an empty one; a malformed one has no tasks; a server error rejects', async () => {
+    const missing = await loadArchive(vi.fn().mockResolvedValue(jsonResponse('not found', 404)));
+    expect(missing).toEqual({ unchanged: false, tasks: [], validators: {} });
+    const odd = await loadArchive(vi.fn().mockResolvedValue(jsonResponse({ tasks: 'x' })));
+    expect(!odd.unchanged && odd.tasks).toEqual([]);
+    await expect(loadArchive(vi.fn().mockResolvedValue(jsonResponse('boom', 500)))).rejects.toThrow('HTTP 500');
   });
 });

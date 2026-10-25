@@ -1196,6 +1196,26 @@ button.menu-trigger:hover,
   background: color-mix(in srgb, var(--cyan) 25%, transparent);
 }
 
+/* "Include archived" in the filter bar (D-5.2) */
+.include-archived {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+/* A dependency on an archived task (D-5.3) */
+.detail-dep-item.archived {
+  opacity: 0.7;
+  cursor: default;
+}
+/* The footer's archive notice (D-5.4) */
+.archive-notice {
+  color: var(--yellow);
+}
+
 /* Stages of Done (D-4.2) */
 .stage-chip {
   font-size: 11px;

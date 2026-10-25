@@ -24,9 +24,10 @@
 
   // "Dim": lay out every task and grey out the ones the search and filters exclude, so the shape stays put
   const dim = $derived(dashboard.graphFiltered === 'dim');
-  const shown = $derived(dim ? dashboard.tasks : dashboard.filtered);
+  // Archived tasks only with "Include archived" (D-5.3): dashboard.base has them then
+  const shown = $derived(dim ? dashboard.base : dashboard.filtered);
   const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
-  const narrowed = $derived(dashboard.filtered.length < dashboard.tasks.length);
+  const narrowed = $derived(dashboard.filtered.length < dashboard.base.length);
   const layout = $derived(layoutGraph(shown));
   const empty = $derived(shown.length === 0);
   const content = $derived({ w: layout.width, h: layout.height });

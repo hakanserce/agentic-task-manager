@@ -57,6 +57,8 @@ def cmd_archive(args):
             write_json_atomic(archive_path(paths), archive)
             moved = set(ids)
             data["tasks"] = [t for t in data["tasks"] if t.get("id") not in moved]
+            # The dashboard shows the count without loading the archive (dashboard D-5.4)
+            data["meta"]["archived"] = len(archive["tasks"])
             write_json_atomic(paths["tasks"], data)
             ensure_archive_merge(paths)
     result = {
@@ -94,6 +96,9 @@ def cmd_unarchive(args):
             raise AtmError(f"not in the archive: {', '.join(missing)}")
         # tasks.json first: a crash here leaves the task in both files, and it stays in tasks.json
         data["tasks"].extend(by_id[i] for i in args.ids)
+        if not isinstance(data.get("meta"), dict):
+            data["meta"] = {}
+        data["meta"]["archived"] = len(archive["tasks"]) - len(set(args.ids))
         write_json_atomic(paths["tasks"], data)
         archive["tasks"] = [t for t in archive["tasks"] if t.get("id") not in args.ids]
         write_json_atomic(archive_path(paths), archive)

@@ -3,8 +3,13 @@ import { flushSync } from 'svelte';
 import { beforeEach, describe, expect, it } from 'vitest';
 import DetailPanel from '../../src/components/DetailPanel.svelte';
 import { dashboard } from '../../src/lib/state.svelte';
+import type { TasksFile } from '../../src/lib/types';
+import archiveFile from '../fixtures/archive.json';
 import standard from '../fixtures/standard.json';
 import { loadIntoDashboard } from './components.helpers';
+
+// The archive's meta (archived_at) isn't part of tasks.json's
+const archive = archiveFile as unknown as TasksFile;
 
 function open(fields: Record<string, unknown>, id = 'T-005') {
   const tasks = standard.tasks.map((t) => (t.id === id ? { ...t, ...fields } : t));
@@ -66,6 +71,25 @@ describe('DetailPanel', () => {
     const who = container.querySelector('#detail-actors')!;
     expect(who).toHaveTextContent('Created by Hakan · started by claude:cccc · completed by Hakan');
     expect(who).toHaveTextContent('Earlier attempts: claude:aaaa');
+  });
+
+  it('a dependency on an archived task is a stub', () => {
+    const tasks = standard.tasks.map((t) => (t.id === 'T-001' ? { ...t, dependencies: ['T-090'] } : t));
+    loadIntoDashboard({ ...standard, meta: { ...standard.meta, archived: 3 }, tasks }, archive);
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-001');
+    flushSync();
+    expect(container.querySelector('.detail-dep-item[data-archived="T-090"]')).toHaveTextContent(
+      /T-090\s*· archived, done/,
+    );
+  });
+
+  it('opens an archived task, marked as archived', () => {
+    loadIntoDashboard(standard, archive);
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-091');
+    flushSync();
+    expect(container.querySelector('#detail-archived')).toHaveTextContent('archived');
   });
 
   it('has no notes, commit or blocked section when the task has none', () => {

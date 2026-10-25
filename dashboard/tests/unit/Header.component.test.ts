@@ -13,6 +13,13 @@ describe('Header', () => {
     expect(container.querySelector('#attention-count')).toBeNull();
   });
 
+  it('shows how many tasks are archived, from meta.archived, without the archive loaded', () => {
+    loadIntoDashboard({ ...standard, meta: { ...standard.meta, archived: 600 } });
+    const { container } = render(Header);
+    expect(container.querySelector('#subtitle')).toHaveTextContent('12 tasks across 3 phases · 600 archived —');
+    expect(dashboard.archiveLoaded).toBe(false);
+  });
+
   it('counts tasks in review and tasks blocked on the user, and opens the Kanban', async () => {
     const tasks = standard.tasks.map((t) =>
       t.id === 'T-005'

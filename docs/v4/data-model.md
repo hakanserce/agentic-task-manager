@@ -174,6 +174,7 @@ line saves only the indentation, about 15%). Moving them out of the working file
 | DM-5.1 | P1 | `atm archive` moves `done`- and `skipped`-kind tasks to `tasks-archive.json`, except those finished in the last `keep_days` days and those in an open PR (`pr` without `merged_at`). |
 | DM-5.2 | P1 | A move writes one file, then the other (`archive`: the archive first; `unarchive`: `tasks.json` first), so a crash in between leaves a task in both files, never in neither. A task in both keeps its `tasks.json` copy: the next `archive` or `unarchive` drops the archive's copy (an interrupted archive simply hasn't happened; an interrupted unarchive is complete), and `atm check` reports it meanwhile. |
 | DM-5.3 | P1 | When `tasks.json` is over `archive.threshold_kb` or has more than `archive.threshold_tasks` archivable tasks, atm-cli suggests archiving ([atm-cli](atm-cli.md#5-hints)). |
+| DM-5.4 | P1 | `atm archive` and `atm unarchive` record the archive's size as `meta.archived` in `tasks.json` (written with the move, so no extra churn), so the dashboard can show "N archived" without loading the archive (dashboard D-5.4). |
 
 **Options considered:** one task per line (~15% smaller, doesn't stop growth); SQLite (binary: no diffs, no merges,
 and the dashboard would need a WebAssembly reader); an append-only event log (not readable or editable; every read

@@ -1,5 +1,5 @@
 import { loadClaims, type ClaimMap } from './claims';
-import { DEFAULT_PROJECT_NAME, loadTasks, type LoadedTasks, type Validators } from './load';
+import { DEFAULT_PROJECT_NAME, loadArchive, loadTasks, type LoadedTasks, type Validators } from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
 import { dashboardVersion } from './release-notes';
@@ -52,12 +52,40 @@ export class DashboardState {
   loadError = $state<string | null>(null);
   reloading = $state(false);
 
+  /** tasks.json's size (characters), for the archive notice */
+  tasksBytes = $state(0);
+  /**
+   * tasks-archive.json's tasks (DM-5), loaded only once a view needs history (D-5.2: wantArchive); empty until then,
+   * and when there is no archive. A task in both files is shown from tasks.json (DM-5.2).
+   */
+  archive = $state.raw<Task[]>([]);
+  archiveLoaded = $state(false);
+  /** Search, the lists and the graph include archived tasks ("Include archived") */
+  includeArchived = $state(false);
+  /** tasks.json's tasks, then the archived ones it doesn't have: the history views use these */
+  history = $derived(
+    this.archive.length ? [...this.tasks, ...this.archive.filter((t) => !this.taskMap.has(t.id))] : this.tasks,
+  );
+  // Archived tasks by ID, for dependency stubs in the detail panel
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  archiveMap = $derived<ReadonlyMap<string, Task>>(new Map(this.archive.map((t) => [t.id, t])));
+  /** How many tasks are archived: meta.archived (written by atm archive), else the loaded archive's size */
+  archivedCount = $derived(
+    typeof this.meta?.archived === 'number' ? this.meta.archived : this.archiveLoaded ? this.archive.length : 0,
+  );
+
   filters = $state.raw<Filters>(emptyFilters());
   /** Keyword search over ID, name, description and type; part of the saved view */
   query = $state('');
   /** Tasks matching the search, before the phase/type/status filters (the filter counts are based on these) */
-  searched = $derived(searchTasks(this.tasks, this.query));
+  /** The tasks the lists, the board and the graph start from: tasks.json's, plus the archive's with Include archived */
+  base = $derived(this.includeArchived ? this.history : this.tasks);
+  searched = $derived(searchTasks(this.base, this.query));
   filtered = $derived(filterTasks(this.searched, this.filters, this.vocab));
+  /** History (archived tasks too, once loaded) matching the search and filters: for the Progress tab */
+  historyFiltered = $derived(
+    this.includeArchived ? this.filtered : filterTasks(searchTasks(this.history, this.query), this.filters, this.vocab),
+  );
 
   /** Task shown in the detail panel; the panel keeps its last content while closed. */
   detailId = $state<string | null>(null);
@@ -107,6 +135,32 @@ export class DashboardState {
 
   // The last tasks.json's ETag / Last-Modified: polls ask whether it changed, and skip the work when it hasn't
   #validators: Validators | undefined;
+  #archiveValidators: Validators | undefined;
+  #archiveWanted = false;
+
+  /**
+   * A view needs history (D-5.2): load the archive now, and keep it current with the polls from then on. Failures
+   * are logged only; the views then show tasks.json alone.
+   */
+  wantArchive() {
+    if (this.#archiveWanted) return;
+    this.#archiveWanted = true;
+    void this.refreshArchive().catch((e) => console.error('Loading the archive failed:', e));
+  }
+
+  setIncludeArchived(on: boolean) {
+    this.includeArchived = on;
+    if (on) this.wantArchive();
+  }
+
+  private async refreshArchive() {
+    const result = await loadArchive(fetch, this.archiveLoaded ? this.#archiveValidators : undefined);
+    if (!result.unchanged) {
+      this.#archiveValidators = result.validators;
+      this.archive = result.tasks;
+    }
+    this.archiveLoaded = true;
+  }
 
   async load() {
     try {
@@ -133,6 +187,9 @@ export class DashboardState {
     const [result, claims] = await Promise.all([
       loadTasks(fetch, this.loaded ? this.#validators : undefined),
       loadClaims(),
+      this.#archiveWanted
+        ? this.refreshArchive().catch((e) => console.error('Reloading the archive failed:', e))
+        : undefined,
     ]);
     if (result.unchanged) {
       // tasks.json is as it was: keep the tasks (no re-parse, no re-render); claims and the clock still move
@@ -171,7 +228,7 @@ export class DashboardState {
   }
 
   showDetail(id: string) {
-    if (!this.taskMap.has(id)) return;
+    if (!this.taskMap.has(id) && !this.archiveMap.has(id)) return;
     this.detailId = id;
     this.detailOpen = true;
   }
@@ -273,6 +330,7 @@ export class DashboardState {
   }
 
   private apply(loaded: LoadedTasks, claims: ClaimMap) {
+    this.tasksBytes = loaded.bytes;
     this.meta = loaded.meta;
     this.vocab = resolveVocabulary(loaded.meta);
     this.tasks = loaded.tasks;

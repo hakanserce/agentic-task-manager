@@ -80,6 +80,10 @@ export interface TasksFile {
     default_priority?: unknown;
     labels?: unknown;
     workflow?: unknown;
+    /** How many tasks are in tasks-archive.json (written by atm archive / unarchive) */
+    archived?: number;
+    /** Archive settings: threshold_kb, threshold_tasks, keep_days, auto (docs/v4/data-model.md §5) */
+    archive?: unknown;
   };
   tasks?: Task[];
 }

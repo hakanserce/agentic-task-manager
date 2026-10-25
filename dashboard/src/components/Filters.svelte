@@ -23,10 +23,10 @@
     label: 'labels',
     agent: 'agents',
   };
-  const options = $derived(filterOptions(dashboard.tasks, dashboard.vocab));
+  const options = $derived(filterOptions(dashboard.base, dashboard.vocab));
   // Labels only when some task has a label; Stage only when some task is in a PR or merged; Started by only when
   // more than one actor started tasks
-  const anyStage = $derived(dashboard.tasks.some(hasStage));
+  const anyStage = $derived(dashboard.base.some(hasStage));
   const groups = $derived(
     FILTER_GROUPS.filter(
       (g) =>
@@ -97,8 +97,19 @@
           <span class="filter-none">No filters</span>
         {/each}
       </div>
+      {#if dashboard.archivedCount > 0}
+        <label class="include-archived" title="Search, list and graph the archived tasks too (tasks-archive.json)">
+          <input
+            type="checkbox"
+            id="include-archived"
+            checked={dashboard.includeArchived}
+            onchange={(e) => dashboard.setIncludeArchived(e.currentTarget.checked)}
+          />
+          Include archived
+        </label>
+      {/if}
       <span class="match-count" id="match-count" aria-live="polite"
-        ><strong>{dashboard.filtered.length}</strong> of {dashboard.tasks.length} tasks</span
+        ><strong>{dashboard.filtered.length}</strong> of {dashboard.base.length} tasks</span
       >
       <button
         class="reset-view-btn"

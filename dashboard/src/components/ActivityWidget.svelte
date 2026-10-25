@@ -13,15 +13,24 @@
   import Icon from './Icon.svelte';
 
   // Compact: completions per period (bars) with their rolling average (line, same scale). Click: the deep dive.
-  const series = $derived(activitySeries(dashboard.tasks, null, dashboard.loadedAt, dashboard.vocab));
+  // Archived completions count too once the archive is loaded (dashboard.history)
+  const series = $derived(activitySeries(dashboard.history, null, dashboard.loadedAt, dashboard.vocab));
   let open = $state(false);
 
   // The panel shows the chosen period (saved with the view); the pill always shows all time
   const range = $derived(dashboard.activityRange);
   const period = $derived(rangeWindow(range, dashboard.loadedAt));
   const detail = $derived(
-    range.preset === 'all' ? series : activitySeries(dashboard.tasks, period, dashboard.loadedAt, dashboard.vocab),
+    range.preset === 'all' ? series : activitySeries(dashboard.history, period, dashboard.loadedAt, dashboard.vocab),
   );
+
+  // A period reaching back before tasks.json's oldest completion needs the archive (D-5.2)
+  const oldest = $derived(
+    Math.min(...dashboard.tasks.map((t) => Date.parse(t.completed_at ?? '')).filter((t) => !Number.isNaN(t))),
+  );
+  $effect(() => {
+    if (open && dashboard.archivedCount > 0 && (!period || period.start < oldest)) dashboard.wantArchive();
+  });
 
   // <input type="datetime-local"> works in local time without seconds
   const toInput = (t: number) => {

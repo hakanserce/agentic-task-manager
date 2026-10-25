@@ -25,6 +25,7 @@ import {
 } from './filters';
 import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
+import { routeFor, withProjectHash, type Route } from './routes';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
@@ -39,14 +40,14 @@ function releaseNotesUnseen(): boolean {
   return !!version && storageAvailable() && (lastSeen === '' || compareVersions(version, lastSeen) > 0);
 }
 
-/** Shown when the server lists no project to open */
-export const NO_PROJECTS =
-  'No projects are registered yet. Run /atm:create-tasks in a project, or `atm projects add <path>` for one that has tasks.';
-
 export class DashboardState {
   /** The projects the server lists (api/projects) */
   projects = $state.raw<ProjectEntry[]>([]);
-  /** The project shown, by id; null until the first load picks one */
+  /** True once the project list has loaded */
+  projectsLoaded = $state(false);
+  /** The page shown: a project, the overview, how to add a project, or an unknown project (lib/routes.ts) */
+  route = $state.raw<Route>({ page: 'project', id: '' });
+  /** The project whose files are loaded, by id; null until one is shown */
   projectId = $state<string | null>(null);
   tasks = $state.raw<Task[]>([]);
   // Never mutated, only replaced on (re)load, so a plain Map in $state.raw is reactive enough
@@ -204,21 +205,64 @@ export class DashboardState {
     setTimeout(() => (this.reloading = false), RELOAD_SPIN_MS);
   }
 
-  /** Re-fetch the project list; keep the project shown, or pick the first one that is there. */
-  private async refreshProjects(): Promise<string> {
+  /** Re-fetch the project list and decide the page from the URL; returns the project to load, or null for a page
+   * without one (the overview, how to add a project, an unknown project). */
+  private async refreshProjects(): Promise<string | null> {
     const result = await loadProjects(fetch, this.#projectsValidators);
     if (!result.unchanged) {
       this.#projectsValidators = result.validators;
       this.projects = result.projects;
     }
-    const shown = this.projects.find((p) => p.id === this.projectId) ?? this.projects.find((p) => !p.missing);
-    if (!shown) throw new Error(NO_PROJECTS);
-    this.projectId = shown.id;
-    return shown.id;
+    this.projectsLoaded = true;
+    this.route = routeFor(this.projects, location.hash);
+    if (this.route.page !== 'project') return null;
+    if (this.route.id !== this.projectId) this.switchProject(this.route.id);
+    return this.route.id;
+  }
+
+  /** Forget the shown project's data and view state, so the next load brings in `id`'s files and saved view. */
+  private switchProject(id: string) {
+    this.projectId = id;
+    this.loaded = false;
+    this.loadError = null;
+    this.#validators = undefined;
+    this.#archiveValidators = undefined;
+    this.#archiveWanted = false;
+    this.archive = [];
+    this.archiveLoaded = false;
+    this.includeArchived = false;
+    this.tasks = [];
+    // Replaced whole, never mutated (like on a load)
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    this.taskMap = new Map();
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    this.claims = new Map();
+    this.meta = undefined;
+    this.vocab = DEFAULT_VOCABULARY;
+    this.projectName = DEFAULT_PROJECT_NAME;
+    this.detailOpen = false;
+    this.detailId = null;
+    this.viewKey = null;
+  }
+
+  /** Show project `id`, or the overview for null (a new history entry, so Back returns). */
+  openProject(id: string | null) {
+    location.hash = withProjectHash(location.hash, id);
+  }
+
+  /** The URL changed (a link, Back): pick up the dialog, and the page when it names another one. */
+  onHashChange() {
+    this.dialog = parseDialogHash(location.hash);
+    const route = routeFor(this.projects, location.hash);
+    if (JSON.stringify(route) !== JSON.stringify(this.route)) void this.reload();
   }
 
   private async fetchAndApply() {
     const project = await this.refreshProjects();
+    if (project === null) {
+      this.loadedAt = Date.now();
+      return;
+    }
     const [result, claims] = await Promise.all([
       loadTasks(project, fetch, this.loaded ? this.#validators : undefined),
       loadClaims(project),
@@ -342,7 +386,8 @@ export class DashboardState {
 
   /** After the first load: bring back this project's view. A #view= in the URL wins over the saved tab. */
   private restoreView() {
-    this.viewKey = projectKey(this.meta);
+    // The server's project id is meta.id (or stands in for it), so views saved before 0.15.0 are found again
+    this.viewKey = projectKey(this.projectId ? { id: this.projectId } : this.meta);
     this.applyView(sanitizeView(readView(this.viewKey), this.tasks, this.vocab), !hasViewHash(location.hash));
   }
 

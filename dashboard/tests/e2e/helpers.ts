@@ -23,9 +23,9 @@ export function loadFixture(name: string): TasksData {
 const toBody = (data: string | TasksData) => JSON.stringify(typeof data === 'string' ? loadFixture(data) : data);
 
 /**
- * Plays atm serve for the dashboard: api/projects lists one project (FIXTURE_PROJECT) by default, more with
- * addProject(), and each project's tasks.json, claims.json (a 404 by default) and tasks-archive.json (a 404 by default)
- * are served under p/<id>/.
+ * Plays atm serve for the dashboard: api/projects lists one project by default (its id is the served data's meta.id,
+ * else FIXTURE_PROJECT), more with addProject(), and each project's tasks.json, claims.json (a 404 by default) and
+ * tasks-archive.json (a 404 by default) are served under p/<id>/.
  */
 export class TasksServer {
   private body: string | null = null;
@@ -45,10 +45,18 @@ export class TasksServer {
 
   constructor(private page: Page) {}
 
+  private get meta(): Record<string, unknown> {
+    return (this.body && this.status === 200 ? (JSON.parse(this.body) as TasksData).meta : undefined) ?? {};
+  }
+
+  /** The default project's id: its meta.id, as atm serve uses, else FIXTURE_PROJECT */
+  get projectId(): string {
+    return typeof this.meta.id === 'string' && this.meta.id ? this.meta.id : FIXTURE_PROJECT;
+  }
+
   /** The project list api/projects answers with (summaries are null until a test needs them) */
   projectList() {
     if (!this.listed) return [];
-    const meta = (this.body && this.status === 200 ? (JSON.parse(this.body) as TasksData).meta : undefined) ?? {};
     const project = (id: string, name: string) => ({
       id,
       name,
@@ -57,7 +65,7 @@ export class TasksServer {
       summary: null,
     });
     return [
-      project(FIXTURE_PROJECT, typeof meta.project === 'string' ? meta.project : FIXTURE_PROJECT),
+      project(this.projectId, typeof this.meta.project === 'string' ? this.meta.project : this.projectId),
       ...[...this.others].map(([id, p]) => project(id, p.name)),
     ];
   }
@@ -72,7 +80,7 @@ export class TasksServer {
     );
     await this.page.route(TASKS_JSON, (route) => {
       const id = decodeURIComponent(TASKS_JSON.exec(route.request().url())![1]);
-      if (id !== FIXTURE_PROJECT) {
+      if (id !== this.projectId) {
         const other = this.others.get(id);
         return other
           ? route.fulfill({ status: 200, contentType: 'application/json', body: other.body })
@@ -87,7 +95,7 @@ export class TasksServer {
       const headers = this.status === 200 ? { ETag: etag } : undefined;
       return route.fulfill({ status: this.status, contentType: 'application/json', body: this.body ?? '', headers });
     });
-    const isDefault = (url: string, pattern: RegExp) => decodeURIComponent(pattern.exec(url)![1]) === FIXTURE_PROJECT;
+    const isDefault = (url: string, pattern: RegExp) => decodeURIComponent(pattern.exec(url)![1]) === this.projectId;
     await this.page.route(ARCHIVE_JSON, (route) => {
       const mine = isDefault(route.request().url(), ARCHIVE_JSON);
       if (mine) this.archiveRequests++;

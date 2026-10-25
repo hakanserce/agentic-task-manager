@@ -5549,7 +5549,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3 (*`atm migrate` stays*).\n\n### Stop copying\n`atm migrate` no longer installs `tasks-dashboard.html` into the task folder: remove `ensure_dashboard`'s copy and the dashboard actions from its output and `--json`. Keep the version/build reading the server needs.\n\n### Clean up, once per project\n- Delete `.agentic-task-manager/tasks-dashboard.html` if present.\n- Stop the project's old per-project server if `.agentic-task-manager/.server.json` names one **and `whoami` confirms it is that folder's server** (as the old `serve stop` did).\n- Remove `.server.json` and `.server.log`.\n- Keep the `.gitignore` entries, so old files stay ignored.\n\nEverything else (legacy move, `.gitignore`, merge driver, archive hint) is unchanged.\n\n### Tests\nScenarios:\n- a project with an old copy and a stale or live per-project server is cleaned up;\n- a second run does nothing;\n- a legacy `docs/tasks.json` still moves.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-167",
         "T-168"
@@ -5562,11 +5562,27 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:24:48Z",
+      "updated_at": "2026-10-25T23:30:32Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "started_at": "2026-10-25T22:24:48Z",
-      "started_by": "claude:e5ea9db0"
+      "notes": [
+        {
+          "at": "2026-10-25T23:30:16Z",
+          "kind": "failure",
+          "text": "lease expired (claude:e5ea9db0)"
+        },
+        {
+          "at": "2026-10-25T23:30:32Z",
+          "kind": "outcome",
+          "text": "migrate no longer installs a dashboard; it deletes a project's old copy, stops its old per-project server (whoami must name that folder) and removes .server.json/.server.log; --json reports cleaned_up",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "started_at": "2026-10-25T23:30:26Z",
+      "started_by": "claude:e5ea9db0",
+      "completed_at": "2026-10-25T23:30:32Z",
+      "completed_by": "claude:e5ea9db0",
+      "commit": "376a1d46be1fd22b80708b09fa178927a1e0e631"
     },
     {
       "id": "T-172",
@@ -5623,7 +5639,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.2 (per-project URLs) and §3.5 (landing page).\n\n### Routing\n- `#project=<id>` selects the project and combines with `#view=...` (`dashboard/src/lib/tabs.ts`' hash handling); back/forward work.\n- An unknown or missing project id shows a message with a link to the overview.\n- Switching projects restores that project's saved view (`view-store.ts`, keyed by `meta.id`) and resets per-project state (filters, graph view, archive).\n\n### Landing page (no `#project`)\n- **Two or more projects:** the overview (a placeholder component until the overview task).\n- **One:** that project.\n- **None:** a short page explaining `/atm:create-tasks` and `atm projects add <path>`.\n\n### Tests\n- Unit tests for the routing and landing rules.\n- e2e with two projects.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-172"
       ],
@@ -5635,9 +5651,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:54Z",
+      "updated_at": "2026-10-25T23:30:37Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T23:30:37Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-174",

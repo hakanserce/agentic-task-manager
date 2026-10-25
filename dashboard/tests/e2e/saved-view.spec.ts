@@ -112,11 +112,14 @@ test.describe('saved view', () => {
     await expect(matchCount(page)).toHaveText('12 of 12 tasks');
   });
 
-  test('a task file without meta.id falls back to the project name', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+  test('the view is kept under the project id the server gives (meta.id, or its stand-in)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openDashboard(page, tasksServer, 'standard'); // no meta.id: the server's id stands in
     await openFilters(page);
     await filterButton(page, 'phase', '0').click();
     const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.includes(':view:')));
-    expect(stored).toEqual(['atm-dashboard:view:project:Standard Project']);
+    expect(stored).toEqual([`atm-dashboard:view:id:${tasksServer.projectId}`]);
   });
 });

@@ -38,7 +38,7 @@ test.describe('loading tasks.json', () => {
 
   test('loads the project list, then the project’s files from p/<id>/', async ({ page, tasksServer }) => {
     const projects = page.waitForRequest(/\/api\/projects$/);
-    const tasks = page.waitForRequest(/\/p\/fixture\/tasks\.json$/);
+    const tasks = page.waitForRequest(/\/p\/[^/]+\/tasks\.json$/);
     await openDashboard(page, tasksServer, 'minimal');
     await projects;
     await tasks;
@@ -58,7 +58,8 @@ test.describe('loading tasks.json', () => {
   test('says how to add a project when none is registered', async ({ page, tasksServer }) => {
     tasksServer.noProjects();
     await page.goto('tasks-dashboard.html');
-    await expect(page.locator('#load-error')).toContainText('No projects are registered yet');
+    await expect(page.locator('#no-projects')).toContainText('/atm:create-tasks');
+    await expect(page.locator('#no-projects')).toContainText('atm projects add <path>');
   });
 
   test('shows the error box for invalid JSON', async ({ page, tasksServer }) => {

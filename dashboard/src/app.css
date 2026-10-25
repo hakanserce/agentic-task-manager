@@ -2725,3 +2725,46 @@ svg.graph-minimap.hidden {
 .kpi-warn {
   box-shadow: inset 3px 0 0 var(--yellow);
 }
+
+/* Pages without a project: the overview, how to add a project, an unknown project (LandingPage.svelte) */
+.landing {
+  padding: 24px 0;
+}
+.landing-note {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  max-width: 640px;
+}
+.landing-note h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+.landing-note p,
+.landing-note li {
+  color: var(--text-muted);
+}
+.landing-note code {
+  color: var(--text);
+}
+.landing-note a,
+.project-item a {
+  color: var(--accent);
+}
+.project-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.project-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.project-item .muted {
+  color: var(--text-muted);
+}

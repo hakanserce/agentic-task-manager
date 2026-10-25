@@ -200,4 +200,4 @@ WCAG's 3:1 for graphical objects, and the WCAG requirement wins. Its colour-blin
 
 ## Size
 
-Each theme adds about 1.2 KB to the built dashboard, which is held to 256 KB (guardrails.spec.ts).
+Each theme adds about 1.2 KB to the built dashboard, which is held to 320 KiB (327,680 bytes; guardrails.spec.ts).

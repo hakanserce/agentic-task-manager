@@ -8,7 +8,7 @@ twenty from the VS Code Marketplace (T-147); of those, **five are added** (see [
 
 Asked on 2026-10-25 (the open questions below):
 - **No dark-only themes.** Every dashboard theme has a light and a dark variant; a derived light variant wouldn't be
-  the theme people know. That also settles the size: five themes take about 6 KB, which the 256 KB budget has.
+  the theme people know. That also settles the size: five themes take about 6 KB, which the 256 KiB budget had (it was raised to 320 KiB afterwards, on 2026-10-25).
 - **No near-duplicates.** Atom One is dropped (its dark variant is One Dark Pro's palette), Winter is Coming too
   (its dark variant shares Night Owl's background and most accents), and GitHub (the Default theme is already
   GitHub's palette).

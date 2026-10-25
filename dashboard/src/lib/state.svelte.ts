@@ -49,6 +49,8 @@ export class DashboardState {
   route = $state.raw<Route>({ page: 'project', id: '' });
   /** The project whose files are loaded, by id; null until one is shown */
   projectId = $state<string | null>(null);
+  /** The overview shows only active projects (open work, or activity lately); remembered per browser */
+  overviewActiveOnly = $state(getPref('overviewActiveOnly', true));
   tasks = $state.raw<Task[]>([]);
   // Never mutated, only replaced on (re)load, so a plain Map in $state.raw is reactive enough
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -156,6 +158,7 @@ export class DashboardState {
   // The last tasks.json's ETag / Last-Modified: polls ask whether it changed, and skip the work when it hasn't
   #validators: Validators | undefined;
   #projectsValidators: Validators | undefined;
+  #pendingNeedsYou = false;
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
 
@@ -217,6 +220,8 @@ export class DashboardState {
     this.route = routeFor(this.projects, location.hash);
     if (this.route.page !== 'project') return null;
     if (this.route.id !== this.projectId) this.switchProject(this.route.id);
+    // The project page wasn't shown, so nothing followed a #view= in the link that opened it
+    if (hasViewHash(location.hash)) this.tab = parseViewHash(location.hash);
     return this.route.id;
   }
 
@@ -245,9 +250,15 @@ export class DashboardState {
     this.viewKey = null;
   }
 
-  /** Show project `id`, or the overview for null (a new history entry, so Back returns). */
-  openProject(id: string | null) {
-    location.hash = withProjectHash(location.hash, id);
+  /** Show project `id`, or the overview for null (a new history entry, so Back returns). With `needsYou`, the project
+   * opens on the Kanban board filtered to the tasks in review and blocked. */
+  openProject(id: string | null, { needsYou = false } = {}) {
+    let hash = withProjectHash(location.hash, id);
+    if (id !== null && needsYou) {
+      hash = withViewHash(hash, 'kanban');
+      this.#pendingNeedsYou = true;
+    }
+    location.hash = hash;
   }
 
   /** The URL changed (a link, Back): pick up the dialog, and the page when it names another one. */
@@ -279,7 +290,18 @@ export class DashboardState {
       this.apply(result.loaded, claims);
     }
     if (!this.loaded) this.restoreView();
+    if (this.#pendingNeedsYou) {
+      // Opened from an overview card's "needs you": only what waits for a review or a decision
+      this.#pendingNeedsYou = false;
+      const status = this.vocab.statuses.filter((s) => s.kind === 'review' || s.kind === 'blocked').map((s) => s.id);
+      this.filters = filtersFrom({ phase: [], type: [], status, priority: [], stage: [], label: [], agent: [] });
+    }
     this.loaded = true;
+  }
+
+  setOverviewActiveOnly(on: boolean) {
+    this.overviewActiveOnly = on;
+    setPref('overviewActiveOnly', on);
   }
 
   setAutoRefresh(on: boolean) {

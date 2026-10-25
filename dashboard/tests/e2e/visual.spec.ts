@@ -244,6 +244,34 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The overview of all projects: cards with progress, phase, agents, activity, a "needs you" and a gone project
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: projects overview (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await page.clock.setFixedTime(new Date('2026-01-01T12:00:00Z'));
+    tasksServer
+      .addProject(
+        'busy',
+        'minimal',
+        'Busy Project',
+        summary({
+          total: 20,
+          done: 9,
+          skipped: 2,
+          percent: 50,
+          current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
+          agents_working: 2,
+          last_activity: '2026-01-01T11:48:00Z',
+        }),
+      )
+      .addProject('asks', 'minimal', 'Waiting Project', summary({ needs_you: { review: 1, blocked_on_user: 1 } }))
+      .goneProject('old1234', 'Old Project');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('.project-card')).toHaveCount(4);
+    await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-${mode}.png`);
+  });
+}
+
 // FR-3: one main view (the Kanban board) per theme and mode, to catch regressions in any palette.
 for (const theme of [
   'nord',

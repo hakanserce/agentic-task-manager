@@ -13,6 +13,8 @@ export interface Prefs {
   mode: string;
   /** Theme id (see appearance.ts) */
   theme: string;
+  /** The overview shows only active projects (lib/projects.ts) */
+  overviewActiveOnly: boolean;
 }
 
 function storage(): Storage | null {

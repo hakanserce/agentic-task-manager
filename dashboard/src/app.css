@@ -2858,23 +2858,118 @@ svg.graph-minimap.hidden {
 .landing-note code {
   color: var(--text);
 }
-.landing-note a,
-.project-item a {
+.landing-note a {
   color: var(--accent);
 }
-.project-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 8px;
+
+/* The overview of all projects (ProjectsOverview.svelte, ProjectCard.svelte) */
+.projects-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
 }
-.project-item {
+.projects-active-only {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 16px;
+  border-radius: 10px;
+  padding: 14px 16px;
 }
-.project-item .muted {
+.project-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+.project-card.missing {
+  border-style: dashed;
+}
+.project-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.project-card-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.project-card-open {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.project-card-open:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.project-card-need {
+  flex-shrink: 0;
+  margin-left: 0;
+}
+.project-card-progress .progress-bar {
+  margin-top: 0;
+}
+.project-card-counts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.project-card-percent {
+  font-weight: 600;
+}
+.project-card-phase,
+.project-card-note {
+  margin: 0;
+  font-size: 13px;
+}
+.project-card-note {
+  color: var(--text-muted);
+}
+.project-card-note code {
+  color: var(--text);
+}
+.project-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.project-card-agents {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.project-card-agents,
+.project-card-last {
+  white-space: nowrap;
+}
+.project-card-spark {
+  margin-left: auto;
+}
+.project-card .muted {
   color: var(--text-muted);
 }

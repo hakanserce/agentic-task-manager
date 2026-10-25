@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import AppearanceMenu from './AppearanceMenu.svelte';
   import ProjectSelector from './ProjectSelector.svelte';
+  import ProjectsOverview from './ProjectsOverview.svelte';
   import RefreshMenu from './RefreshMenu.svelte';
 
   const present = $derived(dashboard.projects.filter((p) => !p.missing));
@@ -52,17 +53,6 @@
       </ul>
     </section>
   {:else}
-    <!-- The overview's cards come with the overview task; until then a plain list of the projects -->
-    <ul class="project-list" id="project-list">
-      {#each dashboard.projects as project (project.id)}
-        <li class="project-item" data-id={project.id} class:missing={project.missing}>
-          {#if project.missing}
-            <span>{project.name}</span> <span class="muted">not found</span>
-          {:else}
-            <a href="#project={encodeURIComponent(project.id)}">{project.name}</a>
-          {/if}
-        </li>
-      {/each}
-    </ul>
+    <ProjectsOverview />
   {/if}
 </main>

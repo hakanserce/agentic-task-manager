@@ -5680,7 +5680,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.4.\n\n### The selector\nThe title becomes a button, **project name ▾**, opening a listbox:\n- **All projects** first;\n- then each project with its name, a small progress bar (`summary.percent`), and a dot when something needs you (`summary.needs_you`).\n\nKeyboard per the WAI-ARIA *select-only combobox* pattern: arrows, `Enter`, `Escape`, type to filter. Theme tokens only. The selector is shown even with one project, so the overview stays reachable.\n\n### Attention counts and polling\n- The header's attention count is **this project's**; a small badge on the selector shows the **other projects'** total.\n- Auto-refresh polls the open project's files plus `/api/projects` (both conditional).\n\n### Tests\n- Component tests.\n- e2e: switching, keyboard, badge.\n- Screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-173"
       ],
@@ -5691,11 +5691,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:35:50Z",
+      "updated_at": "2026-10-25T23:39:48Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:35:50Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "299ef1808bc047b271b28de3c8539dafcb553b13",
+      "completed_at": "2026-10-25T23:39:48Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T23:39:48Z",
+          "kind": "outcome",
+          "text": "Selector button next to the title: All projects, then each project with a progress bar and a needs-you dot; filter field with arrows/Home/End/Enter/Escape; badge counts what needs you in other projects; screenshots updated (Linux ones removed for CI)",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-175",
@@ -5709,7 +5720,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.5, from the `/api/projects` summaries (`docs/multi-project-api.md`).\n\n### The cards\nA responsive grid, one card per project:\n- **name** (the path on hover);\n- a **progress bar** with `done / total · N skipped`;\n- the **current phase** and its progress;\n- **agents working** now;\n- **needs you**: in review, blocked on you;\n- **last activity** (*\"12 min ago\"*);\n- a **14-day completions sparkline** (reuse the Activity widget's sparkline and the `Ring` / progress styles).\n\nFollow the dataviz skill for the sparkline and bars.\n\n### Behaviour\n- **Order:** needs you first, then last activity.\n- **Active only** toggle (on by default, remembered per browser) hides projects with no open work and no activity in 14 days.\n- Missing projects show *not found*, with the `atm projects remove` command to copy.\n- Click a card → the project. Click its needs-you count → that project's Kanban, filtered to the review and blocked kinds.\n\n### Tests\n- Unit tests for ordering and filtering.\n- e2e with several projects.\n- Screenshots in both modes.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-173"
       ],
@@ -5721,9 +5732,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:55Z",
+      "updated_at": "2026-10-25T23:39:51Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T23:39:51Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-176",

@@ -50,6 +50,8 @@ export class TasksServer {
   private archiveBody: string | null = null;
   /** Projects besides the default one: their tasks.json and summary, by id */
   private others = new Map<string, { name: string; body: string; summary: Record<string, unknown> | null }>();
+  /** Registered projects whose folder is gone: their names, by id */
+  private gone = new Map<string, string>();
   private listed = true;
   /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
   archiveRequests = 0;
@@ -83,6 +85,7 @@ export class TasksServer {
     return [
       project(this.projectId, typeof this.meta.project === 'string' ? this.meta.project : this.projectId),
       ...[...this.others].map(([id, p]) => project(id, p.name, p.summary)),
+      ...[...this.gone].map(([id, name]) => ({ ...project(id, name), missing: true })),
     ];
   }
 
@@ -130,6 +133,12 @@ export class TasksServer {
    * (summary() makes one) for api/projects. */
   addProject(id: string, data: string | TasksData, name = id, summary: Record<string, unknown> | null = null) {
     this.others.set(id, { name, body: toBody(data), summary });
+    return this;
+  }
+
+  /** List a registered project whose folder is gone (missing, no summary, no files). */
+  goneProject(id: string, name = id) {
+    this.gone.set(id, name);
     return this;
   }
 

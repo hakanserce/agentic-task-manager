@@ -582,8 +582,9 @@ The full analysis (scenarios, failure modes, the alternatives considered) is in
 [docs/parallel-agents-design.md](docs/parallel-agents-design.md).
 
 **Fewer permission prompts.** The skills run plain `atm …` and pre-approve it while they run (`allowed-tools:
-Bash(atm *)`). To approve atm-cli for good, including commands you ask for outside a skill, add one rule to your
-project's `.claude/settings.json` (or `~/.claude/settings.json`); it keeps working across plugin upgrades:
+Bash(atm *)`), so you don't need to do anything for them. That approval ends with your next message, though: if you
+also want `atm` approved when you ask Claude for something outside a skill ("what's the status?"), add one rule to
+your project's `.claude/settings.json` (or `~/.claude/settings.json`); it keeps working across plugin upgrades:
 
 ```json
 { "permissions": { "allow": ["Bash(atm *)"] } }

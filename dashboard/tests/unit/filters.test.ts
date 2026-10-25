@@ -23,6 +23,7 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
   status: new Set(f.status),
   priority: new Set(f.priority),
   label: new Set(f.label),
+  agent: new Set(f.agent),
 });
 
 describe('filterOptions', () => {
@@ -67,7 +68,7 @@ describe('filterOptions', () => {
   });
 
   it('is empty for no tasks', () => {
-    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [], priority: [], label: [] });
+    expect(filterOptions([])).toEqual({ phase: [], type: [], status: [], priority: [], label: [], agent: [] });
   });
 
   it('offers the priorities in the data, most urgent first; a missing or unknown priority is the default', () => {
@@ -123,6 +124,25 @@ describe('labels', () => {
 
   it('search matches labels', () => {
     expect(ids(searchTasks(withLabels, 'spike-2'))).toEqual([standard[0].id]);
+  });
+});
+
+describe('the agent group', () => {
+  const started = [
+    { ...standard[0], started_by: 'claude:aaaa' },
+    { ...standard[1], agent: 'claude:bbbb' },
+    { ...standard[2], started_by: 'alice@host:/repo' },
+    standard[3],
+  ];
+
+  it('offers who started tasks (an older agent field too), shortened; filters and counts by it', () => {
+    expect(filterOptions(started).agent).toEqual([
+      { value: 'alice@host:/repo', label: 'alice@host' },
+      { value: 'claude:aaaa', label: 'claude:aaaa' },
+      { value: 'claude:bbbb', label: 'claude:bbbb' },
+    ]);
+    expect(ids(filterTasks(started, filters({ agent: ['claude:bbbb'] })))).toEqual([standard[1].id]);
+    expect(facetCounts(started, filters({})).agent.values.get('claude:aaaa')).toBe(1);
   });
 });
 

@@ -30,7 +30,14 @@ describe('reading and writing', () => {
 
   it('round-trips a view', () => {
     const view: SavedView = {
-      filters: { phase: ['1'], type: ['feature', 'test'], status: [], priority: ['P0'], label: ['ux'] },
+      filters: {
+        phase: ['1'],
+        type: ['feature', 'test'],
+        status: [],
+        priority: ['P0'],
+        label: ['ux'],
+        agent: ['claude:a'],
+      },
       query: 'login',
       tab: 'agents',
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
@@ -61,7 +68,7 @@ describe('reading and writing', () => {
     );
     expect(readView(key)).toEqual({
       ...defaultView(),
-      filters: { phase: ['2'], type: [], status: [], priority: [], label: [] },
+      filters: { phase: ['2'], type: [], status: [], priority: [], label: [], agent: [] },
     });
   });
 
@@ -96,7 +103,7 @@ describe('reading and writing', () => {
 });
 
 describe('sanitizeView', () => {
-  const tasks = [{ ...task(0, 'feature', 'done'), labels: ['ux'] }, task(1, 'test', 'todo')];
+  const tasks = [{ ...task(0, 'feature', 'done'), labels: ['ux'], started_by: 'claude:a' }, task(1, 'test', 'todo')];
 
   it('drops filter values and a focused phase the tasks no longer have', () => {
     const view: SavedView = {
@@ -107,13 +114,21 @@ describe('sanitizeView', () => {
         status: ['todo', 'blocked'],
         priority: ['P2', 'P0'],
         label: ['ux', 'gone'],
+        agent: ['claude:a', 'claude:gone'],
       },
       progressPhase: 5,
     };
     // Neither task has a priority: both are the default, P2
     expect(sanitizeView(view, tasks)).toEqual({
       ...view,
-      filters: { phase: ['0'], type: ['feature'], status: ['todo'], priority: ['P2'], label: ['ux'] },
+      filters: {
+        phase: ['0'],
+        type: ['feature'],
+        status: ['todo'],
+        priority: ['P2'],
+        label: ['ux'],
+        agent: ['claude:a'],
+      },
       progressPhase: null,
     });
   });
@@ -121,7 +136,7 @@ describe('sanitizeView', () => {
   it('keeps everything that still exists', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['1'], type: [], status: [], priority: [], label: [] },
+      filters: { phase: ['1'], type: [], status: [], priority: [], label: [], agent: [] },
       progressPhase: 0,
     };
     expect(sanitizeView(view, tasks)).toEqual(view);

@@ -200,6 +200,7 @@ export class DashboardState {
         status: [...this.filters.status],
         priority: [...this.filters.priority],
         label: [...this.filters.label],
+        agent: [...this.filters.agent],
       },
       query: this.query,
       tab: this.tab,

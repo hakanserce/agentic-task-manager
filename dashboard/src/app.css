@@ -2182,6 +2182,22 @@ svg.graph-minimap.hidden {
   line-height: 22px;
   white-space: nowrap;
 }
+/* Completed by someone other than who started it (a reviewer's approval): a small mark at the bar's end (D-4.5) */
+.agent-bar-approved {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--green);
+  border-radius: 0 3px 3px 0;
+}
+.agent-kind {
+  display: inline-flex;
+  color: var(--text-muted);
+  vertical-align: -1px;
+  margin-right: 2px;
+}
 .live-swatch {
   background: repeating-linear-gradient(-45deg, var(--accent) 0 3px, transparent 3px 6px);
 }

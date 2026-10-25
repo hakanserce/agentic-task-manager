@@ -56,8 +56,21 @@ describe('DetailPanel', () => {
     expect(section).toHaveTextContent('atm unblock T-005 --answer');
   });
 
+  it('says who created, started and completed it, and who tried before', () => {
+    const container = open({
+      created_by: 'Hakan',
+      started_by: 'claude:cccc',
+      completed_by: 'Hakan',
+      notes: [{ at: '2026-04-01T08:00:00Z', by: 'claude:aaaa', kind: 'handoff', text: 'half done' }],
+    });
+    const who = container.querySelector('#detail-actors')!;
+    expect(who).toHaveTextContent('Created by Hakan · started by claude:cccc · completed by Hakan');
+    expect(who).toHaveTextContent('Earlier attempts: claude:aaaa');
+  });
+
   it('has no notes, commit or blocked section when the task has none', () => {
     const container = open({});
+    expect(container.querySelector('#detail-actors')).toBeNull();
     expect(container.querySelector('#detail-notes')).toBeNull();
     expect(container.querySelector('#detail-commit')).toBeNull();
     expect(container.querySelector('#detail-blocked')).toBeNull();

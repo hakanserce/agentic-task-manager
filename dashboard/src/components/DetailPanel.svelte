@@ -2,6 +2,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
+  import { actorsLine, earlierAttempts } from '../lib/actors';
   import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import LabelChips from './LabelChips.svelte';
@@ -15,6 +16,8 @@
   const review = $derived(task ? reviewWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const block = $derived(task ? blockWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const notes = $derived(task ? taskNotes(task) : []);
+  const actors = $derived(task ? actorsLine(task) : '');
+  const attempts = $derived(task ? earlierAttempts(task) : []);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
 
   function onOverlayClick(e: MouseEvent) {
@@ -113,6 +116,17 @@
             <div><strong>{claim.agent}</strong>{claim.branch ? ` on ${claim.branch}` : ''}</div>
             <div style="color:var(--text-muted)">Since {since} · lease until {until}</div>
             {#if claim.worktree}<div style="color:var(--text-muted)">{claim.worktree}</div>{/if}
+          </div>
+        </div>
+      {/if}
+      {#if actors || attempts.length}
+        <div class="detail-section" id="detail-actors">
+          <div class="label">Who</div>
+          <div class="value" style="font-size:13px">
+            {#if actors}<div>{actors}</div>{/if}
+            {#if attempts.length}
+              <div style="color:var(--text-muted)">Earlier attempts: {attempts.join(', ')}</div>
+            {/if}
           </div>
         </div>
       {/if}

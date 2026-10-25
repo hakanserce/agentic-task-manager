@@ -96,6 +96,22 @@ describe('Filters', () => {
     expect(container.querySelector('.filter-chip[data-filter="label"]')).toHaveTextContent('Labels: api');
   });
 
+  it('shows a Started by group only when more than one actor started tasks', async () => {
+    const one = standard.tasks.map((t, i) => (i < 2 ? { ...t, started_by: 'claude:aaaa' } : t));
+    loadIntoDashboard({ ...standard, tasks: one });
+    const first = render(Filters);
+    await openPanel(first.container);
+    expect(first.container.querySelector('.filter-group[data-group="agent"]')).toBeNull();
+    first.unmount();
+
+    const two = one.map((t, i) => (i === 2 ? { ...t, started_by: 'Hakan' } : t));
+    loadIntoDashboard({ ...standard, tasks: two });
+    const { container } = render(Filters);
+    await openPanel(container);
+    expect(container.querySelector('.filter-group[data-group="agent"]')).toHaveTextContent('Started by');
+    expect(button(container, 'agent', 'claude:aaaa')).toHaveAttribute('aria-label', 'claude:aaaa, 2 tasks');
+  });
+
   it('the search narrows the tasks and the filter counts, and can be cleared', async () => {
     const { container } = render(Filters);
     const input = container.querySelector('#task-search') as HTMLInputElement;

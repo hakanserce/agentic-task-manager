@@ -10,6 +10,7 @@
     status: 'Status',
     priority: 'Priority',
     label: 'Labels',
+    agent: 'Started by',
   };
   const PLURALS: Record<FilterGroup, string> = {
     phase: 'phases',
@@ -17,10 +18,15 @@
     status: 'statuses',
     priority: 'priorities',
     label: 'labels',
+    agent: 'agents',
   };
   const options = $derived(filterOptions(dashboard.tasks, dashboard.vocab));
-  // The Labels group only when some task has a label
-  const groups = $derived(FILTER_GROUPS.filter((g) => g !== 'label' || options.label.length > 0));
+  // The Labels group only when some task has a label; Started by only when more than one actor started tasks
+  const groups = $derived(
+    FILTER_GROUPS.filter(
+      (g) => (g !== 'label' || options.label.length > 0) && (g !== 'agent' || options.agent.length > 1),
+    ),
+  );
   // How many tasks each button would show, given the search and the selections in the other groups
   const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab));
   let open = $state(false);

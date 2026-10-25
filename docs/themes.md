@@ -1,21 +1,22 @@
 # More themes: the top 20 VS Code colour themes
 
 The dashboard has six themes (Default, Nord, Solarized, Catppuccin, Tokyo Night, High contrast). This picks the top
-twenty from the VS Code Marketplace (T-147); of those, **six are added** (see [Decision](#decision)), in two batches
-of three (T-148, T-149), with a menu that works for 12 themes (T-152).
+twenty from the VS Code Marketplace (T-147); of those, **five are added** (see [Decision](#decision)), in two batches
+(T-148, T-149), with a menu that works for 11 themes (T-152).
 
 ## Decision
 
 Asked on 2026-10-25 (the open questions below):
 - **No dark-only themes.** Every dashboard theme has a light and a dark variant; a derived light variant wouldn't be
-  the theme people know. That also settles the size: six themes take about 7 KB, which the 256 KB budget has.
-- **No near-duplicates.** Atom One is dropped (its dark variant is One Dark Pro's palette), and Winter is Coming too
-  (its dark variant shares Night Owl's background and most accents).
+  the theme people know. That also settles the size: five themes take about 6 KB, which the 256 KB budget has.
+- **No near-duplicates.** Atom One is dropped (its dark variant is One Dark Pro's palette), Winter is Coming too
+  (its dark variant shares Night Owl's background and most accents), and GitHub (the Default theme is already
+  GitHub's palette).
 
 | Batch | Themes |
 |---|---|
-| 1 (T-148) | GitHub, Ayu, Night Owl |
-| 2 (T-149) | Noctis (Noctis + Lux), Gruvbox, Sublime Material |
+| 1 (T-148) | Ayu, Night Owl, Gruvbox |
+| 2 (T-149) | Noctis (Noctis + Lux), Sublime Material |
 
 The dark-only themes in the tables below stay documented, in case the decision changes.
 
@@ -118,5 +119,5 @@ passing shade, as for the existing themes.
 
 ## The menu (T-152)
 
-Twelve names make the Appearance menu long. Proposal: a scrollable list, each theme with its swatch, the current
+Eleven names make the Appearance menu long. Proposal: a scrollable list, each theme with its swatch, the current
 theme scrolled into view on open, arrow keys to move.

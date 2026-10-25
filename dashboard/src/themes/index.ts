@@ -8,5 +8,8 @@ export const THEMES: ThemeInfo[] = [
   { id: 'solarized', name: 'Solarized', swatch: ['#002b36', '#2f90d4', '#859900', '#e25350'] },
   { id: 'catppuccin', name: 'Catppuccin', swatch: ['#181825', '#89b4fa', '#a6e3a1', '#f38ba8'] },
   { id: 'tokyo-night', name: 'Tokyo Night', swatch: ['#16161e', '#7aa2f7', '#9ece6a', '#f7768e'] },
+  { id: 'ayu', name: 'Ayu', swatch: ['#0b0e14', '#e6b450', '#70bf56', '#d95757'] },
+  { id: 'night-owl', name: 'Night Owl', swatch: ['#010e1a', '#82aaff', '#22da6e', '#ef5350'] },
+  { id: 'gruvbox', name: 'Gruvbox', swatch: ['#1d2021', '#83a598', '#b8bb26', '#fb4934'] },
   { id: 'high-contrast', name: 'High contrast', swatch: ['#000000', '#66ccff', '#5df07f', '#ff6b6b'] },
 ];

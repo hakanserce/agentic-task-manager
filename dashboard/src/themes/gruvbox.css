@@ -1,0 +1,69 @@
+/* Gruvbox theme. Palette: https://github.com/morhetz/gruvbox (dark and light, medium contrast; VS Code port
+   jdinhlife.gruvbox, MIT). Colours that missed the contrast targets were moved to the nearest passing shade, as noted
+   per block; the graph node fills are the type colours mixed into the surface. Contrast is checked by
+   tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - purple: #b16286 -> #b36588 (label contrast)
+   - burndown series #3987e5/#d95926 (the Default dark pair), which passes the chart validator on this surface */
+:root[data-theme='gruvbox'] {
+  color-scheme: dark;
+  --bg: #1d2021;
+  --surface: #282828;
+  --surface2: #3c3836;
+  --border: #504945;
+  --text: #ebdbb2;
+  --text-muted: #a89984;
+  --accent: #83a598;
+  --green: #b8bb26;
+  --yellow: #fabd2f;
+  --red: #fb4934;
+  --purple: #b36588;
+  --pink: #d3869b;
+  --orange: #fe8019;
+  --cyan: #8ec07c;
+  --on-accent: #1d2021;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #454528;
+  --node-bugfix: #522f2a;
+  --node-test: #44343b;
+  --node-infra: #533a25;
+  --node-docs: #3c4639;
+  --node-refactor: #524629;
+  --node-polish: #4a3b3f;
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #7c6f64 -> #776b60 (muted text contrast)
+   - yellow: #b57614 -> #ae7113 (label contrast)
+   - burndown series #1a5ad8/#e0580a (the Catppuccin light pair), which passes the chart validator on this surface */
+:root[data-theme='gruvbox'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #f9f5d7;
+  --surface: #fbf1c7;
+  --surface2: #ebdbb2;
+  --border: #d5c4a1;
+  --text: #3c3836;
+  --text-muted: #776b60;
+  --accent: #076678;
+  --green: #79740e;
+  --yellow: #ae7113;
+  --red: #9d0006;
+  --purple: #8f3f71;
+  --pink: #b16286;
+  --orange: #af3a03;
+  --cyan: #427b58;
+  --on-accent: #fbf1c7;
+  --overlay: rgba(60, 56, 54, 0.25);
+  --node-feature: #ded69e;
+  --node-bugfix: #e6bc9d;
+  --node-test: #e3cab4;
+  --node-infra: #eac99c;
+  --node-docs: #d2d7af;
+  --node-refactor: #ead59f;
+  --node-polish: #ebd2b9;
+  --series-remaining: #1a5ad8;
+  --series-scope: #e0580a;
+}

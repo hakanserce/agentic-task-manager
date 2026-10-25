@@ -78,6 +78,9 @@ test.describe('themes', () => {
       'Solarized',
       'Catppuccin',
       'Tokyo Night',
+      'Ayu',
+      'Night Owl',
+      'Gruvbox',
       'High contrast',
     ]);
     const before = await tokens(page);

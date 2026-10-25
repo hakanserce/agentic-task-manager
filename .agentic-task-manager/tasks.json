@@ -4103,7 +4103,7 @@
     },
     {
       "id": "T-148",
-      "name": "Themes: add batch 1 (GitHub, Ayu, Night Owl)",
+      "name": "Themes: add batch 1 (Ayu, Night Owl, Gruvbox)",
       "phase": 14,
       "type": "feature",
       "priority": "P2",
@@ -4113,7 +4113,7 @@
       "description": "Add GitHub, Ayu and Night Owl (docs/themes.md, Decision; light and dark variants only), as the existing ones are built (dashboard/src/themes/<name>.css + index.ts): every token for both variants, checked by tests/unit/theme-contrast.test.ts (readable contrast) and recorded in docs/theme-validation.md. A screenshot per theme and mode (visual.spec.ts' theme loop), with -linux baselines per CLAUDE.md. Mind the 256 KB size budget (about 7 KB left for six themes); if it doesn't fit, ask before raising it.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-147"
       ],
@@ -4123,7 +4123,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:01:37Z",
+      "updated_at": "2026-10-25T07:17:55Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -4133,18 +4133,20 @@
           "text": "Size: 20 more themes add about 24 KB, but only about 7 KB is left under the 256 KB budget. Raise the budget (e.g. to 320 KB), store themes more compactly (still ~8 KB), or add fewer themes? → Fewer themes: only light+dark ones (6 fit the budget).; Dark-only themes (12 of 20): derive a light variant from their accents, or always show them dark (the mode switch then says so)? → No dark-only themes; drop near-duplicates too (see docs/themes.md).",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "started_at": "2026-10-25T07:13:48Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-149",
-      "name": "Themes: add batch 2 (Noctis, Gruvbox, Sublime Material)",
+      "name": "Themes: add batch 2 (Noctis, Sublime Material)",
       "phase": 14,
       "type": "feature",
       "priority": "P2",
       "labels": [
         "themes"
       ],
-      "description": "Add Noctis (dark Noctis, light Lux), Gruvbox and Sublime Material (docs/themes.md, Decision), as in T-148: tokens for both variants, contrast test (Sublime Material light's foreground is too pale and needs adjusting), docs/theme-validation.md, screenshots in both modes, size budget.",
+      "description": "Add Noctis (dark Noctis, light Lux) and Sublime Material (docs/themes.md, Decision), as in T-148: tokens for both variants, contrast test (Sublime Material light's foreground is too pale and needs adjusting), docs/theme-validation.md, screenshots in both modes, size budget (about 3 KB left after T-148).",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -4157,7 +4159,7 @@
         "docs/theme-validation.md"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:01:38Z",
+      "updated_at": "2026-10-25T07:17:55Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     },
@@ -4231,7 +4233,7 @@
     },
     {
       "id": "T-152",
-      "name": "Appearance menu for 12 themes",
+      "name": "Appearance menu for 11 themes",
       "phase": 14,
       "type": "polish",
       "priority": "P2",
@@ -4252,7 +4254,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T05:46:06Z",
-      "updated_at": "2026-10-25T07:01:39Z",
+      "updated_at": "2026-10-25T07:17:56Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     },

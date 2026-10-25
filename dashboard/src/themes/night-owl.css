@@ -1,0 +1,73 @@
+/* Night Owl theme. Palette: https://github.com/sdras/night-owl-vscode-theme (Night Owl for dark, Light Owl for
+   light); MIT. Light Owl has no orange: it uses Night Owl's, darkened. Colours that missed the contrast targets were
+   moved to the nearest passing shade, as noted per block; the graph node fills are the type colours mixed into the
+   surface. Contrast is checked by tests/unit/theme-contrast.test.ts (targets in docs/theme-validation.md). */
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #637777 -> #6f8282 (muted text contrast)
+   - burndown series #3987e5/#d95926 (the Default dark pair), which passes the chart validator on this surface */
+:root[data-theme='night-owl'] {
+  color-scheme: dark;
+  --bg: #010e1a;
+  --surface: #011627;
+  --surface2: #0b2942;
+  --border: #1d3b53;
+  --text: #d6deeb;
+  --text-muted: #6f8282;
+  --accent: #82aaff;
+  --green: #22da6e;
+  --yellow: #c5e478;
+  --red: #ef5350;
+  --purple: #c792ea;
+  --pink: #ff5874;
+  --orange: #f78c6c;
+  --cyan: #21c7a8;
+  --on-accent: #011627;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #083d35;
+  --node-bugfix: #31222f;
+  --node-test: #292f4e;
+  --node-infra: #322e35;
+  --node-docs: #073941;
+  --node-refactor: #283f37;
+  --node-polish: #342336;
+  --series-remaining: #3987e5;
+  --series-scope: #d95926;
+}
+
+/* Adjusted for contrast (nearest passing colour, see docs/theme-validation.md):
+   - text-muted: #989fb1 -> #6f7481 (muted text contrast)
+   - accent: #288ed7 -> #278ad1 (label contrast)
+   - yellow: #e0af02 -> #a48001 (label contrast)
+   - orange: #f78c6c -> #c36f55 (label contrast)
+   - cyan: #2aa298 -> #26938a (label contrast)
+   - on-accent: #ffffff -> #03050a (text on accent)
+   - burndown series #1a5ad8/#e0580a (the Catppuccin light pair), which passes the chart validator on this surface */
+:root[data-theme='night-owl'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #f0f0f0;
+  --surface: #fbfbfb;
+  --surface2: #ececec;
+  --border: #d9d9d9;
+  --text: #403f53;
+  --text-muted: #6f7481;
+  --accent: #278ad1;
+  --green: #08916a;
+  --yellow: #a48001;
+  --red: #de3d3b;
+  --purple: #994cc3;
+  --pink: #d6438a;
+  --orange: #c36f55;
+  --cyan: #26938a;
+  --on-accent: #03050a;
+  --overlay: rgba(64, 63, 83, 0.25);
+  --node-feature: #c6e4db;
+  --node-bugfix: #f5d1d1;
+  --node-test: #e5d4ef;
+  --node-infra: #efdcd6;
+  --node-docs: #cce4e2;
+  --node-refactor: #e8e0c4;
+  --node-polish: #f3d3e2;
+  --series-remaining: #1a5ad8;
+  --series-scope: #e0580a;
+}

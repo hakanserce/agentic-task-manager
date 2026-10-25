@@ -216,7 +216,16 @@ for (const mode of ['dark', 'light'] as const) {
 }
 
 // FR-3: one main view (the Kanban board) per theme and mode, to catch regressions in any palette.
-for (const theme of ['nord', 'solarized', 'catppuccin', 'tokyo-night', 'high-contrast']) {
+for (const theme of [
+  'nord',
+  'solarized',
+  'catppuccin',
+  'tokyo-night',
+  'ayu',
+  'night-owl',
+  'gruvbox',
+  'high-contrast',
+]) {
   for (const mode of ['dark', 'light']) {
     test(`visual: theme ${theme} (${mode})`, async ({ page, tasksServer }) => {
       await page.addInitScript(

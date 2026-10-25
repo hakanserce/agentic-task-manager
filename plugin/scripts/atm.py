@@ -591,6 +591,7 @@ def archive_hint(paths, data):
         "bytes": size,
         "finished": finished,
         "archivable": movable,
+        "auto": settings["auto"],  # false: the skills only relay the hint (S-3.5)
         "text": f"tasks.json is {format_size(size)} with {finished} finished tasks; `atm archive` would move "
         f"{movable} of them to tasks-archive.json.",
     }

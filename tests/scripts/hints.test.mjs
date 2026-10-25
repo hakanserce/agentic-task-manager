@@ -23,12 +23,25 @@ describe('archive hint', () => {
       const status = runAtm(['status'], root, { ATM_NOW: NOW });
       assert.match(status.stdout, /tasks\.json is \d+ KB with 4 finished tasks; `atm archive` would move 4 of them/);
       const json = JSON.parse(runAtm(['status', '--json'], root, { ATM_NOW: NOW }).stdout);
-      assert.deepEqual([json.suggest.archive.finished, json.suggest.archive.archivable], [4, 4]);
+      assert.deepEqual(
+        [json.suggest.archive.finished, json.suggest.archive.archivable, json.suggest.archive.auto],
+        [4, 4, true],
+      );
       assert.match(runAtm(['migrate'], root, { ATM_NOW: NOW }).stdout, /`atm archive` would move 4/);
       assert.equal(
         JSON.parse(runAtm(['migrate', '--json'], root, { ATM_NOW: NOW }).stdout).suggest.archive.archivable,
         4,
       );
+    } finally {
+      removeDir(root);
+    }
+  });
+
+  test('meta.archive.auto false still shows the hint, marked for the skills to only relay it', () => {
+    const root = project(finished(4), { archive: { threshold_tasks: 3, auto: false } });
+    try {
+      const json = JSON.parse(runAtm(['status', '--json'], root, { ATM_NOW: NOW }).stdout);
+      assert.equal(json.suggest.archive.auto, false);
     } finally {
       removeDir(root);
     }

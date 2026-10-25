@@ -157,6 +157,10 @@ while true:
           - `atm commit $TASK_ID --file <path> --file <path> ...` with every file from your list, deleted ones too
             (also `.agentic-task-manager/.gitignore` and `.agentic-task-manager/.gitattributes` if `git status`
             shows atm changed them); the message comes from the project (`feat($TASK_ID): $TASK_NAME` by default)
+        - If `atm done` (or `atm status`) suggested archiving ("`atm archive` would move …"), archive now, between
+          tasks, as /atm:do-task Step 7c says: `atm archive`, then its own commit
+          (`chore: archive N finished tasks`); unless the hint's `auto` is false or the project says not to, in
+          which case only mention it in the final summary. With --no-commit, run `atm archive` but don't commit it.
         - If --push:
           - git push
         - If --push-every <N> and completed_count % N == 0:
@@ -187,6 +191,7 @@ review, blocked or waiting, and what's next) and output a final summary:
 > **Remaining:** N tasks still to do
 > **Blocked:** N tasks waiting on dependencies
 > **Failed:** N tasks that failed verification (if any)
+> **Archived:** N finished tasks (if the loop archived; or the archive hint, if it was only relayed)
 >
 > To pass a review: `atm done <id>`; to send it back: `atm reject <id> --reason "..."`. To answer a block:
 > `atm unblock <id> --answer "..."` (one per question).

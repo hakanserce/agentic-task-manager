@@ -177,6 +177,23 @@ working tree, so never `git add -A` or `git add .` either.
 
 This is the default behavior. Do NOT push — only commit locally.
 
+## Step 7c: Archive when atm suggests it
+
+`atm done`, `atm status` and `atm migrate` say when `tasks.json` has grown big enough that archiving would help
+("tasks.json is … KB with … finished tasks; `atm archive` would move …"; with `--json`, a `suggest.archive` object).
+If one of them said so during this task, archive now, after the task's commit (never in the middle of a task):
+
+1. Skip this step if the project's instructions (e.g. its `CLAUDE.md`) say not to archive automatically, or if the
+   hint's `"auto"` is `false` (`atm status --json`, under `suggest.archive`: the project set `meta.archive.auto`
+   to false); then only relay the hint to the user.
+2. `atm archive` moves finished tasks to `.agentic-task-manager/tasks-archive.json` (recent ones and those in an open
+   PR stay) and prints what it moved.
+3. Commit that on its own:
+   `git add -- .agentic-task-manager/tasks.json .agentic-task-manager/tasks-archive.json .agentic-task-manager/.gitattributes`
+   then `git commit -m "chore: archive N finished tasks" -- .agentic-task-manager/tasks.json .agentic-task-manager/tasks-archive.json .agentic-task-manager/.gitattributes`
+   (leave out `.gitattributes` if `git status` doesn't show it changed).
+4. Tell the user in one line: "Archived N finished tasks (`atm unarchive <id>` brings one back)."
+
 ## Step 8: Report
 
 Output a concise completion report:

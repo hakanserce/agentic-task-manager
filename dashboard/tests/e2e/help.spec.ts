@@ -20,8 +20,8 @@ test.describe('Help', () => {
     await page.goto('tasks-dashboard.html#view=list&help');
     await expect(page.locator(overlay)).toBeVisible();
     await expect(page.locator('#tab-list')).toHaveAttribute('aria-selected', 'true');
-    await page.locator('#help-panel').getByRole('link', { name: 'priorities' }).click();
-    await expect(page.locator('#help-priorities')).toBeInViewport();
+    await page.locator('#help-panel').getByRole('link', { name: 'priorities and labels' }).click();
+    await expect(page.locator('#help-priorities-and-labels')).toBeInViewport();
     await expect(page.locator(overlay)).toBeVisible();
     expect(new URL(page.url()).hash).toBe('#view=list&help');
   });

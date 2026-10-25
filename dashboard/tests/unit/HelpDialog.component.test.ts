@@ -55,10 +55,10 @@ describe('HelpDialog', () => {
     render(HelpDialog);
     dashboard.openDialog('help');
     flushSync();
-    const target = document.querySelector('#help-priorities') as HTMLElement;
+    const target = document.querySelector('#help-priorities-and-labels') as HTMLElement;
     let scrolled = false;
     target.scrollIntoView = () => (scrolled = true);
-    await fireEvent.click(screen.getByRole('link', { name: 'priorities' }));
+    await fireEvent.click(screen.getByRole('link', { name: 'priorities and labels' }));
     expect(scrolled).toBe(true);
     expect(location.hash).toBe('#help');
   });

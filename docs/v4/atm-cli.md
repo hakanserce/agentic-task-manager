@@ -101,6 +101,7 @@ Existing commands are marked *(exists)*.
 | `atm reject <id> --reason T` | review → todo | a `rejection` note; clears `review_requested_at` |
 | `atm block <id> --on user\|agent (--question T)... [--reason T]` | active, todo → blocked | records `waiting_on`, `questions`, `blocked_at`; releases the claim. `--on agent` hands the decision to another agent (e.g. a reviewer agent), which answers with `unblock` |
 | `atm unblock <id> [--answer T]...` | blocked → todo | the questions and answers become an `answer` note |
+| `atm reopen <id> --reason T` | done, skipped → todo | for a task marked done by mistake, or not finished after all: clears the attempt (as `fail` does) and keeps the reason as a note (added with T-153) |
 | `atm note <id> T` | — | adds a `note` |
 | `atm heartbeat <id>` *(exists)* | — | extends the claim |
 

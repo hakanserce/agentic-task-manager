@@ -41,6 +41,8 @@ STATUS_CHANGES = {
     "reject": (("review",), "todo"),
     "block": (("todo", "active"), "blocked"),
     "unblock": (("blocked",), "todo"),
+    # Undo a done (or skipped) by mistake, or work that turns out unfinished; the reason is kept as a note
+    "reopen": (("done", "skipped"), "todo"),
 }
 WAITING_ON = ("user", "agent")
 
@@ -432,6 +434,8 @@ def change_status(
             add_note(task, "failure", reason or "verification failed", agent, stamp)
         elif command == "reject":
             add_note(task, "rejection", reason, agent, stamp)
+        elif command == "reopen":
+            add_note(task, "note", f"Reopened: {reason}", agent, stamp)
         elif note:
             add_note(task, "handoff", note, agent, stamp)
         return current

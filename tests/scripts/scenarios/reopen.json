@@ -1,0 +1,66 @@
+[
+  {
+    "name": "reopen: a done task back to todo; its completion goes, the reason stays as a note",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-001",
+              "status": "done",
+              "started_at": "2026-05-01T09:00:00Z",
+              "started_by": "alice",
+              "completed_at": "2026-05-01T10:00:00Z",
+              "completed_by": "alice",
+              "commit": "abc"
+            }
+          ]
+        }
+      }
+    },
+    "env": { "ATM_AGENT": "bob", "ATM_NOW": "2026-05-01T12:00:00Z" },
+    "args": ["reopen", "T-001", "--reason", "Marked done before its commit went in"],
+    "expect": {
+      "stdout": "T-001: done -> todo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-001",
+              "status": "todo",
+              "updated_at": "2026-05-01T12:00:00Z",
+              "updated_by": "bob",
+              "notes": [
+                {
+                  "at": "2026-05-01T12:00:00Z",
+                  "by": "bob",
+                  "kind": "note",
+                  "text": "Reopened: Marked done before its commit went in"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "reopen a skipped task; then it can be blocked or started again",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "skipped" }] } } },
+    "env": { "ATM_AGENT": "bob" },
+    "args": ["reopen", "T-001", "--reason", "Needed after all", "--json"],
+    "expect": { "stdoutIncludes": ["\"status\": \"todo\""] }
+  },
+  {
+    "name": "reopen needs a reason",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
+    "args": ["reopen", "T-001"],
+    "expect": { "exit": 2, "stderrIncludes": ["--reason"] }
+  },
+  {
+    "name": "reopen refuses a task that isn't done or skipped",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "todo" }] } } },
+    "args": ["reopen", "T-001", "--reason", "x"],
+    "expect": { "exit": 1, "stderrIncludes": ["can't reopen T-001: it is todo, not done or skipped"] }
+  }
+]

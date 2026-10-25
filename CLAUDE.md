@@ -66,6 +66,20 @@ git merges). CI runs the suite with Python 3.9 and a current version.
   `-linux.png` files, push; CI generates the missing Linux baselines as an artifact and fails until you commit them
   (or run `npm run test:e2e:linux-snapshots` with Docker running).
 
+## CI
+- **Workflow:** `pull-request` (also in `tasks.json` `meta.workflow`, so `/atm:push` knows): work happens on a
+  release branch (e.g. `dev/v4`) and reaches `main` through **one combined PR per release branch**.
+- **Linux screenshot baselines:** after a visual change, CI fails until the `-linux.png` baselines are committed, and
+  attaches the generated ones as the `linux-screenshot-baselines` artifact. Find its ID with
+  `gh api repos/hakanserce/agentic-task-manager/actions/runs/<run-id>/artifacts`, download it with
+  `gh api repos/hakanserce/agentic-task-manager/actions/artifacts/<id>/zip > <scratch>/baselines.zip` (`gh run download`
+  fails on the zip's duplicate entries), extract only the `*-linux.png` files into
+  `dashboard/tests/e2e/__screenshots__/`, look at one to check it shows what you expect, then commit them.
+- **Performance budgets:** the e2e interaction budget is 200 ms locally and twice that in CI
+  (`tests/e2e/performance.spec.ts`), and CI runners are about 3× slower than a developer Mac. A failure only in CI
+  (e.g. 407 ms against 400) still needs a local measurement and a real fix: never raise the budget or just re-run.
+  The large-file benchmark (`tests/scripts/bench.mjs --check`) has generous limits and fails only far over them.
+
 ## Versions
 `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` versions must match. Bump both when the
 dashboard or skills change so `/atm:update-dashboard` detects the new dashboard.

@@ -3,7 +3,11 @@
     "project": "ATM Dashboard",
     "created": "2026-10-22",
     "description": "Phases 0-6: Svelte 5 migration (docs/svelte-migration-plan.md, done). Phases 7-9: dashboard v2 (docs/dashboard-v2-requirements.md, done). Phases 10-12: v3 (docs/v3-requirements.md, design for parallel agents in docs/parallel-agents-design.md): 10 = 0.10.0 project folder, helper launcher, /atm:serve, update instructions; 11 = 0.11.0 parallel agents; 12 = 0.12.0 filter counts, saved views, light/dark modes, themes. Every task must leave `npm run verify` (in dashboard/) and the helper's test suite (tests/scripts) green: a behaviour change lands together with the tests it changes. The helper is plugin/scripts/atm.py: Python 3.9+, standard library only (docs/helper-runtime-proposal.md). Phase 13 = 0.13.0: footer, Help and About, priorities, project vocabularies, In Review (docs/v4-requirements.md).",
-    "id": "cb66fd8c"
+    "id": "cb66fd8c",
+    "workflow": {
+      "type": "pull-request",
+      "base": "main"
+    }
   },
   "tasks": [
     {
@@ -3289,7 +3293,7 @@
       "description": "See docs/v4/skills-and-workflows.md §4. Root CLAUDE.md gets a CI section: Linux screenshot baselines (CI fails until committed; artifact linux-screenshot-baselines; download with `gh api .../artifacts/<id>/zip` since gh run download fails on duplicate entries; extract only *-linux.png, look at one, commit), performance budgets (CI's is twice the local one; runners ~3x slower; a CI-only failure needs a local measurement and a real fix), workflow pull-request with one combined PR per release branch. Set this repo's meta.workflow with `atm workflow set pull-request`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-122"
       ],
@@ -3298,7 +3302,10 @@
         ".agentic-task-manager/tasks.json"
       ],
       "created_at": "2026-10-24T21:48:53Z",
-      "updated_at": "2026-10-24T21:48:53Z"
+      "updated_at": "2026-10-25T00:47:46Z",
+      "started_at": "2026-10-25T00:46:58Z",
+      "agent": "claude:e5ea9db0",
+      "completed_at": "2026-10-25T00:47:46Z"
     },
     {
       "id": "T-133",

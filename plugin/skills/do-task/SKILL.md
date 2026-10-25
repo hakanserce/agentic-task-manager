@@ -4,6 +4,7 @@ description: >
   Execute a single task from tasks.json. Updates status to in_progress, does
   the work, runs verification, then marks done. Use when the user says
   "do task T-xxx", "work on task", "implement task", "pick a task", or "next task".
+allowed-tools: Bash(atm *)
 ---
 
 # Do a Single Task
@@ -13,11 +14,14 @@ implement it, verify it, and mark it done.
 
 ## Step 1: Locate and load tasks.json
 
-From the project root, run the plugin's helper:
+From the project root, run atm-cli, the plugin's `atm` command:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+atm migrate
 ```
+
+(The plugin's `bin/` is on your PATH while the plugin is enabled. If the shell says `atm: command not found`, write
+`"${CLAUDE_SKILL_DIR}/../../bin/atm"` instead of `atm`, here and in every later command.)
 
 It keeps the project's `.agentic-task-manager/` folder in order:
 - an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
@@ -36,9 +40,7 @@ Read and parse the file. Build a map of task IDs to task objects.
 
 ## Step 2: Select and claim a task
 
-Every status change goes through the plugin's helper. Below, `atm` stands for
-`"${CLAUDE_SKILL_DIR}/../../scripts/atm"`: write out that full path in each command, run from the project root.
-It locks the task file while it changes it, writes the timestamps, and records which agent works on which task (a
+Every status change goes through `atm`, run from the project root. It locks the task file while it changes it, writes the timestamps, and records which agent works on which task (a
 **claim**), so other agents running at the same time won't take the same task. Never edit `status`, `started_at`,
 `completed_at` or `updated_at` in tasks.json yourself.
 

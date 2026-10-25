@@ -4,6 +4,7 @@ description: >
   Analyze project requirements and decompose them into granular tasks in tasks.json.
   Use when starting a new project, adding a feature set, or when the user says
   "create tasks", "break down requirements", "plan tasks", or "decompose into tasks".
+allowed-tools: Bash(atm *)
 ---
 
 # Create Tasks from Project Requirements
@@ -13,11 +14,14 @@ and create a granular task list in `tasks.json` format.
 
 ## Step 0: Prepare the task folder
 
-From the project root, run the plugin's helper:
+From the project root, run atm-cli, the plugin's `atm` command:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+atm migrate
 ```
+
+(The plugin's `bin/` is on your PATH while the plugin is enabled. If the shell says `atm: command not found`, write
+`"${CLAUDE_SKILL_DIR}/../../bin/atm"` instead of `atm`, here and in every later command.)
 
 It keeps the project's `.agentic-task-manager/` folder in order:
 - an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
@@ -170,7 +174,7 @@ Rules for task generation:
 Run the helper again, now that `tasks.json` exists:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate && "${CLAUDE_SKILL_DIR}/../../scripts/atm" init
+atm migrate && atm init
 ```
 
 (`init` also adds `meta.id` if the file has none: the dashboard remembers each project's filters and tabs under it.)

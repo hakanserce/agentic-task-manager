@@ -6,6 +6,7 @@ description: >
   push strategies, phase/type filters, and pause-between-tasks mode.
   Use when the user says "loop tasks", "do all tasks", "run the loop",
   "Ralph Wiggum it", or "automate the tasks".
+allowed-tools: Bash(atm *)
 ---
 
 # Loop Tasks — Ralph Wiggum Mode 🫠
@@ -37,11 +38,14 @@ If no arguments are provided, run all available tasks with no pausing and auto-c
 
 Before anything else (also for `--dry-run`):
 
-From the project root, run the plugin's helper:
+From the project root, run atm-cli, the plugin's `atm` command:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate
+atm migrate
 ```
+
+(The plugin's `bin/` is on your PATH while the plugin is enabled. If the shell says `atm: command not found`, write
+`"${CLAUDE_SKILL_DIR}/../../bin/atm"` instead of `atm`, here and in every later command.)
 
 It keeps the project's `.agentic-task-manager/` folder in order:
 - an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
@@ -70,11 +74,9 @@ If `--dry-run` is set, do NOT execute any tasks. Instead:
 3. Show the dependency chain and estimated execution order
 4. Report total count and exit
 
-## The atm helper
+## atm
 
-Every status change goes through the plugin's helper. Below, `atm` stands for
-`"${CLAUDE_SKILL_DIR}/../../scripts/atm"`: write out that full path in each command, run from the project root.
-It locks the task file while it changes it, writes timestamps, and records which agent works on which task (a
+Every status change goes through `atm`, run from the project root. It locks the task file while it changes it, writes timestamps, and records which agent works on which task (a
 **claim**), so several agents can run loops on one project, in one working tree or in separate git worktrees, without
 taking the same task. Its exit codes: 0 ok, 3 no task available, 4 the task is claimed by another agent, 1 other
 errors (the message says what).

@@ -4,6 +4,7 @@ description: >
   Update the project's tasks-dashboard.html to the latest version shipped with
   the plugin. Use when the user says "update dashboard", "refresh dashboard",
   "get latest dashboard", or "upgrade dashboard".
+allowed-tools: Bash(atm *)
 ---
 
 # Update Dashboard
@@ -12,11 +13,14 @@ You update the project's `tasks-dashboard.html` to the latest version from the p
 
 ## Step 1: Update the dashboard
 
-From the project root, run the plugin's helper:
+From the project root, run atm-cli, the plugin's `atm` command:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/../../scripts/atm" migrate --json
+atm migrate --json
 ```
+
+(The plugin's `bin/` is on your PATH while the plugin is enabled. If the shell says `atm: command not found`, write
+`"${CLAUDE_SKILL_DIR}/../../bin/atm"` instead of `atm`.)
 
 It moves an old `docs/tasks.json` (or `tasks.json` in the project root) into `.agentic-task-manager/` if needed (the
 move is staged in git, not committed), and installs or updates `.agentic-task-manager/tasks-dashboard.html` to the

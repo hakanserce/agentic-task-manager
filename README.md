@@ -418,7 +418,7 @@ Use phases to group related work. Phase 0 is typically setup/foundation. Higher 
 
 ### Manual intervention
 You can edit `tasks.json` while the loop runs. Changes are picked up on the next iteration. Edit task definitions
-freely, but change statuses with the helper (`plugin/scripts/atm start|done|fail|release <id>`), which locks the file
+freely, but change statuses with atm-cli (`atm start|done|fail|release <id>`), which locks the file
 so your change and an agent's can't overwrite each other. Use this to:
 - Mark a task as `skipped` if it's no longer needed
 - Mark a task as `blocked` to prevent the agent from picking it up
@@ -469,7 +469,8 @@ Merge each branch back as usual (or open a PR per branch).
 - Agents on **different machines or clones** don't see each other's claims; they may start the same task, and the
   merge driver then reconciles the statuses.
 
-**For humans: the helper's commands** (run from the project; the plugin's `scripts/atm`):
+**For humans: atm-cli's commands** (run from the project; the plugin's `bin/atm`, which Claude Code puts on its Bash
+tool's PATH; in your own terminal, run `atm help` there or use the full path):
 
 | Command | What it does |
 |---|---|
@@ -481,6 +482,14 @@ Merge each branch back as usual (or open a PR per branch).
 
 The full analysis (scenarios, failure modes, the alternatives considered) is in
 [docs/parallel-agents-design.md](docs/parallel-agents-design.md).
+
+**Fewer permission prompts.** The skills run plain `atm …` and pre-approve it while they run (`allowed-tools:
+Bash(atm *)`). To approve atm-cli for good, including commands you ask for outside a skill, add one rule to your
+project's `.claude/settings.json` (or `~/.claude/settings.json`); it keeps working across plugin upgrades:
+
+```json
+{ "permissions": { "allow": ["Bash(atm *)"] } }
+```
 
 ---
 

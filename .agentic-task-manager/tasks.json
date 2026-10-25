@@ -5381,7 +5381,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.1, *Filled automatically*.\n\n### Commands that register\n`atm init`, `atm migrate` and `atm serve` (including `--dir`) register the project they act on (`registry.register`, waiting for the lock).\n\n### The hook\n`atm heartbeat --auto` (the PostToolUse hook) also registers the current project when it has `.agentic-task-manager/tasks.json` and isn't listed yet:\n- with `wait=False`, so **a hook never waits on the lock**;\n- it must stay cheap: one read of `projects.json`, and a write only when the project is new or its `seen_at` is more than a day old.\n\nUpdate `name` / `id` in the entry when `meta.project` or `meta.id` changed.\n\n### Tests\nScenarios:\n- each command registers;\n- the hook registers once and doesn't rewrite on the next call;\n- a held registry lock makes the hook skip, without error or delay;\n- `seen_at` refreshes after a day (`ATM_NOW`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-166"
       ],
@@ -5395,9 +5395,11 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:53Z",
+      "updated_at": "2026-10-25T22:13:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T22:13:38Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-168",
@@ -5540,7 +5542,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3 (*No single-project mode*) and `docs/multi-project-api.md`.\n\n### Loading\n- `dashboard/src/lib/load.ts` loads `/api/projects`, and a project's files from `/p/<id>/` (`tasks.json`, `claims.json`, `tasks-archive.json`, keeping the conditional fetch), **instead of `./tasks.json`**.\n- The state holds the project list and the current project id (for now the first project; routing comes next).\n\n### Dev server and tests\n- `build/dev-data.ts` serves the same API, for one folder (`ATM_DEV_DATA`) or several.\n- The e2e `tasksServer` fixture (`tests/e2e/helpers.ts`) serves the API: **one project by default**, so existing specs keep working with only helper changes, and several when a test passes them.\n- Unit tests for `load.ts`.\n- The whole e2e suite and screenshots stay green.\n- Update `CLAUDE.md`'s testing notes.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-165"
       ],
@@ -5553,11 +5555,22 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:08:12Z",
+      "updated_at": "2026-10-25T22:13:35Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:08:12Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "01bb54fec6dbf809b55bad1e31efd7ddeb8f6c11",
+      "completed_at": "2026-10-25T22:13:35Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T22:13:35Z",
+          "kind": "outcome",
+          "text": "The dashboard loads api/projects, then the project's files from p/<id>/ (no ./tasks.json); dev server and e2e tasksServer play the API (addProject, noProjects); load error points to /atm:serve",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-173",

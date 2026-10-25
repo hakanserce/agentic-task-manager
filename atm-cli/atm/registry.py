@@ -108,6 +108,14 @@ def entry_for(path, meta, stamp):
     }
 
 
+def seen_long_ago(entry):
+    """True when the entry's seen_at is a day old (or unreadable): time to refresh it."""
+    try:
+        return (now() - parse_iso(entry.get("seen_at"))).total_seconds() >= SEEN_EVERY
+    except (TypeError, ValueError):
+        return True
+
+
 def update_entry(registry, path, meta):
     """Add, refresh or (when the project opted out) remove the entry for `path`. Returns what happened: "added",
     "updated", "unchanged", "removed" or "unlisted"."""
@@ -123,11 +131,7 @@ def update_entry(registry, path, meta):
         return "added"
     fresh = {"id": project_id(meta, path), "name": project_name(meta, path)}
     changed = any(entry.get(k) != v for k, v in fresh.items())
-    try:
-        stale = (now() - parse_iso(entry.get("seen_at"))).total_seconds() >= SEEN_EVERY
-    except (TypeError, ValueError):
-        stale = True
-    if not (changed or stale):
+    if not (changed or seen_long_ago(entry)):
         return "unchanged"
     entry.update(fresh)
     entry["seen_at"] = stamp
@@ -156,6 +160,18 @@ def register(paths, wait=True):
         if wait:
             raise
         return "busy"
+
+
+def register_if_needed(paths):
+    """The plugin hook's cheap path, run after every tool call: one read of projects.json, and registering (without
+    waiting for the lock) only when the project isn't listed yet or was last seen a day ago."""
+    path = main_worktree(paths["root"])
+    registry = read_json(os.path.join(atm_home(), REGISTRY_FILE))
+    entries = registry.get("projects") if isinstance(registry, dict) else None
+    entry = next((e for e in entries or [] if isinstance(e, dict) and e.get("path") == path), None)
+    if entry is not None and not seen_long_ago(entry):
+        return "unchanged"
+    return register(paths, wait=False)
 
 
 def resolve_project(target):

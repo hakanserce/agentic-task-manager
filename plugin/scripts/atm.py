@@ -426,6 +426,14 @@ def entry_for(path, meta, stamp):
     }
 
 
+def seen_long_ago(entry):
+    """True when the entry's seen_at is a day old (or unreadable): time to refresh it."""
+    try:
+        return (now() - parse_iso(entry.get("seen_at"))).total_seconds() >= SEEN_EVERY
+    except (TypeError, ValueError):
+        return True
+
+
 def update_entry(registry, path, meta):
     """Add, refresh or (when the project opted out) remove the entry for `path`. Returns what happened: "added",
     "updated", "unchanged", "removed" or "unlisted"."""
@@ -441,11 +449,7 @@ def update_entry(registry, path, meta):
         return "added"
     fresh = {"id": project_id(meta, path), "name": project_name(meta, path)}
     changed = any(entry.get(k) != v for k, v in fresh.items())
-    try:
-        stale = (now() - parse_iso(entry.get("seen_at"))).total_seconds() >= SEEN_EVERY
-    except (TypeError, ValueError):
-        stale = True
-    if not (changed or stale):
+    if not (changed or seen_long_ago(entry)):
         return "unchanged"
     entry.update(fresh)
     entry["seen_at"] = stamp
@@ -474,6 +478,18 @@ def register(paths, wait=True):
         if wait:
             raise
         return "busy"
+
+
+def register_if_needed(paths):
+    """The plugin hook's cheap path, run after every tool call: one read of projects.json, and registering (without
+    waiting for the lock) only when the project isn't listed yet or was last seen a day ago."""
+    path = main_worktree(paths["root"])
+    registry = read_json(os.path.join(atm_home(), REGISTRY_FILE))
+    entries = registry.get("projects") if isinstance(registry, dict) else None
+    entry = next((e for e in entries or [] if isinstance(e, dict) and e.get("path") == path), None)
+    if entry is not None and not seen_long_ago(entry):
+        return "unchanged"
+    return register(paths, wait=False)
 
 
 def resolve_project(target):
@@ -1291,6 +1307,10 @@ def auto_heartbeat(args):
         paths = find_paths(cwd)
         if not paths["tasks_exists"]:
             return
+        try:
+            register_if_needed(paths)  # list the project on the dashboard (one read of the registry when it is)
+        except Exception:
+            pass
         current = now()
 
         def due(claims):
@@ -2368,6 +2388,7 @@ def cmd_init(args):
         if not args.json:
             out(("Created tasks.json; meta: " if created else "Updated tasks.json meta: ") + (", ".join(keys) or "-"))
     project_id = ensure_project_id(paths)
+    register(paths)  # the dashboard lists every project atm runs in
     git_repo = in_git(paths["root"])
     changed = ensure_merge_driver(paths) if git_repo else False
     if args.json:
@@ -2854,6 +2875,8 @@ def describe_migration(r, paths):
 def cmd_migrate(args):
     paths = find_paths(os.getcwd())
     r = migrate(paths)
+    if os.path.isfile(paths["tasks"]):
+        register(paths)  # the dashboard lists every project atm runs in (every skill runs migrate first)
     if args.json:
         out(to_json(r))
         return

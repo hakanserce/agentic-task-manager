@@ -40,6 +40,52 @@
     }
   },
   {
+    "name": "init lists the project on the dashboard",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] }
+      }
+    },
+    "args": ["init"],
+    "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },
+    "expect": {
+      "files": {
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "abcd1234",
+              "name": "Demo",
+              "path": "{root}",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "migrate lists the project too, without saying so",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] },
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\">"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": { ".atm-home/projects.json": true }
+    }
+  },
+  {
+    "name": "migrate without tasks.json lists nothing",
+    "args": ["migrate"],
+    "expect": { "files": { ".atm-home/projects.json": false } }
+  },
+  {
     "name": "projects add PATH from another folder, then it is already registered",
     "setup": {
       "files": {

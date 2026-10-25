@@ -13,6 +13,7 @@ from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, now, out, read_jso
 from .lock import locked
 from .model import kind_of, load_tasks, vocabulary
 from .paths import find_paths
+from .registry import register
 
 # What `atm` means is not in this file: git config can't be committed, so each clone registers the driver in its own
 # .git/config (merge.atm.driver), which the atm skills do on every run. A clone without it merges tasks.json normally.
@@ -290,6 +291,7 @@ def cmd_init(args):
         if not args.json:
             out(("Created tasks.json; meta: " if created else "Updated tasks.json meta: ") + (", ".join(keys) or "-"))
     project_id = ensure_project_id(paths)
+    register(paths)  # the dashboard lists every project atm runs in
     git_repo = in_git(paths["root"])
     changed = ensure_merge_driver(paths) if git_repo else False
     if args.json:

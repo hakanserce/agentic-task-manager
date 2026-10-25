@@ -10,6 +10,7 @@ from .core import DASHBOARD_FILE, PLUGIN_ROOT, AtmError, git, in_git, is_tracked
 from .merge import ensure_merge_driver
 from .model import archive_hint, load_tasks
 from .paths import find_paths
+from .registry import register
 
 TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
 # Runtime files in the task folder that must not be committed (the dashboard is a copy of the plugin's template)
@@ -163,6 +164,8 @@ def describe_migration(r, paths):
 def cmd_migrate(args):
     paths = find_paths(os.getcwd())
     r = migrate(paths)
+    if os.path.isfile(paths["tasks"]):
+        register(paths)  # the dashboard lists every project atm runs in (every skill runs migrate first)
     if args.json:
         out(to_json(r))
         return

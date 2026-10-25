@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { describe, test } from 'node:test';
 import { ATM, baseEnv, git, makeProject, removeDir, runAtm, tempDir } from './helpers.mjs';
@@ -41,6 +42,55 @@ describe('project registry', () => {
     } finally {
       git(['worktree', 'remove', '--force', linked], root);
       removeDir(path.dirname(linked));
+      removeDir(home);
+      removeDir(root);
+    }
+  });
+
+  test('the hook (heartbeat --auto) lists a project once, then only reads the registry until a day has passed', () => {
+    const root = makeProject({ files: { '.agentic-task-manager/tasks.json': tasks('abcd1234', 'Demo') } });
+    const home = tempDir('atm-home-');
+    const file = path.join(home, 'projects.json');
+    const hook = (now) => runAtm(['heartbeat', '--auto'], root, { ATM_HOME: home, ATM_NOW: now });
+    try {
+      assert.equal(hook('2026-01-01T00:00:00Z').code, 0);
+      assert.deepEqual(registry(home).projects, [
+        { id: 'abcd1234', name: 'Demo', path: root, added_at: '2026-01-01T00:00:00Z', seen_at: '2026-01-01T00:00:00Z' },
+      ]);
+      const written = fs.statSync(file).mtimeMs;
+      // The next calls the same day don't write, even when the project's name changed
+      fs.writeFileSync(path.join(root, '.agentic-task-manager/tasks.json'), JSON.stringify(tasks('abcd1234', 'New')));
+      assert.equal(hook('2026-01-01T20:00:00Z').code, 0);
+      assert.equal(fs.statSync(file).mtimeMs, written);
+      // A day later it refreshes seen_at and the name
+      assert.equal(hook('2026-01-02T01:00:00Z').code, 0);
+      assert.deepEqual(
+        registry(home).projects.map((p) => [p.name, p.seen_at]),
+        [['New', '2026-01-02T01:00:00Z']],
+      );
+    } finally {
+      removeDir(home);
+      removeDir(root);
+    }
+  });
+
+  test('the hook never waits for a busy registry lock, and never fails', () => {
+    const root = makeProject({ files: { '.agentic-task-manager/tasks.json': tasks('abcd1234', 'Demo') } });
+    const home = tempDir('atm-home-');
+    try {
+      // A live lock: held by this test process, on this host
+      fs.mkdirSync(path.join(home, '.lock'));
+      fs.writeFileSync(
+        path.join(home, '.lock/owner.json'),
+        JSON.stringify({ host: os.hostname(), pid: process.pid, acquired_at: new Date().toISOString() }),
+      );
+      const started = Date.now();
+      const r = runAtm(['heartbeat', '--auto'], root, { ATM_HOME: home });
+      assert.equal(r.code, 0, r.stderr);
+      assert.equal(r.stdout + r.stderr, '');
+      assert.ok(Date.now() - started < 3000, 'did not wait for the lock');
+      assert.equal(fs.existsSync(path.join(home, 'projects.json')), false);
+    } finally {
       removeDir(home);
       removeDir(root);
     }

@@ -5080,7 +5080,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T08:01:19Z",
-      "updated_at": "2026-10-26T00:32:44Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:31:51Z",
@@ -5095,7 +5095,11 @@
           "text": "Progress panel: one card around By phase and one around By type; the rings inside are plain",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-157",
@@ -5120,7 +5124,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:01:20Z",
-      "updated_at": "2026-10-26T01:42:28Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:37:44Z",
@@ -5135,7 +5139,11 @@
           "text": "By phase has an 'Active phases only' checkbox sharing the Progress tab's saved setting (and its days); says how many phases are hidden",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-158",
@@ -5164,7 +5172,7 @@
         "README.md"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-26T00:36:48Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:32:47Z",
@@ -5179,7 +5187,11 @@
           "text": "atm repository [set URL] (git remotes normalised to https web addresses, credentials and .git dropped); atm init fills it from origin; create-tasks asks when missing, /atm:serve mentions it; this repo's address set",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-159",
@@ -5202,7 +5214,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-26T00:38:35Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:36:50Z",
@@ -5217,7 +5229,11 @@
           "text": "Details panel timestamps: Created, Started, Sent for review, Finished (or Skipped), Duration (work time, 'so far' while active) and Updated, only what the task has",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-160",
@@ -5243,7 +5259,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:21:58Z",
-      "updated_at": "2026-10-26T00:41:50Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:38:38Z",
@@ -5258,7 +5274,11 @@
           "text": "Commit and PR (In PR and Merged chips) link to GitHub from meta.repository (a PR's recorded URL wins); other hosts plain text; without an address they look clickable and explain atm repository set",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-161",
@@ -5282,7 +5302,7 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-25T08:22:05Z",
-      "updated_at": "2026-10-26T01:46:48Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:42:31Z",
@@ -5297,7 +5317,11 @@
           "text": "GitLab (nested groups), Bitbucket, Gitea/Forgejo/Codeberg links; self-hosted by host name (gitlab.*, github.*) or meta.repository_type",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-162",
@@ -5325,7 +5349,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-26T01:17:36Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -5352,7 +5376,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "d5e6740019668e9043e824d1ff8e440b4f610b07",
       "completed_at": "2026-10-26T01:17:36Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-163",
@@ -5377,7 +5405,7 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-26T01:00:10Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:55:13Z",
@@ -5392,7 +5420,11 @@
           "text": "Native select styled with theme tokens, current theme's swatch beside it; menu 456px -> 136px tall; radiogroup code and .theme-list styles removed",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-164",
@@ -5415,7 +5447,7 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T19:36:02Z",
-      "updated_at": "2026-10-26T01:06:25Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:00:13Z",
@@ -5430,7 +5462,11 @@
           "text": "Status options come from vocab.statuses plus unknown ones in use; zero-count statuses are selectable",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-165",
@@ -6118,7 +6154,7 @@
         "docs/multi-project-api.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T04:36:20Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -6139,7 +6175,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "e5882cc64c90603118a4fcaa53d33e3bf50e357b",
       "completed_at": "2026-10-26T04:36:20Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-180",
@@ -6259,7 +6299,7 @@
         "dashboard/tests/e2e/detail.spec.ts"
       ],
       "created_at": "2026-10-25T21:49:53Z",
-      "updated_at": "2026-10-26T01:27:16Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:22:25Z",
@@ -6274,7 +6314,11 @@
           "text": "Panel scrolls to the top when the shown task id changes; the same task re-rendered keeps its position",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-183",
@@ -6297,7 +6341,7 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T21:49:53Z",
-      "updated_at": "2026-10-26T01:31:46Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:27:19Z",
@@ -6312,7 +6356,11 @@
           "text": "Description in a bordered box on the page background (theme tokens), Markdown headings scaled down; checked default, Nord, Solarized, High contrast in both modes",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-184",
@@ -6339,7 +6387,7 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-26T00:24:09Z",
-      "updated_at": "2026-10-26T01:37:41Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:31:49Z",
@@ -6354,7 +6402,11 @@
           "text": "Own expired lease: expiry written first, exit 4 with what happened and what to run; expiry and release keep the commit (fail/reject/reopen drop it); 6 scenarios",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-185",

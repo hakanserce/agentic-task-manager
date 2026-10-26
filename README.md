@@ -279,7 +279,8 @@ projects the dashboard opens on it.
   each listed project it serves just three files from `.agentic-task-manager/`: `tasks.json`, `claims.json` and
   `tasks-archive.json`. Nothing else in your projects is reachable through it. The routes are documented in
   [docs/multi-project-api.md](docs/multi-project-api.md).
-- **Git worktrees:** the project's main worktree is listed; work in other worktrees shows once it's merged.
+- **Git worktrees:** the project's main worktree is listed, and its board shows all its worktrees at once: each task
+  as it is on the branch where it got furthest, with a chip naming that branch, and the agents at work in each.
 
 ---
 
@@ -538,7 +539,8 @@ Merge each branch back as usual (or open a PR per branch).
 - **Claims.** `atm next --claim` picks the next task and claims it in one step. Claims record the agent (each Claude
   Code session has its own identity), branch and worktree. They are stored in the clone's `.git` directory, so agents
   in different worktrees of the clone see each other's claims straight away. A task finished in one worktree isn't
-  handed out again in another before the branches merge.
+  handed out again in another before the branches merge. The dashboard shows every worktree's tasks and claims on
+  the project's board, before anything merges.
 - **Leases.** A claim lasts 30 minutes (`"lease_minutes"` in `tasks.json`'s `meta` changes the length) and the
   plugin's hook renews it while the agent works. If an agent crashes, its task goes back to `todo` when the lease
   runs out, with a failure note saying whose lease expired.

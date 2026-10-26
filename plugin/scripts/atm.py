@@ -375,6 +375,44 @@ def main_worktree(root):
     return root
 
 
+def head_branch(git_dir):
+    """The branch checked out per a git directory's HEAD file; a detached HEAD gives its short SHA, no file None."""
+    try:
+        with open(os.path.join(git_dir, "HEAD"), encoding="utf-8") as f:
+            head = f.readline().strip()
+    except OSError:
+        return None
+    if head.startswith("ref: "):
+        ref = head[5:]
+        return ref[len("refs/heads/") :] if ref.startswith("refs/heads/") else ref
+    return head[:7] or None
+
+
+def worktrees(root):
+    """The git worktrees of the project whose main worktree is `root`, main first, as `git worktree list` has them:
+    [{path, branch, main}]. Read from the git directory, without running git, so the server can ask on every poll.
+    Linked worktrees whose folder is gone are left out; outside git (or a bare repository) the list is empty."""
+    git_dir = os.path.join(root, ".git")
+    if not os.path.isdir(git_dir):
+        return []
+    found = [{"path": root, "branch": head_branch(git_dir), "main": True}]
+    linked = os.path.join(git_dir, "worktrees")
+    try:
+        names = sorted(os.listdir(linked))
+    except OSError:
+        names = []
+    for name in names:
+        admin = os.path.join(linked, name)
+        try:
+            with open(os.path.join(admin, "gitdir"), encoding="utf-8") as f:
+                path = os.path.dirname(f.readline().strip())  # the worktree's .git file
+        except OSError:
+            continue
+        if path and os.path.isdir(path):
+            found.append({"path": path, "branch": head_branch(admin), "main": False})
+    return found
+
+
 def project_meta(path):
     """The meta of the project at `path`, or None without a readable tasks.json."""
     data = read_json(os.path.join(path, TASK_DIR, TASKS_FILE))
@@ -3273,7 +3311,7 @@ SERVER_RECORD = "server.json"
 SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
-PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json")
+PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
 PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
 
 
@@ -3502,15 +3540,19 @@ class Summaries:
         self.paths = {}  # project folder -> (atm paths, claims store path): finding them runs git
         self.cache = {}  # project folder -> (stamp, summary or None)
 
+    def store(self, entry):
+        """The project's claims store, shared by all its worktrees."""
+        if entry["path"] not in self.paths:
+            paths = find_paths(entry["path"])
+            self.paths[entry["path"]] = (paths, claims_store_path(paths))
+        return self.paths[entry["path"]][1]
+
     def stamp(self, entry):
         """What the summary depends on, or None when the project is missing."""
         tasks = file_stamp(task_file(entry, TASKS_FILE))
         if tasks is None:
             return None
-        if entry["path"] not in self.paths:
-            paths = find_paths(entry["path"])
-            self.paths[entry["path"]] = (paths, claims_store_path(paths))
-        return (tasks, file_stamp(self.paths[entry["path"]][1]), now().date().isoformat())
+        return (tasks, file_stamp(self.store(entry)), now().date().isoformat())
 
     def summary(self, entry, stamp):
         cached = self.cache.get(entry["path"])
@@ -3529,11 +3571,12 @@ def api_projects(registry, summaries):
     and the day."""
     entries = registry.entries()
     stamps = [summaries.stamp(e) for e in entries]
-    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps).encode("utf-8")).hexdigest()[:16] + '"'
+    trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
+    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps + trees).encode("utf-8")).hexdigest()[:16] + '"'
 
     def body():
         projects = []
-        for entry, stamp in zip(entries, stamps):
+        for entry, stamp, tree in zip(entries, stamps, trees):
             summary = summaries.summary(entry, stamp) if stamp else None
             projects.append(
                 {
@@ -3542,9 +3585,56 @@ def api_projects(registry, summaries):
                     "path": entry["path"],
                     "missing": summary is None,
                     "summary": summary,
+                    "worktrees": tree if summary else [],
                 }
             )
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
+
+    return body, etag
+
+
+def api_claims(summaries, entry):
+    """(body, ETag) of a project's claims.json: the live claims of all its worktrees, from the shared claims store
+    (each worktree's own snapshot has only the claims made there). None when there is no store yet."""
+    store = summaries.store(entry)
+    stamp = file_stamp(store)
+    if stamp is None:
+        return None
+
+    def body():
+        data = read_json(store)
+        claims = data.get("claims") if isinstance(data, dict) else None
+        listed_claims = [c for c in (claims or {}).values() if isinstance(c, dict) and isinstance(c.get("task"), str)]
+        snapshot = {"generated_at": now_iso(), "claims": sorted(listed_claims, key=lambda c: c["task"])}
+        return to_json(snapshot).encode("utf-8")
+
+    return body, file_etag(stamp)
+
+
+def api_worktrees(entry):
+    """(body, ETag) of a project's worktrees.json: its git worktrees, main first, and for each linked one the tasks
+    whose copy there differs from the main worktree's (or that only it has). The dashboard shows them all on one
+    board, each task from the worktree where it got furthest."""
+    trees = worktrees(entry["path"])
+    stamps = [file_stamp(os.path.join(t["path"], TASK_DIR, TASKS_FILE)) for t in trees]
+    etag = '"' + hashlib.sha1(repr([trees, stamps]).encode("utf-8")).hexdigest()[:16] + '"'
+
+    def tasks_of(tree):
+        data = read_json(os.path.join(tree["path"], TASK_DIR, TASKS_FILE))
+        tasks = data.get("tasks") if isinstance(data, dict) else None
+        return [t for t in tasks or [] if isinstance(t, dict) and isinstance(t.get("id"), str)]
+
+    def body():
+        listed_trees = []
+        main = {}
+        for tree in trees:
+            if tree["main"]:
+                main = {t["id"]: t for t in tasks_of(tree)}
+                listed_trees.append(tree)
+            else:
+                differing = [t for t in tasks_of(tree) if main.get(t["id"]) != t]
+                listed_trees.append({**tree, "tasks": differing})
+        return to_json({"generated_at": now_iso(), "worktrees": listed_trees}).encode("utf-8")
 
     return body, etag
 
@@ -3616,7 +3706,19 @@ def cmd_serve_child(args):
             if entry is None:
                 self.send_error_json(404, "unknown project")
                 return
-            p = task_file(entry, match.group(2))
+            name = match.group(2)
+            if not os.path.isfile(task_file(entry, TASKS_FILE)):
+                self.send_error_json(404, "not found")
+                return
+            computed = None
+            if name == "worktrees.json":
+                computed = api_worktrees(entry)
+            elif name == "claims.json":
+                computed = api_claims(summaries, entry)
+            if computed:
+                self.send_conditional(*computed)
+                return
+            p = task_file(entry, name)
             stamp = file_stamp(p)
             if stamp is None:
                 self.send_error_json(404, "not found")

@@ -5,7 +5,8 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 
-const FILES = new Set(['tasks.json', 'claims.json', 'tasks-archive.json']);
+// worktrees.json is never in a task folder, so it answers 404: the dev server shows no linked worktrees
+const FILES = new Set(['tasks.json', 'claims.json', 'tasks-archive.json', 'worktrees.json']);
 
 interface DevProject {
   id: string;

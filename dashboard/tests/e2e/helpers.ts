@@ -13,6 +13,7 @@ const PROJECTS_JSON = /\/api\/projects(\?.*)?$/;
 const TASKS_JSON = /\/p\/([^/]+)\/tasks\.json(\?.*)?$/;
 const CLAIMS_JSON = /\/p\/([^/]+)\/claims\.json(\?.*)?$/;
 const ARCHIVE_JSON = /\/p\/([^/]+)\/tasks-archive\.json(\?.*)?$/;
+const WORKTREES_JSON = /\/p\/([^/]+)\/worktrees\.json(\?.*)?$/;
 /** The id of the project the fixture serves by default */
 export const FIXTURE_PROJECT = 'fixture';
 
@@ -40,14 +41,15 @@ const toBody = (data: string | TasksData) => JSON.stringify(typeof data === 'str
 
 /**
  * Plays atm serve for the dashboard: api/projects lists one project by default (its id is the served data's meta.id,
- * else FIXTURE_PROJECT), more with addProject(), and each project's tasks.json, claims.json (a 404 by default) and
- * tasks-archive.json (a 404 by default) are served under p/<id>/.
+ * else FIXTURE_PROJECT), more with addProject(), and each project's tasks.json, claims.json, tasks-archive.json and
+ * worktrees.json (the last three a 404 by default) are served under p/<id>/.
  */
 export class TasksServer {
   private body: string | null = null;
   private status = 200;
   private claimsBody: string | null = null;
   private archiveBody: string | null = null;
+  private worktreesBody: string | null = null;
   /** Projects besides the default one: their tasks.json and summary, by id */
   private others = new Map<string, { name: string; body: string; summary: Record<string, unknown> | null }>();
   /** Registered projects whose folder is gone: their names, by id */
@@ -127,6 +129,19 @@ export class TasksServer {
         ? route.fulfill({ status: 404, body: 'not found' })
         : route.fulfill({ status: 200, contentType: 'application/json', body: this.claimsBody }),
     );
+    await this.page.route(WORKTREES_JSON, (route) =>
+      this.worktreesBody === null || !isDefault(route.request().url(), WORKTREES_JSON)
+        ? route.fulfill({ status: 404, body: 'not found' })
+        : route.fulfill({ status: 200, contentType: 'application/json', body: this.worktreesBody }),
+    );
+  }
+
+  /** Serve worktrees.json (the project's git worktrees, main first, linked ones with their differing tasks); null
+   * makes it a 404 (no linked worktrees) again. */
+  worktrees(worktrees: Record<string, unknown>[] | null) {
+    this.worktreesBody =
+      worktrees === null ? null : JSON.stringify({ generated_at: '2026-01-01T00:00:00Z', worktrees });
+    return this;
   }
 
   /** Register another project, served under p/<id>/ (a fixture by name or inline tasks), with an optional summary

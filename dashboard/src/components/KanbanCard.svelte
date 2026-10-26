@@ -5,6 +5,7 @@
   import { phaseColor, typeStyle } from '../lib/theme';
   import { kindOf } from '../lib/vocab';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
+  import BranchChip from './BranchChip.svelte';
   import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
   import StageChip from './StageChip.svelte';
@@ -43,6 +44,7 @@
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
     <PriorityBadge {task} />
     <StageChip {task} />
+    <BranchChip {task} />
     <LabelChips {task} />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>

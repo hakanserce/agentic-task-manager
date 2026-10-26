@@ -1416,6 +1416,26 @@ button.stage-chip:hover {
   background: color-mix(in srgb, var(--purple) 12%, transparent);
 }
 
+/* A task shown from a linked git worktree (BranchChip.svelte) */
+.branch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 160px;
+  overflow: hidden;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.branch-chip .icon {
+  flex: none;
+}
+
 /* Commit and PR references (RepoRef.svelte): links, or, without a repository address, a button with a hint */
 a.repo-ref {
   color: var(--accent);

@@ -9,6 +9,7 @@
   import { taskTimes } from '../lib/work';
   import { commitRef } from '../lib/repo';
   import RepoRef from './RepoRef.svelte';
+  import BranchChip from './BranchChip.svelte';
   import LabelChips from './LabelChips.svelte';
   import Markdown from './Markdown.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
@@ -83,6 +84,7 @@
         >
         <PriorityBadge {task} />
         <StageChip {task} />
+        <BranchChip {task} />
         <LabelChips {task} />
       </div>
       <div class="detail-section">

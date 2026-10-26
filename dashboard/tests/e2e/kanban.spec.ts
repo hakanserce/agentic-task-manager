@@ -47,6 +47,47 @@ test.describe('Kanban board', () => {
     expect(await cardIds(page, 'blocked')).toEqual(['T-035', 'T-034']);
   });
 
+  test("a project's git worktrees on one board: each task where it got furthest, with its branch", async ({
+    page,
+    tasksServer,
+  }) => {
+    const tasks = loadFixture('kanban').tasks;
+    const copy = (id: string, fields: Record<string, unknown>) => ({ ...tasks.find((t) => t.id === id)!, ...fields });
+    tasksServer.worktrees([
+      { path: '/projects/fixture', branch: 'main', main: true },
+      {
+        path: '/projects/fixture-2',
+        branch: 'agent-2',
+        main: false,
+        tasks: [
+          copy('T-029', { status: 'in_progress', started_at: '2026-01-02T00:00:00Z' }),
+          copy('T-027', { status: 'done', completed_at: '2026-04-05T00:00:00Z' }), // the newest, so the first shown
+          copy('T-024', { status: 'todo' }), // behind the main worktree: not shown
+          { id: 'T-099', name: 'Only on the branch', phase: 1, type: 'feature', description: '', status: 'todo' },
+        ],
+      },
+    ]);
+    await openKanban(page, tasksServer, 'kanban');
+    await expect(column(page, 'in_progress').locator('.kanban-card[data-id="T-029"]')).toBeVisible();
+    await expect(column(page, 'done').locator('.kanban-card[data-id="T-027"]')).toBeVisible();
+    await expect(column(page, 'todo').locator('.kanban-card[data-id="T-099"]')).toBeVisible();
+    for (const id of ['T-029', 'T-027', 'T-099']) {
+      await expect(card(page, id).locator('.branch-chip')).toHaveText('agent-2');
+    }
+    await expect(card(page, 'T-024').locator('.branch-chip')).toHaveCount(0);
+    await expect(column(page, 'done').locator('.kanban-card[data-id="T-024"]')).toBeVisible();
+    await card(page, 'T-027').click();
+    await expect(page.locator('#detail-overlay.open .branch-chip')).toHaveText('agent-2');
+    await page.keyboard.press('Escape');
+
+    // The branch merged and its worktree was removed: the board shows the main worktree's tasks again
+    tasksServer.worktrees([{ path: '/projects/fixture', branch: 'main', main: true }]);
+    await page.locator('#reload-btn').click();
+    await expect(page.locator('.branch-chip')).toHaveCount(0);
+    await expect(card(page, 'T-099')).toHaveCount(0);
+    await expect(column(page, 'todo').locator('.kanban-card[data-id="T-029"]')).toBeVisible();
+  });
+
   test('todo cards show readiness', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await expect(card(page, 'T-029').locator('.kanban-readiness')).toHaveText('Ready');

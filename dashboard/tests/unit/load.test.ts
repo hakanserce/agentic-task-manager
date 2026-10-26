@@ -85,7 +85,11 @@ describe('loadProjects', () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { headers: { ETag: '"p1"' } }));
     const result = await loadProjects(fetchFn);
     expect(fetchFn).toHaveBeenCalledWith('api/projects', { cache: 'no-store', headers: {} });
-    expect(result).toEqual({ unchanged: false, projects: body.projects, validators: { etag: '"p1"' } });
+    expect(result).toEqual({
+      unchanged: false,
+      projects: [{ ...body.projects[0], worktrees: [] }],
+      validators: { etag: '"p1"' },
+    });
     const again = vi.fn().mockResolvedValue(new Response(null, { status: 304 }));
     expect(await loadProjects(again, { etag: '"p1"' })).toEqual({ unchanged: true });
     expect(again).toHaveBeenCalledWith('api/projects', { cache: 'no-store', headers: { 'If-None-Match': '"p1"' } });
@@ -95,10 +99,24 @@ describe('loadProjects', () => {
     const body = { projects: [{ name: 'no id' }, { id: '' }, { id: 'x1', missing: 'yes', summary: 'odd' }, null] };
     const result = await loadProjects(vi.fn().mockResolvedValue(jsonResponse(body)));
     expect(!result.unchanged && result.projects).toEqual([
-      { id: 'x1', name: 'x1', path: '', missing: false, summary: null },
+      { id: 'x1', name: 'x1', path: '', missing: false, summary: null, worktrees: [] },
     ]);
     const empty = await loadProjects(vi.fn().mockResolvedValue(jsonResponse({})));
     expect(!empty.unchanged && empty.projects).toEqual([]);
+  });
+
+  it("lists each project's git worktrees, main first, leaving out malformed ones", async () => {
+    const worktrees = [
+      { path: '/x', branch: 'main', main: true },
+      { path: '/x-2', branch: 7, main: 'no' },
+      { branch: 'no-path' },
+      null,
+    ];
+    const result = await loadProjects(vi.fn().mockResolvedValue(jsonResponse({ projects: [{ id: 'x1', worktrees }] })));
+    expect(!result.unchanged && result.projects[0].worktrees).toEqual([
+      { path: '/x', branch: 'main', main: true },
+      { path: '/x-2', branch: null, main: false },
+    ]);
   });
 
   it('rejects with the HTTP status', async () => {

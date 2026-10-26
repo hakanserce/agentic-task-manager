@@ -55,7 +55,7 @@ describe('DashboardState', () => {
       await s.load();
       expect(s.route).toEqual({ page: 'project', id: 'p2' });
       expect(s.projectId).toBe('p2');
-      expect(urls()).toEqual(['api/projects', 'p/p2/tasks.json', 'p/p2/claims.json']);
+      expect(urls()).toEqual(['api/projects', 'p/p2/tasks.json', 'p/p2/claims.json', 'p/p2/worktrees.json']);
     });
 
     it('with several, lands on the overview without loading any project', async () => {

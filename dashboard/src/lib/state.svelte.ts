@@ -32,6 +32,7 @@ import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, resolveVocabulary, type Vocabulary } from './vocab';
+import { loadWorktrees, mergeWorktrees, type Worktree, type WorktreesResult } from './worktrees';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
@@ -68,6 +69,10 @@ export class DashboardState {
   // Replaced on every (re)load, never mutated (like taskMap)
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   claims = $state.raw<ClaimMap>(new Map());
+  /** The branch a task is shown from, when one of the project's linked git worktrees has it further along (T-179) */
+  // Replaced on every (re)load, never mutated (like taskMap)
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  branches = $state.raw<ReadonlyMap<string, string>>(new Map());
   /** When the data was last loaded; "12 m ago" labels are relative to it. */
   loadedAt = $state(Date.now());
   /** True once tasks.json has loaded successfully at least once. */
@@ -166,6 +171,10 @@ export class DashboardState {
   #newVersionDismissed = false;
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
+  // The main worktree's tasks as loaded, and the project's worktrees: `tasks` is the two merged
+  #mainTasks: Task[] = [];
+  #worktrees: Worktree[] = [];
+  #worktreesValidators: Validators | undefined;
 
   /**
    * A view needs history (D-5.2): load the archive now, and keep it current with the polls from then on. Failures
@@ -247,6 +256,11 @@ export class DashboardState {
     this.taskMap = new Map();
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
     this.claims = new Map();
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    this.branches = new Map();
+    this.#mainTasks = [];
+    this.#worktrees = [];
+    this.#worktreesValidators = undefined;
     this.meta = undefined;
     this.vocab = DEFAULT_VOCABULARY;
     this.projectName = DEFAULT_PROJECT_NAME;
@@ -291,16 +305,26 @@ export class DashboardState {
       this.loadedAt = Date.now();
       return;
     }
-    const [result, claims] = await Promise.all([
+    const [result, claims, trees] = await Promise.all([
       loadTasks(project, fetch, this.loaded ? this.#validators : undefined),
       loadClaims(project),
+      // Worktrees are extra: a failure leaves the board on the main worktree's tasks (logged only)
+      loadWorktrees(project, fetch, this.#worktreesValidators).catch((e): WorktreesResult => {
+        console.error('Loading the worktrees failed:', e);
+        return { unchanged: true };
+      }),
       this.#archiveWanted
         ? this.refreshArchive().catch((e) => console.error('Reloading the archive failed:', e))
         : undefined,
     ]);
+    if (!trees.unchanged) {
+      this.#worktreesValidators = trees.validators;
+      this.#worktrees = trees.worktrees;
+    }
     if (result.unchanged) {
       // tasks.json is as it was: keep the tasks (no re-parse, no re-render); claims and the clock still move
       this.claims = claims;
+      if (!trees.unchanged) this.mergeWorktrees();
       this.loadedAt = Date.now();
     } else {
       this.#validators = result.validators;
@@ -454,11 +478,24 @@ export class DashboardState {
     this.tasksBytes = loaded.bytes;
     this.meta = loaded.meta;
     this.vocab = resolveVocabulary(loaded.meta);
+    this.#mainTasks = loaded.tasks;
     this.tasks = loaded.tasks;
     this.taskMap = loaded.taskMap;
+    this.mergeWorktrees();
     this.projectName = loaded.projectName;
     this.claims = claims;
     this.loadedAt = Date.now();
+  }
+
+  /** Show each task from the worktree where it got furthest (lib/worktrees.ts) */
+  private mergeWorktrees() {
+    const merged = mergeWorktrees(this.#mainTasks, this.#worktrees, this.vocab);
+    if (merged.tasks !== this.tasks) {
+      this.tasks = merged.tasks;
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity
+      this.taskMap = new Map(merged.tasks.map((t) => [t.id, t]));
+    }
+    if (merged.branches.size || this.branches.size) this.branches = merged.branches;
   }
 }
 

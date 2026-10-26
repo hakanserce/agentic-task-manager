@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 218,
+    "next_id": 220,
     "labels": [
       {
         "id": "dashboard",
@@ -7619,7 +7619,7 @@
         "dashboard",
         "activity"
       ],
-      "description": "In the Activity per hour/day/week popup (ActivityDeepDive.svelte), the 'Idle (no agent working)' box wraps its value: '75 h 39 m' puts 'm' on a second line. Keep the value on one line at every popup width (non-breaking spaces between number and unit, white-space: nowrap, or a shorter format such as '75h 39m' consistently with the other boxes), and check the sibling boxes for the same problem. The user also doesn't understand the color bar on the left side of the box: find what it encodes (insights.ts), and either remove it if it carries no meaning, or make it self-explanatory (a legend or a tooltip saying what the color means). Add an e2e check that the value doesn't wrap at the popup's narrowest width, and update the affected screenshots.",
+      "description": "In the Activity per hour/day/week popup (`dashboard/src/components/ActivityDeepDive.svelte`), the **Idle (no agent working)** box wraps its value: `75 h 39 m` puts `m` on a second line.\n\n## Fix\n- Keep the value on one line at every popup width: non-breaking spaces between number and unit, `white-space: nowrap`, or a shorter format such as `75h 39m`, used consistently with the other boxes.\n- Check the sibling boxes for the same problem.\n\n## The color bar\nThe user doesn't understand the color bar on the left side of the box. Find what it encodes (`dashboard/src/lib/insights.ts`), then either:\n- remove it, if it carries no meaning; or\n- make it self-explanatory (a legend, or a tooltip saying what the color means).\n\n## Tests\n- An e2e check that the value doesn't wrap at the popup's narrowest width.\n- Update the affected screenshots.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7630,9 +7630,9 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T19:19:36Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-211",
@@ -7644,7 +7644,7 @@
         "security",
         "interactive"
       ],
-      "description": "Security review, interactive with the user. (1) Threat model first: write docs/security-review.md starting with a threat model of atm: assets (task files, the user's repositories and git credentials, the machine via the agents' shell), actors and trust boundaries (the user, agents running the skills, other local processes and users, web pages in the user's browser, collaborators whose tasks.json or PRs come in through git, CI), entry points (atm-cli commands and their file arguments, the dashboard server's HTTP routes and the projects registry, the dashboard rendering task text, Markdown and links, the skills and the hook acting on task text (prompt injection), the GitHub workflows), and the threats per boundary (e.g. STRIDE), with likelihood and impact. (2) Review atm against it: atm-cli (atm-cli/atm/*.py: locking, path handling for --file/--dir/--meta-file, git shell-outs, parsing untrusted tasks.json), the server (server.py: localhost binding, Host/Origin checks against DNS rebinding, path traversal on p/<id>/, --refresh restarts), the dashboard (XSS through task text/Markdown/meta.repository links, external URLs), the skills and hook (plugin/skills, plugin/hooks), and CI (.github/workflows: permissions, pinned actions). (3) In the same document, list the proposed fix tasks (name, severity, area, what to change, how to test), NOT yet in tasks.json. (4) Review the document with the user (crit; atm block --on user for open decisions). (5) Only after the user approves, add the approved tasks with /atm:create-tasks, labeled security (plus the area label), prioritized by severity, in phase 20 'Security fixes'. Fix nothing in this task.",
+      "description": "Security review, **interactive with the user**. *Fix nothing in this task.*\n\n## 1. Threat model\nWrite `docs/security-review.md`, starting with a threat model of atm:\n- **Assets:** task files, the user's repositories and git credentials, the machine (through the agents' shell).\n- **Actors and trust boundaries:** the user, agents running the skills, other local processes and users, web pages in the user's browser, collaborators whose `tasks.json` or PRs come in through git, CI.\n- **Entry points:** atm-cli commands and their file arguments; the dashboard server's HTTP routes and the projects registry; the dashboard rendering task text, Markdown and links; the skills and the hook acting on task text (*prompt injection*); the GitHub workflows.\n- **Threats** per boundary (e.g. STRIDE), with likelihood and impact.\n\n## 2. Review atm against it\n- **atm-cli** (`atm-cli/atm/*.py`): locking, path handling for `--file`/`--dir`/`--meta-file`, git shell-outs, parsing an untrusted `tasks.json`.\n- **Server** (`server.py`): localhost binding, `Host`/`Origin` checks against DNS rebinding, path traversal on `p/<id>/`, `--refresh` restarts.\n- **Dashboard:** XSS through task text, Markdown and `meta.repository` links; external URLs.\n- **Skills and hook** (`plugin/skills`, `plugin/hooks`).\n- **CI** (`.github/workflows`): permissions, pinned actions.\n\n## 3. Proposed fix tasks\nIn the same document, list the proposed fix tasks (name, severity, area, what to change, how to test). **Not yet in `tasks.json`.**\n\n## 4. Review with the user\nReview the document with the user (crit; `atm block --on user` for open decisions).\n\n## 5. Add the approved tasks\nOnly after the user approves: add them with `/atm:create-tasks`, labeled `security` (plus the area label), prioritized by severity, in phase 20 *Security fixes*.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7653,7 +7653,7 @@
         "docs/security-review.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:16:12Z",
+      "updated_at": "2026-10-26T19:19:37Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     },
@@ -7668,7 +7668,7 @@
         "progress",
         "interactive"
       ],
-      "description": "Interactive with the user. Go through the Progress tab (ProgressTab.svelte, ProgressWidget.svelte, BurndownChart.svelte, PhaseTable.svelte, Ring.svelte, forecast.ts) piece by piece: for each diagram and number, write what it shows, how it's computed, when it misleads (few tasks, skipped tasks, parallel agents, archived tasks) and what question it answers for the user. Put that in a short proposal (docs/progress-tab-review.md) with a recommendation per item: keep, change, or drop, and the helper text (tooltip, info popover or empty-state message) each kept item gets. Review it with the user (start the preview server and/or a crit review of the proposal; block with `atm block --on user` for decisions you can't make). Then implement what's approved, or, if it's large, add follow-up tasks with /atm:create-tasks.",
+      "description": "**Interactive with the user.** Make every diagram and number on the Progress tab meaningful, with help that makes it useful.\n\n## Review\nGo through the Progress tab piece by piece (`ProgressTab.svelte`, `ProgressWidget.svelte`, `BurndownChart.svelte`, `PhaseTable.svelte`, `Ring.svelte`, `forecast.ts`). For each diagram and number, write:\n- what it shows and how it's computed;\n- when it misleads (few tasks, skipped tasks, parallel agents, archived tasks);\n- what question it answers for the user.\n\n## Proposal\nPut that in `docs/progress-tab-review.md`, with a recommendation per item (*keep*, *change* or *drop*) and the help each kept item gets: a tooltip, an info popover or an empty-state message.\n\n## With the user\nReview it with the user (the preview server and/or a crit review of the proposal; `atm block --on user` for decisions you can't make). Then implement what's approved, or, if it's large, add follow-up tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7678,9 +7678,9 @@
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T19:19:37Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-213",
@@ -7693,7 +7693,7 @@
         "activity",
         "interactive"
       ],
-      "description": "Interactive with the user, the same pass as the Progress tab review, for the Activity per hour/day/week popup (ActivityWidget.svelte, ActivityDeepDive.svelte, UtilizationPanel.svelte, insights.ts): for each chart, box and number (throughput, cumulative done, cycle time, WIP, idle time, utilization), write what it shows, how it's computed, when it misleads, and what question it answers. Short proposal in docs/activity-popup-review.md with keep/change/drop and the helper text for each. Review it with the user (preview server and/or crit; `atm block --on user` for open decisions). Then implement what's approved, or add follow-up tasks with /atm:create-tasks.",
+      "description": "**Interactive with the user.** The same pass as the Progress tab review (T-212), for the Activity per hour/day/week popup.\n\n## Review\nGo through `ActivityWidget.svelte`, `ActivityDeepDive.svelte`, `UtilizationPanel.svelte` and `insights.ts`. For each chart, box and number (throughput, cumulative done, cycle time, WIP, idle time, utilization), write:\n- what it shows and how it's computed;\n- when it misleads;\n- what question it answers.\n\n## Proposal\n`docs/activity-popup-review.md`, with *keep*, *change* or *drop* and the help text for each.\n\n## With the user\nReview it with the user (the preview server and/or crit; `atm block --on user` for open decisions). Then implement what's approved, or add follow-up tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7705,9 +7705,9 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T19:19:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-214",
@@ -7720,7 +7720,7 @@
         "stats",
         "interactive"
       ],
-      "description": "Interactive with the user, done together with T-216 (project information: same proposal and review). Propose where (Progress tab, a new Stats section, the project card, About-like dialog) and how to show overall project stats: project start; project duration (earliest task start to latest task completion); total agent time used (sum of in-progress spans); task duration avg/min/max (propose the best visualization, e.g. a box plot or histogram by type, with the slowest tasks listed); max parallelization (most agents working at once); overall parallelization (define it, e.g. agent time / wall-clock time while any agent works); number of commits, pull requests, phases and tasks. For each stat, say how it's computed from tasks.json (and the archive), and where data is missing (tasks without started_at, reopened tasks, skipped tasks). Write docs/project-stats-proposal.md with mock-ups, review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "description": "**Interactive with the user**, done together with T-216 (project information): same proposal, same review.\n\n## Where\nPropose where to show the overall project stats: the Progress tab, a new Stats section, the project card, or an About-like dialog.\n\n## Which stats, and how\n- **Project start**\n- **Project duration:** earliest task start to latest task completion.\n- **Total agent time used:** the sum of in-progress spans.\n- **Task duration** avg/min/max: propose the best visualization (e.g. a box plot or histogram by type, with the slowest tasks listed).\n- **Max parallelization:** the most agents working at once.\n- **Overall parallelization:** define it, e.g. *agent time ÷ wall-clock time while any agent works*.\n- Number of **commits**, **pull requests**, **phases** and **tasks**.\n\nFor each stat, say how it's computed from `tasks.json` (and the archive), and where data is missing (tasks without `started_at`, reopened tasks, skipped tasks).\n\n## Proposal\nWrite `docs/project-stats-proposal.md` with mock-ups, review it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7729,7 +7729,7 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:13:37Z",
+      "updated_at": "2026-10-26T19:19:39Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
     },
@@ -7745,7 +7745,7 @@
         "kanban",
         "interactive"
       ],
-      "description": "Interactive with the user. Explore an All Projects Kanban in the overview: one board with cards from every project (project chip on each card, like the branch chip). Options to weigh: (a) cross-project phase and filter selection (phases differ per project, so how would that work?); (b) no phase filter: every task in Review, Blocked and In Progress, plus the N most recently updated in To Do and Done; (c) per-project swimlanes. Consider load (api/projects already sends summaries; would the board need every project's tasks.json, and how often?), sorting, the Needs-you menu, and how it fits next to the project cards. Write docs/all-projects-kanban-proposal.md with mock-ups and a recommendation, review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "description": "**Interactive with the user.** Explore an All Projects Kanban in the overview: one board with cards from every project, each card with a project chip (like the branch chip).\n\n## Options to weigh\n1. **Cross-project phases and filters.** Phases differ per project, so how would that work?\n2. **No phase filter:** every task in *Review*, *Blocked* and *In Progress*, plus the N most recently updated in *To Do* and *Done*.\n3. **Per-project swimlanes.**\n\n## Also consider\n- **Load:** `api/projects` already sends summaries; would the board need every project's `tasks.json`, and how often?\n- Sorting, the Needs-you menu, and how it fits next to the project cards.\n\n## Proposal\nWrite `docs/all-projects-kanban-proposal.md` with mock-ups and a recommendation, review it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7754,9 +7754,9 @@
         "docs/all-projects-kanban-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T19:19:39Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-216",
@@ -7769,7 +7769,7 @@
         "stats",
         "interactive"
       ],
-      "description": "Interactive with the user, done together with T-214 (same proposal, docs/project-stats-proposal.md, and the same review). Propose where (e.g. a Project info dialog or tab, the About dialog, the project card's tooltip, a section next to the stats) and how to show the project's information: name and description; developers (who created and worked on tasks: users and agents, with task counts; how to group agent sessions); git repository (link); development workflow (direct or pull-request, base branch, verify, commit template); and the project vocabulary (phases with names and task counts, labels, task types, statuses with their kinds, priorities and the default). Say for each item where its data comes from (tasks.json meta, the tasks, the server) and what's missing. Review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "description": "**Interactive with the user**, done together with T-214: the same proposal (`docs/project-stats-proposal.md`) and the same review.\n\n## Where\nPropose where to show the project's information: e.g. a Project info dialog or tab, the About dialog, the project card's tooltip, or a section next to the stats.\n\n## What\n- **Name** and **description**.\n- **Developers:** who created and worked on tasks, users and agents, with task counts; how to group agent sessions.\n- **Git repository** (a link).\n- **Development workflow:** *direct* or *pull-request*, base branch, verify, commit template.\n- **Project vocabulary:** phases with names and task counts, labels, task types, statuses with their kinds, priorities and the default.\n\nFor each item, say where its data comes from (`tasks.json` `meta`, the tasks, the server) and what's missing.\n\n## With the user\nReview it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7778,9 +7778,9 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T19:13:32Z",
-      "updated_at": "2026-10-26T19:13:32Z",
+      "updated_at": "2026-10-26T19:19:40Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-217",
@@ -7791,7 +7791,7 @@
       "labels": [
         "dashboard"
       ],
-      "description": "AboutDialog.svelte shows a 'This project' section (statuses, phases, types, priorities, workflow) from dashboard.vocab and dashboard.meta. In the All projects view these still hold the last project that was open, so the section is stale. Fix: in the All projects view, leave the project section out (the dialog shows only the plugin's facts). In a project's view, head the section with the project's name, with its logo (ProjectLogo.svelte) when it has one, instead of the bare 'This project'. Tests: a component test for both views, and an e2e check that opening About from All projects after visiting a project shows no project section. Update the About screenshots. T-216 may later move the project information elsewhere; keep this fix small.",
+      "description": "`dashboard/src/components/AboutDialog.svelte` shows a **This project** section (statuses, phases, types, priorities, workflow) from `dashboard.vocab` and `dashboard.meta`. In the All projects view these still hold the last project that was open, so the section is **stale**.\n\n## Fix\n- **All projects view:** leave the project section out; the dialog shows only the plugin's facts.\n- **A project's view:** head the section with the project's name, with its logo (`ProjectLogo.svelte`) when it has one, instead of the bare *This project*.\n\n## Tests\n- A component test for both views.\n- An e2e check that opening About from All projects, after visiting a project, shows no project section.\n- Update the About screenshots.\n\n*T-216 may later move the project information elsewhere; keep this fix small.*\n",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7802,7 +7802,58 @@
         "dashboard/tests/unit/AboutDialog.component.test.ts"
       ],
       "created_at": "2026-10-26T19:14:58Z",
-      "updated_at": "2026-10-26T19:14:58Z",
+      "updated_at": "2026-10-26T19:19:41Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-218",
+      "name": "Skills: write task descriptions and notes in Markdown",
+      "phase": 19,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "skills"
+      ],
+      "description": "The dashboard renders task descriptions as Markdown (`dashboard/src/lib/markdown.ts`: `#`–`####` headings, lists, fenced code, `>` quotes, inline `code`, **strong**, *em*, links), but the skills don't ask for it, so descriptions arrive as one long paragraph.\n\n## Change\n- `plugin/skills/create-tasks/SKILL.md` (Step 5's rules for task generation, and `atm edit`): write descriptions in Markdown **when it helps**: paths, commands and identifiers in `code`; short `##` sections (e.g. *Fix*, *Tests*) for longer descriptions; lists for steps or options; fenced code blocks for snippets; *italics* sparingly. Say which subset the dashboard renders, and to keep a one-sentence task plain. Prefer `--description-file` / `--json-file` for multi-line text.\n- `plugin/skills/do-task/SKILL.md` and `plugin/skills/loop-tasks/SKILL.md`: the same for `atm edit` of later tasks, and inline Markdown (`code`, *em*) in notes, questions, answers and rejection reasons, which the dashboard renders after T-219.\n- Keep the wording short; one example of a well-formatted description in create-tasks.\n\n## Check\nBump the plugin version per the repo's rules, with CHANGELOG and WHATS-NEW entries if this ships on its own.\n",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-219"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-26T19:19:57Z",
+      "updated_at": "2026-10-26T19:20:08Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-219",
+      "name": "Dashboard: render notes as Markdown",
+      "phase": 19,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "Task descriptions are rendered as Markdown, but **notes are plain text**: the note list in `dashboard/src/components/DetailPanel.svelte` (`.note-text`), the review note (`.review-note`), and block questions and answers wherever they appear (detail panel, the Needs-you menu, Kanban cards).\n\n## Change\n- Render notes with the existing parser (`dashboard/src/lib/markdown.ts`) and `Markdown.svelte`. Notes are short (atm caps them at 500 characters), so consider an *inline-only* mode (`code`, **strong**, *em*, links) for one-line places such as the Needs-you menu and cards, and full blocks in the detail panel.\n- Keep the escaping guarantees: no raw HTML, links only `http(s)`.\n- Style the rendered notes so they fit the existing note layout (no extra margins from `<p>`).\n\n## Tests\n- Unit tests for the inline-only mode in `tests/unit/markdown.test.ts`.\n- A component test for the detail panel's notes, and an e2e check with a note containing `code` and a link.\n- Update affected screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/Markdown.svelte",
+        "dashboard/src/lib/markdown.ts",
+        "dashboard/tests/unit/markdown.test.ts"
+      ],
+      "created_at": "2026-10-26T19:19:57Z",
+      "updated_at": "2026-10-26T19:19:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

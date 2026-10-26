@@ -8052,7 +8052,7 @@
       "description": "Finding **F1** in `docs/security-review.md`.\n\nEvery skill's frontmatter has `allowed-tools: Bash(atm *)`, and `atm run <id> -- <anything>` runs its child, so any command wrapped in `atm run` skips the permission prompt.\n\n## Do\n\n- In each `plugin/skills/*/SKILL.md`, replace `Bash(atm *)` with the `atm` subcommands that skill uses (e.g. `Bash(atm next *)`, `Bash(atm commit *)`, ...).\n- Leave out `atm run`, so its child command gets a normal permission check. Keep the instruction to use `atm run` for long commands.\n- Add a check to `npm run check` (or the skills test) that no skill pre-approves `atm *` or `atm run`.\n\n## Verify\n\nIn default permission mode, `/atm:do-task` with `atm run <id> -- touch /tmp/x` asks for permission.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "plugin/skills/do-task/SKILL.md",
@@ -8062,9 +8062,11 @@
         "plugin/skills/serve/SKILL.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:10:03Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:10:03Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-221",

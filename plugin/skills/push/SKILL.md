@@ -4,7 +4,7 @@ description: >
   Push the work: push the branch (direct) or open or update its pull request (pull-request), watch CI, fix
   failures until it is green, and record PRs and merges on the tasks. Use when the user says "push", "ship it",
   "open a PR", "push and watch CI", or "get CI green".
-allowed-tools: Bash(atm *)
+allowed-tools: Bash(atm workflow:*), Bash(atm status:*), Bash(atm show:*), Bash(atm list:*), Bash(atm commit:*), Bash(atm pr:*), Bash(atm merged:*)
 ---
 
 # Push

@@ -4,7 +4,7 @@ description: >
   Analyze project requirements and decompose them into granular tasks in tasks.json.
   Use when starting a new project, adding a feature set, or when the user says
   "create tasks", "break down requirements", "plan tasks", or "decompose into tasks".
-allowed-tools: Bash(atm *)
+allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm show:*), Bash(atm list:*), Bash(atm init:*), Bash(atm repository:*), Bash(atm phases:*), Bash(atm workflow:*), Bash(atm add:*), Bash(atm edit:*), Bash(atm check:*)
 ---
 
 # Create Tasks from Project Requirements

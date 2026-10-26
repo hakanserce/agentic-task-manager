@@ -6,7 +6,7 @@ description: >
   push strategies, phase/type filters, and pause-between-tasks mode.
   Use when the user says "loop tasks", "do all tasks", "run the loop",
   "Ralph Wiggum it", or "automate the tasks".
-allowed-tools: Bash(atm *)
+allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*)
 ---
 
 # Loop Tasks — Ralph Wiggum Mode 🫠
@@ -96,7 +96,8 @@ errors (the message says what).
 3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
    out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand). The hook renews
    only after a tool call, so run long commands (a full test suite, a build, waiting on CI) as
-   `atm run <id> -- <command> [args...]`: it keeps the claim alive while the command runs.
+   `atm run <id> -- <command> [args...]`: it keeps the claim alive while the command runs. It isn't pre-approved
+   (it runs any command), so it gets the same permission check as the command itself.
 4. **Commit first, then finish.** Commit with `atm commit <id> --file <path> ...` while the task is still in
    progress, naming every file you changed for the task: it commits exactly those plus `tasks.json`. Never
    `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree. Only then finish with

@@ -4,7 +4,7 @@ description: >
   Execute a single task from tasks.json. Updates status to in_progress, does
   the work, runs verification, then marks done. Use when the user says
   "do task T-xxx", "work on task", "implement task", "pick a task", or "next task".
-allowed-tools: Bash(atm *)
+allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*), Bash(atm unarchive:*)
 ---
 
 # Do a Single Task
@@ -107,7 +107,8 @@ Your claim has a lease (30 minutes by default); if it runs out, the task goes ba
 hook renews it after each of your tool calls, so you don't need to (`atm heartbeat $TASK_ID` does it by hand). A
 command that runs for many minutes (a full test suite, a build, waiting on CI), especially one you leave running in
 the background, makes no tool calls: run it as `atm run $TASK_ID -- <command> [args...]`, which keeps the claim
-alive while it runs and exits with the command's exit code.
+alive while it runs and exits with the command's exit code. `atm run` is not pre-approved by this skill: it runs any
+command, so it goes through the same permission check as the command itself.
 
 While you work:
 - **A later task needs to change** (what you built changes its scope, its files or its dependencies): update it with

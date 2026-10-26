@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 203,
+    "next_id": 204,
     "labels": [
       {
         "id": "dashboard",
@@ -6903,6 +6903,36 @@
       ],
       "created_at": "2026-10-26T05:13:52Z",
       "updated_at": "2026-10-26T05:13:52Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-203",
+      "name": "Leases: keep a claim alive while its agent waits on a long command",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "cli"
+      ],
+      "description": "### Today\nA claim's lease (30 min) is renewed by the plugin's PostToolUse hook (`atm heartbeat --auto`), so only when the agent makes a tool call. An agent waiting for a background command to finish makes none. Seen on 2026-10-26: three parallel loop agents ran `npm run verify` in the background (10+ min each, slower with three at once), and their leases fell from 28 to 20 min left with no renewal. A wait longer than the lease puts the task back to todo, where another agent can take it.\n\n### Change: evaluate, then implement the best (maybe several)\n1. **Skills:** do-task, loop-tasks and push tell agents to run `atm heartbeat <id>` before a long command or wait, and to wait with a command that keeps the claim alive (2).\n2. **A keep-alive in atm-cli**, e.g. `atm run <id> -- <command> [args...]`: runs the command, renews the claim every few minutes while it runs (well within the lease), and exits with the command's exit code and output unchanged. Alternatively `atm heartbeat <id> --while <pid>`. Pick one, stdlib only, Python 3.9. A renewal that fails (lease already lost to another agent) is reported on stderr but doesn't kill the command.\n3. **Claude Code hooks:** check whether Claude Code has a hook for background-task completion or idle waiting that could renew claims; use it if it exists.\n\n### Tests\n`tests/scripts/` (a `*.test.mjs`, with `ATM_NOW` or a short lease in `meta.lease_minutes`): the keep-alive renews the claim while a child process runs, stops when it exits, passes the exit code through, and never renews another agent's claim.\n\n### Docs\n`docs/v4/atm-cli.md` (the command), the skills' text, and the README's parallel-agents section (leases).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/cli.py",
+        "plugin/scripts/atm.py",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/skills/push/SKILL.md",
+        "tests/scripts/",
+        "docs/v4/atm-cli.md",
+        "README.md"
+      ],
+      "created_at": "2026-10-26T05:27:57Z",
+      "updated_at": "2026-10-26T05:27:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

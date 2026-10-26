@@ -1,6 +1,6 @@
 # atm security architecture
 
-Status: **draft for review** (T-232). The maintained version of the threat model from `docs/security-review.md`, the
+Status: **approved** (T-232, reviewed with Hakan on 2026-10-26). The maintained version of the threat model from `docs/security-review.md`, the
 rules every change must keep, and the check that enforces each. The review stays as the record of the first pass;
 this document is what changes with the code.
 
@@ -118,8 +118,9 @@ This document changes **in the same PR** as a change that:
 Such a PR adds the threat (with its boundary) and, if it needs one, the invariant and its check. `CLAUDE.md`
 (development) points here.
 
-## 5. Questions for you
+## 5. Review outcome
 
-1. Is the list of invariants the right one: anything missing, or anything you'd rather not promise?
-2. Should every invariant without a check (**to build**) block a release until it has one, or is review enough for
-   I5, I9 and I15 for now?
+- The invariants were approved as listed.
+- Those still **to build** rely on review until their tasks add the checks: I5 and I15 (T-234), I1's red-team run
+  (T-235), I18 and I19 (T-230), I21 (T-231). I9 stays a review item.
+- A release is every PR to `main` (§3).

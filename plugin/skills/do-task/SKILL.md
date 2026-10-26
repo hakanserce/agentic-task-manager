@@ -209,8 +209,10 @@ Once the commit is in, decide how the task ends:
   **A review you hold with the user** (the task says to review a draft or proposal with them, e.g. in a review tool
   or the preview): commit the draft, run `atm review` *before* you show it, so the dashboard shows it waiting on
   them, then open the review. Address their comments while it stays in review (`atm commit` works in any status).
-  When they approve, finish it from review with `atm done $TASK_ID --note '…'`; if their comments mean more work than
-  a round of edits, `atm reject $TASK_ID --reason '…'` sends it back to to do with what's left.
+  When they approve, **don't mark it done yet**: check what the task still asks for after the review (implementing
+  what was approved, follow-up tasks to add, documents to update). If anything is left, take it back to in progress,
+  `atm reject $TASK_ID --reason 'Approved; continuing with <what is left>'` then `atm start $TASK_ID`, and carry on
+  from Step 5. Only when nothing is left, `atm done $TASK_ID --note '…'` from review.
 - **Otherwise**: run `atm done $TASK_ID --note '<one-line outcome>'`. It sets the status and `completed_at`, records
   the outcome as a note (the commit atm recorded stays), drops your claim, and prints the tasks it made ready
   ("Now ready:").

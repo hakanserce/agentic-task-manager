@@ -26,6 +26,7 @@ MODULES = [
     "lock",
     "registry",
     "model",
+    "repository",
     "claims",
     "query",
     "tasks",

@@ -61,3 +61,6 @@ Relay the helper's output. After a successful `start`, add:
 
 If the output included a line about moving `tasks.json`, also say the move is staged (not committed) and that it
 should be committed.
+
+Then run `atm repository`. If it says there is no address yet, add one line: commits and pull requests on the
+dashboard become links once the repository's address is set, with `atm repository set <url>` (or ask me to set it).

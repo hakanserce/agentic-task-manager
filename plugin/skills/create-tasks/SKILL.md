@@ -156,6 +156,10 @@ example `meta.statuses needs at least one status of the kind 'done'`), fix the f
 It also registers atm's merge driver in a git repository. A key in the file replaces that whole list, so never put
 `phases` in it.
 
+`atm init` also records the repository's web address (`meta.repository`, for commit and pull request links on the
+dashboard) from the `origin` remote. If `atm repository` then says there is none (no remote, or one that isn't a web
+address), ask the user for it once, say they can skip it, and set it with `atm repository set <url>`.
+
 Name the confirmed phases one at a time, which leaves other phases' names alone:
 
 ```bash

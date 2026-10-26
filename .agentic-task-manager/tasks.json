@@ -36,7 +36,8 @@
         "id": 16,
         "name": "Dashboard polish and worktrees"
       }
-    ]
+    ],
+    "repository": "https://github.com/hakanserce/agentic-task-manager"
   },
   "tasks": [
     {
@@ -5067,7 +5068,7 @@
       "description": "T-143 misread the request: it gave **every ring** its own border and background.\n\n### What was meant\n- **One card** (border + background, theme tokens) around the whole **By Phase** group of rings.\n- **A second card** around the **By Type** group.\n- The rings inside have no card of their own.\n\n### Steps\n1. Revert the per-ring card style (`.ring-cell`) to plain cells.\n2. Add the group card in `ProgressWidget.svelte` / `app.css`.\n3. Check every theme in both modes.\n4. Update the `agents-progress-panel` and `light-agents-progress-panel` screenshots (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -5075,11 +5076,22 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T08:01:19Z",
-      "updated_at": "2026-10-26T00:31:51Z",
+      "updated_at": "2026-10-26T00:32:44Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:31:51Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "591495ead4afae9be61c8dbae45eaa70299d96cd",
+      "completed_at": "2026-10-26T00:32:44Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:32:44Z",
+          "kind": "outcome",
+          "text": "Progress panel: one card around By phase and one around By type; the rings inside are plain",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-157",
@@ -5122,7 +5134,7 @@
       "description": "`tasks.json` gets **`meta.repository`**: the repository's web address (e.g. `https://github.com/o/r`), which the dashboard uses to build commit and PR links.\n\n### atm\n- A command to print or set it (e.g. `atm repository [set URL]`, with `--json`).\n- Validate an `http(s)` URL and normalise a git remote (examples below).\n- `atm init` fills it from `git remote get-url origin` when `meta` has none.\n\n```\ngit@github.com:o/r.git      -> https://github.com/o/r\nhttps://github.com/o/r.git  -> https://github.com/o/r\n```\n\n### Skills\n- `/atm:create-tasks` detects it from `origin`, and asks the user when there's no remote or it can't be turned into a web address (they can also skip).\n- `/atm:update-dashboard` mentions how to set it when it's missing.\n\n### Tests and docs\n- Scenarios in `tests/scripts/scenarios/`: set, normalise, refuse a non-URL, init from origin, no remote.\n- `plugin/CLAUDE.md` and `README` document it.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "tests/scripts/scenarios/",
@@ -5135,9 +5147,11 @@
         "README.md"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T00:32:47Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:32:47Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-159",

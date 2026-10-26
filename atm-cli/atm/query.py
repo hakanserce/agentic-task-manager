@@ -7,7 +7,7 @@ never write: they read tasks.json and the claims store without the lock (both ar
 import json
 import os
 
-from .claims import next_task, read_store
+from .claims import next_task, read_store, ready_in_order
 from .core import now, out, parse_iso, to_json
 from .model import (
     archive_hint,
@@ -216,6 +216,13 @@ def parse_time(text):
 
 
 RECENT_PHASES = 4
+NEXT_TASKS = 2
+NAME_CAP = 80  # task names in the summary, so /api/projects stays small with many projects
+
+
+def capped(name):
+    name = name if isinstance(name, str) else ""
+    return name if len(name) <= NAME_CAP else name[: NAME_CAP - 1] + "…"
 
 
 def recent_phases(tasks, kinds, open_phases, names):
@@ -271,9 +278,34 @@ def project_summary(paths):
         }
 
     current = now()
-    claims = read_store(paths)["claims"].values()
-    agents_working = sum(
-        1 for c in claims if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+    store = read_store(paths)
+    live = sorted(
+        (
+            c
+            for c in store["claims"].values()
+            if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+        ),
+        key=lambda c: str(c.get("claimed_at") or ""),
+    )
+    agents_working = len(live)
+    by_id = {t.get("id"): t for t in tasks}
+    # What the cards show by name (T-205): who works on what now, what the loop takes next, the last finished task
+    working = [
+        {
+            "task": c.get("task"),
+            "name": capped((by_id.get(c.get("task")) or {}).get("name")),
+            "agent": c.get("agent"),
+            "branch": c.get("branch"),
+        }
+        for c in live
+    ]
+    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready_in_order(data, store)[:NEXT_TASKS]]
+    finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
+    last_task = max(finished, key=lambda f: f[0])[1] if finished else None
+    last_done = (
+        {"id": last_task.get("id"), "name": capped(last_task.get("name")), "completed_at": last_task.get("completed_at")}
+        if last_task
+        else None
     )
 
     times = [parse_time(t.get(f)) for t in tasks for f in ACTIVITY_FIELDS]
@@ -292,7 +324,7 @@ def project_summary(paths):
 
     # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
     needs_you_tasks = [
-        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        {"id": t.get("id"), "name": capped(t.get("name")), "reason": "review" if k == "review" else "blocked"}
         for t, k in zip(tasks, kinds)
         if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
     ]
@@ -305,6 +337,9 @@ def project_summary(paths):
         "current_phase": current_phase,
         "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "agents_working": agents_working,
+        "working": working,
+        "next": next_up,
+        "last_done": last_done,
         "needs_you": {
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),

@@ -115,6 +115,9 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
           { "id": 15, "name": "One dashboard for all projects", "done": 0, "total": 17, "percent": 0 }
         ],
         "agents_working": 1,
+        "working": [{ "task": "T-188", "name": "One title bar for every page", "agent": "claude:e5ea9db0", "branch": "dev/phase-17" }],
+        "next": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line" }],
+        "last_done": { "id": "T-189", "name": "Status bar pinned to the bottom on All projects", "completed_at": "2026-10-26T05:53:00Z" },
         "needs_you": { "review": 1, "blocked_on_user": 0 },
         "needs_you_tasks": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "reason": "review" }],
         "last_activity": "2026-10-25T21:51:38Z",
@@ -145,7 +148,8 @@ server combines their size/mtime stamps and the worktree lists). Projects are li
 ### 3.2 Summary fields
 
 Counted from `tasks.json` only (not the archive), by status **kind** (the project's vocabulary), with atm-cli's own
-logic (`query.py`):
+logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_tasks` are capped at 80 characters
+(the 80th is "…"), so the response stays small with many projects.
 
 | Field | Meaning |
 |---|---|
@@ -156,6 +160,9 @@ logic (`query.py`):
 | `current_phase` | the lowest phase with a task that is neither done- nor skipped-kind: `{ id, name, done, total }` within that phase, with `done` and `total` counted as above (skipped tasks left out of `total`). `name` is `null` without a phase name. `null` when every phase is finished |
 | `recent_phases` | up to 4 phases for the overview's rings, in phase order: the lowest phases with open work (a task of todo, active, review or blocked kind), then the most recently finished phases (by their latest `completed_at`; phases without one rank last, higher phase first) to fill up to 4. More than 4 open phases: the lowest 4. Each is `{ id, name, done, total, percent }`, counted as for `current_phase`, with `percent` = `round(100 × done / total)`. A phase of only skipped tasks (`total` 0) is never listed. `[]` without tasks |
 | `agents_working` | live claims (lease not expired) in the claims store |
+| `working` | those claims, oldest first: `{ task, name, agent, branch }` (the task's name from this `tasks.json`; `branch` as the claim recorded it, `null` outside git) |
+| `next` | up to 2 tasks `atm next` would hand out, in its order (to do, dependencies done, not claimed, not done or waiting in another worktree; lowest phase, most urgent priority, lowest ID): `{ id, name }` |
+| `last_done` | the done-kind task with the latest `completed_at`: `{ id, name, completed_at }`, or `null` |
 | `needs_you.review` | review-kind tasks |
 | `needs_you.blocked_on_user` | blocked-kind tasks with `waiting_on: "user"` |
 | `needs_you_tasks` | those same tasks, in file order: `{ id, name, reason }`, `reason` being `"review"` or `"blocked"` (on a question for the user). The card's "needs you" chip opens them |

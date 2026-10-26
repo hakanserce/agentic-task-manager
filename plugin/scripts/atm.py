@@ -1520,6 +1520,18 @@ def report_expired(expired):
         sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
 
 
+def ready_in_order(data, store, candidates=None):
+    """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
+    completed or waiting in another worktree; lowest phase first, then the most urgent priority, then lowest ID."""
+    vocab = vocabulary(data)
+    if candidates is None:
+        candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
+    taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
+    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
+    order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    return sorted(ready, key=order)
+
+
 def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
@@ -1533,11 +1545,9 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed) | set(waiting)
-    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
+    ready = ready_in_order(data, store, candidates)
     if ready:
-        order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
-        return min(ready, key=order), None
+        return ready[0], None
     if not candidates:
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
@@ -1956,6 +1966,13 @@ def parse_time(text):
 
 
 RECENT_PHASES = 4
+NEXT_TASKS = 2
+NAME_CAP = 80  # task names in the summary, so /api/projects stays small with many projects
+
+
+def capped(name):
+    name = name if isinstance(name, str) else ""
+    return name if len(name) <= NAME_CAP else name[: NAME_CAP - 1] + "…"
 
 
 def recent_phases(tasks, kinds, open_phases, names):
@@ -2011,9 +2028,34 @@ def project_summary(paths):
         }
 
     current = now()
-    claims = read_store(paths)["claims"].values()
-    agents_working = sum(
-        1 for c in claims if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+    store = read_store(paths)
+    live = sorted(
+        (
+            c
+            for c in store["claims"].values()
+            if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+        ),
+        key=lambda c: str(c.get("claimed_at") or ""),
+    )
+    agents_working = len(live)
+    by_id = {t.get("id"): t for t in tasks}
+    # What the cards show by name (T-205): who works on what now, what the loop takes next, the last finished task
+    working = [
+        {
+            "task": c.get("task"),
+            "name": capped((by_id.get(c.get("task")) or {}).get("name")),
+            "agent": c.get("agent"),
+            "branch": c.get("branch"),
+        }
+        for c in live
+    ]
+    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready_in_order(data, store)[:NEXT_TASKS]]
+    finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
+    last_task = max(finished, key=lambda f: f[0])[1] if finished else None
+    last_done = (
+        {"id": last_task.get("id"), "name": capped(last_task.get("name")), "completed_at": last_task.get("completed_at")}
+        if last_task
+        else None
     )
 
     times = [parse_time(t.get(f)) for t in tasks for f in ACTIVITY_FIELDS]
@@ -2032,7 +2074,7 @@ def project_summary(paths):
 
     # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
     needs_you_tasks = [
-        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        {"id": t.get("id"), "name": capped(t.get("name")), "reason": "review" if k == "review" else "blocked"}
         for t, k in zip(tasks, kinds)
         if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
     ]
@@ -2045,6 +2087,9 @@ def project_summary(paths):
         "current_phase": current_phase,
         "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "agents_working": agents_working,
+        "working": working,
+        "next": next_up,
+        "last_done": last_done,
         "needs_you": {
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),

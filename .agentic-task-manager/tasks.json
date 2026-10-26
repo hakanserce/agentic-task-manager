@@ -7379,7 +7379,7 @@
       "description": "Part of the project-card layout approved in review (`docs/project-cards-proposal.md` §4, with the summary JSON there).\n\nAdd to each project's summary in `api/projects`:\n- `working`: `[{task, name, agent, branch}]`, from the claims store's live claims (every worktree).\n- `next`: up to 2 ready tasks `[{id, name}]`, by the loop's rule (`atm next`'s order, same code).\n- `last_done`: `{id, name, completed_at}` of the most recently completed task, or null.\n\nCap names at 80 characters, so the response stays small with many projects. The ETag rules don't change: everything comes from tasks.json and the claims store, which the summary already depends on.\n\nTests in `tests/scripts/serve.test.mjs` (the summary is only reachable through the server). Document the fields in `docs/multi-project-api.md` §3.2. Add them to `summary()` in `dashboard/tests/e2e/helpers.ts` and to `ProjectSummary` in `dashboard/src/lib/load.ts`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/query.py",
@@ -7390,9 +7390,11 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T06:44:16Z",
+      "updated_at": "2026-10-26T08:32:47Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T08:32:47Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-206",

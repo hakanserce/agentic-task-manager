@@ -90,6 +90,12 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
         "skipped": 3,
         "percent": 84,
         "current_phase": { "id": 15, "name": "One dashboard for all projects", "done": 0, "total": 17 },
+        "recent_phases": [
+          { "id": 12, "name": "Themes", "done": 10, "total": 10, "percent": 100 },
+          { "id": 13, "name": "Agents", "done": 9, "total": 9, "percent": 100 },
+          { "id": 14, "name": "Archive", "done": 12, "total": 12, "percent": 100 },
+          { "id": 15, "name": "One dashboard for all projects", "done": 0, "total": 17, "percent": 0 }
+        ],
         "agents_working": 1,
         "needs_you": { "review": 0, "blocked_on_user": 0 },
         "last_activity": "2026-10-25T21:51:38Z",
@@ -127,6 +133,7 @@ logic (`query.py`):
 | `skipped` | skipped-kind tasks |
 | `percent` | `round(100 × done / (total − skipped))`, an integer. When `total − skipped` is 0 (no tasks, or only skipped ones): `100` if there are skipped tasks, `0` if there are no tasks |
 | `current_phase` | the lowest phase with a task that is neither done- nor skipped-kind: `{ id, name, done, total }` within that phase, with `done` and `total` counted as above (skipped tasks left out of `total`). `name` is `null` without a phase name. `null` when every phase is finished |
+| `recent_phases` | up to 4 phases for the overview's rings, in phase order: the lowest phases with open work (a task of todo, active, review or blocked kind), then the most recently finished phases (by their latest `completed_at`; phases without one rank last, higher phase first) to fill up to 4. More than 4 open phases: the lowest 4. Each is `{ id, name, done, total, percent }`, counted as for `current_phase`, with `percent` = `round(100 × done / total)`. A phase of only skipped tasks (`total` 0) is never listed. `[]` without tasks |
 | `agents_working` | live claims (lease not expired) in the claims store |
 | `needs_you.review` | review-kind tasks |
 | `needs_you.blocked_on_user` | blocked-kind tasks with `waiting_on: "user"` |

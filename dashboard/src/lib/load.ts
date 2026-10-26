@@ -19,6 +19,8 @@ export interface ProjectSummary {
   skipped: number;
   percent: number;
   current_phase: { id: number; name: string | null; done: number; total: number } | null;
+  /** Up to 4 phases, in phase order: the lowest with open work, then the most recently finished */
+  recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
   agents_working: number;
   needs_you: { review: number; blocked_on_user: number };
   last_activity: string | null;

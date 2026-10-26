@@ -18,6 +18,7 @@ function project(id: string, fields: Partial<ProjectSummary> | null = {}, missin
           needs_you: { review: 0, blocked_on_user: 0 },
           last_activity: '2026-03-01T10:00:00Z',
           completions_14d: [],
+          recent_phases: [],
           ...fields,
         };
   return { id, name: id, path: `/${id}`, missing, summary };

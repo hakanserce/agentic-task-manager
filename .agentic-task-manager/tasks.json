@@ -6420,7 +6420,7 @@
       "description": "The **\"A new version of the dashboard is ready\"** notice doesn't fit: its bottom part is hidden under the title bar.\n\n`UpdateNotice.svelte` renders before the sticky `.topbar` (`App.svelte`), and the title bar covers it.\n\n## Do\n- Place the notice so it's fully visible on both pages (project view and All projects): either as a banner the title bar pushes down, or as a toast above it (`z-index`).\n- It must not shift or cover the filters row.\n\n## Verify\n- An e2e check that `#update-notice` is fully inside the viewport and not covered by `.topbar` (`elementFromPoint` at its corners).\n- Screenshots in light and dark.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/UpdateNotice.svelte",
@@ -6428,11 +6428,22 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:05:28Z",
+      "updated_at": "2026-10-26T05:27:14Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:05:28Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "61df6f87f164c073af8ade190eefe15e3513fcab",
+      "completed_at": "2026-10-26T05:27:14Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:27:14Z",
+          "kind": "outcome",
+          "text": "Notice is now a fixed toast bottom-right above the footer (z 45); e2e corner check on both pages, light/dark screenshots",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-186",
@@ -6602,7 +6613,7 @@
       "description": "The overall progress bar on project cards isn't useful when working incrementally: it sits at 80–90% all the time, since many tasks are long done and more phases will come.\n\nAdd to each project's summary in atm serve's `api/projects` a list of the **last 4 active phases**, for the card to show as rings.\n\n## Do\n- `recent_phases`: up to 4 phases, in phase order, chosen as: phases with open work (`todo`/`active`/`review`/`blocked` kinds), and then the most recently finished phases (by their last `completed_at`) to fill up to 4.\n- Each entry: `id`, `name`, `done`, `total` (skipped tasks left out of `total`, as for `percent`), `percent`.\n- Document the field in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli scenarios: no tasks, all done, one active phase, more than 4 open phases, skipped tasks.\n- `npm run test:scripts` on Python 3.9.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/",
@@ -6612,9 +6623,11 @@
         "dashboard/src/lib/load.ts"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:27:16Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:27:16Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-193",

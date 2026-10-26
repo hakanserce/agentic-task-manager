@@ -29,6 +29,7 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
     needs_you: { review: 0, blocked_on_user: 0 },
     last_activity: '2026-01-01T00:00:00Z',
     completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
+    recent_phases: [],
     ...fields,
   };
 }

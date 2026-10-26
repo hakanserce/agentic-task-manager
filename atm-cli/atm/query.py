@@ -215,6 +215,36 @@ def parse_time(text):
         return None
 
 
+RECENT_PHASES = 4
+
+
+def recent_phases(tasks, kinds, open_phases, names):
+    """Up to four phases for the overview's rings, in phase order: the lowest phases with open work first, then the
+    most recently finished ones (by their last completed_at) to fill up. A phase of only skipped tasks has nothing to
+    show and is left out."""
+    chosen = list(open_phases[:RECENT_PHASES])
+    finished = {}  # finished phase -> its last completion ("" when none is recorded)
+    for t, k in zip(tasks, kinds):
+        phase = phase_of(t)
+        if phase in open_phases or k != "done":
+            continue
+        finished[phase] = max(finished.get(phase, ""), t.get("completed_at") or "")
+    for phase in sorted(finished, key=lambda p: (finished[p], p), reverse=True)[: RECENT_PHASES - len(chosen)]:
+        chosen.append(phase)
+    result = []
+    for phase in sorted(chosen):
+        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
+        done, total = in_phase.count("done"), len(in_phase) - in_phase.count("skipped")
+        result.append({
+            "id": as_phase_id(phase),
+            "name": names.get(phase) or None,
+            "done": done,
+            "total": total,
+            "percent": round(100 * done / total),
+        })
+    return result
+
+
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
     status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
@@ -229,10 +259,10 @@ def project_summary(paths):
 
     current_phase = None
     open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
+    names = {p.get("id"): p.get("name") for p in vocab["phases"]}
     if open_phases:
         phase = open_phases[0]
         in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        names = {p.get("id"): p.get("name") for p in vocab["phases"]}
         current_phase = {
             "id": as_phase_id(phase),
             "name": names.get(phase) or None,
@@ -266,6 +296,7 @@ def project_summary(paths):
         "skipped": skipped,
         "percent": percent,
         "current_phase": current_phase,
+        "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "agents_working": agents_working,
         "needs_you": {
             "review": kinds.count("review"),

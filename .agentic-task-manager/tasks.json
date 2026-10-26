@@ -6498,7 +6498,7 @@
       "description": "On **All projects**, the Refresh and theme pills are not pinned to the right as in the project view. It should look **exactly the same**.\n\n`LandingPage.svelte` has its own copy of `<header class=\"topbar\">` (title, project selector, subtitle, `topbar-controls`), separate from `Header.svelte`.\n\n## Do\n- Make one title bar component used by both pages: title row, project selector, version chip, subtitle, controls at the right. The project page adds its charts and the filters row through slots/snippets.\n- Remove the copy from `LandingPage.svelte`.\n\n## Verify\n- e2e: `.topbar-controls` has the same right edge and top on the project page and on `#overview`.\n- Update screenshot baselines for the overview.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Header.svelte",
@@ -6506,9 +6506,11 @@
         "dashboard/src/styles/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:05:29Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:05:29Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-189",

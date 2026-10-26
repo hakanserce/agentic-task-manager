@@ -19,6 +19,22 @@ test.describe('projects', () => {
     await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
   });
 
+  test('the title bar is the same on the overview and on a project: controls at the same place', async ({
+    page,
+    tasksServer,
+  }) => {
+    tasksServer.addProject('second', 'minimal', 'Second Project');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
+    await expect(page.locator('#version-chip')).toBeVisible();
+    const onOverview = (await page.locator('.topbar-controls').boundingBox())!;
+    await page.locator('.project-card[data-id="second"] .project-card-open').click();
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    const onProject = (await page.locator('.topbar-controls').boundingBox())!;
+    expect(onOverview.x + onOverview.width).toBeCloseTo(onProject.x + onProject.width, 0);
+    expect(onOverview.y).toBeCloseTo(onProject.y, 0);
+  });
+
   test('with one project, the dashboard opens it right away', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');

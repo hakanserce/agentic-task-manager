@@ -942,6 +942,8 @@ button.menu-trigger:hover,
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  /* At the right edge on every page, with or without the charts before them */
+  margin-left: auto;
 }
 .menu-label {
   font-size: 11px;

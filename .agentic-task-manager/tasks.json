@@ -7846,7 +7846,7 @@
       "description": "The dashboard renders task descriptions as Markdown (`dashboard/src/lib/markdown.ts`: `#`–`####` headings, lists, fenced code, `>` quotes, inline `code`, **strong**, *em*, links), but the skills don't ask for it, so descriptions arrive as one long paragraph.\n\n## Change\n- `plugin/skills/create-tasks/SKILL.md` (Step 5's rules for task generation, and `atm edit`): write descriptions in Markdown **when it helps**: paths, commands and identifiers in `code`; short `##` sections (e.g. *Fix*, *Tests*) for longer descriptions; lists for steps or options; fenced code blocks for snippets; *italics* sparingly. Say which subset the dashboard renders, and to keep a one-sentence task plain. Prefer `--description-file` / `--json-file` for multi-line text.\n- `plugin/skills/do-task/SKILL.md` and `plugin/skills/loop-tasks/SKILL.md`: the same for `atm edit` of later tasks, and inline Markdown (`code`, *em*) in notes, questions, answers and rejection reasons, which the dashboard renders after T-219.\n- Keep the wording short; one example of a well-formatted description in create-tasks.\n\n## Check\nBump the plugin version per the repo's rules, with CHANGELOG and WHATS-NEW entries if this ships on its own.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-219"
       ],
@@ -7856,9 +7856,11 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T19:20:08Z",
+      "updated_at": "2026-10-26T19:32:06Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T19:32:06Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-219",
@@ -7872,7 +7874,7 @@
       "description": "Task descriptions are rendered as Markdown, but **notes are plain text**: the note list in `dashboard/src/components/DetailPanel.svelte` (`.note-text`), the review note (`.review-note`), and block questions and answers wherever they appear (detail panel, the Needs-you menu, Kanban cards).\n\n## Change\n- Render notes with the existing parser (`dashboard/src/lib/markdown.ts`) and `Markdown.svelte`. Notes are short (atm caps them at 500 characters), so consider an *inline-only* mode (`code`, **strong**, *em*, links) for one-line places such as the Needs-you menu and cards, and full blocks in the detail panel.\n- Keep the escaping guarantees: no raw HTML, links only `http(s)`.\n- Style the rendered notes so they fit the existing note layout (no extra margins from `<p>`).\n\n## Tests\n- Unit tests for the inline-only mode in `tests/unit/markdown.test.ts`.\n- A component test for the detail panel's notes, and an e2e check with a note containing `code` and a link.\n- Update affected screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -7881,11 +7883,22 @@
         "dashboard/tests/unit/markdown.test.ts"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T19:29:06Z",
+      "updated_at": "2026-10-26T19:32:03Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:29:06Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "8781c67a511f9e0cb5fd0a248ad143eb24f93f51",
+      "completed_at": "2026-10-26T19:32:03Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T19:32:03Z",
+          "kind": "outcome",
+          "text": "Notes and review notes render as Markdown in the detail panel, questions as inline Markdown; card tooltips show the plain text. Same escaping: no HTML, only http(s)/mailto/# links.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

@@ -3,6 +3,8 @@
 // (Codeberg, Forgejo) are recognised by their host name; a self-hosted server whose name doesn't say gets its kind from
 // meta.repository_type. Other hosts show plain text, and without an address a click explains how to set one.
 
+import { safeUrl } from './url';
+
 type RepoMeta = { repository?: unknown; repository_type?: unknown } | undefined;
 
 /** Where a commit or PR reference goes: a link, plain text (a host we can't build links for), or a hint to set the
@@ -14,8 +16,7 @@ export const REPOSITORY_HINT =
 
 /** The repository's web address from meta, without a trailing slash; null when it isn't set */
 export function repositoryOf(meta: RepoMeta): string | null {
-  const url = meta?.repository;
-  return typeof url === 'string' && /^https?:\/\//.test(url) ? url.replace(/\/+$/, '') : null;
+  return safeUrl(meta?.repository)?.replace(/\/+$/, '') ?? null;
 }
 
 export type HostKind = 'github' | 'gitlab' | 'bitbucket' | 'gitea';
@@ -75,6 +76,7 @@ export function commitRef(meta: RepoMeta, sha: string): RepoRef {
 
 /** A PR's link: the address atm recorded with it (`atm pr --url`), else one built from the repository */
 export function pullRef(meta: RepoMeta, pr: { number: number; url?: string }): RepoRef {
-  if (pr.url && /^https?:\/\//.test(pr.url)) return { kind: 'link', href: pr.url };
+  const recorded = safeUrl(pr.url);
+  if (recorded) return { kind: 'link', href: recorded };
   return refFor(meta, (links) => links.pull(pr.number));
 }

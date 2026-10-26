@@ -6,6 +6,7 @@ never write: they read tasks.json and the claims store without the lock (both ar
 
 import json
 import os
+import re
 
 from .claims import next_task, read_store, ready_in_order
 from .core import now, out, parse_iso, to_json
@@ -277,7 +278,8 @@ def git_summary(paths, tasks):
         pr = t.get("pr")
         if isinstance(pr, dict) and isinstance(pr.get("number"), int):
             entry = prs.setdefault(pr["number"], {"number": pr["number"], "url": None, "state": "open"})
-            if isinstance(pr.get("url"), str) and pr["url"]:
+            # The dashboard links to it: only a web address (docs/security-review.md F9)
+            if isinstance(pr.get("url"), str) and re.match(r"https?://\S+\Z", pr["url"], re.IGNORECASE):
                 entry["url"] = pr["url"]
             if t.get("merged_at"):
                 entry["state"] = "merged"

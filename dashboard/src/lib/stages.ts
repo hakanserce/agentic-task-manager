@@ -2,6 +2,7 @@
 // (`merged_at`). Stages are derived, never statuses: they don't affect dependencies or the columns.
 import type { KanbanCard } from './kanban';
 import type { Task } from './types';
+import { safeUrl } from './url';
 import { DEFAULT_VOCABULARY, kindOf, type Vocabulary } from './vocab';
 
 export type Stage = 'done' | 'in_pr' | 'merged';
@@ -50,7 +51,13 @@ export function doneSections(cards: KanbanCard[], vocab: Vocabulary = DEFAULT_VO
     else if (stage === 'in_pr') {
       const pr = prOf(card.task)!;
       if (!prs.has(pr.number))
-        prs.set(pr.number, { id: `in_pr:${pr.number}`, stage, label: `In PR #${pr.number}`, url: pr.url, cards: [] });
+        prs.set(pr.number, {
+          id: `in_pr:${pr.number}`,
+          stage,
+          label: `In PR #${pr.number}`,
+          url: safeUrl(pr.url) ?? undefined,
+          cards: [],
+        });
       prs.get(pr.number)!.cards.push(card);
     } else done.push(card);
   }

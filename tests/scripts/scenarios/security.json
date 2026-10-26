@@ -35,6 +35,16 @@
     "expect": { "stdoutIncludes": ["release/v1.2-rc_1"] }
   },
   {
+    "name": "pr refuses a URL that isn't http(s), and nothing changes (T-225, F9)",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
+    "args": ["pr", "T-001", "--number", "7", "--url", "javascript:alert(1)"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["--url must be an http:// or https:// address"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } }
+    }
+  },
+  {
     "name": "a task ID with shell characters stops every command, and atm check names it (T-222, F5)",
     "setup": {
       "files": {

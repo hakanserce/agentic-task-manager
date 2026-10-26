@@ -40,7 +40,7 @@
   {
     "name": "pr with an unknown task changes nothing",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
-    "args": ["pr", "T-001", "T-009", "--number", "7", "--url", "u"],
+    "args": ["pr", "T-001", "T-009", "--number", "7", "--url", "https://example.com/pr/7"],
     "expect": {
       "exit": 1,
       "stderrIncludes": ["T-009"],

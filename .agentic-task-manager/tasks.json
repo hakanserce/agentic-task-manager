@@ -8211,7 +8211,7 @@
       "description": "Findings **F7** and **F8** in `docs/security-review.md`.\n\nA repo can commit `.agentic-task-manager/.gitignore` (or `.gitattributes`, `tasks-archive.json`, or the folder itself) as a symlink to a file outside it.\n\n## Do\n\n- atm-cli refuses to work on a `.agentic-task-manager/` that is a symlink or whose real path leaves the repo, and refuses to write a symlinked `.gitignore` / `.gitattributes` (`migrate.py`, `merge.py`).\n- The server serves `p/<id>/<file>` only when it is a regular file whose real path is inside that project's task folder (open with `O_NOFOLLOW` or check `realpath`); 404 otherwise.\n\n## Verify\n\nTests: a repo with these symlinks; `atm migrate` / `atm init` fail and leave the target untouched; the server returns 404 for a symlinked archive.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/migrate.py",
@@ -8221,11 +8221,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:20:31Z",
+      "updated_at": "2026-10-26T22:23:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:20:31Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "13e08e610eeb2807eff6bb7c2bd23ed675080c43",
+      "completed_at": "2026-10-26T22:23:57Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:23:57Z",
+          "kind": "outcome",
+          "text": "atm refuses a task folder that is a symlink or leads outside the project, and symlinked `tasks.json`, `tasks-archive.json`, `.gitignore` or `.gitattributes` (`paths.check_task_folder`, so every command). The server serves only regular, unlinked files from the task folder (`served_file`). Tests: `symlinks.test.mjs`, `serve.test.mjs`.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-225",
@@ -8241,7 +8252,7 @@
       "description": "Finding **F9** in `docs/security-review.md`.\n\n`atm pr --url` stores any string, and `ProjectCard.svelte` and `stages.ts` → `KanbanColumns.svelte` use `pr.url` as an `href` unchecked, so a `javascript:` URL could run script.\n\n## Do\n\n- One `safeUrl()` in `src/lib` (http(s) only; reuse `markdown.ts`'s `safeHref` rules where they fit) used for every link built from task data: PR links on cards and in Kanban sections, repository links.\n- `atm pr --url` and the overview summary (`query.py`) accept only http(s).\n- Optionally, check by hand whether a `javascript:` link with `target=_blank` runs in the dashboard's origin, and note it in `docs/security-review.md`.\n\n## Verify\n\nUnit and e2e: a fixture with `pr.url = \"javascript:alert(1)\"` renders no `<a href>`; `atm pr --url javascript:x` fails.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/stages.ts",
@@ -8251,9 +8262,11 @@
         "atm-cli/atm/query.py"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:23:57Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:23:57Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-226",

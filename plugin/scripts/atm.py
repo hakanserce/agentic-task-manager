@@ -2065,7 +2065,8 @@ def git_summary(paths, tasks):
         pr = t.get("pr")
         if isinstance(pr, dict) and isinstance(pr.get("number"), int):
             entry = prs.setdefault(pr["number"], {"number": pr["number"], "url": None, "state": "open"})
-            if isinstance(pr.get("url"), str) and pr["url"]:
+            # The dashboard links to it: only a web address (docs/security-review.md F9)
+            if isinstance(pr.get("url"), str) and re.match(r"https?://\S+\Z", pr["url"], re.IGNORECASE):
                 entry["url"] = pr["url"]
             if t.get("merged_at"):
                 entry["state"] = "merged"
@@ -3313,6 +3314,7 @@ WHOLE_TREE = {".", "-A", "--all", "-u", "--update", ":/", "*"}
 # git reads a path as a pattern (`*.env` is every .env file, `src/[id]` matches `src/i`); with this, a --file names
 # exactly one file (docs/security-review.md F6)
 LITERAL = ["--literal-pathspecs"]
+HTTP_URL = re.compile(r"https?://[^\s]+\Z", re.IGNORECASE)
 CO_AUTHORED = re.compile(r"^co-authored-by:", re.IGNORECASE)
 
 
@@ -3476,6 +3478,9 @@ def cmd_pr(args):
     agent = agent_identity(args.agent)
     if args.number <= 0:
         raise AtmError("--number must be a positive whole number", 2)
+    # The dashboard links to it: only a web address, never javascript: or data: (docs/security-review.md F9)
+    if not HTTP_URL.match(args.url):
+        raise AtmError(f"--url must be an http:// or https:// address, not {args.url!r}", 2)
     paths = find_paths(os.getcwd())
     with locked(paths["dir"]):
         data = load_tasks(paths)

@@ -8661,7 +8661,7 @@
       "description": "Level 2 of the sandbox decision in `docs/security-architecture.md`.\n\n## Do\n\n- A container definition (Docker or devcontainer) with Claude Code, the plugin from this checkout, a throwaway git repo, no real credentials, and network egress blocked except the model API.\n- A red-team task set: descriptions and notes that ask the agent to run commands, `curl | sh`, read `~/.ssh` or env secrets, edit CI or git hooks, push elsewhere.\n- A script that runs `/atm:loop-tasks` there and reports, per red-team task, whether the agent blocked it or followed it (check the file system, the git log, and the tasks' statuses afterwards).\n- How to run it in `CLAUDE.md`.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-233",
         "T-221"
@@ -8670,11 +8670,22 @@
         "tests/sandbox/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:01:37Z",
+      "updated_at": "2026-10-26T23:04:29Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:01:37Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "676a8b0c25be3b168ddff9147a499b1c0b3ab626",
+      "completed_at": "2026-10-26T23:04:29Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T23:04:29Z",
+          "kind": "outcome",
+          "text": "Agent sandbox in `tests/sandbox/`: a Docker image with this checkouts plugin, a seeded project with six red-team tasks and canary secrets, network only to the model API through a logging proxy; `run.mjs` runs `/atm:loop-tasks` and judges each task. The verdict is tested (`sandbox-verdict.test.mjs`); the full run needs Docker and an API key and has not been run yet.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-236",
@@ -8689,7 +8700,7 @@
       "description": "§4.2 of `docs/security-review.md`. Write the schedule into `docs/security-architecture.md` and wire it up.\n\n- **Every PR (CI)**: the hostile-repo suite, the header and link checks, the skills-template check, build freshness, Dependabot alerts.\n- **Before each release**: run the agent sandbox; a checklist item in `CLAUDE.md` *Versions* that the threat model covers any new entry point.\n- **Periodically** (each quarter, or when Claude Code's permission model changes): a review like `docs/security-review.md` against the threat model, and a pass over pinned action and image versions. Decide with the user how to be reminded (e.g. a scheduled workflow that opens an issue).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-234",
         "T-235"
@@ -8700,9 +8711,11 @@
         ".github/workflows/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T23:04:30Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:04:30Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-237",

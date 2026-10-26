@@ -1,0 +1,31 @@
+name: Security review reminder
+
+# Each quarter, an issue with the periodic security checks (docs/security-architecture.md §3). It only opens an issue:
+# the review itself is done by a person, with an agent, against the threat model.
+on:
+  schedule:
+    - cron: '0 9 1 1,4,7,10 *' # 09:00 UTC on the first day of each quarter
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open the quarterly security review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh issue create \
+            --title "Quarterly security review ($(date -u +%Y-Q$(( ($(date -u +%-m) - 1) / 3 + 1 ))))" \
+            --body "Periodic checks from docs/security-architecture.md §3:
+
+          - [ ] Review against the threat model, like docs/security-review.md: new entry points, file formats, skill instructions since the last review
+          - [ ] Every invariant in §2 still has its check, and the checks pass
+          - [ ] Run the agent sandbox: \`ANTHROPIC_API_KEY=... node tests/sandbox/run.mjs\`
+          - [ ] Bump the pinned container image digests in .github/workflows/ci.yml (Dependabot handles actions and npm)
+          - [ ] Look at open Dependabot alerts and PRs
+          - [ ] Did Claude Code's permission model or plugin format change? Recheck what the skills pre-approve (I2)"

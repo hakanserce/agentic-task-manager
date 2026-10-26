@@ -95,15 +95,19 @@ with the task that adds it.
 
 ## 3. Verifying it
 
-How each kind of check runs, and when, is decided in T-233 (the sandbox) and T-236 (the schedule). In short, as the
-review proposed:
+The schedule (T-236):
 
-- **Every PR (CI)**: everything in §2 that is a test.
+- **Every PR (CI)**: everything in §2 that is a test: `npm run test:scripts` (the hostile-repo suites), the unit tests
+  (skills, links, CI workflow, static checks, invariants table), the e2e suite under the page's CSP, and the build
+  freshness checks. Dependabot proposes action and npm updates weekly.
 - **Every PR that changes what agents read** (a skill, `plugin/CLAUDE.md`, or atm's output agents act on), before
   it is merged: the agent sandbox's red-team run (I1). Here **every PR to `main` is a release** (the version is
   bumped and `/plugin marketplace update` delivers it), so "before a release" means "before merging such a PR". PRs
   that change only the dashboard or atm-cli don't need the sandbox run: their invariants are covered by CI.
-- **Each quarter**: a review against this document, like `docs/security-review.md`.
+- **Each quarter**: `.github/workflows/security-review-reminder.yml` opens an issue with the checklist: a review
+  against this document (like `docs/security-review.md`), the agent sandbox, the pinned image digests, Dependabot,
+  and whether Claude Code's permission model changed. Also whenever that model changes. *(T-236 question: is a
+  quarterly GitHub issue the reminder you want, or would you rather have something else, e.g. a calendar event?)*
 
 ### 3.1 The sandbox (T-233, approved)
 

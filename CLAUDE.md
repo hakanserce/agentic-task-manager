@@ -113,3 +113,8 @@ Every release gets **two** entries (`npm run check` fails without either):
   bullets in plain language about what a user notices. No command flags, internals or file names; one idea per
   bullet; say what it does for them ("Agents can ask you a question instead of guessing"), not how it works. Write
   it from the changelog entry, not instead of it.
+
+Before merging a release PR (every PR to `main` is one), the security checklist (`docs/security-architecture.md` §3):
+- the PR changes a skill, `plugin/CLAUDE.md` or atm output agents act on → run the agent sandbox (Security, above);
+- it adds an entry point, a field agents or the dashboard act on, or a CI permission → `docs/security-architecture.md`
+  is updated in the same PR.

@@ -6741,7 +6741,7 @@
       "description": "ATM needs a **logo**.\n\n## Do\n- Propose 2–3 simple SVG logo designs to the user (e.g. as a quick artifact), and use the one they pick.\n- The logo must work at 16 px (browser tab) and in both light and dark themes (`currentColor` or theme tokens).\n- Use it: in the title bar next to the title, as the page's favicon (inline `data:` SVG, since the dashboard is a single file), and in the About dialog.\n- Keep the source SVG in the repo (e.g. `dashboard/src/assets/atm-logo.svg`).\n\n## Verify\n- Screenshot baselines for the title bar; the favicon link is in the built file.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/assets/atm-logo.svg",
@@ -6750,9 +6750,11 @@
         "dashboard/index.html"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T06:07:53Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T06:07:53Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-196",
@@ -6767,7 +6769,7 @@
       "description": "Each project can have a **logo** that the dashboard shows.\n\n## Do\n- `meta.logo`: a path relative to the project root to an image (SVG, PNG, ICO, WebP). Set with an atm command (e.g. `atm init --meta-file` or a dedicated `atm logo set <path>`).\n- Without `meta.logo`, find a likely one: `logo.svg`/`logo.png`, `.github/logo.*`, `public/favicon.*`, `assets/logo.*` — first match wins.\n- atm serve serves it at `p/<id>/logo` with the right content type and caching; 404 when there is none. Only files inside the project folder; refuse anything outside it or larger than ~512 KB.\n- `api/projects` gets `has_logo` (or a `logo` URL) per project.\n- Document it in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli tests: set, auto-detect, missing, path outside the project, too large.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/",
@@ -6776,11 +6778,22 @@
         "docs/multi-project-api.md"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:56:21Z",
+      "updated_at": "2026-10-26T06:07:49Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:56:21Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "88f18fad42cb9d6c1f14630c997d5fdec9371b04",
+      "completed_at": "2026-10-26T06:07:49Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T06:07:49Z",
+          "kind": "outcome",
+          "text": "atm logo [set|unset], auto-detect, p/<id>/logo (no-cache+ETag, CSP sandbox), api/projects logo URL or null; docs §2.3",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-197",

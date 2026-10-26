@@ -6741,7 +6741,7 @@
       "description": "ATM needs a **logo**.\n\n## Do\n- Propose 2–3 simple SVG logo designs to the user (e.g. as a quick artifact), and use the one they pick.\n- The logo must work at 16 px (browser tab) and in both light and dark themes (`currentColor` or theme tokens).\n- Use it: in the title bar next to the title, as the page's favicon (inline `data:` SVG, since the dashboard is a single file), and in the About dialog.\n- Keep the source SVG in the repo (e.g. `dashboard/src/assets/atm-logo.svg`).\n\n## Verify\n- Screenshot baselines for the title bar; the favicon link is in the built file.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "todo",
       "dependencies": [],
       "files": [
         "dashboard/src/assets/atm-logo.svg",
@@ -6750,11 +6750,18 @@
         "dashboard/index.html"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T06:07:53Z",
+      "updated_at": "2026-10-26T06:21:13Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "started_at": "2026-10-26T06:07:53Z",
-      "started_by": "claude:e5ea9db0"
+      "commit": "adedba8380c0e395b51d916bbb05a70b42bca45b",
+      "notes": [
+        {
+          "at": "2026-10-26T06:21:13Z",
+          "kind": "answer",
+          "text": "Which ATM logo? Open docs/logo/preview.html (16/32/64 px, light, dark, accent): A graph (two tasks leading to a done one), B ring (a 3/4 progress ring around a check), C board (Kanban columns of cards). Or describe changes. The pick then goes in the title bar, favicon and About. → A1, the board (logo-proposals/a-board.svg).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-196",
@@ -6809,7 +6816,7 @@
       "description": "Show each project's logo (`p/<id>/logo`) in the **project selector**, on the **project cards** and next to the project name in the title bar.\n\n## Do\n- A small `ProjectLogo` component: the image when the project has one, otherwise a monogram (the project's initials on a colour derived from its id).\n- Fixed size per place (e.g. 16 px in the selector, 24 px on cards), `object-fit: contain`, rounded.\n- No layout shift while the image loads; fall back to the monogram if it fails.\n\n## Verify\n- Component tests for image / monogram / failed image.\n- e2e with the `tasksServer` fixture serving a logo for one project and none for another; screenshot baselines.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-196"
       ],
@@ -6821,9 +6828,11 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T06:08:57Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T06:08:57Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-198",

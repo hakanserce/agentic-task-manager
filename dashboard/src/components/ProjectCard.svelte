@@ -6,6 +6,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor } from '../lib/theme';
   import Icon from './Icon.svelte';
+  import ProjectLogo from './ProjectLogo.svelte';
   import Ring from './Ring.svelte';
 
   let { project }: { project: ProjectEntry } = $props();
@@ -27,6 +28,7 @@
 
 <article class="project-card" class:missing={project.missing} data-id={project.id}>
   <div class="project-card-head">
+    <ProjectLogo {project} size={24} />
     {#if project.missing}
       <h3 class="project-card-name" title={project.path}>{project.name}</h3>
     {:else}

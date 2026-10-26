@@ -14,6 +14,7 @@ const TASKS_JSON = /\/p\/([^/]+)\/tasks\.json(\?.*)?$/;
 const CLAIMS_JSON = /\/p\/([^/]+)\/claims\.json(\?.*)?$/;
 const ARCHIVE_JSON = /\/p\/([^/]+)\/tasks-archive\.json(\?.*)?$/;
 const WORKTREES_JSON = /\/p\/([^/]+)\/worktrees\.json(\?.*)?$/;
+const LOGO = /\/p\/([^/]+)\/logo(\?.*)?$/;
 /** The id of the project the fixture serves by default */
 export const FIXTURE_PROJECT = 'fixture';
 
@@ -55,6 +56,8 @@ export class TasksServer {
   private others = new Map<string, { name: string; body: string; summary: Record<string, unknown> | null }>();
   /** Registered projects whose folder is gone: their names, by id */
   private gone = new Map<string, string>();
+  /** Projects with a logo: the SVG served at p/<id>/logo, by id; null lists one that fails to load */
+  private logos = new Map<string, string | null>();
   private listed = true;
   /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
   archiveRequests = 0;
@@ -84,6 +87,7 @@ export class TasksServer {
       path: `/projects/${id}`,
       missing: false,
       summary,
+      logo: this.logos.has(id) ? `p/${id}/logo` : null,
     });
     return [
       project(this.projectId, typeof this.meta.project === 'string' ? this.meta.project : this.projectId),
@@ -135,6 +139,18 @@ export class TasksServer {
         ? route.fulfill({ status: 404, body: 'not found' })
         : route.fulfill({ status: 200, contentType: 'application/json', body: this.worktreesBody }),
     );
+    await this.page.route(LOGO, (route) => {
+      const svg = this.logos.get(decodeURIComponent(LOGO.exec(route.request().url())![1]));
+      return svg
+        ? route.fulfill({ status: 200, contentType: 'image/svg+xml', body: svg })
+        : route.fulfill({ status: 404, contentType: 'application/json', body: '{"error": "no logo"}' });
+    });
+  }
+
+  /** Give a project a logo, an SVG served at p/<id>/logo; null lists a logo that fails to load (a 404) */
+  logo(id: string, svg: string | null) {
+    this.logos.set(id, svg);
+    return this;
   }
 
   /** Serve worktrees.json (the project's git worktrees, main first, linked ones with their differing tasks); null

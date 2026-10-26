@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import type { ProjectEntry, ProjectSummary } from '../../src/lib/load';
-import { isActive, needsYou, openTasks, orderProjects } from '../../src/lib/projects';
+import { idHash, isActive, monogram, needsYou, openTasks, orderProjects } from '../../src/lib/projects';
+
+describe('monogram and idHash', () => {
+  it('initials of the first two words, else the first two letters, upper case', () => {
+    expect(monogram('Agentic Task Manager')).toBe('AT');
+    expect(monogram('my-cool_app')).toBe('MC');
+    expect(monogram('atm')).toBe('AT');
+    expect(monogram('Ünïcode')).toBe('ÜN');
+    expect(monogram('x')).toBe('X');
+    expect(monogram('—')).toBe('?');
+  });
+
+  it('a stable, non-negative number per id', () => {
+    expect(idHash('abcd1234')).toBe(idHash('abcd1234'));
+    expect(idHash('abcd1234')).not.toBe(idHash('abcd1235'));
+    expect(idHash('')).toBe(0);
+    expect(idHash('zzzzzzzzzzzzzzzzzzzzzzzz')).toBeGreaterThanOrEqual(0);
+  });
+});
 
 const NOW = Date.parse('2026-03-01T12:00:00Z');
 

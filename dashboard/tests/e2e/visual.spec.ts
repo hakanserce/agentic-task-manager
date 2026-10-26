@@ -304,9 +304,15 @@ for (const mode of ['dark', 'light'] as const) {
           recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
         }),
       )
-      .goneProject('old1234', 'Old Project');
+      .goneProject('old1234', 'Old Project')
+      .logo(
+        'busy',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#2f81f7"/>' +
+          '<path d="m4.5 8.2 2.3 2.3 4.7-5" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+      );
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('.project-card')).toHaveCount(4);
+    await expect(page.locator('.project-card[data-id="busy"] .project-logo img')).toHaveJSProperty('complete', true);
     await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-${mode}.png`);
   });
 }

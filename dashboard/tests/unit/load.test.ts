@@ -88,7 +88,7 @@ describe('loadProjects', () => {
     expect(fetchFn).toHaveBeenCalledWith('api/projects', { cache: 'no-store', headers: {} });
     expect(result).toEqual({
       unchanged: false,
-      projects: [{ ...body.projects[0], worktrees: [] }],
+      projects: [{ ...body.projects[0], worktrees: [], logo: null }],
       validators: { etag: '"p1"' },
     });
     const again = vi.fn().mockResolvedValue(new Response(null, { status: 304 }));
@@ -100,7 +100,7 @@ describe('loadProjects', () => {
     const body = { projects: [{ name: 'no id' }, { id: '' }, { id: 'x1', missing: 'yes', summary: 'odd' }, null] };
     const result = await loadProjects(vi.fn().mockResolvedValue(jsonResponse(body)));
     expect(!result.unchanged && result.projects).toEqual([
-      { id: 'x1', name: 'x1', path: '', missing: false, summary: null, worktrees: [] },
+      { id: 'x1', name: 'x1', path: '', missing: false, summary: null, worktrees: [], logo: null },
     ]);
     const empty = await loadProjects(vi.fn().mockResolvedValue(jsonResponse({})));
     expect(!empty.unchanged && empty.projects).toEqual([]);
@@ -117,6 +117,20 @@ describe('loadProjects', () => {
     expect(!result.unchanged && result.projects[0].worktrees).toEqual([
       { path: '/x', branch: 'main', main: true },
       { path: '/x-2', branch: null, main: false },
+    ]);
+  });
+
+  it("takes a project's logo only as the server's own p/<id>/logo route", async () => {
+    const logos = ['p/x1/logo', 'https://example.com/logo.png', '//evil/logo', 'p/x1/../../logo', 'javascript:x', 7];
+    const body = { projects: logos.map((logo, i) => ({ id: `x${i + 1}`, logo })) };
+    const result = await loadProjects(vi.fn().mockResolvedValue(jsonResponse(body)));
+    expect(!result.unchanged && result.projects.map((p) => p.logo)).toEqual([
+      'p/x1/logo',
+      null,
+      null,
+      null,
+      null,
+      null,
     ]);
   });
 

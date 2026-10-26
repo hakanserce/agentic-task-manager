@@ -199,6 +199,44 @@ test.describe('projects', () => {
     expect(geometry).toEqual({ oneLine: true, countInside: true, feetLevel: true, cards: 2 });
   });
 
+  // T-197: each project's logo (p/<id>/logo), or its monogram, in the cards, the selector and the title bar
+  test('project logos: the image when there is one, else the monogram, also when the image fails', async ({
+    page,
+    tasksServer,
+  }) => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="red"/></svg>';
+    tasksServer
+      .addProject('withlogo', 'minimal', 'With Logo', summary())
+      .addProject('broken', 'minimal', 'Broken Logo', summary())
+      .logo('withlogo', svg)
+      .logo('broken', null);
+    await openDashboard(page, tasksServer, 'standard');
+    const logo = (id: string) => page.locator(`.project-card[data-id="${id}"] .project-logo`);
+    await expect(logo('withlogo').locator('img')).toHaveJSProperty('complete', true);
+    expect(
+      await logo('withlogo')
+        .locator('img')
+        .evaluate((img: HTMLImageElement) => img.naturalWidth),
+    ).toBeGreaterThan(0);
+    await expect(logo('broken')).toHaveAttribute('data-initials', 'BL');
+    await expect(logo('broken').locator('img')).toHaveCount(0);
+    await expect(logo(tasksServer.projectId)).toHaveAttribute('data-initials', 'SP');
+    for (const id of ['withlogo', 'broken', tasksServer.projectId]) {
+      const box = await logo(id).boundingBox();
+      expect([id, Math.round(box!.width), Math.round(box!.height)]).toEqual([id, 24, 24]);
+    }
+
+    await page.locator('#project-selector').click();
+    await expect(page.locator('.project-option[data-id="withlogo"] .project-logo img')).toHaveCount(1);
+    await expect(page.locator('.project-option[data-id="broken"] .project-logo')).toHaveAttribute(
+      'data-initials',
+      'BL',
+    );
+    await page.locator('.project-option[data-id="withlogo"]').click();
+    await expect(page.locator('.title-row .project-logo img')).toHaveAttribute('src', 'p/withlogo/logo');
+  });
+
   test('“needs you” opens the project’s Kanban, filtered to review and blocked', async ({ page, tasksServer }) => {
     tasksServer.addProject('asks', 'v4', 'Asks', summary({ needs_you: { review: 1, blocked_on_user: 1 } }));
     await openDashboard(page, tasksServer, 'standard');

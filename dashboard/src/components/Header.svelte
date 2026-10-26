@@ -7,9 +7,15 @@
   import RefreshMenu from './RefreshMenu.svelte';
   import ActivityWidget from './ActivityWidget.svelte';
   import ProgressWidget from './ProgressWidget.svelte';
+  import ProjectLogo from './ProjectLogo.svelte';
   import ProjectSelector from './ProjectSelector.svelte';
 
   const version = dashboardVersion();
+  // The open project, as api/projects lists it: its logo goes next to the title
+  const project = $derived.by(() => {
+    const route = dashboard.route;
+    return route.page === 'project' ? dashboard.projects.find((p) => p.id === route.id) : undefined;
+  });
 
   const title = $derived(dashboard.loaded ? dashboard.projectName + ' — Task Dashboard' : 'Task Dashboard');
   const phaseCount = $derived(new Set(dashboard.tasks.map((t) => t.phase)).size);
@@ -30,6 +36,7 @@
 <header class="topbar" class:scrolled>
   <div class="title-block">
     <div class="title-row">
+      {#if project}<ProjectLogo {project} size={26} />{/if}
       <h1 id="dashboard-title">{title}</h1>
       <ProjectSelector />
       {#if version}

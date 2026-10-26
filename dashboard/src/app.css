@@ -570,8 +570,9 @@ h1 {
   font-size: 0.85em;
   white-space: nowrap;
 }
-.ring-skipped {
-  font-size: 10px;
+/* The skipped share, outside the ring: the skipped status colour, at full strength for 3:1 against the surface */
+.ring-skip-arc {
+  stroke: var(--text-muted);
 }
 .ring-value {
   fill: var(--text);

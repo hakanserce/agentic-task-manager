@@ -92,7 +92,9 @@ test.describe('Progress tab: phase table', () => {
     await page.locator('#progress-card').click();
     await expect(page.locator('#progress-card')).toHaveAccessibleName('Progress 100%, 2 of 2 tasks done');
     await expect(page.locator('#overall-skipped')).toHaveText('· 1 skipped');
-    await expect(page.locator('#progress-panel .ring-skipped')).toHaveText(['1 skipped', '1 skipped']);
+    // A thin outer arc on the overall ring, phase 1's and feature's; screen readers hear the count
+    await expect(page.locator('#progress-panel .ring-skip-arc')).toHaveCount(3);
+    await expect(page.getByRole('img', { name: 'Phase 1 100% done, 1 skipped' })).toBeVisible();
   });
 
   test('says when there is not enough history', async ({ page, tasksServer }) => {

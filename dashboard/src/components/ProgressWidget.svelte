@@ -56,7 +56,15 @@
     <div class="insights-panel" id="progress-panel" role="dialog" aria-label="Progress details">
       <div class="panel-heading">Progress</div>
       <div class="insights-hero">
-        <Ring ratio={p.overall.ratio} color="var(--green)" size={132} stroke={12} label="All tasks" />
+        <Ring
+          ratio={p.overall.ratio}
+          color="var(--green)"
+          size={132}
+          stroke={12}
+          label="All tasks"
+          skipped={p.overall.skipped}
+          total={p.overall.total}
+        />
         <div class="insights-hero-text">
           <div class="insights-title">
             {p.overall.done} of {p.overall.total} tasks done{#if p.overall.skipped}<span
@@ -99,10 +107,9 @@
           class="ring-cell"
           title="{capitalize(s.label)}: {s.done} of {s.total} done{s.skipped ? `, ${s.skipped} skipped` : ''}"
         >
-          <Ring ratio={s.ratio} color={color(s.key)} label={s.label} />
+          <Ring ratio={s.ratio} color={color(s.key)} label={s.label} skipped={s.skipped} total={s.total} />
           <div class="ring-label">{capitalize(s.label)}</div>
           <div class="ring-count">{s.done}/{s.total}</div>
-          {#if s.skipped}<div class="ring-skipped skipped-note">{s.skipped} skipped</div>{/if}
         </div>
       {/each}
     </div>

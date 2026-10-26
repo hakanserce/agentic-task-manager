@@ -215,7 +215,7 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
-// The Appearance menu with every theme, scrolled to the current one
+// The Appearance menu: the mode switch and the theme combo box with the current theme's swatch
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: appearance menu (${mode})`, async ({ page, tasksServer }) => {
     await page.addInitScript(
@@ -225,6 +225,16 @@ for (const mode of ['dark', 'light'] as const) {
     await openDashboard(page, tasksServer, 'standard');
     await page.locator('#appearance-btn').click();
     await expect(page.locator('#appearance-menu')).toHaveScreenshot(`appearance-menu-${mode}.png`);
+  });
+}
+
+// The Progress panel with skipped tasks: the thin outer arc on the overall ring, Phase 2's and Docs'
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: progress panel with skipped tasks (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('#progress-card').click();
+    await expect(page.locator('#progress-panel')).toHaveScreenshot(`progress-panel-skipped-${mode}.png`);
   });
 }
 

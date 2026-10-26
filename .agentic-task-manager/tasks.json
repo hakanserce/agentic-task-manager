@@ -7622,7 +7622,7 @@
       "description": "In the Activity per hour/day/week popup (`dashboard/src/components/ActivityDeepDive.svelte`), the **Idle (no agent working)** box wraps its value: `75 h 39 m` puts `m` on a second line.\n\n## Fix\n- Keep the value on one line at every popup width: non-breaking spaces between number and unit, `white-space: nowrap`, or a shorter format such as `75h 39m`, used consistently with the other boxes.\n- Check the sibling boxes for the same problem.\n\n## The color bar\nThe user doesn't understand the color bar on the left side of the box. Find what it encodes (`dashboard/src/lib/insights.ts`), then either:\n- remove it, if it carries no meaning; or\n- make it self-explanatory (a legend, or a tooltip saying what the color means).\n\n## Tests\n- An e2e check that the value doesn't wrap at the popup's narrowest width.\n- Update the affected screenshots.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ActivityDeepDive.svelte",
@@ -7630,9 +7630,11 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:19:36Z",
+      "updated_at": "2026-10-26T19:22:10Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T19:22:10Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-211",

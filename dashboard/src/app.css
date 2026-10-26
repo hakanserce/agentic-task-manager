@@ -656,22 +656,25 @@ h1 {
   transition: stroke-dasharray 0.6s ease;
 }
 
+/* Five across in the wide panel; fewer per row when the panel is narrower, rather than squeezing the numbers */
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
   gap: 10px;
 }
 .kpi {
   background: var(--surface2);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
 }
+/* One line: "75 h 39 m" must not leave its "m" on a line of its own */
 .kpi-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .kpi-label {
   font-size: 11px;
@@ -3055,9 +3058,16 @@ svg.graph-minimap.hidden {
   font-size: 10px;
   fill: var(--text-muted);
 }
-/* Text stays in text colours (yellow on light backgrounds is hard to read); a yellow edge marks it */
-.kpi-warn {
-  box-shadow: inset 3px 0 0 var(--yellow);
+/* The idle number's key: a small sample of the charts' idle hatching (.idle-band) */
+.idle-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--yellow) 45%, transparent);
 }
 
 /* A newer dashboard is ready after a plugin update (UpdateNotice.svelte). A toast in the bottom right corner, above

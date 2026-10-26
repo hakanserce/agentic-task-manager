@@ -84,6 +84,22 @@ describe('progressBreakdown', () => {
     expect(progressBreakdown([]).overall.ratio).toBe(0);
   });
 
+  it('archived tasks count as done overall, so archiving never lowers the percentage (T-238)', () => {
+    const current = [task('a', { status: 'done' }), task('b', { status: 'todo' }), task('c', { status: 'todo' })];
+    // 6 archived, not loaded: counted from meta.archived
+    const p = progressBreakdown(current, undefined, 6);
+    expect(p.overall).toMatchObject({ done: 7, total: 9 });
+    expect(p.overall.ratio).toBeCloseTo(7 / 9);
+    expect(p.archived).toBe(6);
+    // Phases and types are the tasks passed in: tasks.json's until the archive is loaded
+    expect(p.byPhase.map((s) => s.total)).toEqual([3]);
+    // Loaded: the history has them, and the count is only for the tooltip
+    const archived = Array.from({ length: 6 }, (_, i) => task(`x${i}`, { status: 'done' }));
+    const loaded = progressBreakdown([...current, ...archived], undefined, 0, 6);
+    expect(loaded.overall).toMatchObject({ done: 7, total: 9 });
+    expect(loaded.archived).toBe(6);
+  });
+
   it('skipped tasks count as neither done nor left: 7 done and 3 skipped is 100%, the 3 shown apart', () => {
     const tasks = [
       ...Array.from({ length: 7 }, (_, i) => task(`d${i}`, { status: 'done' })),

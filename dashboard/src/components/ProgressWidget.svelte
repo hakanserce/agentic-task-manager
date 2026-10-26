@@ -8,9 +8,19 @@
   import Ring from './Ring.svelte';
 
   // Compact: a progress bar. Click: overall completion, the status split, and completion per phase and type.
-  const p = $derived(progressBreakdown(dashboard.tasks, dashboard.vocab));
+  // Archived tasks count (all done): from meta.archived until the archive is loaded, then from the history (T-238)
+  const p = $derived(
+    dashboard.archiveLoaded
+      ? progressBreakdown(dashboard.history, dashboard.vocab, 0, dashboard.archivedCount)
+      : progressBreakdown(dashboard.tasks, dashboard.vocab, dashboard.archivedCount),
+  );
   const pct = $derived(Math.round(p.overall.ratio * 100));
   let open = $state(false);
+  // The popover's breakdown by phase and type needs the archived tasks themselves
+  $effect(() => {
+    if (open && dashboard.archivedCount > 0) dashboard.wantArchive();
+  });
+  const archivedNote = $derived(p.archived ? ` (${p.archived} archived, done)` : '');
   let root: HTMLElement;
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
@@ -41,7 +51,7 @@
     class="widget-card progress-card"
     id="progress-card"
     aria-expanded={open}
-    title="Progress: {p.overall.done} of {p.overall.total} tasks done · click for details"
+    title="Progress: {p.overall.done} of {p.overall.total} tasks done{archivedNote} · click for details"
     aria-label="Progress {pct}%, {p.overall.done} of {p.overall.total} tasks done"
     onclick={() => (open = !open)}
   >
@@ -82,9 +92,11 @@
         />
         <div class="insights-hero-text">
           <div class="insights-title">
-            {p.overall.done} of {p.overall.total} tasks done{#if p.overall.skipped}<span
+            {p.overall.done} of {p.overall.total} tasks done{#if p.archived}<span
                 class="skipped-note"
-                id="overall-skipped">&nbsp;· {p.overall.skipped} skipped</span
+                id="overall-archived">&nbsp;· {p.archived} archived</span
+              >{/if}{#if p.overall.skipped}<span class="skipped-note" id="overall-skipped"
+                >&nbsp;· {p.overall.skipped} skipped</span
               >{/if}
           </div>
           <!-- Status split: a stacked bar (part of a whole), labelled in the legend -->

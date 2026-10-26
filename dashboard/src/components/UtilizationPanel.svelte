@@ -6,8 +6,9 @@
 
   let { now }: { now: number } = $props();
 
-  // Work of the matching tasks, over the whole project's period (first start to now)
-  const u = $derived(utilization(dashboard.filtered, dashboard.claims, now, dashboard.tasks, dashboard.vocab));
+  // Work of the matching tasks, over the whole project's period (first start to now). From the history, like the
+  // burndown above it: archiving finished tasks doesn't shrink the work or the period (T-238)
+  const u = $derived(utilization(dashboard.historyFiltered, dashboard.claims, now, dashboard.history, dashboard.vocab));
   const pct = (r: number) => `${Math.round(r * 100)}%`;
   const hours = (msSpan: number) => formatMinutes(msSpan / 60_000);
   const span = (msSpan: number) => {

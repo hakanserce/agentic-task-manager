@@ -23,7 +23,10 @@ export interface StatusCount {
 }
 
 export interface ProgressBreakdown {
+  /** Every task of the project, the archived ones included */
   overall: Share;
+  /** Archived tasks: counted as done in `overall`, and in the other numbers only when they were passed in */
+  archived: number;
   byStatus: StatusCount[];
   byPhase: Share[];
   byType: Share[];
@@ -47,14 +50,30 @@ function groupBy<K>(tasks: Task[], key: (t: Task) => K): Map<K, Task[]> {
   return groups;
 }
 
-export function progressBreakdown(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): ProgressBreakdown {
+/**
+ * The Progress widget's numbers. `tasks` is tasks.json's tasks, or the history once the archive is loaded;
+ * `unloadedArchived` is how many archived tasks are not among them (meta.archived until the archive is loaded): they
+ * are all finished, so the overall share counts them as done without loading the archive (T-238), and archiving
+ * never lowers the percentage. A skipped one among them counts as done until the archive is loaded and the numbers
+ * become exact.
+ */
+export function progressBreakdown(
+  tasks: Task[],
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+  unloadedArchived = 0,
+  archived = unloadedArchived,
+): ProgressBreakdown {
   const statusCounts = groupBy(tasks, (t) => t.status);
   const rank = (s: string) => {
     const kind = kindOf(vocab, s);
     return kind ? KIND_ORDER.indexOf(kind) : KIND_ORDER.length;
   };
+  const current = share('all', 'All tasks', tasks, vocab);
+  const done = current.done + unloadedArchived;
+  const total = current.total + unloadedArchived;
   return {
-    overall: share('all', 'All tasks', tasks, vocab),
+    overall: { ...current, done, total, ratio: total ? done / total : current.ratio },
+    archived,
     byStatus: [...statusCounts]
       .map(([status, list]) => ({ status, count: list.length }))
       .sort((a, b) => rank(a.status) - rank(b.status) || a.status.localeCompare(b.status)),

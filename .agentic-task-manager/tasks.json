@@ -6906,7 +6906,7 @@
       "description": "Do the same for the **\"N need(s) you\"** chip on the project cards (`.project-card-need` in `ProjectCard.svelte`), which today opens the project's Kanban filtered to review and blocked.\n\n## Do\n- atm serve's project summary (`api/projects`) lists the tasks that need the user: `id`, `name` and the reason, as the dashboard's `needingUser` decides it (same status kinds). Document it in `docs/multi-project-api.md`; atm-cli scenarios for it.\n- One task: clicking opens that project with the task's details open (`dashboard.openProject(id, …)` plus the task).\n- Several: the same popup list as the title bar chip (reuse its component); a row opens the project and that task.\n\n## Verify\n- atm-cli scenarios for the new summary field.\n- e2e on `#overview`: one and several tasks; the project page opens with `#detail-overlay.open` on the right task.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-199"
       ],
@@ -6920,11 +6920,22 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:59:38Z",
-      "updated_at": "2026-10-26T06:46:29Z",
+      "updated_at": "2026-10-26T06:53:46Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T06:46:29Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "7c05f41c8252e7334f57103c2eedaa0f427f8225",
+      "completed_at": "2026-10-26T06:53:46Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T06:53:46Z",
+          "kind": "outcome",
+          "text": "api/projects summary has needs_you_tasks [{id,name,reason}] (serve.test covers it, incl. blocked-on-agent excluded); NeedsYouMenu is now generic (items/onopen/align) and used by the title bar and project cards; one task opens the project on it (openProject task option), several list under the chip. Old servers fall back to the filtered Kanban.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

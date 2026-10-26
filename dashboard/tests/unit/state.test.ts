@@ -44,7 +44,9 @@ describe('DashboardState', () => {
       history.replaceState(null, '', '/');
       localStorage.clear();
     });
-    const urls = () => fetchMock.mock.calls.map(([url]) => String(url).split('?')[0]);
+    // What the page loads (the server's whoami is asked alongside, for the "new version" notice)
+    const urls = () =>
+      fetchMock.mock.calls.map(([url]) => String(url).split('?')[0]).filter((u) => u !== '__atm/whoami');
 
     it('with one project, loads the project list, then its files from p/<id>/', async () => {
       fetchMock = server({ projects: [project('gone', true), project('p2')] });
@@ -110,7 +112,7 @@ describe('DashboardState', () => {
     await s.load();
     fetchMock.mockClear();
     await s.reload();
-    expect(String(fetchMock.mock.calls[1][0])).toBe('p/p1/tasks.json');
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain('p/p1/tasks.json');
   });
 
   it('records an initial load failure', async () => {

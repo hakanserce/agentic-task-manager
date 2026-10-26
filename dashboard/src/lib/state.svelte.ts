@@ -5,13 +5,15 @@ import {
   loadArchive,
   loadProjects,
   loadTasks,
+  newBuildReady,
+  serverBuild,
   type LoadedTasks,
   type ProjectEntry,
   type Validators,
 } from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
-import { dashboardVersion } from './release-notes';
+import { dashboardBuild, dashboardVersion } from './release-notes';
 import { isModePref, knownTheme, resolveMode, type Mode, type ModePref } from './appearance';
 import {
   emptyFilters,
@@ -49,6 +51,8 @@ export class DashboardState {
   route = $state.raw<Route>({ page: 'project', id: '' });
   /** The project whose files are loaded, by id; null until one is shown */
   projectId = $state<string | null>(null);
+  /** The server holds a newer dashboard than this page (after a plugin update): a bar offers to reload */
+  newVersionReady = $state(false);
   /** The overview shows only active projects (open work, or activity lately); remembered per browser */
   overviewActiveOnly = $state(getPref('overviewActiveOnly', true));
   tasks = $state.raw<Task[]>([]);
@@ -159,6 +163,7 @@ export class DashboardState {
   #validators: Validators | undefined;
   #projectsValidators: Validators | undefined;
   #pendingNeedsYou = false;
+  #newVersionDismissed = false;
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
 
@@ -268,8 +273,20 @@ export class DashboardState {
     if (JSON.stringify(route) !== JSON.stringify(this.route)) void this.reload();
   }
 
+  /** Whether the server now holds a newer dashboard than this page (the plugin was updated): offer a reload */
+  private async checkServerBuild() {
+    if (!this.#newVersionDismissed && newBuildReady(dashboardBuild(), await serverBuild())) this.newVersionReady = true;
+  }
+
+  /** "Not now": the bar stays away until the page is reloaded */
+  dismissNewVersion() {
+    this.#newVersionDismissed = true;
+    this.newVersionReady = false;
+  }
+
   private async fetchAndApply() {
     const project = await this.refreshProjects();
+    void this.checkServerBuild(); // the server answered: ask which dashboard it holds now
     if (project === null) {
       this.loadedAt = Date.now();
       return;

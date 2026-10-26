@@ -114,6 +114,28 @@ export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Valida
   return { unchanged: false, projects, validators: file.validators };
 }
 
+export const WHOAMI_URL = '__atm/whoami';
+
+/**
+ * The build of the dashboard the server holds now (its /__atm/whoami), or null when it doesn't say (a server or dev
+ * server without it, or any failure): a new plugin version restarts the server with a new build.
+ */
+export async function serverBuild(fetchFn: typeof fetch = fetch): Promise<string | null> {
+  try {
+    const resp = await fetchFn(WHOAMI_URL, { cache: 'no-store' });
+    if (!resp.ok) return null;
+    const info = (await resp.json()) as { build?: unknown };
+    return typeof info.build === 'string' && info.build ? info.build : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. */
+export function newBuildReady(pageBuild: string | undefined, server: string | null): boolean {
+  return !!pageBuild && !!server && pageBuild !== server;
+}
+
 export type LoadResult = { unchanged: true } | { unchanged: false; loaded: LoadedTasks; validators: Validators };
 
 /**

@@ -136,6 +136,14 @@ export class TasksServer {
     return this;
   }
 
+  /** Answer __atm/whoami with this dashboard build, as a server restarted on a new plugin version would. */
+  async serverBuild(build: string) {
+    await this.page.route(/\/__atm\/whoami$/, (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ atm: true, build }) }),
+    );
+    return this;
+  }
+
   /** List a registered project whose folder is gone (missing, no summary, no files). */
   goneProject(id: string, name = id) {
     this.gone.set(id, name);

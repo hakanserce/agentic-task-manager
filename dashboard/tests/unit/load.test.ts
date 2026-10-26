@@ -4,8 +4,10 @@ import {
   loadArchive,
   loadProjects,
   loadTasks,
+  newBuildReady,
   parseTasksFile,
   projectFileUrl,
+  serverBuild,
 } from '../../src/lib/load';
 import archive from '../fixtures/archive.json';
 import standard from '../fixtures/standard.json';
@@ -37,6 +39,24 @@ describe('parseTasksFile', () => {
       ],
     });
     expect(taskMap.get('T-1')?.name).toBe('b');
+  });
+});
+
+describe('a new dashboard build on the server', () => {
+  it("reads the server's build from __atm/whoami; anything else is unknown", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse({ atm: true, build: 'b2' }));
+    expect(await serverBuild(fetchFn)).toBe('b2');
+    expect(fetchFn).toHaveBeenCalledWith('__atm/whoami', { cache: 'no-store' });
+    expect(await serverBuild(vi.fn().mockResolvedValue(jsonResponse('nope', 404)))).toBeNull();
+    expect(await serverBuild(vi.fn().mockResolvedValue(jsonResponse({ atm: true })))).toBeNull();
+    expect(await serverBuild(vi.fn().mockRejectedValue(new TypeError('offline')))).toBeNull();
+  });
+
+  it('is ready only when both builds are known and differ', () => {
+    expect(newBuildReady('b1', 'b2')).toBe(true);
+    expect(newBuildReady('b1', 'b1')).toBe(false);
+    expect(newBuildReady(undefined, 'b2')).toBe(false);
+    expect(newBuildReady('b1', null)).toBe(false);
   });
 });
 

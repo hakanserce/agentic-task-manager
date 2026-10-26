@@ -11,6 +11,7 @@
   import AboutDialog from './components/AboutDialog.svelte';
   import HelpDialog from './components/HelpDialog.svelte';
   import LandingPage from './components/LandingPage.svelte';
+  import UpdateNotice from './components/UpdateNotice.svelte';
 
   onMount(() => {
     dashboard.load();
@@ -27,6 +28,7 @@
   $effect(() => dashboard.saveView());
 </script>
 
+<UpdateNotice />
 {#if dashboard.route.page === 'project'}
   <Header />
   <ViewPanel />

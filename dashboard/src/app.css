@@ -2836,6 +2836,44 @@ svg.graph-minimap.hidden {
   box-shadow: inset 3px 0 0 var(--yellow);
 }
 
+/* A newer dashboard is ready after a plugin update (UpdateNotice.svelte) */
+.update-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+}
+.update-reload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.update-dismiss {
+  margin-left: auto;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.update-dismiss:hover {
+  color: var(--text);
+}
+
 /* Pages without a project: the overview, how to add a project, an unknown project (LandingPage.svelte) */
 .landing {
   padding: 24px 0;

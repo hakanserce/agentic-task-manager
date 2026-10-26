@@ -5771,7 +5771,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3.\n\n### Behaviour\n- On each auto-refresh (or when a poll fails and then recovers), compare `/__atm/whoami`'s `build` with the page's `atm-dashboard-build` meta tag.\n- When they differ, show a small, non-blocking bar: *\"A new version of the dashboard is ready\"*, with a **Reload** button.\n- **Never reload by itself.**\n- What's new keeps its current *new* marker logic after the reload.\n\n### Tests\n- Unit test for the comparison.\n- e2e where the fixture's `whoami` changes `build` mid-test.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-172"
       ],
@@ -5782,9 +5782,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:55Z",
+      "updated_at": "2026-10-26T00:00:28Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:00:28Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-177",
@@ -5949,7 +5951,7 @@
       "description": "Done tasks from before 0.7.0 have no `completed_at`, and skipped tasks never get a finish time, so the dashboard falls back to `updated_at` (`timeline.ts`, `kanban.ts`, `archive.ts`). Any later `atm edit` (a label, a description) then moves the task's finish time to *now*: it shows up as finished today in Activity, the burndown and the Kanban's Done order, and its archiving is delayed.\n\n### atm-cli\n- **`atm skip`** records `skipped_at` (the skip time); `atm reopen` clears it, like `completed_at`.\n- **`atm migrate`** backfills, once and idempotently:\n  - a done-kind task without `completed_at` gets `completed_at = updated_at`;\n  - a skipped-kind task without `skipped_at` gets `skipped_at = updated_at`.\n\n  It writes under the lock, leaves `updated_at` / `updated_by` as they are, and reports how many tasks it filled in (one line, and in `--json`). Run it on `tasks-archive.json` too.\n- **Archiving** (`atm archive`, `archivable()` in `model.py`) uses `skipped_at` for skipped tasks, falling back to `updated_at`.\n\n### Dashboard\n`lib/archive.ts` (and anything else that dates a skipped task) uses `skipped_at`, then `updated_at`. Add `skipped_at` to the `Task` type.\n\n### Tests and docs\n- Scenarios: backfill of done and skipped tasks; a second run changes nothing; tasks that have the field are untouched; `skip` sets and `reopen` clears `skipped_at`; archive eligibility by `skipped_at`.\n- A dashboard unit test for `archive.ts`.\n- `docs/v4/data-model.md` and `plugin/CLAUDE.md` list `skipped_at`.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -5963,11 +5965,22 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T21:35:18Z",
-      "updated_at": "2026-10-25T23:52:48Z",
+      "updated_at": "2026-10-26T00:00:25Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:52:48Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "53d683eebee5e5009a2c134797d121ecdd9ebc92",
+      "completed_at": "2026-10-26T00:00:25Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:00:25Z",
+          "kind": "outcome",
+          "text": "skip records skipped_at (reopen clears it, merge driver carries it); migrate backfills completed_at/skipped_at from updated_at in tasks.json and the archive, once, under the lock; archive dating (atm-cli and dashboard) uses skipped_at",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-182",

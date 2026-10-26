@@ -91,7 +91,7 @@ with the task that adds it.
 | I18 | **CI tokens are read-only by default; checkouts don't keep credentials** | `dashboard/tests/unit/ci-workflow.test.ts` |
 | I19 | **Actions are pinned by commit SHA and images by digest**; Dependabot proposes action and npm updates | `ci-workflow.test.ts`; `.github/dependabot.yml` |
 | I20 | **What users run is what was reviewed**: the committed build artifacts match their sources | CI's freshness checks |
-| I21 | **`main` takes only reviewed changes with green checks** | branch protection (**to set up**, T-231) |
+| I21 | **`main` takes only reviewed changes with green checks** | the ruleset `.github/rulesets/main.json`, applied by the owner (T-231) |
 
 ## 3. Verifying it
 
@@ -159,7 +159,7 @@ container with no credentials and no egress already bounds what it can reach.
 3. Level 2 runs locally for now. A manual `workflow_dispatch` job (the API key as a repository secret) can come later,
    once local runs are reliable (a note in T-235).
 
-### 3.2 Distribution (T-231, proposal)
+### 3.2 Distribution (T-231, approved)
 
 Users run what is on `main`: the marketplace installs `./plugin` from the default branch, and the hooks run it on every
 tool call. Today `main` has **no branch protection**. Proposal:
@@ -172,8 +172,9 @@ tool call. Today `main` has **no branch protection**. Proposal:
   merge. The PR and its checks are the review; revisit when there are other committers;
 - the owner can bypass in an emergency.
 
-Applied with (run by the owner; I'll write the exact JSON once you agree):
-`gh api -X POST repos/hakanserce/agentic-task-manager/rulesets --input <ruleset.json>`
+The ruleset is `.github/rulesets/main.json` (the bypass actor 5 is the repository's Admin role). Applied once by the
+owner: `gh api -X POST repos/hakanserce/agentic-task-manager/rulesets --input .github/rulesets/main.json`. A later
+change to the file is applied with `-X PUT …/rulesets/<id>`.
 
 **Private vulnerability reporting**: turn it on (Settings → Code security), as `SECURITY.md` points to it.
 
@@ -182,11 +183,8 @@ That would make a release an explicit step (push a tag, update the marketplace e
 Branch protection already makes `main` the reviewed state, every PR is a release (§3), and a tag step would add a
 manual move to each release without changing who can publish. Revisit if outside contributors start merging.
 
-**Questions for you:**
-
-1. Branch protection as above (PR only, the four checks, no required approval, owner bypass)?
-2. Turn on private vulnerability reporting?
-3. Keep installing from `main` (no release tags) for now?
+**Decisions** (approved 2026-10-26): branch protection as above; private vulnerability reporting on; users keep
+installing from `main`, no release tags for now. Both settings are applied by the owner (T-231).
 
 ## 4. Keeping it current
 

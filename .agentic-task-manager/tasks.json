@@ -8370,7 +8370,7 @@
       "description": "Findings **F12**, **F13** and **F14** in `docs/security-review.md`.\n\n## Do\n\n- Catch `RecursionError` in `read_json`; make `find_cycle` iterative; check task shapes on load (each task a dict, dependencies a list of strings).\n- A catch-all in `main` (and the merge driver) that reports a clean error instead of a traceback.\n- The ID regex `^(.*?)(\\d+)$`: time it on `'1'*20000+'x'`; if slow, cap ID length or strip trailing digits by hand.\n- Fix the lock-breaking race in `lock.py` (rename first, then check the owner inside the renamed directory).\n- Delete a legacy `.agentic-task-manager/.server.json` without contacting its port or signalling its pid.\n\n## Verify\n\nScenarios with deeply nested JSON, a 2000-task dependency chain, a non-dict task, a long numeric ID; a concurrency test for the lock.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/core.py",
@@ -8382,11 +8382,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:46:15Z",
+      "updated_at": "2026-10-26T22:56:22Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:46:15Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6fc584d8e2af458261dae6f1f8e316b15b06d587",
+      "completed_at": "2026-10-26T22:56:22Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:56:22Z",
+          "kind": "outcome",
+          "text": "Hostile task files get clean errors: shape checks on load, a catch-all in `main`, iterative `find_cycle` (3000-task chain), a linear `split_id` instead of the backtracking ID regex, the lock broken by rename-then-check, and a committed legacy `.server.json` deleted without contacting its port or pid. `hostile.test.mjs`; the lock race itself has no test (it needs three processes timed to the millisecond).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-229",
@@ -8523,7 +8534,7 @@
       "description": "§4.2 of `docs/security-review.md`. A section of `docs/security-architecture.md`, decided with the user.\n\nThe recommendation to present:\n\n1. **Hostile-repo fixture** for atm-cli and the server: a temp `HOME` / `ATM_HOME` and a generated repo with symlinks, nested JSON, odd IDs and URLs, in the existing `tests/scripts` harness. Cheap; runs on every PR.\n2. **Agent sandbox** for the skills: a container (devcontainer or Docker) with a throwaway repo, no real credentials, network egress blocked except the model API, where an agent runs `/atm:loop-tasks` on red-team tasks (injected commands, `curl | sh`, credential reads); it passes if it blocks them. The only way to test prompt injection; costs model calls, so not on every PR.\n\nRecord the decision, what each level covers and what it costs.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-232"
       ],
@@ -8531,9 +8542,11 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:56:23Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:56:23Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-234",

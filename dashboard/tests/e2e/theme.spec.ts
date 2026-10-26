@@ -6,7 +6,7 @@ import { expect, openDashboard, openMenu, test } from './helpers';
 const html = (page: Page) => page.locator('html');
 /** Mode and theme are in the menu behind the palette button, top right */
 const menu = (page: Page) => openMenu(page, '#appearance-btn');
-const theme = (page: Page, id: string) => page.locator(`.theme-option[data-theme="${id}"]`);
+const themeSelect = (page: Page) => page.locator('#theme-select');
 const bodyBackground = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 const DARK_BG = 'rgb(13, 17, 23)';
 const LIGHT_BG = 'rgb(255, 255, 255)';
@@ -72,7 +72,7 @@ test.describe('themes', () => {
   test('picking a theme changes the colours, per mode, and is remembered', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     await menu(page);
-    await expect(page.locator('.theme-option .theme-name')).toHaveText([
+    await expect(themeSelect(page).locator('option')).toHaveText([
       'Default',
       'Nord',
       'Solarized',
@@ -86,8 +86,8 @@ test.describe('themes', () => {
       'High contrast',
     ]);
     const before = await tokens(page);
-    await theme(page, 'nord').click();
-    await expect(theme(page, 'nord')).toHaveAttribute('aria-checked', 'true');
+    await themeSelect(page).selectOption('nord');
+    await expect(themeSelect(page)).toHaveValue('nord');
     await expect(html(page)).toHaveAttribute('data-theme', 'nord');
     expect(await tokens(page)).toEqual({ bg: '#2e3440', accent: '#88c0d0' });
     expect(await tokens(page)).not.toEqual(before);
@@ -95,7 +95,7 @@ test.describe('themes', () => {
     expect((await tokens(page)).bg).toBe('#eceff4');
     await page.reload();
     await menu(page);
-    await expect(theme(page, 'nord')).toHaveAttribute('aria-checked', 'true');
+    await expect(themeSelect(page)).toHaveValue('nord');
     await expect(html(page)).toHaveAttribute('data-theme', 'nord');
     await expect(html(page)).toHaveAttribute('data-mode', 'light');
   });
@@ -104,33 +104,31 @@ test.describe('themes', () => {
     await page.addInitScript(() => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: 'vaporwave' })));
     await openDashboard(page, tasksServer, 'standard');
     await menu(page);
-    await expect(theme(page, 'default')).toHaveAttribute('aria-checked', 'true');
+    await expect(themeSelect(page)).toHaveValue('default');
     await expect(html(page)).toHaveAttribute('data-theme', 'default');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(DARK_BG);
   });
 
-  test('the keyboard: the current theme is focused on open, arrows and Home/End choose', async ({
+  test('the theme is a compact combo box, labelled, with the current theme and its swatch', async ({
     page,
     tasksServer,
   }) => {
     await page.addInitScript(() => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: 'noctis' })));
     await openDashboard(page, tasksServer, 'standard');
     await menu(page);
-    await expect(theme(page, 'noctis')).toBeFocused();
-    await expect(theme(page, 'noctis')).toBeInViewport();
-    await page.keyboard.press('ArrowDown');
-    await expect(theme(page, 'sublime-material')).toBeFocused();
-    await expect(html(page)).toHaveAttribute('data-theme', 'sublime-material');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
+    await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('noctis');
+    await expect(page.locator('.theme-picker .theme-swatch span')).toHaveCount(4);
+    const height = (await page.locator('#appearance-menu').boundingBox())!.height;
+    expect(height).toBeLessThan(200);
+  });
+
+  test('the keyboard: Tab reaches the theme, typing a letter picks one', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await menu(page);
+    await themeSelect(page).focus();
+    await page.keyboard.type('g');
     await expect(html(page)).toHaveAttribute('data-theme', 'gruvbox');
-    await page.keyboard.press('End');
-    await expect(theme(page, 'high-contrast')).toBeFocused();
-    await page.keyboard.press('ArrowDown'); // stays on the last one
-    await expect(html(page)).toHaveAttribute('data-theme', 'high-contrast');
-    await page.keyboard.press('Home');
-    await expect(theme(page, 'default')).toHaveAttribute('aria-checked', 'true');
-    await expect(theme(page, 'default')).toBeFocused();
+    await expect(themeSelect(page)).toHaveValue('gruvbox');
   });
 
   test('the menu button previews the theme and closes the menu on Escape', async ({ page, tasksServer }) => {

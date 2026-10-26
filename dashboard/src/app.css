@@ -942,34 +942,25 @@ button.menu-trigger:hover,
   color: var(--text);
   font-weight: 600;
 }
-.theme-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-.theme-option {
+.theme-picker {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: none;
-  border: none;
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 13px;
-  padding: 6px 8px;
-  cursor: pointer;
-  text-align: left;
+  gap: 8px;
 }
-.theme-option:hover {
-  background: color-mix(in srgb, var(--text) 10%, transparent);
-}
-.theme-option.active {
-  font-weight: 600;
-}
-.theme-option .theme-name {
+.theme-picker select {
   flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+.theme-picker select:hover {
+  border-color: var(--text-muted);
 }
 .theme-swatch {
   display: inline-flex;

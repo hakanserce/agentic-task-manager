@@ -60,7 +60,7 @@ with the task that adds it.
 
 | # | Invariant | Enforced by |
 |---|---|---|
-| I5 | **atm never runs a shell**: subprocesses get argument lists; no `shell=True`, `os.system`, `eval` or `exec` | review; a static check (**to build**, T-234) |
+| I5 | **atm never runs a shell**: subprocesses get argument lists; no `shell=True`, `os.system`, `eval` or `exec` | `dashboard/tests/unit/security-invariants.test.ts` (a static check) |
 | I6 | **atm never reads or writes through a symlink** in the task folder, nor a task folder outside the project | `tests/scripts/symlinks.test.mjs` |
 | I7 | **A `--file` names one file**: git runs with literal pathspecs; whole-tree pathspecs are refused | `tests/scripts/git.test.mjs` |
 | I8 | **Strings from `tasks.json` that reach a shell are shell-safe**: task IDs and `meta.workflow.base` are checked on load | `tests/scripts/scenarios/security.json` |
@@ -80,7 +80,7 @@ with the task that adds it.
 | # | Invariant | Enforced by |
 |---|---|---|
 | I14 | **Every link from task data is http(s)** (`safeUrl`); Markdown links are http(s), mailto or `#` | `tests/unit/url.test.ts`, `markdown.test.ts`, `stages.test.ts`, `ProjectCard.component.test.ts` |
-| I15 | **No `{@html}` on data**: only on the built-in icons and the bundled logo | review; a check that `{@html}` appears only in `Icon.svelte` and `Logo.svelte` (**to build**, T-234) |
+| I15 | **No `{@html}` on data**: only on the built-in icons and the bundled logo | `security-invariants.test.ts` (`{@html}` only in `Icon.svelte` and `Logo.svelte`) |
 | I16 | **The page runs under its CSP**: nothing it does is refused | the e2e `cspGuard` fixture (every e2e test) |
 | I17 | **No request leaves localhost** | the e2e `externalRequestGuard` fixture |
 
@@ -121,9 +121,9 @@ a user does. Most of it exists since phase 20's fixes:
 | pathspec globs (I7) | `tests/scripts/git.test.mjs` |
 | headers, Host check, `[::1]` (I10, I13) | `tests/scripts/serve.test.mjs` |
 
-What T-234 adds: the static checks (I5: no `shell=True` / `os.system` / `eval` / `exec` in `atm-cli/`; I15: `{@html}`
-only in `Icon.svelte` and `Logo.svelte`), and a test that each invariant in §2 marked as tested names a test that
-exists. **Cost:** seconds; runs in CI on every PR with `npm run test:scripts` and the unit tests.
+T-234 added the static checks (I5: no `shell=True` / `os.system` / `eval` / `exec` in `atm-cli/`; I15: `{@html}` only
+in `Icon.svelte` and `Logo.svelte`) and a check that every test the §2 table names exists, all in
+`dashboard/tests/unit/security-invariants.test.ts`. **Cost:** seconds; runs in CI on every PR with `npm run test:scripts` and the unit tests.
 
 **Level 2: the agent sandbox (the skills).** The only way to test I1 (task text is data) is to let a real agent loop
 over hostile tasks and see what it does. It must run where a mistake costs nothing:

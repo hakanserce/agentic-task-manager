@@ -8449,7 +8449,7 @@
       "description": "Findings **F15** and **F16** in `docs/security-review.md`.\n\n## Do\n\n- `.github/workflows/ci.yml`: top-level `permissions: contents: read`; `persist-credentials: false` on every `actions/checkout`.\n- Pin actions by commit SHA (with a version comment), the Playwright image and the Python images by `@sha256:` digest.\n- `.github/dependabot.yml` for `github-actions`, `npm` (in `dashboard/`) and `docker`.\n- The `linux-screenshot-baselines` artifact holds only `**/*-linux.png`.\n- `CLAUDE.md`: check the run's head SHA is your branch's before downloading its baselines; tell developers `npm ci`, not `npm install` (check the `prepare` script still sets the hooks path).\n\n## Verify\n\nCI is green; the run log's \"GITHUB_TOKEN Permissions\" shows contents: read.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         ".github/workflows/ci.yml",
@@ -8457,11 +8457,22 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:57:46Z",
+      "updated_at": "2026-10-26T22:59:55Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:57:46Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "34d1550133dd65637c212ce6ee47d897557d6adf",
+      "completed_at": "2026-10-26T22:59:55Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:59:55Z",
+          "kind": "outcome",
+          "text": "CI: `permissions: contents: read`, `persist-credentials: false`, actions pinned by commit SHA and images by digest, the baselines artifact holds only `*-linux.png`; Dependabot for actions and npm; `CLAUDE.md` says check the run before using its baselines and `npm ci`. Guarded by `ci-workflow.test.ts`. CI itself runs with the phase push.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-231",
@@ -8600,7 +8611,7 @@
       "description": "Level 1 of the sandbox decision in `docs/security-architecture.md`.\n\n## Do\n\n- In `tests/scripts/`, a helper that builds a hostile repo in a temp folder with its own `HOME` / `ATM_HOME`: symlinked task files and folders, deeply nested JSON, odd task IDs, `javascript:` URLs, a legacy `.server.json`.\n- Collect the security tests from the fix tasks there, and add any invariant from `docs/security-architecture.md` that has no test yet.\n- A static check (in the suite or `npm run check`) that `atm-cli/` has no `shell=True`, `os.system`, `eval` or `exec`.\n\nRuns in CI with the rest of `npm run test:scripts`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-233"
       ],
@@ -8608,9 +8619,11 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:59:56Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:59:56Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-235",

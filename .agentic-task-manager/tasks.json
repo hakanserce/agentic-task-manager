@@ -8412,16 +8412,18 @@
       "description": "Finding **F19** in `docs/security-review.md`.\n\nWith the `direct` workflow, `/atm:loop-tasks --push` pushes each task's commit to the base branch with no review, and a commit a hook rejects (e.g. a secret scanner) only logs a warning.\n\n## Do\n\n- loop-tasks: with `--push` / `--push-every` / `--batch-push` and the `direct` workflow, ask once at the start (show what will be pushed), unless the loop has `--yes`.\n- A commit rejected by a hook stops the loop and reports it; other commit failures keep today's behaviour.\n- push: in `direct`, show the commits that will be pushed.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "plugin/skills/loop-tasks/SKILL.md",
         "plugin/skills/push/SKILL.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:56:58Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:56:58Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-230",
@@ -8534,7 +8536,7 @@
       "description": "§4.2 of `docs/security-review.md`. A section of `docs/security-architecture.md`, decided with the user.\n\nThe recommendation to present:\n\n1. **Hostile-repo fixture** for atm-cli and the server: a temp `HOME` / `ATM_HOME` and a generated repo with symlinks, nested JSON, odd IDs and URLs, in the existing `tests/scripts` harness. Cheap; runs on every PR.\n2. **Agent sandbox** for the skills: a container (devcontainer or Docker) with a throwaway repo, no real credentials, network egress blocked except the model API, where an agent runs `/atm:loop-tasks` on red-team tasks (injected commands, `curl | sh`, credential reads); it passes if it blocks them. The only way to test prompt injection; costs model calls, so not on every PR.\n\nRecord the decision, what each level covers and what it costs.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "in_review",
       "dependencies": [
         "T-232"
       ],
@@ -8542,11 +8544,21 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:56:23Z",
+      "updated_at": "2026-10-26T22:56:49Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:56:23Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "8469efd678ba0edd9b0c484134e3dc6e8f9f4840",
+      "review_requested_at": "2026-10-26T22:56:49Z",
+      "notes": [
+        {
+          "at": "2026-10-26T22:56:49Z",
+          "kind": "review",
+          "text": "Sandbox proposal in §3.1 of `docs/security-architecture.md` (level 1: hostile-repo tests; level 2: agent sandbox in Docker with canaries and red-team tasks), under review with Hakan in Crit.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-234",

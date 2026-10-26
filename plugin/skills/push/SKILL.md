@@ -51,7 +51,9 @@ and no PR was opened.
 
 ## Step 2: Check before pushing
 
-- **direct:** you should be on the base branch. If you aren't, ask whether to push this branch anyway.
+- **direct:** you should be on the base branch. If you aren't, ask whether to push this branch anyway. List the
+  commits that will be pushed (`git log --oneline @{upstream}..HEAD`) in your report: they reach the base branch with
+  no review in between.
 - **pull-request:** you must *not* be on the base branch. If you are, offer to create a branch for the unpushed commits
   (`git switch -c <name>`) and stop until the user agrees.
 - **Nothing uncommitted that you didn't write** (`git status`): another agent or the user may be working in this tree.

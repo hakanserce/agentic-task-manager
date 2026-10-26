@@ -32,6 +32,7 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 | `--batch-push` | off | Git commit after each task, single push at the end |
 | `--push-every <N>` | off | Git commit after each task, push every N completions |
 | `--no-watch` | off | With a push flag: don't watch CI after the last push either |
+| `--yes` | off | With a push flag in a `direct` project: don't ask before the loop starts |
 
 If no arguments are provided, run all available tasks with no pausing and auto-commit after each task (default behavior).
 
@@ -39,6 +40,13 @@ If no arguments are provided, run all available tasks with no pausing and auto-c
 `pull-request`, opens or updates the PR, records it on the tasks, and watches CI). Pushes in the middle of the loop
 run it as `/atm:push --no-watch`, so the loop isn't held up by CI; the **last** push (at the end of the loop) runs
 `/atm:push`, which watches CI and fixes failures, unless the loop has `--no-watch`.
+
+**Pushing in a `direct` project asks first.** With a push flag and the `direct` workflow (`atm workflow`), each task's
+commit lands on the base branch with nobody reviewing it in between. Unless the loop has `--yes`, before the first
+task tell the user once: the branch it will push to, the commits already waiting there
+(`git log --oneline @{upstream}..HEAD`), and that every finished task will be pushed as it goes. Ask whether to go on
+with pushing, go on without pushing (as if no push flag was given), or stop. In `pull-request` projects the PR is the
+review, so there is nothing to ask.
 
 ## Locate tasks.json
 
@@ -173,6 +181,10 @@ while true:
           - If the commit fails: the task stays in progress. Fix the cause and commit again; if you can't,
             `atm release $TASK_ID --note '<what is done; why the commit failed>'`, log it and continue with the next
             iteration. Don't mark it done.
+          - **If a git hook rejected it** (the error comes from `pre-commit`, `commit-msg` or another hook: a secret
+            scanner, a linter, a policy check): don't work around the hook, never `--no-verify`. Leave the task in
+            progress with its changes, and **stop the loop**: report the hook's message and what it rejected. A hook
+            saying no is the project telling the user something.
 
     6. FINISH the task, once its commit is in:
        - If a review is asked for (by the task's description, the project's instructions or the user; by the user
@@ -245,7 +257,8 @@ summary. With `--push`, this is the last task's push, watched.
 - If `atm` says your lease expired (exit code 4, "your lease expired at …") → the task went back to todo, with your
   commit kept. Run `atm start <id>` and, if that works, the command again as it says; if another agent has claimed
   the task in the meantime (exit code 4), leave it and continue with the next iteration
-- If git commit/push fails → log a warning but continue the loop
+- If a git hook rejects a commit → stop the loop and report it (step 5); never bypass the hook
+- If git commit/push fails otherwise → log a warning but continue the loop
 - If the task description is too vague to execute → `atm release $TASK_ID`, skip it,
   note it in the summary as "skipped: unclear description"
 

@@ -102,6 +102,35 @@ describe('atm commit', () => {
     }
   });
 
+  test('a --file is one file, never a pattern: *.env stages no untracked secrets; [id] is a real name (T-223)', () => {
+    const root = makeProject({
+      commit: true,
+      files: {
+        [TASKS]: { tasks: [{ id: 'T-001', name: 'Add login', phase: 1, type: 'feature', status: 'done' }] },
+        'a.env': 'TRACKED=1\n',
+        'src/[id]/page.ts': 'export {};\n',
+        'src/i': 'a file the pattern [id] would match\n',
+      },
+    });
+    try {
+      write(root, 'a.env', 'TRACKED=2\n');
+      write(root, 'secret.env', 'TOKEN=hunter2\n');
+      const pattern = runAtm(['commit', 'T-001', '--file', '*.env'], root, ENV);
+      assert.equal(pattern.code, 1, pattern.stderr);
+      assert.match(pattern.stderr, /no such file/);
+      assert.equal(git(['rev-list', '--count', 'HEAD'], root), '1');
+      assert.match(git(['status', '--porcelain'], root), /^\?\? secret\.env$/m); // still untracked
+
+      write(root, 'src/[id]/page.ts', 'export const page = 1;\n');
+      write(root, 'src/i', 'changed, and not named\n');
+      const literal = runAtm(['commit', 'T-001', '--file', 'src/[id]/page.ts'], root, ENV);
+      assert.equal(literal.code, 0, literal.stderr);
+      assert.deepEqual(committedFiles(root), ['src/[id]/page.ts']); // not src/i; tasks.json had no change
+    } finally {
+      removeDir(root);
+    }
+  });
+
   test('the template and the trailer rule shape the message; --message replaces the template', () => {
     const forbid = project({
       workflow: { type: 'direct', commit_template: '{type}: {name} ({id})', trailers: 'forbid' },

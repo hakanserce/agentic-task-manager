@@ -8133,7 +8133,7 @@
       "description": "Findings **F3** and **F5** in `docs/security-review.md`.\n\n## Do\n\n- Skill templates put agent-written text in double quotes (`--note \"<…>\"`, `--question`, `--reason`, `gh pr create --title`), where backticks and `$(…)` run. Use single quotes, or add `--note-file` / `--reason-file` / `--question-file` to atm and use those.\n- atm-cli: validate task IDs (`[A-Za-z0-9._-]{1,64}`) and `meta.workflow.base` (git ref syntax, no leading `-`) when loading and in `atm check`; `atm workflow set --base` refuses bad values.\n- A check in `npm run check` that no skill has a `\"<…>\"` template.\n\n## Verify\n\nScenarios in `tests/scripts/scenarios/` with an ID like `T-1;x` and a base like `main$(x)`: `atm check` reports them, `atm workflow` refuses them.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -8143,11 +8143,22 @@
         "plugin/skills/push/SKILL.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:12:59Z",
+      "updated_at": "2026-10-26T22:17:30Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:12:59Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6edbdb89593f8546f754dc2a8db36523bb2d44d8",
+      "completed_at": "2026-10-26T22:17:30Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:17:30Z",
+          "kind": "outcome",
+          "text": "Skill templates single-quote agent text (`--note`, `--question`, `--answer`, `--reason`, `--title`, `--agent`), with a note on apostrophes; `skills.test.ts` forbids double quotes there. atm refuses task IDs and `meta.workflow.base` with shell characters (load, `atm check`, `atm workflow set`); `scenarios/security.json`.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-223",
@@ -8162,16 +8173,18 @@
       "description": "Finding **F6** in `docs/security-review.md`.\n\ngit reads each `--file` value as a pattern: `*.env` means every `.env` file, `src/[id]` matches `src/i` and `src/d`, and `git add -A -- <pattern>` also stages untracked matches (local secrets).\n\n## Do\n\nRun every git call that takes paths (in `git_ops.py`: `ls-files`, `add`, `commit`) with `--literal-pathspecs`.\n\n## Verify\n\nA test with a tracked `a.env` and an untracked `secret.env`: `atm commit T-1 --file '*.env'` fails and commits nothing; a real file named `src/[id]/page.ts` commits.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/git_ops.py",
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:17:31Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:17:31Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-224",

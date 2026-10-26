@@ -14,6 +14,7 @@
               "status": "skipped",
               "updated_at": "2026-05-01T12:00:00Z",
               "updated_by": "bob",
+              "skipped_at": "2026-05-01T12:00:00Z",
               "notes": [
                 { "at": "2026-05-01T12:00:00Z", "by": "bob", "kind": "note", "text": "Skipped: Covered by T-002" }
               ]
@@ -51,6 +52,7 @@
               "status": "skipped",
               "updated_at": "2026-05-01T12:00:00Z",
               "updated_by": "bob",
+              "skipped_at": "2026-05-01T12:00:00Z",
               "notes": [{ "at": "2026-05-01T12:00:00Z", "by": "bob", "kind": "note", "text": "Skipped: Not needed" }]
             }
           ]

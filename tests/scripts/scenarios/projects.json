@@ -1,0 +1,268 @@
+[
+  {
+    "name": "projects lists nothing at first",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] }
+      }
+    },
+    "args": ["projects"],
+    "expect": {
+      "stdout": "No projects registered. `atm projects add [PATH]` adds one; atm adds a project when it runs there.\n",
+      "files": { ".atm-home/projects.json": false }
+    }
+  },
+  {
+    "name": "projects add registers the current project",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] }
+      }
+    },
+    "args": ["projects", "add"],
+    "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },
+    "expect": {
+      "stdout": "Added: abcd1234  Demo  {root}\n",
+      "files": {
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "abcd1234",
+              "name": "Demo",
+              "path": "{root}",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "init lists the project on the dashboard",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] }
+      }
+    },
+    "args": ["init"],
+    "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },
+    "expect": {
+      "files": {
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "abcd1234",
+              "name": "Demo",
+              "path": "{root}",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "migrate lists the project too, without saying so",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] },
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n"
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": { ".atm-home/projects.json": true }
+    }
+  },
+  {
+    "name": "migrate without tasks.json lists nothing",
+    "args": ["migrate"],
+    "expect": { "files": { ".atm-home/projects.json": false } }
+  },
+  {
+    "name": "projects add PATH from another folder, then it is already registered",
+    "setup": {
+      "files": {
+        "app/.agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] }
+      },
+      "commands": [["sh", "-c", "ATM_HOME=\"$PWD/.atm-home\" \"$ATM\" projects add app"]]
+    },
+    "args": ["projects", "add", "{root}/app"],
+    "expect": { "stdout": "Already registered: abcd1234  Demo  {root}/app\n" }
+  },
+  {
+    "name": "a project without meta.id or meta.project gets a path-based id and the folder's name",
+    "setup": { "files": { "plain/.agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["projects", "add", "plain", "--json"],
+    "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },
+    "expect": { "stdoutIncludes": ["\"result\": \"added\"", "\"name\": \"plain\"", "\"id\": \"p"] }
+  },
+  {
+    "name": "projects add refuses a folder without tasks.json",
+    "setup": { "files": { "empty/README.md": "nothing here\n" } },
+    "args": ["projects", "add", "empty"],
+    "expect": { "exit": 1, "stderrIncludes": ["no tasks.json in", "Run /atm:create-tasks there first."] }
+  },
+  {
+    "name": "projects add refuses a project that opted out",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "id": "abcd1234", "dashboard": { "listed": false } },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["projects", "add"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["opts out of the dashboard"],
+      "files": { ".atm-home/projects.json": false }
+    }
+  },
+  {
+    "name": "projects marks a project whose folder is gone",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] },
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "0ld0ne00",
+              "name": "Gone",
+              "path": "/nonexistent/atm-test/gone",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["projects"],
+    "expect": { "stdout": "0ld0ne00  Gone  /nonexistent/atm-test/gone  (not found)\n" }
+  },
+  {
+    "name": "projects --json lists entries with missing",
+    "setup": {
+      "files": {
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "0ld0ne00",
+              "name": "Gone",
+              "path": "/nonexistent/atm-test/gone",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["projects", "--json"],
+    "expect": {
+      "json": {
+        "projects": [
+          {
+            "id": "0ld0ne00",
+            "name": "Gone",
+            "path": "/nonexistent/atm-test/gone",
+            "added_at": "2026-01-01T00:00:00Z",
+            "seen_at": "2026-01-01T00:00:00Z",
+            "missing": true
+          }
+        ],
+        "damaged": null
+      }
+    }
+  },
+  {
+    "name": "projects prune drops projects that are gone",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] },
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "0ld0ne00",
+              "name": "Gone",
+              "path": "/nonexistent/atm-test/gone",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["projects", "prune"],
+    "expect": {
+      "stdout": "Removed: 0ld0ne00  Gone  /nonexistent/atm-test/gone\n",
+      "files": { ".atm-home/projects.json": { "version": 1, "projects": [] } }
+    }
+  },
+  {
+    "name": "projects remove by id",
+    "setup": {
+      "files": {
+        ".atm-home/projects.json": {
+          "version": 1,
+          "projects": [
+            {
+              "id": "0ld0ne00",
+              "name": "Gone",
+              "path": "/nonexistent/atm-test/gone",
+              "added_at": "2026-01-01T00:00:00Z",
+              "seen_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["projects", "remove", "0ld0ne00"],
+    "expect": {
+      "stdout": "Removed: 0ld0ne00  Gone  /nonexistent/atm-test/gone\n",
+      "files": { ".atm-home/projects.json": { "version": 1, "projects": [] } }
+    }
+  },
+  {
+    "name": "projects remove by path",
+    "setup": {
+      "files": {
+        "app/.agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234", "project": "Demo" }, "tasks": [] }
+      },
+      "commands": [["sh", "-c", "ATM_HOME=\"$PWD/.atm-home\" \"$ATM\" projects add app"]]
+    },
+    "args": ["projects", "remove", "app"],
+    "expect": {
+      "stdout": "Removed: abcd1234  Demo  {root}/app\n",
+      "files": { ".atm-home/projects.json": { "version": 1, "projects": [] } }
+    }
+  },
+  {
+    "name": "projects remove refuses an unknown project",
+    "args": ["projects", "remove", "nope"],
+    "expect": { "exit": 1, "stderrIncludes": ["no registered project nope"] }
+  },
+  {
+    "name": "an unreadable registry is moved aside and replaced",
+    "setup": { "files": { ".atm-home/projects.json": "{ not json" } },
+    "args": ["projects"],
+    "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },
+    "expect": {
+      "stdoutIncludes": [
+        "projects.json was unreadable: moved it to {root}/.atm-home/projects.json.damaged-20260101T000000Z"
+      ],
+      "files": {
+        ".atm-home/projects.json.damaged-20260101T000000Z": "{ not json",
+        ".atm-home/projects.json": { "version": 1, "projects": [] }
+      }
+    }
+  }
+]

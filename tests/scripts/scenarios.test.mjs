@@ -5,7 +5,7 @@
 //   "setup": { "files": {...}, "git": true, "commit": true, "commands": [[...]] },   see makeProject()
 //   "cwd": "docs",                          optional, relative to the project root
 //   "args": ["paths", "--json"],
-//   "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },   optional extra environment
+//   "env": { "ATM_NOW": "2026-01-01T00:00:00Z" },   optional extra environment (ATM_HOME defaults to {root}/.atm-home)
 //   "expect": {
 //     "exit": 0,
 //     "stdout": "exact text", "json": <value parsed from stdout>, "stdoutIncludes": ["..."], "stderrIncludes": ["..."],
@@ -13,8 +13,8 @@
 //     "git": { "staged": ["path", ...] }    `git diff --cached --name-status` lines, e.g. "R docs/a .agentic-task-manager/a"
 //   }
 // }
-// Strings may use {root} (the project's real path), {version} (the plugin version) and {build} (the shipped
-// dashboard's build ID); setup only {version} and {build}.
+// Strings in args, env and expect may use {root} (the project's real path), {version} (the plugin version) and
+// {build} (the shipped dashboard's build ID); setup only {version} and {build}.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -51,7 +51,9 @@ describe('scenarios', () => {
       try {
         const vars = { root, version: PLUGIN_VERSION, build: PLUGIN_BUILD };
         const e = fill(s.expect, vars);
-        const r = runAtm(s.args, path.join(root, s.cwd || '.'), s.env);
+        // Each scenario has its own ATM_HOME, .atm-home in the project, so `expect.files` can check the registry
+        const env = { ATM_HOME: path.join(root, '.atm-home'), ...fill(s.env || {}, vars) };
+        const r = runAtm(fill(s.args, vars), path.join(root, s.cwd || '.'), env);
         const context = `stdout:\n${r.stdout}\nstderr:\n${r.stderr}`;
         assert.equal(r.code, e.exit ?? 0, `exit code\n${context}`);
         if ('stdout' in e) assert.equal(r.stdout, e.stdout, context);

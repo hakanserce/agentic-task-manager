@@ -38,6 +38,7 @@ from .model import (
     vocabulary,
 )
 from .paths import find_paths, project_root
+from .registry import register_if_needed
 
 CLAIMS_STORE = "claims.json"  # in <git common dir>/atm/, shared by all worktrees of a clone
 CLAIMS_STORE_NO_GIT = "claims-store.json"  # in the task folder, outside git
@@ -267,6 +268,10 @@ def auto_heartbeat(args):
         paths = find_paths(cwd)
         if not paths["tasks_exists"]:
             return
+        try:
+            register_if_needed(paths)  # list the project on the dashboard (one read of the registry when it is)
+        except Exception:
+            pass
         current = now()
 
         def due(claims):

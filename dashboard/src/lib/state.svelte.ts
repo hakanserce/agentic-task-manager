@@ -1,9 +1,19 @@
 import { loadClaims, type ClaimMap } from './claims';
 import { DEFAULT_ACTIVE_DAYS } from './forecast';
-import { DEFAULT_PROJECT_NAME, loadArchive, loadTasks, type LoadedTasks, type Validators } from './load';
+import {
+  DEFAULT_PROJECT_NAME,
+  loadArchive,
+  loadProjects,
+  loadTasks,
+  newBuildReady,
+  serverBuild,
+  type LoadedTasks,
+  type ProjectEntry,
+  type Validators,
+} from './load';
 import { compareVersions } from './changelog';
 import { getPref, setPref, storageAvailable } from './prefs';
-import { dashboardVersion } from './release-notes';
+import { dashboardBuild, dashboardVersion } from './release-notes';
 import { isModePref, knownTheme, resolveMode, type Mode, type ModePref } from './appearance';
 import {
   emptyFilters,
@@ -17,6 +27,7 @@ import {
 } from './filters';
 import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
+import { routeFor, withProjectHash, type Route } from './routes';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
@@ -32,6 +43,18 @@ function releaseNotesUnseen(): boolean {
 }
 
 export class DashboardState {
+  /** The projects the server lists (api/projects) */
+  projects = $state.raw<ProjectEntry[]>([]);
+  /** True once the project list has loaded */
+  projectsLoaded = $state(false);
+  /** The page shown: a project, the overview, how to add a project, or an unknown project (lib/routes.ts) */
+  route = $state.raw<Route>({ page: 'project', id: '' });
+  /** The project whose files are loaded, by id; null until one is shown */
+  projectId = $state<string | null>(null);
+  /** The server holds a newer dashboard than this page (after a plugin update): a bar offers to reload */
+  newVersionReady = $state(false);
+  /** The overview shows only active projects (open work, or activity lately); remembered per browser */
+  overviewActiveOnly = $state(getPref('overviewActiveOnly', true));
   tasks = $state.raw<Task[]>([]);
   // Never mutated, only replaced on (re)load, so a plain Map in $state.raw is reactive enough
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -138,6 +161,9 @@ export class DashboardState {
 
   // The last tasks.json's ETag / Last-Modified: polls ask whether it changed, and skip the work when it hasn't
   #validators: Validators | undefined;
+  #projectsValidators: Validators | undefined;
+  #pendingNeedsYou = false;
+  #newVersionDismissed = false;
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
 
@@ -157,7 +183,8 @@ export class DashboardState {
   }
 
   private async refreshArchive() {
-    const result = await loadArchive(fetch, this.archiveLoaded ? this.#archiveValidators : undefined);
+    if (!this.projectId) return;
+    const result = await loadArchive(this.projectId, fetch, this.archiveLoaded ? this.#archiveValidators : undefined);
     if (!result.unchanged) {
       this.#archiveValidators = result.validators;
       this.archive = result.tasks;
@@ -174,7 +201,7 @@ export class DashboardState {
     }
   }
 
-  /** Re-fetch tasks.json. Failures keep the current data (logged only), like the legacy dashboard. */
+  /** Re-fetch the project list and the project's files. Failures keep the current data (logged only). */
   async reload() {
     this.reloading = true;
     try {
@@ -186,10 +213,87 @@ export class DashboardState {
     setTimeout(() => (this.reloading = false), RELOAD_SPIN_MS);
   }
 
+  /** Re-fetch the project list and decide the page from the URL; returns the project to load, or null for a page
+   * without one (the overview, how to add a project, an unknown project). */
+  private async refreshProjects(): Promise<string | null> {
+    const result = await loadProjects(fetch, this.#projectsValidators);
+    if (!result.unchanged) {
+      this.#projectsValidators = result.validators;
+      this.projects = result.projects;
+    }
+    this.projectsLoaded = true;
+    this.route = routeFor(this.projects, location.hash);
+    if (this.route.page !== 'project') return null;
+    if (this.route.id !== this.projectId) this.switchProject(this.route.id);
+    // The project page wasn't shown, so nothing followed a #view= in the link that opened it
+    if (hasViewHash(location.hash)) this.tab = parseViewHash(location.hash);
+    return this.route.id;
+  }
+
+  /** Forget the shown project's data and view state, so the next load brings in `id`'s files and saved view. */
+  private switchProject(id: string) {
+    this.projectId = id;
+    this.loaded = false;
+    this.loadError = null;
+    this.#validators = undefined;
+    this.#archiveValidators = undefined;
+    this.#archiveWanted = false;
+    this.archive = [];
+    this.archiveLoaded = false;
+    this.includeArchived = false;
+    this.tasks = [];
+    // Replaced whole, never mutated (like on a load)
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    this.taskMap = new Map();
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    this.claims = new Map();
+    this.meta = undefined;
+    this.vocab = DEFAULT_VOCABULARY;
+    this.projectName = DEFAULT_PROJECT_NAME;
+    this.detailOpen = false;
+    this.detailId = null;
+    this.viewKey = null;
+  }
+
+  /** Show project `id`, or the overview for null (a new history entry, so Back returns). With `needsYou`, the project
+   * opens on the Kanban board filtered to the tasks in review and blocked. */
+  openProject(id: string | null, { needsYou = false } = {}) {
+    let hash = withProjectHash(location.hash, id);
+    if (id !== null && needsYou) {
+      hash = withViewHash(hash, 'kanban');
+      this.#pendingNeedsYou = true;
+    }
+    location.hash = hash;
+  }
+
+  /** The URL changed (a link, Back): pick up the dialog, and the page when it names another one. */
+  onHashChange() {
+    this.dialog = parseDialogHash(location.hash);
+    const route = routeFor(this.projects, location.hash);
+    if (JSON.stringify(route) !== JSON.stringify(this.route)) void this.reload();
+  }
+
+  /** Whether the server now holds a newer dashboard than this page (the plugin was updated): offer a reload */
+  private async checkServerBuild() {
+    if (!this.#newVersionDismissed && newBuildReady(dashboardBuild(), await serverBuild())) this.newVersionReady = true;
+  }
+
+  /** "Not now": the bar stays away until the page is reloaded */
+  dismissNewVersion() {
+    this.#newVersionDismissed = true;
+    this.newVersionReady = false;
+  }
+
   private async fetchAndApply() {
+    const project = await this.refreshProjects();
+    void this.checkServerBuild(); // the server answered: ask which dashboard it holds now
+    if (project === null) {
+      this.loadedAt = Date.now();
+      return;
+    }
     const [result, claims] = await Promise.all([
-      loadTasks(fetch, this.loaded ? this.#validators : undefined),
-      loadClaims(),
+      loadTasks(project, fetch, this.loaded ? this.#validators : undefined),
+      loadClaims(project),
       this.#archiveWanted
         ? this.refreshArchive().catch((e) => console.error('Reloading the archive failed:', e))
         : undefined,
@@ -203,7 +307,18 @@ export class DashboardState {
       this.apply(result.loaded, claims);
     }
     if (!this.loaded) this.restoreView();
+    if (this.#pendingNeedsYou) {
+      // Opened from an overview card's "needs you": only what waits for a review or a decision
+      this.#pendingNeedsYou = false;
+      const status = this.vocab.statuses.filter((s) => s.kind === 'review' || s.kind === 'blocked').map((s) => s.id);
+      this.filters = filtersFrom({ phase: [], type: [], status, priority: [], stage: [], label: [], agent: [] });
+    }
     this.loaded = true;
+  }
+
+  setOverviewActiveOnly(on: boolean) {
+    this.overviewActiveOnly = on;
+    setPref('overviewActiveOnly', on);
   }
 
   setAutoRefresh(on: boolean) {
@@ -310,7 +425,8 @@ export class DashboardState {
 
   /** After the first load: bring back this project's view. A #view= in the URL wins over the saved tab. */
   private restoreView() {
-    this.viewKey = projectKey(this.meta);
+    // The server's project id is meta.id (or stands in for it), so views saved before 0.15.0 are found again
+    this.viewKey = projectKey(this.projectId ? { id: this.projectId } : this.meta);
     this.applyView(sanitizeView(readView(this.viewKey), this.tasks, this.vocab), !hasViewHash(location.hash));
   }
 

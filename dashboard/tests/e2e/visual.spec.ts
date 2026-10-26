@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { expect, openDashboard, test } from './helpers';
+import { expect, openDashboard, summary, test } from './helpers';
 
 // The version chip and the footer's version are masked: they show the version (and a "new" marker) and would
 // otherwise change every page baseline on each release; whats-new.spec and footer.spec cover them. They also get a
@@ -225,6 +225,50 @@ for (const mode of ['dark', 'light'] as const) {
     await openDashboard(page, tasksServer, 'standard');
     await page.locator('#appearance-btn').click();
     await expect(page.locator('#appearance-menu')).toHaveScreenshot(`appearance-menu-${mode}.png`);
+  });
+}
+
+// The project selector, open, with progress, a "needs you" dot and a project that is gone
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: project selector (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    const third = summary({ percent: 20, needs_you: { review: 1, blocked_on_user: 0 } });
+    tasksServer
+      .addProject('second', 'minimal', 'Second Project', summary({ percent: 75 }))
+      .addProject('third', 'minimal', 'Third Project', third);
+    await openDashboard(page, tasksServer, 'standard');
+    await page.evaluate(() => (location.hash = '#project=second'));
+    await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
+    await page.locator('#project-selector').click();
+    await expect(page.locator('#project-menu')).toHaveScreenshot(`project-selector-${mode}.png`);
+  });
+}
+
+// The overview of all projects: cards with progress, phase, agents, activity, a "needs you" and a gone project
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: projects overview (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await page.clock.setFixedTime(new Date('2026-01-01T12:00:00Z'));
+    tasksServer
+      .addProject(
+        'busy',
+        'minimal',
+        'Busy Project',
+        summary({
+          total: 20,
+          done: 9,
+          skipped: 2,
+          percent: 50,
+          current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
+          agents_working: 2,
+          last_activity: '2026-01-01T11:48:00Z',
+        }),
+      )
+      .addProject('asks', 'minimal', 'Waiting Project', summary({ needs_you: { review: 1, blocked_on_user: 1 } }))
+      .goneProject('old1234', 'Old Project');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('.project-card')).toHaveCount(4);
+    await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-${mode}.png`);
   });
 }
 

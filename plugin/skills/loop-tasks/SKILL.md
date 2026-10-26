@@ -56,8 +56,8 @@ atm migrate
 It keeps the project's `.agentic-task-manager/` folder in order:
 - an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
   staged in git, not committed;
-- the dashboard there (`tasks-dashboard.html`, a copy that isn't committed) is installed or updated to the plugin's
-  version.
+- the project is added to the dashboard's list of projects (one dashboard, served by `/atm:serve`, shows them all);
+- what older versions left there is cleaned up (the project's own copy of the dashboard and its own server).
 
 Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
 atm needs it, so ask the user to install it and stop.

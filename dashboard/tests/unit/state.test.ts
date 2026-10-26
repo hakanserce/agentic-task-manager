@@ -3,12 +3,17 @@ import { DashboardState } from '../../src/lib/state.svelte';
 import standard from '../fixtures/standard.json';
 
 const ok = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body)));
+const project = (id: string, missing = false) => ({ id, name: id, path: `/${id}`, missing, summary: null });
+const PROJECTS = { projects: [project('p1')] };
+/** Plays atm serve: the project list, and the standard fixture as each project's files */
+const server = (projects: unknown = PROJECTS) =>
+  vi.fn((url: string) => ok(String(url).startsWith('api/projects') ? projects : standard));
 
 describe('DashboardState', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    fetchMock = vi.fn(() => ok(standard));
+    fetchMock = server();
     vi.stubGlobal('fetch', fetchMock);
   });
   afterEach(() => {
@@ -32,6 +37,82 @@ describe('DashboardState', () => {
     expect(s.taskMap.get('T-004')?.name).toBe('User login');
     expect(s.projectName).toBe('Standard Project');
     expect(s.filtered).toHaveLength(12);
+  });
+
+  describe('pages', () => {
+    afterEach(() => {
+      history.replaceState(null, '', '/');
+      localStorage.clear();
+    });
+    // What the page loads (the server's whoami is asked alongside, for the "new version" notice)
+    const urls = () =>
+      fetchMock.mock.calls.map(([url]) => String(url).split('?')[0]).filter((u) => u !== '__atm/whoami');
+
+    it('with one project, loads the project list, then its files from p/<id>/', async () => {
+      fetchMock = server({ projects: [project('gone', true), project('p2')] });
+      vi.stubGlobal('fetch', fetchMock);
+      const s = new DashboardState();
+      await s.load();
+      expect(s.route).toEqual({ page: 'project', id: 'p2' });
+      expect(s.projectId).toBe('p2');
+      expect(urls()).toEqual(['api/projects', 'p/p2/tasks.json', 'p/p2/claims.json']);
+    });
+
+    it('with several, lands on the overview without loading any project', async () => {
+      fetchMock = server({ projects: [project('p2'), project('p3')] });
+      vi.stubGlobal('fetch', fetchMock);
+      const s = new DashboardState();
+      await s.load();
+      expect(s.route).toEqual({ page: 'overview' });
+      expect([s.loaded, s.loadError, s.projectsLoaded]).toEqual([false, null, true]);
+      expect(urls()).toEqual(['api/projects']);
+    });
+
+    it('#project= picks one; a later hash change switches project and restores that one’s view', async () => {
+      fetchMock = server({ projects: [project('p2'), project('p3')] });
+      vi.stubGlobal('fetch', fetchMock);
+      history.replaceState(null, '', '/#project=p3');
+      const s = new DashboardState();
+      await s.load();
+      expect([s.projectId, s.loaded]).toEqual(['p3', true]);
+      s.query = 'login';
+      s.saveView();
+      s.showDetail('T-004');
+
+      history.replaceState(null, '', '/#project=p2');
+      s.onHashChange();
+      await vi.waitFor(() => expect(s.projectId).toBe('p2'));
+      await vi.waitFor(() => expect(s.loaded).toBe(true));
+      expect([s.detailOpen, s.query]).toEqual([false, '']);
+      expect(urls()).toContain('p/p2/tasks.json');
+    });
+
+    it('a hash change that only switches the tab reloads nothing', async () => {
+      const s = new DashboardState();
+      await s.load();
+      fetchMock.mockClear();
+      history.replaceState(null, '', '/#view=kanban');
+      s.onHashChange();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('without a project to show, says how to add one; an unknown project is its own page', async () => {
+      vi.stubGlobal('fetch', server({ projects: [project('gone', true)] }));
+      const s = new DashboardState();
+      await s.load();
+      expect([s.route, s.loadError]).toEqual([{ page: 'none' }, null]);
+      history.replaceState(null, '', '/#project=nope');
+      await s.load();
+      expect(s.route).toEqual({ page: 'unknown', id: 'nope' });
+    });
+  });
+
+  it('keeps showing the same project across reloads', async () => {
+    const s = new DashboardState();
+    await s.load();
+    fetchMock.mockClear();
+    await s.reload();
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain('p/p1/tasks.json');
   });
 
   it('records an initial load failure', async () => {
@@ -114,10 +195,7 @@ describe('DashboardState saved view', () => {
   beforeEach(() => {
     localStorage.clear();
     history.replaceState(null, '', '/');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => ok(standard)),
-    );
+    vi.stubGlobal('fetch', server());
   });
   afterEach(() => vi.unstubAllGlobals());
 

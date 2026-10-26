@@ -30,8 +30,8 @@ atm migrate
 It keeps the project's `.agentic-task-manager/` folder in order:
 - an old `docs/tasks.json` (or `tasks.json` in the project root) is moved into `.agentic-task-manager/`; the move is
   staged in git, not committed;
-- the dashboard there (`tasks-dashboard.html`, a copy that isn't committed) is installed or updated to the plugin's
-  version.
+- the project is added to the dashboard's list of projects (one dashboard, served by `/atm:serve`, shows them all);
+- what older versions left there is cleaned up (the project's own copy of the dashboard and its own server).
 
 Relay what it prints, except "Nothing to migrate.". If it exits with code 127, Python 3.9 or newer is not installed:
 atm needs it, so ask the user to install it and stop.
@@ -92,7 +92,8 @@ status has a **kind**, one of `todo`, `active`, `review`, `blocked`, `done` and 
 on the kind, so a project can name its statuses as it likes.
 
 Show the user the vocabularies you will use, in one short message:
-- **adding to an existing `tasks.json`**: the lists in its `meta`, and the defaults for any list it doesn't have;
+- **adding to an existing `tasks.json`**: the lists in its `meta`, and the defaults for any list it doesn't have
+  (`atm phases` lists the phases with their names);
 - **a new project**: the defaults.
 
 The defaults:
@@ -122,11 +123,10 @@ they define their own:
   `awaiting_agent`, both `review`): agents pick one with `--status`, otherwise the first listed is used;
 - priorities are listed most urgent first; ask which one is the default for tasks without a priority.
 
-Step 4 writes to `meta` only the lists that differ from the defaults, plus the phase names, for example:
+Step 4 writes to `meta` only the lists that differ from the defaults, for example:
 
 ```json
 {
-  "phases": [{ "id": 0, "name": "Foundations" }, { "id": 1, "name": "Core features" }],
   "statuses": [
     { "id": "todo", "label": "To Do", "kind": "todo" },
     { "id": "in_progress", "label": "In Progress", "kind": "active" },
@@ -148,12 +148,20 @@ Write the `meta` keys to a scratch file outside the repository (your scratchpad,
 atm init --meta-file <that file>
 ```
 
-For a new project the file holds `project` (from the README or the directory name), `description` (one line),
-`phases` and any vocabularies that differ from the defaults; for an existing one, only the keys that change (new phase
-names, say). It creates `.agentic-task-manager/tasks.json` if there is none, merges the keys into `meta` (keeping
+For a new project the file holds `project` (from the README or the directory name), `description` (one line) and any
+vocabularies that differ from the defaults; for an existing one, only the keys that change (skip this step when
+nothing does). It creates `.agentic-task-manager/tasks.json` if there is none, merges the keys into `meta` (keeping
 `meta.id`, and adding one if missing), and checks the vocabularies before writing: if it reports a problem (for
 example `meta.statuses needs at least one status of the kind 'done'`), fix the file as it says and run it again.
-It also registers atm's merge driver in a git repository.
+It also registers atm's merge driver in a git repository. A key in the file replaces that whole list, so never put
+`phases` in it.
+
+Name the confirmed phases one at a time, which leaves other phases' names alone:
+
+```bash
+atm phases name 0 "Foundations"
+atm phases name 1 "Core features"
+```
 
 Then save the confirmed workflow (unless one was already set): `atm workflow set <direct|pull-request>`, with
 `--base <branch>` when the base isn't the remote's default branch.
@@ -229,15 +237,16 @@ Run `atm migrate` again, now that `tasks.json` exists:
 atm migrate && atm init
 ```
 
-It writes `.agentic-task-manager/.gitignore` (the dashboard and runtime files aren't committed; `tasks.json` is),
-installs the plugin's current dashboard next to `tasks.json`, and in a git repository registers atm's merge driver
-for `tasks.json` (`.agentic-task-manager/.gitattributes` plus the clone's git config), so branches that changed
-different tasks merge cleanly. Relay what it prints, except "Nothing to migrate.".
+It writes `.agentic-task-manager/.gitignore` (runtime files aren't committed; `tasks.json` is), adds the project to
+the dashboard's list of projects, and in a git repository registers atm's merge driver for `tasks.json`
+(`.agentic-task-manager/.gitattributes` plus the clone's git config), so branches that changed different tasks merge
+cleanly. Relay what it prints, except "Nothing to migrate.".
 
-Then tell the user how to start the dashboard:
+Then tell the user how to see the dashboard:
 
 > **Dashboard ready!** Run `/atm:serve` to start it in the background (`/atm:serve --open` also opens your
-> browser), or `/atm:serve stop` to stop it later.
+> browser), or `/atm:serve stop` to stop it later. One dashboard shows all your projects: switch with the arrow next
+> to the title.
 >
 > The dashboard refreshes itself every 5 seconds, so you can watch progress live
 > while an agent loops through tasks with `/atm:loop-tasks`.

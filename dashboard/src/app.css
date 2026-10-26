@@ -771,6 +771,116 @@ button.menu-trigger:hover,
 .appearance .menu {
   right: 0;
 }
+
+/* The project selector next to the title (ProjectSelector.svelte) */
+.project-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.project-switch:hover,
+.project-switch[aria-expanded='true'] {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.project-switch-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.project-menu {
+  left: 0;
+  width: 300px;
+}
+.project-filter {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.project-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.project-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.project-option.active {
+  background: var(--surface2);
+}
+.project-option[aria-selected='true'] .project-option-name {
+  font-weight: 600;
+}
+.project-option.missing {
+  color: var(--text-muted);
+  cursor: default;
+}
+.project-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-option-note,
+.project-option-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.project-option-empty {
+  padding: 6px 8px;
+}
+.project-option-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  flex-shrink: 0;
+}
+.project-option-bar {
+  width: 48px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.project-option-fill {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
 .refresh .menu {
   right: 0;
 }
@@ -2724,4 +2834,180 @@ svg.graph-minimap.hidden {
 /* Text stays in text colours (yellow on light backgrounds is hard to read); a yellow edge marks it */
 .kpi-warn {
   box-shadow: inset 3px 0 0 var(--yellow);
+}
+
+/* A newer dashboard is ready after a plugin update (UpdateNotice.svelte) */
+.update-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+}
+.update-reload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.update-dismiss {
+  margin-left: auto;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.update-dismiss:hover {
+  color: var(--text);
+}
+
+/* Pages without a project: the overview, how to add a project, an unknown project (LandingPage.svelte) */
+.landing {
+  padding: 24px 0;
+}
+.landing-note {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  max-width: 640px;
+}
+.landing-note h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+.landing-note p,
+.landing-note li {
+  color: var(--text-muted);
+}
+.landing-note code {
+  color: var(--text);
+}
+.landing-note a {
+  color: var(--accent);
+}
+
+/* The overview of all projects (ProjectsOverview.svelte, ProjectCard.svelte) */
+.projects-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.projects-active-only {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.project-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+.project-card.missing {
+  border-style: dashed;
+}
+.project-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.project-card-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.project-card-open {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.project-card-open:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.project-card-need {
+  flex-shrink: 0;
+  margin-left: 0;
+}
+.project-card-progress .progress-bar {
+  margin-top: 0;
+}
+.project-card-counts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.project-card-percent {
+  font-weight: 600;
+}
+.project-card-phase,
+.project-card-note {
+  margin: 0;
+  font-size: 13px;
+}
+.project-card-note {
+  color: var(--text-muted);
+}
+.project-card-note code {
+  color: var(--text);
+}
+.project-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.project-card-agents {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.project-card-agents,
+.project-card-last {
+  white-space: nowrap;
+}
+.project-card-spark {
+  margin-left: auto;
+}
+.project-card .muted {
+  color: var(--text-muted);
 }

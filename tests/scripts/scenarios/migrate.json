@@ -16,7 +16,7 @@
     },
     "args": ["migrate"],
     "expect": {
-      "stdout": "Moved docs/tasks.json to .agentic-task-manager/tasks.json (staged with git mv, not committed); removed docs/tasks-dashboard.html (a current copy now sits next to tasks.json, ignored by git).\nDashboard updated from v0.4.0 to v{version}.\n",
+      "stdout": "Moved docs/tasks.json to .agentic-task-manager/tasks.json (staged with git mv, not committed); removed docs/tasks-dashboard.html (the dashboard now comes with the plugin: /atm:serve).\n",
       "files": {
         "docs/tasks.json": false,
         "docs/tasks-dashboard.html": false,
@@ -27,7 +27,7 @@
           },
           "tasks": []
         },
-        ".agentic-task-manager/tasks-dashboard.html": true,
+        ".agentic-task-manager/tasks-dashboard.html": false,
         ".agentic-task-manager/.gitignore": "# atm runtime files (managed by atm)\ntasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
         ".agentic-task-manager/.gitattributes": "# 'atm' is defined in each clone's git config (merge.atm.driver), registered by the atm plugin on every run.\n# Without it, git merges tasks.json line by line as usual.\ntasks.json merge=atm\n",
         ".agentic-task-manager/claims.json": true
@@ -65,42 +65,8 @@
         "warning": null,
         "gitignore_updated": true,
         "merge_driver_updated": true,
-        "dashboard": {
-          "action": "updated",
-          "from": "",
-          "to": "{version}"
-        }
-      }
-    }
-  },
-  {
-    "name": "moving a dashboard that is already current reports nothing about it",
-    "setup": {
-      "commit": true,
-      "files": {
-        "docs/tasks.json": {
-          "tasks": []
-        },
-        "docs/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\">"
-      }
-    },
-    "args": ["migrate", "--json"],
-    "expect": {
-      "json": {
-        "moved": {
-          "from": "docs/tasks.json",
-          "to": ".agentic-task-manager/tasks.json",
-          "git": true
-        },
-        "removed_dashboard": "docs/tasks-dashboard.html",
-        "warning": null,
-        "gitignore_updated": true,
-        "merge_driver_updated": true,
-        "dashboard": {
-          "action": "current",
-          "from": "{version}",
-          "to": "{version}"
-        }
+        "cleaned_up": null,
+        "finish_times_filled": 0
       }
     }
   },
@@ -116,12 +82,13 @@
     },
     "args": ["migrate"],
     "expect": {
-      "stdout": "Moved tasks.json to .agentic-task-manager/tasks.json.\nDashboard v{version} installed.\n",
+      "stdout": "Moved tasks.json to .agentic-task-manager/tasks.json.\n",
       "files": {
         "tasks.json": false,
         ".agentic-task-manager/tasks.json": {
           "tasks": []
-        }
+        },
+        ".agentic-task-manager/tasks-dashboard.html": false
       },
       "git": {
         "staged": ["A .agentic-task-manager/.gitignore", "A .agentic-task-manager/.gitattributes"]
@@ -141,7 +108,7 @@
     "cwd": "docs",
     "args": ["migrate"],
     "expect": {
-      "stdout": "Moved docs/tasks.json to .agentic-task-manager/tasks.json; removed docs/tasks-dashboard.html (a current copy now sits next to tasks.json, ignored by git).\nDashboard updated from v? to v{version}.\n",
+      "stdout": "Moved docs/tasks.json to .agentic-task-manager/tasks.json; removed docs/tasks-dashboard.html (the dashboard now comes with the plugin: /atm:serve).\n",
       "files": {
         "docs/tasks.json": false,
         "docs/tasks-dashboard.html": false,
@@ -167,7 +134,7 @@
     },
     "args": ["migrate"],
     "expect": {
-      "stdout": "warning: both docs/tasks.json and .agentic-task-manager/tasks.json exist; using .agentic-task-manager/tasks.json. Remove the old file when you no longer need it.\nDashboard v{version} installed.\n",
+      "stdout": "warning: both docs/tasks.json and .agentic-task-manager/tasks.json exist; using .agentic-task-manager/tasks.json. Remove the old file when you no longer need it.\n",
       "files": {
         "docs/tasks.json": {
           "tasks": ["old"]
@@ -188,8 +155,7 @@
         ".agentic-task-manager/tasks.json": {
           "tasks": []
         },
-        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\"> current"
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n"
       }
     },
     "args": ["migrate"],
@@ -197,7 +163,7 @@
       "stdout": "Nothing to migrate.\n",
       "files": {
         ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\"> current"
+        ".agentic-task-manager/tasks-dashboard.html": false
       }
     }
   },
@@ -208,8 +174,7 @@
         ".agentic-task-manager/tasks.json": {
           "tasks": []
         },
-        ".agentic-task-manager/.gitignore": "notes.txt\n.server.json",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"{build}\">"
+        ".agentic-task-manager/.gitignore": "notes.txt\n.server.json"
       }
     },
     "args": ["migrate"],
@@ -221,51 +186,50 @@
     }
   },
   {
-    "name": "an older dashboard is updated",
-    "setup": {
-      "files": {
-        ".agentic-task-manager/tasks.json": {
-          "tasks": []
-        },
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"0.1.0\">"
-      }
-    },
-    "args": ["migrate"],
-    "expect": {
-      "stdout": "Dashboard updated from v0.1.0 to v{version}.\n"
-    }
-  },
-  {
-    "name": "a dashboard without a version tag is updated",
-    "setup": {
-      "files": {
-        ".agentic-task-manager/tasks.json": {
-          "tasks": []
-        },
-        ".agentic-task-manager/tasks-dashboard.html": "x"
-      }
-    },
-    "args": ["migrate"],
-    "expect": {
-      "stdout": "Dashboard updated from v? to v{version}.\n"
-    }
-  },
-  {
-    "name": "a newer dashboard is left alone (0.10.0 is newer than 0.9.0)",
+    "name": "a project's old copy of the dashboard is removed",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
           "tasks": []
         },
         ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"99.10.0\">"
+        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"0.14.0\">"
       }
     },
     "args": ["migrate"],
     "expect": {
-      "stdout": "Nothing to migrate.\n",
+      "stdout": "Removed this project's old dashboard files: one dashboard for all your projects now comes with the plugin (/atm:serve).\n",
       "files": {
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"99.10.0\">"
+        ".agentic-task-manager/tasks-dashboard.html": false
+      }
+    }
+  },
+  {
+    "name": "an old server's record (its process gone) and log are removed",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": []
+        },
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/.server.json": { "pid": 999999, "port": 1, "folder": "/nowhere" },
+        ".agentic-task-manager/.server.log": "old log\n"
+      }
+    },
+    "args": ["migrate", "--json"],
+    "expect": {
+      "json": {
+        "moved": null,
+        "removed_dashboard": null,
+        "warning": null,
+        "gitignore_updated": false,
+        "merge_driver_updated": false,
+        "cleaned_up": { "dashboard": false, "server": null },
+        "finish_times_filled": 0
+      },
+      "files": {
+        ".agentic-task-manager/.server.json": false,
+        ".agentic-task-manager/.server.log": false
       }
     }
   },
@@ -289,49 +253,14 @@
       "files": {
         "docs/tasks.json": {
           "tasks": []
-        }
+        },
+        "docs/tasks-dashboard.html": "old"
       },
       "commands": [["sh", "-c", "\"$ATM\" migrate"]]
     },
     "args": ["migrate"],
     "expect": {
       "stdout": "Nothing to migrate.\n"
-    }
-  },
-  {
-    "name": "the same version but another build is replaced (a fix shipped without a new version number)",
-    "setup": {
-      "files": {
-        ".agentic-task-manager/tasks.json": { "tasks": [] },
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\"><meta name=\"atm-dashboard-build\" content=\"000000000000\">"
-      }
-    },
-    "args": ["migrate"],
-    "expect": {
-      "stdout": "Dashboard updated (same version, v{version}, new build).\n",
-      "files": {
-        ".agentic-task-manager/tasks-dashboard.html": true
-      }
-    }
-  },
-  {
-    "name": "the same version without a build ID (built before build IDs existed) is replaced",
-    "setup": {
-      "files": {
-        ".agentic-task-manager/tasks.json": { "tasks": [] },
-        ".agentic-task-manager/tasks-dashboard.html": "<meta name=\"atm-dashboard-version\" content=\"{version}\">"
-      }
-    },
-    "args": ["migrate", "--json"],
-    "expect": {
-      "json": {
-        "moved": null,
-        "removed_dashboard": null,
-        "warning": null,
-        "gitignore_updated": true,
-        "merge_driver_updated": false,
-        "dashboard": { "action": "rebuilt", "from": "{version}", "to": "{version}" }
-      }
     }
   }
 ]

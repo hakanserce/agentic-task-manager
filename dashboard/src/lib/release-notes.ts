@@ -8,3 +8,8 @@ export const releaseNotes: ChangelogEntry[] = changelog;
 export function dashboardVersion(doc: Document = document): string | undefined {
   return doc.querySelector<HTMLMetaElement>('meta[name="atm-dashboard-version"]')?.content || undefined;
 }
+
+/** This page's build ID (<meta name="atm-dashboard-build">, stamped by the build); undefined in the dev server. */
+export function dashboardBuild(doc: Document = document): string | undefined {
+  return doc.querySelector<HTMLMetaElement>('meta[name="atm-dashboard-build"]')?.content || undefined;
+}

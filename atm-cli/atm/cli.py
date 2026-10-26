@@ -13,7 +13,9 @@ from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
-from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child
+from .phases import cmd_phases
+from .registry import cmd_projects
+from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
 from .git_ops import cmd_commit, cmd_merged, cmd_pr, cmd_workflow
@@ -28,8 +30,10 @@ commands:
   migrate [--json]
                  move tasks.json from docs/ or the root into .agentic-task-manager/,
                  and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--port N] [--dir PATH]
-                 run the dashboard server for this project (or the one at PATH) in the background
+  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH] [--refresh]
+                 run the dashboard server in the background: one per user, for all registered projects
+                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's;
+                 --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
@@ -87,12 +91,22 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  phases [--archived] | phases name <n> "<name>" | phases unname <n>
+                 the phases with their names and task counts by kind; name or unname one phase (meta.phases)
+  projects [add [PATH] | remove <id|PATH> | prune]
+                 the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
+                 list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
                  (status commands and heartbeat take --agent NAME and --json; status commands and next --claim
                  take --status ID to pick a status when the project has several of that kind)
   help           show this help
 
 Every command takes --json, and `atm <command> --help` describes it.
 """
+
+
+# Commands that don't check for an outdated dashboard server first: serve does it itself, the server process is the
+# server, and git runs the merge driver in the middle of a merge
+NO_REFRESH = ("serve", "_serve-child", "merge-driver", "_lock-test", "help", "version")
 
 
 class Parser(argparse.ArgumentParser):
@@ -138,11 +152,17 @@ def build_parser():
     command("paths", cmd_paths, "print where this project's task files are")
     command("migrate", cmd_migrate, "move an old tasks.json into .agentic-task-manager/ and set the folder up")
 
-    serve = command("serve", cmd_serve, "run the dashboard server for this project in the background")
+    serve = command("serve", cmd_serve, "run the dashboard server, one for all your projects, in the background")
     serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
     serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
+    serve.add_argument("--all", action="store_true", help="show the overview of all projects, not this project")
+    serve.add_argument(
+        "--refresh",
+        action="store_true",
+        help="only restart a running server that has an older dashboard than this plugin (the SessionStart hook)",
+    )
     serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
-    serve.add_argument("--dir", metavar="PATH", help="the project to act on (default: the current directory's)")
+    serve.add_argument("--dir", metavar="PATH", help="the project to show (default: the current directory's)")
 
     for name, description in (
         ("start", "mark a task in_progress and claim it (its dependencies must be done)"),
@@ -318,9 +338,17 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
+    phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
+    phases.add_argument("number", nargs="?", help="the phase number")
+    phases.add_argument("name", nargs="?", help="name: the phase's name")
+    phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
+    projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
+    projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
+    projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")
 
     child = command("_serve-child", cmd_serve_child, "the detached server process", hidden=True)
-    child.add_argument("task_dir")
+    child.add_argument("home")
     child.add_argument("port", type=int)
     lock_test = command("_lock-test", cmd_lock_test, "test hook: hold the lock", hidden=True)
     lock_test.add_argument("seconds", type=float, nargs="?", default=0.0)
@@ -351,6 +379,11 @@ def main(argv):
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")
+        if argv[0] not in NO_REFRESH:
+            try:
+                refresh_server()  # after a plugin update, the first atm command brings the dashboard server along
+            except Exception:
+                pass  # never in the way of the command itself
         args.run(args)
     except AtmError as e:
         report(e, as_json)

@@ -7,6 +7,7 @@
   import RefreshMenu from './RefreshMenu.svelte';
   import ActivityWidget from './ActivityWidget.svelte';
   import ProgressWidget from './ProgressWidget.svelte';
+  import ProjectSelector from './ProjectSelector.svelte';
 
   const version = dashboardVersion();
 
@@ -30,6 +31,7 @@
   <div class="title-block">
     <div class="title-row">
       <h1 id="dashboard-title">{title}</h1>
+      <ProjectSelector />
       {#if version}
         <button
           class="version-chip"

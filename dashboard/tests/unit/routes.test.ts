@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest';
+import type { ProjectEntry } from '../../src/lib/load';
+import { hasOverviewHash, parseProjectHash, routeFor, withProjectHash } from '../../src/lib/routes';
+
+const project = (id: string, missing = false): ProjectEntry => ({
+  id,
+  name: id,
+  path: `/${id}`,
+  missing,
+  summary: null,
+});
+
+describe('the project in the URL', () => {
+  it('is read from #project=, alongside other parameters', () => {
+    expect(parseProjectHash('#project=abc&view=kanban')).toBe('abc');
+    expect(parseProjectHash('#view=kanban')).toBeNull();
+    expect(parseProjectHash('#project=')).toBeNull();
+    expect(hasOverviewHash('#overview&about')).toBe(true);
+    expect(hasOverviewHash('#project=abc')).toBe(false);
+  });
+
+  it('is set or replaced by the overview, keeping the view and dialogs', () => {
+    expect(withProjectHash('#view=kanban', 'abc')).toBe('#view=kanban&project=abc');
+    expect(withProjectHash('#project=abc&view=list&about', 'def')).toBe('#view=list&about&project=def');
+    expect(withProjectHash('#project=abc&view=list', null)).toBe('#view=list&overview');
+    expect(withProjectHash('#overview', 'a b')).toBe('#project=a%20b');
+  });
+});
+
+describe('routeFor', () => {
+  const two = [project('a'), project('b')];
+
+  it('shows a named project the server lists and has', () => {
+    expect(routeFor(two, '#project=b&view=kanban')).toEqual({ page: 'project', id: 'b' });
+  });
+
+  it('a named project that is unknown or missing is its own page', () => {
+    expect(routeFor(two, '#project=zz')).toEqual({ page: 'unknown', id: 'zz' });
+    expect(routeFor([project('a', true)], '#project=a')).toEqual({ page: 'unknown', id: 'a' });
+  });
+
+  it('#overview is the overview, with any number of projects', () => {
+    expect(routeFor([project('a')], '#overview')).toEqual({ page: 'overview' });
+    expect(routeFor([], '#overview')).toEqual({ page: 'overview' });
+  });
+
+  it('lands on the overview with two or more projects, the project with one, how to add one with none', () => {
+    expect(routeFor(two, '')).toEqual({ page: 'overview' });
+    expect(routeFor([project('a'), project('gone', true)], '#view=list')).toEqual({ page: 'project', id: 'a' });
+    expect(routeFor([project('gone', true)], '')).toEqual({ page: 'none' });
+    expect(routeFor([], '')).toEqual({ page: 'none' });
+  });
+});

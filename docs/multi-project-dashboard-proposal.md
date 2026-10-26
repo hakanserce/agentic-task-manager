@@ -233,8 +233,8 @@ the project page switch between worktrees, or show all of them on one Kanban wit
 This becomes **phase 15**. The tasks now in phase 15 (T-156 to T-164) move to **phase 16**, along with the later
 worktree support (3.6).
 
-1. **API format first:** `/api/projects` and `/p/<id>/...`, written down in `docs/` so the atm-cli and dashboard work
-   can go in parallel.
+1. **API format first:** `/api/projects` and `/p/<id>/...`, written down in
+   [`docs/multi-project-api.md`](multi-project-api.md) so the atm-cli and dashboard work can go in parallel.
 2. **Registry** (atm-cli): `atm projects`; registration from init, migrate, serve and the hook.
 3. **User server** (atm-cli): routes, the Host check, summaries, `serve --refresh`, the SessionStart hook, and taking
    over from per-project servers.

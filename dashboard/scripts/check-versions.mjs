@@ -17,7 +17,7 @@ if (entry.version !== plugin.version) {
 }
 const escaped = plugin.version.replace(/\./g, '\\.');
 // Every release has both: the detailed changelog (developers) and the short What's New (users, shown in the
-// dashboard and by /atm:update-dashboard)
+// dashboard)
 for (const [file, what] of [
   ['CHANGELOG.md', 'the detailed changes'],
   ['WHATS-NEW.md', 'a short, end-user summary'],

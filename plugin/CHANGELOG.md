@@ -2,7 +2,54 @@
 
 All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
-To get a new dashboard into a project, update the plugin and run `/atm:update-dashboard`.
+The dashboard comes with the plugin: updating the plugin updates it everywhere.
+
+## [0.15.0] - 2026-10-25
+
+**One dashboard for all your projects.** The dashboard is no longer copied into each project and served per project:
+one server per user serves it, straight from the installed plugin, for every project atm runs in.
+
+### Added
+- **Project registry** in `~/.agentic-task-manager/projects.json` (`ATM_HOME` overrides the folder). `atm init`,
+  `atm migrate` and `atm serve` add the project they run in, and the PostToolUse hook adds it on the first tool call
+  (one small file read per call; it never waits for the registry's lock). A linked git worktree adds its main
+  worktree. `atm projects` lists them; `atm projects add [PATH]`, `remove <id|PATH>` and `prune` manage them. A
+  project opts out with `meta.dashboard.listed: false`. An unreadable registry is moved aside and started again.
+- **`atm serve`, one server per user** (`ATM_HOME/server.json`), on port 8765 or the next free one. It holds the
+  dashboard in memory and serves `/api/projects` (each project with a summary: done / (total − skipped), current
+  phase, agents working, what needs you, last activity, completions over 14 days; computed by atm-cli's own logic,
+  cached until a project's files change) and each registered project's `tasks.json`, `claims.json` and
+  `tasks-archive.json` under `/p/<id>/` (ETag and 304), nothing else. It binds to 127.0.0.1 and refuses requests whose
+  Host isn't `localhost`/`127.0.0.1` on its port (DNS rebinding). `atm serve` prints the project's URL
+  (`#project=<id>`), `--all` the overview's. Routes and formats: `docs/multi-project-api.md`.
+- **`atm serve --refresh`** restarts a running server whose dashboard is older than the plugin's (never a newer one),
+  on the same port. A SessionStart hook runs it, and every atm command (so the PostToolUse hook too) makes the same
+  cheap check, so the server follows a plugin update by itself.
+- **Dashboard: project selector** next to the title: All projects, then each project with a progress bar and a dot
+  when something needs you; type to filter, arrows, Enter, Escape. A badge counts what needs you in the other
+  projects.
+- **Dashboard: All projects overview**, a card per project: progress (skipped tasks shown apart), current phase,
+  agents at work, what needs you (opens that project's Kanban filtered to review and blocked), last activity and a
+  14-day sparkline. Projects that need you come first; **Active only** hides projects with nothing open and nothing
+  done in 14 days. The dashboard opens on it with two or more projects, on the project with one, and explains how to
+  add a project with none. `#project=<id>` and `#overview` links; an unknown project has its own page.
+- **Dashboard: "A new version of the dashboard is ready"**, with Reload, when the server restarted on a newer build.
+- `atm phases` lists the phases with their names and task counts by kind; `atm phases name <n> "<name>"` and
+  `atm phases unname <n>` change one name at a time. `atm status` shows the names; `atm check` warns about a named
+  phase without tasks. `/atm:create-tasks` names phases this way instead of rewriting `meta.phases`.
+- `atm skip` records `skipped_at`; `atm migrate` fills in `completed_at` and `skipped_at` from `updated_at` for
+  finished tasks without them (in the archive too), so a later edit doesn't move them in time.
+
+### Changed
+- `atm migrate` no longer copies the dashboard into the project. It deletes a project's old copy, stops its old
+  per-project server (only when that server confirms it serves that folder) and removes `.server.json`/`.server.log`.
+- The dashboard loads everything from the server's API (`api/projects`, `p/<id>/…`); opening the HTML file another
+  way is no longer supported. The dev server and the e2e fixture play the same API.
+- Saved views are kept under the project id the server gives (`meta.id`, so existing views are found again).
+- Archiving dates a skipped task by `skipped_at`.
+
+### Removed
+- `/atm:update-dashboard`: updating the plugin updates the dashboard, and What's new is in the dashboard.
 
 ## [0.14.0] - 2026-10-25
 

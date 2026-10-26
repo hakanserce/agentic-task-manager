@@ -16,9 +16,14 @@ export const PLUGIN_BUILD = /<meta name="atm-dashboard-build" content="([^"]*)"/
   fs.readFileSync(path.join(REPO, 'plugin/templates/tasks-dashboard.html'), 'utf8'),
 )?.[1];
 
+/** atm's user folder (ATM_HOME: the project registry, the server record) for tests that don't pick their own, so no
+ * test reads or changes the real ~/.agentic-task-manager. */
+const TEST_HOME = tempDir('atm-home-');
+process.on('exit', () => fs.rmSync(TEST_HOME, { recursive: true, force: true }));
+
 /** The environment without this machine's agent identity, so every test decides who the agent is. */
 export function baseEnv() {
-  const env = { ...process.env };
+  const env = { ...process.env, ATM_HOME: TEST_HOME };
   delete env.CLAUDE_CODE_SESSION_ID;
   delete env.ATM_AGENT;
   delete env.ATM_NOW;

@@ -72,11 +72,12 @@ def describe_owner(owner):
 
 
 @contextlib.contextmanager
-def locked(directory):
-    """Hold the lock for `directory` (creating it if needed) for the duration of the block."""
+def locked(directory, timeout=None):
+    """Hold the lock for `directory` (creating it if needed) for the duration of the block. `timeout` (seconds) replaces
+    the usual wait; 0 tries once."""
     os.makedirs(directory, exist_ok=True)
     lock = os.path.join(directory, LOCK_DIR)
-    deadline = time.time() + lock_timeout()
+    deadline = time.time() + (lock_timeout() if timeout is None else timeout)
     while True:
         try:
             os.mkdir(lock)

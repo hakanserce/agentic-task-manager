@@ -8,6 +8,7 @@ with nothing to install.
 
 import argparse
 import contextlib
+import hashlib
 import json
 import os
 import re
@@ -17,8 +18,8 @@ import socket
 import subprocess
 import sys
 import time
-import urllib.request
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 
 # ==== core.py ====
@@ -175,6 +176,21 @@ def pid_alive(pid):
     return not is_zombie(pid)
 
 
+WHOAMI = "/__atm/whoami"
+
+
+def whoami(port):
+    """Ask the atm server on this port who it is; None if nothing (or not an atm server) answers."""
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f"http://localhost:{port}{WHOAMI}", timeout=1) as response:
+            info = json.loads(response.read().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+    return info if isinstance(info, dict) and info.get("atm") else None
+
+
 # ==== paths.py ====
 # Where a project's task files are: the project root, the task folder, legacy locations.
 
@@ -291,11 +307,12 @@ def describe_owner(owner):
 
 
 @contextlib.contextmanager
-def locked(directory):
-    """Hold the lock for `directory` (creating it if needed) for the duration of the block."""
+def locked(directory, timeout=None):
+    """Hold the lock for `directory` (creating it if needed) for the duration of the block. `timeout` (seconds) replaces
+    the usual wait; 0 tries once."""
     os.makedirs(directory, exist_ok=True)
     lock = os.path.join(directory, LOCK_DIR)
-    deadline = time.time() + lock_timeout()
+    deadline = time.time() + (lock_timeout() if timeout is None else timeout)
     while True:
         try:
             os.mkdir(lock)
@@ -330,6 +347,271 @@ def cmd_lock_test(args):
         time.sleep(seconds)
         with open(log, "a", encoding="utf-8") as f:
             f.write(f"release {os.getpid()}\n")
+
+
+# ==== registry.py ====
+# The user's project registry ($ATM_HOME/projects.json): the projects the dashboard server shows.
+#
+# One file per user, guarded by $ATM_HOME/.lock (not by any project's lock, and never taken while holding one), written
+# atomically. A linked git worktree registers its repository's main worktree. Format: docs/multi-project-api.md, 5.1.
+
+REGISTRY_FILE = "projects.json"
+REGISTRY_VERSION = 1
+SEEN_EVERY = 24 * 3600  # seconds between seen_at updates, so the registry isn't rewritten on every command
+
+
+def atm_home():
+    """The user's atm folder: ATM_HOME, else ~/.agentic-task-manager."""
+    return os.path.abspath(os.path.expanduser(os.environ.get("ATM_HOME") or "~/.agentic-task-manager"))
+
+
+def main_worktree(root):
+    """The main worktree's folder for a project root (itself unless it is a linked git worktree)."""
+    common = git(["rev-parse", "--git-common-dir"], root)
+    if common:
+        common = os.path.normpath(os.path.join(root, common))
+        if os.path.basename(common) == ".git":
+            return os.path.dirname(common)
+    return root
+
+
+def project_meta(path):
+    """The meta of the project at `path`, or None without a readable tasks.json."""
+    data = read_json(os.path.join(path, TASK_DIR, TASKS_FILE))
+    if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
+        return None
+    return data.get("meta") if isinstance(data.get("meta"), dict) else {}
+
+
+def project_id(meta, path):
+    """meta.id, else "p" and 7 hex characters of the path's SHA-1 (stable until meta.id is set)."""
+    if isinstance(meta.get("id"), str) and meta["id"]:
+        return meta["id"]
+    return "p" + hashlib.sha1(path.encode("utf-8")).hexdigest()[:7]
+
+
+def project_name(meta, path):
+    return meta.get("project") if isinstance(meta.get("project"), str) and meta["project"] else os.path.basename(path)
+
+
+def listed(meta):
+    dashboard = meta.get("dashboard")
+    return not (isinstance(dashboard, dict) and dashboard.get("listed") is False)
+
+
+def is_missing(entry):
+    return project_meta(entry["path"]) is None
+
+
+def empty_registry():
+    return {"version": REGISTRY_VERSION, "projects": []}
+
+
+def read_registry(home):
+    """(registry, damaged): an unreadable projects.json is moved aside to projects.json.damaged-<time> (its path is
+    returned as `damaged`) and replaced by an empty registry. Call it holding the registry lock."""
+    path = os.path.join(home, REGISTRY_FILE)
+    if not os.path.exists(path):
+        return empty_registry(), None
+    data = read_json(path)
+    entries = data.get("projects") if isinstance(data, dict) else None
+    if isinstance(entries, list) and all(isinstance(e, dict) and isinstance(e.get("path"), str) for e in entries):
+        return data, None
+    damaged = f"{path}.damaged-{now().strftime('%Y%m%dT%H%M%SZ')}"
+    os.replace(path, damaged)
+    return empty_registry(), damaged
+
+
+def write_registry(home, registry):
+    write_json_atomic(os.path.join(home, REGISTRY_FILE), registry)
+
+
+def find_entry(registry, path):
+    return next((e for e in registry["projects"] if e["path"] == path), None)
+
+
+def entry_for(path, meta, stamp):
+    return {
+        "id": project_id(meta, path),
+        "name": project_name(meta, path),
+        "path": path,
+        "added_at": stamp,
+        "seen_at": stamp,
+    }
+
+
+def seen_long_ago(entry):
+    """True when the entry's seen_at is a day old (or unreadable): time to refresh it."""
+    try:
+        return (now() - parse_iso(entry.get("seen_at"))).total_seconds() >= SEEN_EVERY
+    except (TypeError, ValueError):
+        return True
+
+
+def update_entry(registry, path, meta):
+    """Add, refresh or (when the project opted out) remove the entry for `path`. Returns what happened: "added",
+    "updated", "unchanged", "removed" or "unlisted"."""
+    entry = find_entry(registry, path)
+    if not listed(meta):
+        if entry:
+            registry["projects"].remove(entry)
+            return "removed"
+        return "unlisted"
+    stamp = now_iso()
+    if entry is None:
+        registry["projects"].append(entry_for(path, meta, stamp))
+        return "added"
+    fresh = {"id": project_id(meta, path), "name": project_name(meta, path)}
+    changed = any(entry.get(k) != v for k, v in fresh.items())
+    if not (changed or seen_long_ago(entry)):
+        return "unchanged"
+    entry.update(fresh)
+    entry["seen_at"] = stamp
+    return "updated"
+
+
+def register(paths, wait=True):
+    """Register the project of `paths` (its main worktree). With wait=False the registry lock is tried once and the
+    project is skipped if the lock is taken (the plugin's hook must never wait). Returns update_entry's result,
+    "busy" when skipped, or None when the project has no tasks.json."""
+    path = main_worktree(paths["root"])
+    meta = project_meta(path)
+    if meta is None:
+        meta = project_meta(paths["root"])
+    if meta is None:
+        return None
+    home = atm_home()
+    try:
+        with locked(home, timeout=None if wait else 0):
+            registry, _ = read_registry(home)
+            result = update_entry(registry, path, meta)
+            if result not in ("unchanged", "unlisted"):
+                write_registry(home, registry)
+            return result
+    except AtmError:
+        if wait:
+            raise
+        return "busy"
+
+
+def register_if_needed(paths):
+    """The plugin hook's cheap path, run after every tool call: one read of projects.json, and registering (without
+    waiting for the lock) only when the project isn't listed yet or was last seen a day ago."""
+    path = main_worktree(paths["root"])
+    registry = read_json(os.path.join(atm_home(), REGISTRY_FILE))
+    entries = registry.get("projects") if isinstance(registry, dict) else None
+    entry = next((e for e in entries or [] if isinstance(e, dict) and e.get("path") == path), None)
+    if entry is not None and not seen_long_ago(entry):
+        return "unchanged"
+    return register(paths, wait=False)
+
+
+def resolve_project(target):
+    """The main worktree folder of the project at `target` (a path), and its meta; refuses a folder without tasks."""
+    folder = os.path.abspath(os.path.expanduser(target or os.getcwd()))
+    if not os.path.isdir(folder):
+        raise AtmError(f"{target}: not a directory", 2)
+    paths = find_paths(folder)
+    path = main_worktree(paths["root"])
+    meta = project_meta(path) or project_meta(paths["root"])
+    if meta is None:
+        raise AtmError(f"no tasks.json in {os.path.join(path, TASK_DIR)}. Run /atm:create-tasks there first.")
+    return path, meta
+
+
+def describe_entry(entry):
+    return f"{entry['id']}  {entry['name']}  {entry['path']}"
+
+
+def damaged_notice(damaged):
+    return f"projects.json was unreadable: moved it to {damaged} and started an empty registry." if damaged else None
+
+
+def projects_list(home, as_json):
+    with locked(home):
+        registry, damaged = read_registry(home)
+        if damaged:
+            write_registry(home, registry)
+    entries = [{**e, "missing": is_missing(e)} for e in registry["projects"]]
+    if as_json:
+        out(to_json({"projects": entries, "damaged": damaged}))
+        return
+    if damaged:
+        out(damaged_notice(damaged))
+    if not entries:
+        out("No projects registered. `atm projects add [PATH]` adds one; atm adds a project when it runs there.")
+    for e in entries:
+        out(describe_entry(e) + ("  (not found)" if e["missing"] else ""))
+
+
+def projects_add(home, target, as_json):
+    path, meta = resolve_project(target)
+    if not listed(meta):
+        raise AtmError(f"{path} opts out of the dashboard (meta.dashboard.listed is false)")
+    with locked(home):
+        registry, damaged = read_registry(home)
+        result = update_entry(registry, path, meta)
+        write_registry(home, registry)
+    entry = find_entry(registry, path)
+    if as_json:
+        out(to_json({"result": result, "project": entry, "damaged": damaged}))
+        return
+    if damaged:
+        out(damaged_notice(damaged))
+    out(f"{'Added' if result == 'added' else 'Already registered'}: {describe_entry(entry)}")
+
+
+def projects_remove(home, target, as_json):
+    if not target:
+        raise AtmError("remove needs a project ID or path (see `atm projects`)", 2)
+    candidates = {target, os.path.abspath(os.path.expanduser(target))}
+    if os.path.isdir(target):
+        candidates.add(main_worktree(find_paths(os.path.abspath(target))["root"]))
+    with locked(home):
+        registry, damaged = read_registry(home)
+        entry = next((e for e in registry["projects"] if e.get("id") in candidates or e["path"] in candidates), None)
+        if entry:
+            registry["projects"].remove(entry)
+        if entry or damaged:
+            write_registry(home, registry)
+    if entry is None:
+        raise AtmError(f"no registered project {target} (see `atm projects`)")
+    if as_json:
+        out(to_json({"removed": entry, "damaged": damaged}))
+        return
+    out(f"Removed: {describe_entry(entry)}")
+
+
+def projects_prune(home, as_json):
+    with locked(home):
+        registry, damaged = read_registry(home)
+        gone = [e for e in registry["projects"] if is_missing(e)]
+        registry["projects"] = [e for e in registry["projects"] if e not in gone]
+        if gone or damaged:
+            write_registry(home, registry)
+    if as_json:
+        out(to_json({"removed": gone, "damaged": damaged}))
+        return
+    if damaged:
+        out(damaged_notice(damaged))
+    if not gone:
+        out("Nothing to prune: every registered project is there.")
+    for e in gone:
+        out(f"Removed: {describe_entry(e)}")
+
+
+def cmd_projects(args):
+    home = atm_home()
+    if args.action == "add":
+        projects_add(home, args.target, args.json)
+    elif args.action == "remove":
+        projects_remove(home, args.target, args.json)
+    elif args.action == "prune":
+        projects_prune(home, args.json)
+    else:
+        if args.target:
+            raise AtmError(f"unexpected argument '{args.target}'", 2)
+        projects_list(home, args.json)
 
 
 # ==== model.py ====
@@ -545,7 +827,9 @@ def archive_settings(data):
 
 
 def finished_at(task):
-    for key in ("completed_at", "updated_at"):
+    """When a finished task finished: completed_at (done) or skipped_at (skipped), else updated_at for files from
+    before those were written (atm migrate fills them in)."""
+    for key in ("completed_at", "skipped_at", "updated_at"):
         try:
             return parse_iso(task[key])
         except (KeyError, TypeError, ValueError):
@@ -689,6 +973,7 @@ def back_to_todo(task, vocab, actor, stamp):
     for field in (
         "started_at",
         "completed_at",
+        "skipped_at",
         "started_by",
         "completed_by",
         "agent",
@@ -786,6 +1071,7 @@ def change_status(
     elif command == "skip":
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
+        task["skipped_at"] = stamp
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
@@ -1039,6 +1325,10 @@ def auto_heartbeat(args):
         paths = find_paths(cwd)
         if not paths["tasks_exists"]:
             return
+        try:
+            register_if_needed(paths)  # list the project on the dashboard (one read of the registry when it is)
+        except Exception:
+            pass
         current = now()
 
         def due(claims):
@@ -1296,6 +1586,82 @@ def cmd_deps(args):
     out(f"{args.id} is waited on by: {line(waited_on_by)}")
 
 
+ACTIVITY_FIELDS = ("updated_at", "started_at", "completed_at", "review_requested_at", "blocked_at", "skipped_at")
+SUMMARY_DAYS = 14
+
+
+def as_phase_id(phase):
+    return int(phase) if isinstance(phase, float) and phase.is_integer() else phase
+
+
+def parse_time(text):
+    try:
+        return parse_iso(text) if isinstance(text, str) else None
+    except ValueError:
+        return None
+
+
+def project_summary(paths):
+    """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
+    status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
+    needs the user, the latest activity and the completions of the last 14 days."""
+    data = load_tasks(paths)
+    vocab = vocabulary(data)
+    tasks = data["tasks"]
+    kinds = [kind_of(vocab, t.get("status")) for t in tasks]
+    done, skipped = kinds.count("done"), kinds.count("skipped")
+    counted = len(tasks) - skipped
+    percent = round(100 * done / counted) if counted else (100 if skipped else 0)
+
+    current_phase = None
+    open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
+    if open_phases:
+        phase = open_phases[0]
+        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
+        names = {p.get("id"): p.get("name") for p in vocab["phases"]}
+        current_phase = {
+            "id": as_phase_id(phase),
+            "name": names.get(phase) or None,
+            "done": in_phase.count("done"),
+            "total": len(in_phase) - in_phase.count("skipped"),
+        }
+
+    current = now()
+    claims = read_store(paths)["claims"].values()
+    agents_working = sum(
+        1 for c in claims if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+    )
+
+    times = [parse_time(t.get(f)) for t in tasks for f in ACTIVITY_FIELDS]
+    times += [parse_time(n.get("at")) for t in tasks for n in t.get("notes") or [] if isinstance(n, dict)]
+    times = [t for t in times if t]
+    last = max(times) if times else None
+
+    completions = [0] * SUMMARY_DAYS
+    today = current.date()
+    for t, k in zip(tasks, kinds):
+        finished = parse_time(t.get("completed_at")) if k == "done" else None
+        if finished:
+            age = (today - finished.date()).days
+            if 0 <= age < SUMMARY_DAYS:
+                completions[SUMMARY_DAYS - 1 - age] += 1
+
+    return {
+        "total": len(tasks),
+        "done": done,
+        "skipped": skipped,
+        "percent": percent,
+        "current_phase": current_phase,
+        "agents_working": agents_working,
+        "needs_you": {
+            "review": kinds.count("review"),
+            "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
+        },
+        "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
+        "completions_14d": completions,
+    }
+
+
 def cmd_status(args):
     paths = find_paths(os.getcwd())
     data = load_tasks(paths)
@@ -1345,6 +1711,7 @@ def cmd_status(args):
         "tasks": len(tasks),
         "by_status": by_status,
         "by_phase": counts(lambda t: [t.get("phase")]),
+        "phase_names": {str(as_phase_id(p["id"])): p["name"] for p in vocab["phases"] if p.get("name")},
         "by_type": counts(lambda t: [t.get("type")]),
         "by_label": counts(lambda t: t.get("labels") or []),
         "in_progress": in_progress,
@@ -1366,7 +1733,8 @@ def cmd_status(args):
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
-    out(f"by phase: {pairs(result['by_phase'])}")
+    names = result["phase_names"]
+    out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
     out(f"by type: {pairs(result['by_type'])}")
     if result["by_label"]:
         out(f"by label: {pairs(result['by_label'])}")
@@ -1796,6 +2164,10 @@ def check_data(data, root, files=False, archived=()):
             for f in task.get("files") or []:
                 if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
                     warnings.append(f"{task_id}: the file {f} doesn't exist")
+    used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
+    for p in vocab["phases"]:
+        if p["id"] not in used:
+            warnings.append(f"phase {p['id']} is named ({p.get('name')!r}) but has no tasks (atm phases unname)")
     well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
     cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
     if cycle:
@@ -1834,6 +2206,118 @@ def cmd_check(args):
         raise AtmExit(1)
 
 
+# ==== phases.py ====
+# `atm phases`: the project's phases, with their names (meta.phases) and how far along each one is; and naming one
+# phase at a time, so naming a phase never means rewriting (or first having to read) the whole list.
+
+def phase_number(text):
+    """A phase number from the command line: 15, or 1.5; an int when it is whole."""
+    try:
+        value = float(text)
+    except (TypeError, ValueError):
+        raise AtmError(f"{text!r} is not a phase number", 2)
+    return int(value) if value.is_integer() else value
+
+
+def phase_overview(data, archived=()):
+    """Every phase that has tasks or a name, in order: {id, name, tasks, by_kind}."""
+    vocab = vocabulary(data)
+    names = {p["id"]: p.get("name") for p in vocab["phases"]}
+    phases = {}
+    for task in list(data["tasks"]) + list(archived):
+        if not isinstance(task, dict):
+            continue
+        entry = phases.setdefault(phase_of(task), {kind: 0 for kind in KINDS})
+        kind = kind_of(vocab, task.get("status"))
+        if kind in entry:
+            entry[kind] += 1
+    for phase_id in names:
+        phases.setdefault(phase_id, {kind: 0 for kind in KINDS})
+    return [
+        {
+            "id": phase_number(phase_id),
+            "name": names.get(phase_id) or None,
+            "tasks": sum(counts.values()),
+            "by_kind": {kind: n for kind, n in counts.items() if n},
+        }
+        for phase_id, counts in sorted(phases.items())
+    ]
+
+
+def describe_phase(p):
+    counts = ", ".join(f"{kind} {n}" for kind, n in p["by_kind"].items())
+    title = f"phase {p['id']}" + (f" · {p['name']}" if p["name"] else "")
+    return f"{title}: {p['tasks']} task{'' if p['tasks'] == 1 else 's'}" + (f" ({counts})" if counts else "")
+
+
+def phases_list(paths, archived, as_json):
+    data = load_tasks(paths)
+    phases = phase_overview(data, load_archive(paths)["tasks"] if archived else ())
+    if as_json:
+        out(to_json(phases))
+        return
+    if not phases:
+        out("No phases yet: no task has a phase, and none is named.")
+    for p in phases:
+        out(describe_phase(p))
+
+
+def set_phase_name(paths, number, name):
+    """Set (name) or remove (None) the name of one phase under the lock, leaving the others as they are. Returns the
+    previous name."""
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        meta = data.setdefault("meta", {})
+        phases = [p for p in meta.get("phases") or [] if isinstance(p, dict)]
+        previous = next((p.get("name") for p in phases if p.get("id") == number), None)
+        if name is None and previous is None:
+            raise AtmError(f"phase {number} has no name")
+        phases = [p for p in phases if p.get("id") != number]
+        if name is not None:
+            phases.append({"id": number, "name": name})
+        phases.sort(key=lambda p: p["id"])
+        if phases:
+            meta["phases"] = phases
+        else:
+            meta.pop("phases", None)
+        vocabulary(data)
+        write_json_atomic(paths["tasks"], data)
+    return previous
+
+
+def cmd_phases(args):
+    paths = find_paths(os.getcwd())
+    if args.action in (None, "list"):
+        if args.number is not None:
+            raise AtmError(f"unexpected argument '{args.number}'", 2)
+        phases_list(paths, args.archived, args.json)
+        return
+    if args.number is None:
+        raise AtmError(f"atm phases {args.action} needs a phase number", 2)
+    number = phase_number(args.number)
+    if args.action == "name":
+        name = (args.name or "").strip()
+        if not name:
+            raise AtmError('atm phases name needs a name: atm phases name <n> "<name>"', 2)
+        previous = set_phase_name(paths, number, name)
+        if args.json:
+            out(to_json({"id": number, "name": name, "previous": previous}))
+        elif previous is None:
+            out(f"Phase {number} is now named “{name}”.")
+        elif previous == name:
+            out(f"Phase {number} was already named “{name}”.")
+        else:
+            out(f"Phase {number} renamed from “{previous}” to “{name}”.")
+        return
+    if args.name is not None:
+        raise AtmError(f"unexpected argument '{args.name}'", 2)
+    previous = set_phase_name(paths, number, None)
+    if args.json:
+        out(to_json({"id": number, "name": None, "previous": previous}))
+    else:
+        out(f"Phase {number} no longer has a name (it was “{previous}”).")
+
+
 # ==== merge.py ====
 # Merging tasks.json, and `atm init`.
 #
@@ -1853,6 +2337,7 @@ PROGRESS_FIELDS = (
     "updated_at",
     "started_at",
     "completed_at",
+    "skipped_at",
     "last_failure",
     "agent",
     "started_by",
@@ -2116,6 +2601,7 @@ def cmd_init(args):
         if not args.json:
             out(("Created tasks.json; meta: " if created else "Updated tasks.json meta: ") + (", ".join(keys) or "-"))
     project_id = ensure_project_id(paths)
+    register(paths)  # the dashboard lists every project atm runs in
     git_repo = in_git(paths["root"])
     changed = ensure_merge_driver(paths) if git_repo else False
     if args.json:
@@ -2447,12 +2933,16 @@ def cmd_merged(args):
 
 
 # ==== migrate.py ====
-# `atm migrate`: move a legacy tasks.json into the task folder and set the folder up (.gitignore, merge driver,
-# the current dashboard).
+# `atm migrate`: move a legacy tasks.json into the task folder and set the folder up (.gitignore, merge driver), and
+# clean up after per-project dashboards (0.10.0-0.14.0): the dashboard now comes from the plugin, served by
+# `atm serve` for all projects.
 
 TEMPLATE = os.path.join(PLUGIN_ROOT, "templates", DASHBOARD_FILE)
-# Runtime files in the task folder that must not be committed (the dashboard is a copy of the plugin's template)
+# Runtime files in the task folder that must not be committed (the dashboard and server files are from before
+# 0.15.0; they stay listed so leftovers stay out of git)
 IGNORED = ["tasks-dashboard.html", ".server.json", ".server.log", "claims.json", "claims-store.json", ".lock/"]
+OLD_SERVER_RECORD = ".server.json"
+OLD_SERVER_LOG = ".server.log"
 VERSION_META = re.compile(r'<meta name="atm-dashboard-version" content="([^"]*)"')
 BUILD_META = re.compile(r'<meta name="atm-dashboard-build" content="([^"]*)"')
 # The tags sit at the top of the page; reading this much finds them without reading the whole (inlined) dashboard
@@ -2470,28 +2960,75 @@ def dashboard_head(p):
     return (version.group(1) if version else "", build.group(1) if build else "")
 
 
-def dashboard_version(p):
-    head = dashboard_head(p)
-    return None if head is None else head[0]
+def clean_up_old_dashboard(task_dir):
+    """Per-project dashboards (0.10.0-0.14.0): delete the project's copy of the dashboard, stop its server if one still
+    runs (only when whoami confirms it serves this folder), and remove the server's record and log. Returns what was
+    done, or None when there was nothing left."""
+    removed = False
+    copy = os.path.join(task_dir, DASHBOARD_FILE)
+    if os.path.isfile(copy):
+        os.remove(copy)
+        removed = True
+    stopped = None
+    record_path = os.path.join(task_dir, OLD_SERVER_RECORD)
+    record = read_json(record_path)
+    if record is not None:
+        info = whoami(record.get("port")) if isinstance(record, dict) else None
+        if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):
+            try:
+                os.kill(record["pid"], signal.SIGTERM)
+                stopped = record["pid"]
+            except OSError:
+                pass
+    had_files = False
+    for name in (OLD_SERVER_RECORD, OLD_SERVER_LOG):
+        p = os.path.join(task_dir, name)
+        if os.path.exists(p):
+            os.remove(p)
+            had_files = True
+    if not (removed or stopped or had_files):
+        return None
+    return {"dashboard": removed, "server": stopped}
 
 
-def ensure_dashboard(dashboard):
-    """Copy the plugin's dashboard if the project's is missing, older, or the same version but another build (a fix
-    shipped without a new version number). Returns (action, old, new): action is installed, updated, rebuilt or
-    current."""
-    new, new_build = dashboard_head(TEMPLATE)
-    head = dashboard_head(dashboard)
-    old, old_build = head if head is not None else (None, None)
-    if old is not None:
-        if parse_version(old) > parse_version(new):
-            return ("current", old, new)  # a newer dashboard is left alone
-        if parse_version(old) == parse_version(new) and (not new_build or old_build == new_build):
-            return ("current", old, new)
-    os.makedirs(os.path.dirname(dashboard), exist_ok=True)
-    shutil.copyfile(TEMPLATE, dashboard)
-    if old is None:
-        return ("installed", old, new)
-    return ("rebuilt" if parse_version(old) == parse_version(new) else "updated", old, new)
+FINISH_FIELDS = {"done": "completed_at", "skipped": "skipped_at"}
+
+
+def missing_finish_times(tasks, vocab):
+    """The finished tasks without their finish time (done ones from before completed_at existed; skipped ones from
+    before skipped_at existed), with the field each one needs."""
+    result = []
+    for task in tasks:
+        field = FINISH_FIELDS.get(kind_of(vocab, task.get("status"))) if isinstance(task, dict) else None
+        if field and not task.get(field) and task.get("updated_at"):
+            result.append((task, field))
+    return result
+
+
+def backfill_finish_times(paths):
+    """Give finished tasks without a finish time their updated_at, which is what the dashboard showed for them anyway,
+    so a later edit (which moves updated_at) doesn't move them in time. In tasks.json and the archive; once per task;
+    updated_at and updated_by stay. Returns how many tasks were filled in."""
+    archive = archive_path(paths)
+    try:
+        data = load_tasks(paths)
+        vocab = vocabulary(data)
+        if not missing_finish_times(data["tasks"], vocab) and not missing_finish_times(load_archive(paths)["tasks"], vocab):
+            return 0
+    except AtmError:
+        return 0  # an unreadable file: the command the skill runs next reports the problem
+    filled = 0
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        files = [(paths["tasks"], data)] + ([(archive, load_archive(paths))] if os.path.isfile(archive) else [])
+        for path, contents in files:
+            missing = missing_finish_times(contents["tasks"], vocab)
+            for task, field in missing:
+                task[field] = task["updated_at"]
+            if missing:
+                write_json_atomic(path, contents)
+                filled += len(missing)
+    return filled
 
 
 def ensure_gitignore(task_dir):
@@ -2524,9 +3061,9 @@ def migrate(paths):
         "warning": None,
         "gitignore_updated": False,
         "merge_driver_updated": False,
-        "dashboard": None,
+        "cleaned_up": None,
+        "finish_times_filled": 0,
     }
-    legacy_version = None
     if legacy and paths["tasks_exists"]:
         result["warning"] = (
             f"both {rel(root, legacy['tasks'])} and {rel(root, paths['tasks'])} exist; "
@@ -2542,7 +3079,6 @@ def migrate(paths):
             os.rename(legacy["tasks"], paths["tasks"])
         result["moved"] = {"from": rel(root, legacy["tasks"]), "to": rel(root, paths["tasks"]), "git": tracked}
         if legacy["dashboard"]:
-            legacy_version = dashboard_version(legacy["dashboard"])
             if is_tracked(root, legacy["dashboard"]):
                 git(["rm", "--cached", "-q", "--", rel(root, legacy["dashboard"])], root)
             os.remove(legacy["dashboard"])
@@ -2557,12 +3093,8 @@ def migrate(paths):
     if not os.path.exists(os.path.join(task_dir, CLAIMS_SNAPSHOT)):
         # So the dashboard finds the file from the start instead of logging a 404 on every refresh
         write_claims_snapshot(paths, read_store(paths)["claims"])
-    action, old, new = ensure_dashboard(paths["dashboard"])
-    if action == "installed" and legacy_version is not None:
-        # Report against the dashboard the project had before the move
-        old = legacy_version
-        action = "current" if parse_version(old) >= parse_version(new) else "updated"
-    result["dashboard"] = {"action": action, "from": old, "to": new}
+    result["cleaned_up"] = clean_up_old_dashboard(task_dir)
+    result["finish_times_filled"] = backfill_finish_times(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))
     except AtmError:
@@ -2581,17 +3113,20 @@ def describe_migration(r, paths):
         if r["moved"]["git"]:
             line += " (staged with git mv, not committed)"
         if r["removed_dashboard"]:
-            line += f"; removed {r['removed_dashboard']} (a current copy now sits next to tasks.json, ignored by git)"
+            line += f"; removed {r['removed_dashboard']} (the dashboard now comes with the plugin: /atm:serve)"
         lines.append(line + ".")
     elif not os.path.isfile(paths["tasks"]):
         lines.append("No tasks.json found. Run /atm:create-tasks to create one.")
-    d = r["dashboard"]
-    if d and d["action"] == "installed":
-        lines.append(f"Dashboard v{d['to']} installed.")
-    elif d and d["action"] == "updated":
-        lines.append(f"Dashboard updated from v{d['from'] or '?'} to v{d['to']}.")
-    elif d and d["action"] == "rebuilt":
-        lines.append(f"Dashboard updated (same version, v{d['to']}, new build).")
+    cleaned = r["cleaned_up"]
+    if cleaned:
+        line = "Removed this project's old dashboard files"
+        if cleaned["server"]:
+            line += f" and stopped its old dashboard server (pid {cleaned['server']})"
+        lines.append(line + ": one dashboard for all your projects now comes with the plugin (/atm:serve).")
+    filled = r.get("finish_times_filled")
+    if filled:
+        tasks = "1 finished task" if filled == 1 else f"{filled} finished tasks"
+        lines.append(f"Filled in the finish time of {tasks} that had none, from the last update (completed_at/skipped_at).")
     if not lines:
         lines.append("Nothing to migrate.")
     if r.get("suggest"):
@@ -2602,6 +3137,8 @@ def describe_migration(r, paths):
 def cmd_migrate(args):
     paths = find_paths(os.getcwd())
     r = migrate(paths)
+    if os.path.isfile(paths["tasks"]):
+        register(paths)  # the dashboard lists every project atm runs in (every skill runs migrate first)
     if args.json:
         out(to_json(r))
         return
@@ -2610,37 +3147,31 @@ def cmd_migrate(args):
 
 
 # ==== server.py ====
-# `atm serve`: the dashboard server, a detached process per project.
+# `atm serve`: one dashboard server per user, a detached process serving every registered project.
+#
+# The server holds the plugin's dashboard in memory and serves each registered project's task files under /p/<id>/.
+# Its routes and record are described in docs/multi-project-api.md.
 
-SERVER_RECORD = ".server.json"
-SERVER_LOG = ".server.log"
-DEFAULT_PORT = 8000
+SERVER_RECORD = "server.json"
+SERVER_LOG = "server.log"
+DEFAULT_PORT = 8765
 PORT_TRIES = 100
-WHOAMI = "/__atm/whoami"
+PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json")
+PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
 
 
-def server_url(port):
-    return f"http://localhost:{port}/{DASHBOARD_FILE}"
+def server_url(port, project=None):
+    return f"http://localhost:{port}/" + (f"#project={project}" if project else "")
 
 
-def whoami(port):
-    """Ask the server on this port who it is; None if nothing (or not an atm server) answers."""
-    try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}{WHOAMI}", timeout=1) as response:
-            info = json.loads(response.read().decode("utf-8"))
-    except (OSError, ValueError):
-        return None
-    return info if isinstance(info, dict) and info.get("atm") else None
-
-
-def live_server(task_dir):
-    """The record of this folder's running server, or None. A stale record is removed."""
-    record_path = os.path.join(task_dir, SERVER_RECORD)
+def live_server(home):
+    """The record of the user's running server, or None. A stale record is removed."""
+    record_path = os.path.join(home, SERVER_RECORD)
     record = read_json(record_path)
     if record is None:
         return None
     info = whoami(record.get("port"))
-    if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):
+    if info and info.get("pid") == record.get("pid"):
         return record
     os.remove(record_path)
     return None
@@ -2654,21 +3185,16 @@ def open_browser(url):
         out(f"Could not open a browser; open {url} yourself.")
 
 
-def serve_start(paths, port):
-    for line in describe_migration(migrate(paths), paths):
-        if line != "Nothing to migrate.":
-            out(line)
-    if not os.path.isfile(paths["tasks"]):
-        raise AtmError("no tasks.json to serve. Run /atm:create-tasks first.")
-    task_dir = paths["dir"]
-    record = live_server(task_dir)
+def ensure_server(home, port):
+    """The running server's record, starting the server if none runs. Returns (record, started)."""
+    record = live_server(home)
     if record:
-        out(f"Dashboard server already running: {server_url(record['port'])}")
-        return record
-    with open(os.path.join(task_dir, SERVER_LOG), "ab") as log:
+        return record, False
+    os.makedirs(home, exist_ok=True)
+    with open(os.path.join(home, SERVER_LOG), "ab") as log:
         child = subprocess.Popen(
-            [sys.executable, os.path.abspath(__file__), "_serve-child", task_dir, str(port)],
-            cwd=task_dir,
+            [sys.executable, os.path.abspath(__file__), "_serve-child", home, str(port)],
+            cwd=home,
             stdin=subprocess.DEVNULL,
             stdout=log,
             stderr=log,
@@ -2676,40 +3202,102 @@ def serve_start(paths, port):
         )
     deadline = time.time() + 10
     while time.time() < deadline:
-        record = read_json(os.path.join(task_dir, SERVER_RECORD))
+        record = read_json(os.path.join(home, SERVER_RECORD))
         if record and record.get("pid") == child.pid and whoami(record["port"]):
-            out(f"Dashboard server started: {server_url(record['port'])}")
-            return record
+            return record, True
         if child.poll() is not None:
             break
         time.sleep(0.05)
-    raise AtmError(f"the dashboard server did not start; see {os.path.join(task_dir, SERVER_LOG)}")
+    raise AtmError(f"the dashboard server did not start; see {os.path.join(home, SERVER_LOG)}")
 
 
-def serve_stop(paths):
-    task_dir = paths["dir"]
-    record_path = os.path.join(task_dir, SERVER_RECORD)
+def project_for(paths):
+    """(id, listed) of the project at `paths`, after registering it."""
+    register(paths)
+    path = main_worktree(paths["root"])
+    meta = project_meta(path) or project_meta(paths["root"]) or {}
+    return project_id(meta, path), listed(meta)
+
+
+def serve_start(paths, port, overview):
+    """Start (or reuse) the server; returns the URL to show: the project's, or the overview's."""
+    project = None
+    if not overview:
+        for line in describe_migration(migrate(paths), paths):
+            if line != "Nothing to migrate.":
+                out(line)
+        if not os.path.isfile(paths["tasks"]):
+            raise AtmError("no tasks.json to serve. Run /atm:create-tasks first.")
+        project, shown = project_for(paths)
+        if not shown:
+            out("This project isn't listed on the dashboard (meta.dashboard.listed is false).")
+            project = None
+    home = atm_home()
+    record, started = ensure_server(home, port)
+    url = server_url(record["port"], project)
+    out(f"Dashboard server {'started' if started else 'already running'}: {url}")
+    return url
+
+
+def stop_server(home, pid):
+    """Stop the user's server (whose pid whoami confirmed) and remove its record."""
+    os.kill(pid, signal.SIGTERM)
+    deadline = time.time() + 5
+    while time.time() < deadline and pid_alive(pid):
+        time.sleep(0.05)
+    record_path = os.path.join(home, SERVER_RECORD)
+    if os.path.exists(record_path):
+        os.remove(record_path)
+
+
+def serve_stop(home):
+    record_path = os.path.join(home, SERVER_RECORD)
     record = read_json(record_path)
     if record is None:
         out("Dashboard server is not running.")
         return
     info = whoami(record.get("port"))
-    if not (info and info.get("folder") == task_dir and info.get("pid") == record.get("pid")):
+    if not (info and info.get("pid") == record.get("pid")):
         os.remove(record_path)
         out(f"Dashboard server is not running (removed a stale record for pid {record.get('pid')}).")
         return
-    pid = record["pid"]
-    os.kill(pid, signal.SIGTERM)
-    deadline = time.time() + 5
-    while time.time() < deadline and pid_alive(pid):
-        time.sleep(0.05)
-    if os.path.exists(record_path):
-        os.remove(record_path)
-    out(f"Dashboard server stopped (pid {pid}).")
+    stop_server(home, record["pid"])
+    out(f"Dashboard server stopped (pid {record['pid']}).")
 
 
-def serve_status(paths, as_json):
-    record = live_server(paths["dir"])
+def outdated(record):
+    """True when the server runs an older dashboard than this plugin's: an older version, or the same version but
+    another build. A newer server is left alone, so a session still on an older plugin never downgrades it."""
+    mine, mine_build = dashboard_head(TEMPLATE) or ("", "")
+    theirs, theirs_build = str(record.get("version") or ""), str(record.get("build") or "")
+    if parse_version(mine) != parse_version(theirs):
+        return parse_version(mine) > parse_version(theirs)
+    return bool(mine_build) and mine_build != theirs_build
+
+
+def refresh_server(home=None):
+    """Restart the user's server on the same port if it runs an older dashboard than this plugin's (after a plugin
+    update). Cheap when there is nothing to do: one read of server.json, and no request unless it is outdated.
+    Never starts a server that isn't running. Returns the new record, or None."""
+    home = home or atm_home()
+    record = read_json(os.path.join(home, SERVER_RECORD))
+    if not isinstance(record, dict) or not outdated(record):
+        return None
+    live = live_server(home)
+    if not live:
+        return None
+    stop_server(home, live["pid"])
+    return ensure_server(home, live["port"])[0]
+
+
+def serve_refresh(home):
+    record = refresh_server(home)
+    if record:
+        out(f"Dashboard server restarted with dashboard {record.get('version')}: {server_url(record['port'])}")
+
+
+def serve_status(home, as_json):
+    record = live_server(home)
     if as_json:
         out(to_json({"running": bool(record), **(record or {}), "url": server_url(record["port"]) if record else None}))
         return
@@ -2717,89 +3305,227 @@ def serve_status(paths, as_json):
         out("Dashboard server is not running.")
         return
     up = format_duration((datetime.now(timezone.utc) - parse_iso(record["started_at"])).total_seconds())
-    out(f"Dashboard server running: {server_url(record['port'])} (pid {record['pid']}, up {up})")
+    out(
+        f"Dashboard server running: {server_url(record['port'])} "
+        f"(pid {record['pid']}, dashboard {record.get('version')}, up {up})"
+    )
 
 
 def cmd_serve(args):
-    # --dir acts on another project's server without a cd (which permission rules can't check)
+    # --dir acts on another project without a cd (which permission rules can't check)
     cwd = os.path.abspath(args.dir) if args.dir else os.getcwd()
     if not os.path.isdir(cwd):
         raise AtmError(f"--dir {args.dir}: not a directory", 2)
-    paths = find_paths(cwd)
-    if args.action == "start":
-        record = serve_start(paths, args.port)
+    home = atm_home()
+    if args.refresh:
+        serve_refresh(home)
+    elif args.action == "start":
+        refresh_server(home)  # an outdated server is replaced before its URL is shown
+        url = serve_start(find_paths(cwd), args.port, args.all)
         if args.open:
-            open_browser(server_url(record["port"]))
+            open_browser(url)
     elif args.action == "stop":
-        serve_stop(paths)
+        serve_stop(home)
     else:
-        serve_status(paths, args.json)
+        serve_status(home, args.json)
 
 
-def json_etag(task_dir, path):
-    """A strong ETag for a .json file in the task folder (size and nanosecond mtime), or None. Last-Modified alone has
-    one-second resolution, so two atm changes in the same second would look unchanged to the dashboard."""
-    name = path.lstrip("/")
-    if not name.endswith(".json") or "/" in name or name.startswith("."):
-        return None
+def port_in_use(port):
+    """Something accepts connections on 127.0.0.1:port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+def file_stamp(p):
+    """(size, nanosecond mtime) of a file, or None if it doesn't exist."""
     try:
-        st = os.stat(os.path.join(task_dir, name))
+        st = os.stat(p)
     except OSError:
         return None
-    return f'"{st.st_size:x}-{st.st_mtime_ns:x}"'
+    return (st.st_size, st.st_mtime_ns)
+
+
+def file_etag(stamp):
+    """A strong ETag from a file's size and nanosecond mtime. Last-Modified alone has one-second resolution, so two
+    atm changes in the same second would look unchanged to the dashboard."""
+    return f'"{stamp[0]:x}-{stamp[1]:x}"'
+
+
+class Registry:
+    """The registry as the server sees it, re-read when projects.json changes."""
+
+    def __init__(self, home):
+        self.path = os.path.join(home, REGISTRY_FILE)
+        self.stamp = None
+        self.projects = []
+
+    def entries(self):
+        stamp = file_stamp(self.path)
+        if stamp != self.stamp:
+            data = read_json(self.path)
+            entries = data.get("projects") if isinstance(data, dict) else None
+            self.projects = [e for e in entries or [] if isinstance(e, dict) and isinstance(e.get("path"), str)]
+            self.stamp = stamp
+        return self.projects
+
+    def find(self, project):
+        return next((e for e in self.entries() if e.get("id") == project), None)
+
+
+def task_file(entry, name):
+    return os.path.join(entry["path"], TASK_DIR, name)
+
+
+class Summaries:
+    """Each project's summary (query.project_summary), computed again only when its tasks.json or claims store
+    changed, or the day did (the completions count by day)."""
+
+    def __init__(self):
+        self.paths = {}  # project folder -> (atm paths, claims store path): finding them runs git
+        self.cache = {}  # project folder -> (stamp, summary or None)
+
+    def stamp(self, entry):
+        """What the summary depends on, or None when the project is missing."""
+        tasks = file_stamp(task_file(entry, TASKS_FILE))
+        if tasks is None:
+            return None
+        if entry["path"] not in self.paths:
+            paths = find_paths(entry["path"])
+            self.paths[entry["path"]] = (paths, claims_store_path(paths))
+        return (tasks, file_stamp(self.paths[entry["path"]][1]), now().date().isoformat())
+
+    def summary(self, entry, stamp):
+        cached = self.cache.get(entry["path"])
+        if cached and cached[0] == stamp:
+            return cached[1]
+        try:
+            summary = project_summary(self.paths[entry["path"]][0])
+        except AtmError:
+            summary = None  # unreadable tasks.json or an unusable vocabulary: listed as missing
+        self.cache[entry["path"]] = (stamp, summary)
+        return summary
+
+
+def api_projects(registry, summaries):
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
+    and the day."""
+    entries = registry.entries()
+    stamps = [summaries.stamp(e) for e in entries]
+    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps).encode("utf-8")).hexdigest()[:16] + '"'
+
+    def body():
+        projects = []
+        for entry, stamp in zip(entries, stamps):
+            summary = summaries.summary(entry, stamp) if stamp else None
+            projects.append(
+                {
+                    "id": entry.get("id"),
+                    "name": entry.get("name"),
+                    "path": entry["path"],
+                    "missing": summary is None,
+                    "summary": summary,
+                }
+            )
+        return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
+
+    return body, etag
 
 
 def cmd_serve_child(args):
-    """The detached server process: serve task_dir on the first free port from `port`, record it, run until stopped."""
+    """The detached server process: serve on the first free port from `port`, record it, run until stopped."""
     import http.server
     import socketserver
 
-    task_dir, port = args.task_dir, args.port
-    record_path = os.path.join(task_dir, SERVER_RECORD)
+    home, port = args.home, args.port
+    record_path = os.path.join(home, SERVER_RECORD)
+    with open(TEMPLATE, "rb") as f:
+        page = f.read()
+    version, build = dashboard_head(TEMPLATE)
+    registry = Registry(home)
+    summaries = Summaries()
 
-    class Handler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *a, **kw):
-            super().__init__(*a, directory=task_dir, **kw)
+    class Handler(http.server.BaseHTTPRequestHandler):
+        server_version = "atm"
+
+        def send(self, status, body=b"", content_type="application/json", etag=None):
+            self.send_response(status)
+            if body or status == 200:
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+            if etag:
+                self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            if body and self.command != "HEAD":
+                self.wfile.write(body)
+
+        def send_error_json(self, status, message):
+            self.send(status, to_json({"error": message}).encode("utf-8"))
+
+        def send_conditional(self, body_fn, etag, content_type="application/json"):
+            if self.headers.get("If-None-Match") == etag:
+                # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
+                self.send(304, etag=etag)
+                return
+            self.send(200, body_fn(), content_type, etag)
 
         def do_GET(self):
-            path = self.path.split("?", 1)[0]
-            self.etag = None
-            if path == WHOAMI:
-                body = json.dumps({"atm": True, "folder": task_dir, "pid": os.getpid()}).encode()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-            elif path == "/":
-                self.send_response(302)
-                self.send_header("Location", "/" + DASHBOARD_FILE)
-                self.end_headers()
+            port_now = self.server.server_address[1]
+            if self.headers.get("Host") not in (f"localhost:{port_now}", f"127.0.0.1:{port_now}"):
+                # A page on another site that points its own domain at 127.0.0.1 (DNS rebinding) is refused
+                self.send_error_json(403, "unexpected Host header")
+                return
+            path = urlsplit(self.path).path
+            if path == "/":
+                self.send(200, page, "text/html; charset=utf-8")
+            elif path == WHOAMI:
+                info = {"atm": True, "pid": os.getpid(), "port": port_now, "version": version, "build": build}
+                self.send(200, to_json(info).encode("utf-8"))
+            elif path == "/api/projects":
+                body, etag = api_projects(registry, summaries)
+                self.send_conditional(body, etag)
             else:
-                self.etag = json_etag(task_dir, path)
-                if self.etag and self.headers.get("If-None-Match") == self.etag:
-                    # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
-                    self.send_response(304)
-                    self.end_headers()
-                    return
-                super().do_GET()
+                self.serve_project_file(path)
 
-        def end_headers(self):
-            if getattr(self, "etag", None):
-                self.send_header("ETag", self.etag)
-            self.send_header("Cache-Control", "no-store")
-            super().end_headers()
+        do_HEAD = do_GET
 
-        def list_directory(self, path):
-            self.send_error(404)
-            return None
+        def serve_project_file(self, path):
+            match = PROJECT_FILE.fullmatch(path)
+            if not match:
+                self.send_error_json(404, "not found")
+                return
+            entry = registry.find(match.group(1))
+            if entry is None:
+                self.send_error_json(404, "unknown project")
+                return
+            p = task_file(entry, match.group(2))
+            stamp = file_stamp(p)
+            if stamp is None:
+                self.send_error_json(404, "not found")
+                return
+
+            def read():
+                with open(p, "rb") as f:
+                    return f.read()
+
+            self.send_conditional(read, file_etag(stamp))
+
+        def not_allowed(self):
+            self.send_error_json(405, "only GET and HEAD")
+
+        do_POST = do_PUT = do_DELETE = do_PATCH = do_OPTIONS = not_allowed
 
     class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
         daemon_threads = True
-        allow_reuse_address = False
+        # A restarted server takes its port back while the old one's connections linger in TIME_WAIT. On macOS the
+        # same option would also let it share a port another server listens on, hence port_in_use() first.
+        allow_reuse_address = True
 
     server = None
     for candidate in range(port, port + PORT_TRIES):
+        if port_in_use(candidate):
+            continue
         try:
             server = Server(("127.0.0.1", candidate), Handler)
             break
@@ -2811,7 +3537,9 @@ def cmd_serve_child(args):
     record = {
         "pid": os.getpid(),
         "port": server.server_address[1],
-        "folder": task_dir,
+        "version": version,
+        "build": build,
+        "plugin_root": PLUGIN_ROOT,
         "started_at": now_iso(),
     }
     write_json_atomic(record_path, record)
@@ -2840,8 +3568,10 @@ commands:
   migrate [--json]
                  move tasks.json from docs/ or the root into .agentic-task-manager/,
                  and set up the folder (.gitignore, current dashboard)
-  serve [start|stop|status] [--open] [--port N] [--dir PATH]
-                 run the dashboard server for this project (or the one at PATH) in the background
+  serve [start|stop|status] [--open] [--all] [--port N] [--dir PATH] [--refresh]
+                 run the dashboard server in the background: one per user, for all registered projects
+                 (start registers this project, or the one at PATH, and prints its URL; --all the overview's;
+                 --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
@@ -2899,12 +3629,22 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  phases [--archived] | phases name <n> "<name>" | phases unname <n>
+                 the phases with their names and task counts by kind; name or unname one phase (meta.phases)
+  projects [add [PATH] | remove <id|PATH> | prune]
+                 the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
+                 list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
                  (status commands and heartbeat take --agent NAME and --json; status commands and next --claim
                  take --status ID to pick a status when the project has several of that kind)
   help           show this help
 
 Every command takes --json, and `atm <command> --help` describes it.
 """
+
+
+# Commands that don't check for an outdated dashboard server first: serve does it itself, the server process is the
+# server, and git runs the merge driver in the middle of a merge
+NO_REFRESH = ("serve", "_serve-child", "merge-driver", "_lock-test", "help", "version")
 
 
 class Parser(argparse.ArgumentParser):
@@ -2950,11 +3690,17 @@ def build_parser():
     command("paths", cmd_paths, "print where this project's task files are")
     command("migrate", cmd_migrate, "move an old tasks.json into .agentic-task-manager/ and set the folder up")
 
-    serve = command("serve", cmd_serve, "run the dashboard server for this project in the background")
+    serve = command("serve", cmd_serve, "run the dashboard server, one for all your projects, in the background")
     serve.add_argument("action", nargs="?", default="start", choices=["start", "stop", "status"])
     serve.add_argument("--open", action="store_true", help="also open the dashboard in the browser")
+    serve.add_argument("--all", action="store_true", help="show the overview of all projects, not this project")
+    serve.add_argument(
+        "--refresh",
+        action="store_true",
+        help="only restart a running server that has an older dashboard than this plugin (the SessionStart hook)",
+    )
     serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="the port to try first")
-    serve.add_argument("--dir", metavar="PATH", help="the project to act on (default: the current directory's)")
+    serve.add_argument("--dir", metavar="PATH", help="the project to show (default: the current directory's)")
 
     for name, description in (
         ("start", "mark a task in_progress and claim it (its dependencies must be done)"),
@@ -3130,9 +3876,17 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
+    phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
+    phases.add_argument("number", nargs="?", help="the phase number")
+    phases.add_argument("name", nargs="?", help="name: the phase's name")
+    phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
+    projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
+    projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
+    projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")
 
     child = command("_serve-child", cmd_serve_child, "the detached server process", hidden=True)
-    child.add_argument("task_dir")
+    child.add_argument("home")
     child.add_argument("port", type=int)
     lock_test = command("_lock-test", cmd_lock_test, "test hook: hold the lock", hidden=True)
     lock_test.add_argument("seconds", type=float, nargs="?", default=0.0)
@@ -3163,6 +3917,11 @@ def main(argv):
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")
+        if argv[0] not in NO_REFRESH:
+            try:
+                refresh_server()  # after a plugin update, the first atm command brings the dashboard server along
+            except Exception:
+                pass  # never in the way of the command itself
         args.run(args)
     except AtmError as e:
         report(e, as_json)

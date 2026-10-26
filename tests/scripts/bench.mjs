@@ -130,16 +130,21 @@ async function benchDashboard(n) {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    // Everything is served from memory: no server, no request leaves the page
+    // Everything is served from memory, as atm serve's API (docs/multi-project-api.md) for one project: no server, no
+    // request leaves the page
+    const projects = JSON.stringify({
+      projects: [{ id: 'bench', name: 'Bench', path: '/bench', missing: false, summary: null }],
+    });
     await page.route('http://bench.local/**', (route) => {
       const url = new URL(route.request().url());
-      if (url.pathname.endsWith('/tasks.json')) return route.fulfill({ body, contentType: 'application/json' });
-      if (url.pathname.endsWith('/claims.json')) return route.fulfill({ status: 404, body: '' });
-      return route.fulfill({ body: html, contentType: 'text/html' });
+      if (url.pathname === '/api/projects') return route.fulfill({ body: projects, contentType: 'application/json' });
+      if (url.pathname === '/p/bench/tasks.json') return route.fulfill({ body, contentType: 'application/json' });
+      if (url.pathname === '/') return route.fulfill({ body: html, contentType: 'text/html' });
+      return route.fulfill({ status: 404, body: '' }); // claims.json, the archive, whoami
     });
     // The Kanban board: the tab people keep open while agents work
     const t = performance.now();
-    await page.goto('http://bench.local/tasks-dashboard.html#view=kanban');
+    await page.goto('http://bench.local/#view=kanban');
     await page.locator('.kanban-card').first().waitFor({ timeout: 120_000 });
     const load = performance.now() - t;
 

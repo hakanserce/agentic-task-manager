@@ -10,7 +10,8 @@
   import Footer from './components/Footer.svelte';
   import AboutDialog from './components/AboutDialog.svelte';
   import HelpDialog from './components/HelpDialog.svelte';
-  import { parseDialogHash } from './lib/dialogs';
+  import LandingPage from './components/LandingPage.svelte';
+  import UpdateNotice from './components/UpdateNotice.svelte';
 
   onMount(() => {
     dashboard.load();
@@ -27,8 +28,13 @@
   $effect(() => dashboard.saveView());
 </script>
 
-<Header />
-<ViewPanel />
+<UpdateNotice />
+{#if dashboard.route.page === 'project'}
+  <Header />
+  <ViewPanel />
+{:else}
+  <LandingPage />
+{/if}
 <Footer />
 <LoadError />
 <DetailPanel />
@@ -36,4 +42,4 @@
 <AboutDialog />
 <HelpDialog />
 
-<svelte:window onhashchange={() => (dashboard.dialog = parseDialogHash(location.hash))} />
+<svelte:window onhashchange={() => dashboard.onHashChange()} />

@@ -7,7 +7,7 @@ usage line; with --json, every error is {"error": "...", "code": N} on stderr, w
 import argparse
 import sys
 
-from .claims import cmd_claims, cmd_heartbeat, cmd_next
+from .claims import cmd_claims, cmd_heartbeat, cmd_next, cmd_run
 from .core import AtmError, AtmExit, out, plugin_version, to_json
 from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
@@ -85,6 +85,9 @@ commands:
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
+  run <id> [--every SECONDS] -- <command> [args...]
+                 run a long command (tests, a build, a wait on CI) while keeping your claim on <id> alive; the
+                 hook renews claims only between tool calls. Exits with the command's exit code
   init [--meta-file F]
                  give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
@@ -336,6 +339,16 @@ def build_parser():
     )
     agent_option(heartbeat)
 
+    run = command("run", cmd_run, "run a long command while keeping your claim on a task alive")
+    run.add_argument("id", help="the task ID")
+    run.add_argument(
+        "--every",
+        type=float,
+        metavar="SECONDS",
+        help="renew this often (default: three times per lease, at least once a minute)",
+    )
+    agent_option(run)
+
     init = command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
     init.add_argument(
         "--meta-file",
@@ -381,6 +394,11 @@ def main(argv):
         sys.stdout.write(USAGE)
         return 0
     parser, commands = build_parser()
+    # `atm run <id> -- <command>`: what follows -- is the command to run, never atm's own options
+    child = None
+    if argv[0] == "run" and "--" in argv:
+        split = argv.index("--")
+        argv, child = argv[:split], argv[split + 1 :]
     as_json = "--json" in argv
     if argv[0] not in commands:
         if as_json:
@@ -390,6 +408,7 @@ def main(argv):
         return 2
     try:
         args, extra = parser.parse_known_args(argv)
+        args.child = child
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")

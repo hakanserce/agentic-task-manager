@@ -1625,6 +1625,64 @@ def cmd_heartbeat(args):
         out(f"{task_id}: lease extended to {claim['lease_expires_at']}")
 
 
+def renew_claim(paths, task_id, agent):
+    """Renew `agent`'s live claim on `task_id`. Returns the lease length in minutes; raises AtmError (exit code 4)
+    when the task has no live claim or another agent holds it."""
+    with locked_with_claims(paths):
+        data = load_tasks(paths)
+        store = read_store(paths)
+        claim = store["claims"].get(task_id)
+        try:
+            alive = claim is not None and parse_iso(claim["lease_expires_at"]) > now()
+        except (KeyError, TypeError, ValueError):
+            alive = False
+        if not alive:
+            raise AtmError(f"{task_id} has no live claim", 4)
+        check_holder(store["claims"], task_id, agent, "renew the claim on")
+        claim["lease_expires_at"] = lease_until(data)
+        claim["renewed_at"] = now_iso()
+        write_store(paths, store)
+    return lease_minutes(data)
+
+
+def cmd_run(args):
+    """`atm run <id> -- <command>`: run a long command (a full test suite, a build, a wait on CI) while keeping the
+    claim on <id> alive. The plugin's hook renews claims only when the agent makes a tool call, and an agent waiting
+    for a command makes none, so a wait longer than the lease would hand the task to someone else (T-203). The claim
+    is renewed at the start (so a wrong ID or someone else's claim fails before anything runs) and then three times per
+    lease; the command's output passes through unchanged, and atm exits with its exit code."""
+    if not args.child:
+        raise AtmError("atm run needs a command after --: atm run <id> -- <command> [args...]", 2)
+    if args.every is not None and args.every <= 0:
+        raise AtmError("--every must be more than 0 seconds", 2)
+    agent = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    minutes = renew_claim(paths, args.id, agent)
+    every = args.every if args.every is not None else max(60.0, minutes * 60 / 3)
+    try:
+        child = subprocess.Popen(args.child)
+    except OSError as e:
+        raise AtmError(f"can't run {args.child[0]}: {e.strerror}", 127)
+    # Renewed from this (the main) thread between waits: the lock uses signals, which only work here
+    renewing = True
+    while True:
+        try:
+            code = child.wait(timeout=every)
+            break
+        except subprocess.TimeoutExpired:
+            pass
+        except KeyboardInterrupt:  # the command got the same interrupt; wait for it to end
+            continue
+        if renewing:
+            try:
+                renew_claim(paths, args.id, agent)
+            except Exception as e:  # never stops the command; say so once and stop renewing
+                sys.stderr.write(f"atm run: stopped renewing the claim on {args.id}: {e}\n")
+                renewing = False
+    if code:
+        raise AtmExit(128 - code if code < 0 else code)  # a signal -N ends like a shell's 128+N
+
+
 def cmd_claims(args):
     paths = find_paths(os.getcwd())
     with locked_with_claims(paths):
@@ -4034,6 +4092,9 @@ commands:
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
+  run <id> [--every SECONDS] -- <command> [args...]
+                 run a long command (tests, a build, a wait on CI) while keeping your claim on <id> alive; the
+                 hook renews claims only between tool calls. Exits with the command's exit code
   init [--meta-file F]
                  give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
@@ -4285,6 +4346,16 @@ def build_parser():
     )
     agent_option(heartbeat)
 
+    run = command("run", cmd_run, "run a long command while keeping your claim on a task alive")
+    run.add_argument("id", help="the task ID")
+    run.add_argument(
+        "--every",
+        type=float,
+        metavar="SECONDS",
+        help="renew this often (default: three times per lease, at least once a minute)",
+    )
+    agent_option(run)
+
     init = command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
     init.add_argument(
         "--meta-file",
@@ -4330,6 +4401,11 @@ def main(argv):
         sys.stdout.write(USAGE)
         return 0
     parser, commands = build_parser()
+    # `atm run <id> -- <command>`: what follows -- is the command to run, never atm's own options
+    child = None
+    if argv[0] == "run" and "--" in argv:
+        split = argv.index("--")
+        argv, child = argv[:split], argv[split + 1 :]
     as_json = "--json" in argv
     if argv[0] not in commands:
         if as_json:
@@ -4339,6 +4415,7 @@ def main(argv):
         return 2
     try:
         args, extra = parser.parse_known_args(argv)
+        args.child = child
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")

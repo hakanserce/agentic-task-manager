@@ -90,7 +90,9 @@ even in auto mode.
 - pull-request: `gh pr checks <n>`; direct: `gh run list --branch <branch> --limit 2`.
 - Right after a push the run may not be registered yet (no run, or only the previous one): check again in a moment
   instead of reporting a failure.
-- To wait for a run: `gh run watch <run-id> --exit-status`, run in the background, and continue when it finishes.
+- To wait for a run: `gh run watch <run-id> --exit-status`, run in the background, and continue when it finishes. If
+  you hold a claim on a task while you wait (a push in the middle of a loop), wait with
+  `atm run <id> -- gh run watch <run-id> --exit-status`, so the claim doesn't expire during the wait.
 
 ## Step 6: On failure
 

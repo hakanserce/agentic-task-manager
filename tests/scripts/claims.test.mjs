@@ -231,6 +231,44 @@ describe('claims', () => {
     }
   });
 
+  test('run keeps the claim alive while a long command runs, passing its output and exit code through (T-203)', () => {
+    const root = repo();
+    const store = path.join(root, '.git/atm/claims.json');
+    const claimOf = (id) => JSON.parse(fs.readFileSync(store, 'utf8')).claims[id];
+    try {
+      runAtm(['start', 'T-001'], root, as('alice'));
+      assert.equal(claimOf('T-001').lease_expires_at, at(30));
+      // The command removes the claim's renewed_at, prints, waits and fails with 7. The time is fixed (ATM_NOW), so
+      // a renewed_at back in the store afterwards proves a renewal while the command ran.
+      const script = [
+        `const fs = require('fs'); const f = ${JSON.stringify(store)};`,
+        `const s = JSON.parse(fs.readFileSync(f, 'utf8')); delete s.claims['T-001'].renewed_at;`,
+        `fs.writeFileSync(f, JSON.stringify(s)); console.log('working');`,
+        `setTimeout(() => process.exit(7), 1500);`,
+      ].join(' ');
+      const r = runAtm(['run', 'T-001', '--every', '0.3', '--', 'node', '-e', script], root, as('alice', 20));
+      assert.deepEqual([r.code, r.stdout, r.stderr], [7, 'working\n', '']);
+      assert.equal(claimOf('T-001').lease_expires_at, at(50));
+      assert.equal(claimOf('T-001').renewed_at, at(20));
+
+      // Someone else's claim, or none: refused before the command runs
+      const marker = path.join(root, 'ran');
+      const touch = ['--', 'node', '-e', `require('fs').writeFileSync(${JSON.stringify(marker)}, '')`];
+      const bob = runAtm(['run', 'T-001', ...touch], root, as('bob', 21));
+      assert.equal(bob.code, 4);
+      assert.match(bob.stderr, /claimed by alice/);
+      assert.equal(runAtm(['run', 'T-002', ...touch], root, as('alice', 21)).code, 4);
+      assert.equal(fs.existsSync(marker), false);
+      // A command that succeeds: exit 0; without a command: a usage error
+      assert.equal(runAtm(['run', 'T-001', '--', 'node', '-e', '0'], root, as('alice', 22)).code, 0);
+      const usage = runAtm(['run', 'T-001'], root, as('alice', 22));
+      assert.equal(usage.code, 2);
+      assert.match(usage.stderr, /needs a command after --/);
+    } finally {
+      removeDir(root);
+    }
+  });
+
   test('a task done in one worktree is not handed out again in another before the branches merge', () => {
     const root = repo();
     const wt = path.join(tempDir(), 'wt2');

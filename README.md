@@ -543,8 +543,9 @@ Merge each branch back as usual (or open a PR per branch).
   handed out again in another before the branches merge. The dashboard shows every worktree's tasks and claims on
   the project's board, before anything merges.
 - **Leases.** A claim lasts 30 minutes (`"lease_minutes"` in `tasks.json`'s `meta` changes the length) and the
-  plugin's hook renews it while the agent works. If an agent crashes, its task goes back to `todo` when the lease
-  runs out, with a failure note saying whose lease expired.
+  plugin's hook renews it while the agent works. A long command (a full test suite, a build) runs as
+  `atm run <id> -- <command>`, which keeps the claim alive while it runs. If an agent crashes, its task goes back to
+  `todo` when the lease runs out, with a failure note saying whose lease expired.
 - **Merging `tasks.json`.** A git merge driver (registered automatically) merges `tasks.json` task by task. Status
   changes from different branches combine (the further-along status wins, e.g. `done` over `in_progress`). Tasks
   added on both branches are both kept, and the incoming ones are renumbered if their IDs collide. Only conflicting

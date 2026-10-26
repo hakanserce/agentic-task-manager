@@ -104,7 +104,10 @@ any additional files that are needed. Keep a list of every file you create, chan
 exactly those.
 
 Your claim has a lease (30 minutes by default); if it runs out, the task goes back to `todo` for others. The plugin's
-hook renews it while you work, so you don't need to (`atm heartbeat $TASK_ID` does it by hand).
+hook renews it after each of your tool calls, so you don't need to (`atm heartbeat $TASK_ID` does it by hand). A
+command that runs for many minutes (a full test suite, a build, waiting on CI), especially one you leave running in
+the background, makes no tool calls: run it as `atm run $TASK_ID -- <command> [args...]`, which keeps the claim
+alive while it runs and exits with the command's exit code.
 
 While you work:
 - **A later task needs to change** (what you built changes its scope, its files or its dependencies): update it with
@@ -132,6 +135,9 @@ After implementation, verify the work:
 2. **Test check**: If you wrote tests or the task is a test task, run the relevant test suite.
 3. **Lint check**: If the project has a linter configured, run it on changed files.
 4. **Self-review**: Quickly review your changes for obvious issues — missing imports, typos, logic errors.
+
+Run a long check through `atm run $TASK_ID -- <command>` (e.g. `atm run $TASK_ID -- npm run verify`), so your claim
+doesn't expire while it runs.
 
 If verification fails:
 - Try to fix the issue (up to 2 attempts)

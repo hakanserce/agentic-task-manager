@@ -7139,7 +7139,7 @@
       "description": "### Today\n`agent_identity()` in `atm-cli/atm/claims.py` is `\"claude:\" + CLAUDE_CODE_SESSION_ID[:8]`. Subagents inherit their parent's session ID, so three loop agents spawned in separate git worktrees all claim as `claude:e5ea9db0` (seen on 2026-10-26, running phase 17 with three parallel agents). atm's claims still kept them on different tasks, but:\n- `check_holder` lets one agent finish, release or fail another agent's task (same name);\n- `own_lease_expired` can tell the wrong agent its lease expired;\n- `atm claims` and the dashboard show one agent for all of them.\n\n### Change\n- When the identity comes from `CLAUDE_CODE_SESSION_ID` and the project root is a **linked** git worktree, append the worktree's folder name: `claude:e5ea9db0@agent-a74a…` (or a short form of it). The main worktree keeps plain `claude:<8 hex>`, so existing claims and task history still match.\n- If Claude Code gives subagents an environment variable of their own (check the Claude Code docs for hooks and subagents), prefer it, so two subagents in the same worktree also differ.\n- `--agent` and `ATM_AGENT` still win, unchanged.\n- The PostToolUse heartbeat hook (`atm heartbeat --auto`) runs in the agent's current directory, so it must compute the same identity and renew that agent's claims. Check it does, and that a subagent's heartbeat doesn't renew the parent's claims or another subagent's claims.\n- Dashboard: `shortAgent`/`claimSummary` in `dashboard/src/lib/claims.ts` show the new form readably on cards and in the Agents tab (e.g. `claude:e5ea9db0@agent-a74a`); add unit tests.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` (or a `*.test.mjs` with real `git worktree add` if scenarios can't express it): two worktrees with the same `CLAUDE_CODE_SESSION_ID` get different identities, each claims its own task, and one can't `done`/`release` the other's (exit 4). The main worktree's identity is unchanged.\n\n### Docs\n`docs/v4/atm-cli.md` (identity rules), README's parallel-agents section, `plugin/CLAUDE.md` if it describes identities.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/claims.py",
@@ -7151,11 +7151,22 @@
         "README.md"
       ],
       "created_at": "2026-10-26T05:13:52Z",
-      "updated_at": "2026-10-26T07:29:35Z",
+      "updated_at": "2026-10-26T07:35:19Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T07:29:35Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "8e23f8f59b6593915f4e283d58f6310580155ef2",
+      "completed_at": "2026-10-26T07:35:19Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T07:35:19Z",
+          "kind": "outcome",
+          "text": "Session identity gets @<worktree folder> in a linked worktree (main unchanged); the hook computes the same from its cwd, so it renews only that agent's claims. Two-worktree test: separate claims, no cross done/release.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-203",
@@ -7169,7 +7180,7 @@
       "description": "### Today\nA claim's lease (30 min) is renewed by the plugin's PostToolUse hook (`atm heartbeat --auto`), so only when the agent makes a tool call. An agent waiting for a background command to finish makes none. Seen on 2026-10-26: three parallel loop agents ran `npm run verify` in the background (10+ min each, slower with three at once), and their leases fell from 28 to 20 min left with no renewal. A wait longer than the lease puts the task back to todo, where another agent can take it.\n\n### Change: evaluate, then implement the best (maybe several)\n1. **Skills:** do-task, loop-tasks and push tell agents to run `atm heartbeat <id>` before a long command or wait, and to wait with a command that keeps the claim alive (2).\n2. **A keep-alive in atm-cli**, e.g. `atm run <id> -- <command> [args...]`: runs the command, renews the claim every few minutes while it runs (well within the lease), and exits with the command's exit code and output unchanged. Alternatively `atm heartbeat <id> --while <pid>`. Pick one, stdlib only, Python 3.9. A renewal that fails (lease already lost to another agent) is reported on stderr but doesn't kill the command.\n3. **Claude Code hooks:** check whether Claude Code has a hook for background-task completion or idle waiting that could renew claims; use it if it exists.\n\n### Tests\n`tests/scripts/` (a `*.test.mjs`, with `ATM_NOW` or a short lease in `meta.lease_minutes`): the keep-alive renews the claim while a child process runs, stops when it exits, passes the exit code through, and never renews another agent's claim.\n\n### Docs\n`docs/v4/atm-cli.md` (the command), the skills' text, and the README's parallel-agents section (leases).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/claims.py",
@@ -7183,9 +7194,11 @@
         "README.md"
       ],
       "created_at": "2026-10-26T05:27:57Z",
-      "updated_at": "2026-10-26T05:27:57Z",
+      "updated_at": "2026-10-26T07:35:20Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T07:35:20Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-204",

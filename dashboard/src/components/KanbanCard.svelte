@@ -46,7 +46,7 @@
     <PriorityBadge {task} />
     <StageChip {task} />
     <BranchChip {task} />
-    <LabelChips {task} />
+    <LabelChips {task} compact />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}
   </div>
   <div class="kanban-card-name">{task.name}</div>

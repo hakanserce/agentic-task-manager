@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 256,
+    "next_id": 257,
     "labels": [
       {
         "id": "dashboard",
@@ -7832,11 +7832,12 @@
         "docs/all-projects-kanban-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:41:59Z",
+      "updated_at": "2026-10-26T21:42:30Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:41:59Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "e6fc654e84cb728ca00b4215446a5cfc601ea7ac"
     },
     {
       "id": "T-216",
@@ -8963,6 +8964,33 @@
       "updated_at": "2026-10-26T21:41:48Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-256",
+      "name": "Kanban cards: labels on one line, with a +N chip that shows them all",
+      "phase": 19,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "kanban"
+      ],
+      "description": "Many or long labels wrap onto several lines on a Kanban card and make it much taller.\n\n## Do\n\n- `LabelChips.svelte` gets a compact mode, used by `KanbanCard.svelte`: the labels stay on **one line**; the **first 2** show, each cut at about 14 characters with an ellipsis (the full text in its tooltip); the rest become a **+N** chip.\n- Hovering or focusing **+N** shows a small popover listing every label in full; a click (or Enter) pins it open and doesn't open the task's details; Escape or a click outside closes it.\n- The List tab and the detail panel keep showing every label in full.\n\n## Verify\n\nComponent test for the compact mode (2 shown, +N, ellipsis); e2e: a card with 5 long labels stays one label line high, +3 opens the popover with all 5, clicking it doesn't open the details. Update the Kanban screenshots if they change (remove the matching `-linux.png`).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/LabelChips.svelte",
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-26T21:48:16Z",
+      "updated_at": "2026-10-26T21:48:20Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:48:20Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

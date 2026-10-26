@@ -311,14 +311,22 @@ def lock_is_stale(lock, owner):
 
 
 def break_lock(lock, owner):
-    """Move a stale lock aside. Re-checks the owner first, so a lock that another waiter broke and re-took meanwhile
-    is left alone. Returns True if this process broke it."""
-    if lock_owner(lock) != owner:
-        return False
+    """Move a stale lock aside. Returns True if this process broke it.
+
+    Rename first, then check the owner inside the renamed directory (docs/security-review.md F13): checking first and
+    renaming after leaves a gap in which another waiter breaks the same stale lock and takes a fresh one, and this
+    process would then move the fresh lock aside, leaving two holders. If what was moved isn't the stale lock judged
+    here, it goes back."""
     aside = f"{lock}.stale.{os.getpid()}.{os.urandom(4).hex()}"
     try:
         os.rename(lock, aside)
     except OSError:
+        return False
+    if lock_owner(aside) != owner:
+        try:
+            os.rename(aside, lock)  # someone else's live lock: put it back
+        except OSError:
+            pass  # a newer lock is in place already; the moved one was broken by another waiter too
         return False
     shutil.rmtree(aside, ignore_errors=True)
     return True
@@ -788,6 +796,18 @@ def valid_task_id(value):
     return isinstance(value, str) and bool(TASK_ID.fullmatch(value))
 
 
+def split_id(task_id):
+    """(prefix, digits) of an ID that ends in a number ("T-001" -> ("T-", "001")), else None. A plain scan from the
+    end, not a regex: `^(.*?)(\\d+)$` backtracks quadratically on a long run of digits without an end (a hostile ID,
+    docs/security-review.md F12)."""
+    if not isinstance(task_id, str):
+        return None
+    end = len(task_id)
+    while end and task_id[end - 1].isdigit():
+        end -= 1
+    return (task_id[:end], task_id[end:]) if end < len(task_id) else None
+
+
 def check_workflow(workflow):
     """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
     if workflow is None:
@@ -1003,12 +1023,19 @@ def load_tasks(paths):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
     # Agents put task IDs into shell commands: an ID with shell characters stops every command (atm check lists them)
-    for task in data["tasks"]:
-        if isinstance(task, dict) and isinstance(task.get("id"), str) and not valid_task_id(task["id"]):
+    for i, task in enumerate(data["tasks"]):
+        # Every command looks tasks up by ID and follows dependencies: a malformed task stops them all with a clear
+        # message instead of a traceback halfway through (docs/security-review.md F12). atm check lists them all.
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str):
+            raise AtmError(f"{paths['tasks']}: task #{i + 1} isn't a task (an object with an \"id\"); run atm check")
+        if not valid_task_id(task["id"]):
             raise AtmError(
                 f"{paths['tasks']}: the task ID {task['id']!r} has characters atm doesn't allow (letters, digits, '.', "
                 "'_' and '-' only): fix it in the file, then run atm check"
             )
+        deps = task.get("dependencies", [])
+        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+            raise AtmError(f"{paths['tasks']}: {task['id']}'s dependencies aren't a list of IDs; run atm check")
     _archive["paths"], _archive["data"] = paths, None
     return data
 
@@ -2459,25 +2486,20 @@ def cmd_note(args):
 # Status and timestamps are not edited here: they change only through the status commands.
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
-ID_PATTERN = re.compile(r"^(.*?)(\d+)$")
 DEFAULT_ID = ("T-", 3)
 
 
 def id_format(data):
     """The project's ID pattern: the prefix and digit count of its last numbered task ID (T-001: "T-", 3)."""
     for task in reversed(data["tasks"]):
-        m = ID_PATTERN.match(str(task.get("id", "")))
-        if m:
-            return m.group(1), len(m.group(2))
+        parts = split_id(task.get("id"))
+        if parts:
+            return parts[0], len(parts[1])
     return DEFAULT_ID
 
 
 def highest_number(data, prefix):
-    numbers = [
-        int(m.group(2))
-        for m in (ID_PATTERN.match(str(t.get("id", ""))) for t in data["tasks"])
-        if m and m.group(1) == prefix
-    ]
+    numbers = [int(p[1]) for p in (split_id(t.get("id")) for t in data["tasks"]) if p and p[0] == prefix]
     return max(numbers, default=0)
 
 
@@ -2558,25 +2580,26 @@ def new_task(vocab, fields, actor, stamp):
 def find_cycle(tasks):
     """A dependency cycle among `tasks` (as a list of IDs), or None."""
     deps = {t["id"]: t.get("dependencies") or [] for t in tasks}
-    state = {}
-
-    def visit(node, path):
-        state[node] = "visiting"
-        for dep in deps.get(node, []):
-            if state.get(dep) == "visiting":
-                return path[path.index(dep):] + [dep] if dep in path else [node, dep]
-            if dep in deps and dep not in state:
-                cycle = visit(dep, path + [dep])
-                if cycle:
-                    return cycle
-        state[node] = "done"
-        return None
-
-    for node in deps:
-        if node not in state:
-            cycle = visit(node, [node])
-            if cycle:
-                return cycle
+    done = set()
+    # Depth-first with an explicit stack, not recursion: a chain of thousands of tasks (or a hostile file) can't hit
+    # Python's recursion limit (docs/security-review.md F12). `path` is the current chain; `on_path` its positions.
+    for start in deps:
+        if start in done:
+            continue
+        path, on_path, stack = [start], {start: 0}, [iter(deps[start])]
+        while stack:
+            dep = next(stack[-1], None)
+            if dep is None:
+                node = path.pop()
+                del on_path[node]
+                done.add(node)
+                stack.pop()
+            elif dep in on_path:
+                return path[on_path[dep] :] + [dep]
+            elif dep in deps and dep not in done:
+                on_path[dep] = len(path)
+                path.append(dep)
+                stack.append(iter(deps[dep]))
     return None
 
 
@@ -3028,13 +3051,13 @@ def merge_task(base, ours, theirs, vocab):
 
 
 def next_free_id(task_id, used):
-    m = re.match(r"^(.*?)(\d+)$", task_id)
-    if not m:
+    parts = split_id(task_id)
+    if not parts:
         n = 2
         while f"{task_id}-{n}" in used:
             n += 1
         return f"{task_id}-{n}"
-    prefix, digits = m.group(1), m.group(2)
+    prefix, digits = parts
     numbers = [int(x[len(prefix) :]) for x in used if x.startswith(prefix) and x[len(prefix) :].isdigit()]
     return prefix + str(max(numbers) + 1).zfill(len(digits))
 
@@ -3596,6 +3619,18 @@ def dashboard_head(p):
     return page_tags(head)
 
 
+def written_by_atm(path):
+    """Whether an old server record is one atm wrote here: owned by this user and not tracked by git (atm always kept
+    it out of git). A record that came with the repository is only deleted: atm never contacts its port or signals its
+    pid (docs/security-review.md F14)."""
+    try:
+        if os.stat(path).st_uid != os.getuid():
+            return False
+    except (OSError, AttributeError):  # missing, or no uids (Windows)
+        return False
+    return not is_tracked(os.path.dirname(path), path)
+
+
 def clean_up_old_dashboard(task_dir):
     """Per-project dashboards (0.10.0-0.14.0): delete the project's copy of the dashboard, stop its server if one still
     runs (only when whoami confirms it serves this folder), and remove the server's record and log. Returns what was
@@ -3607,7 +3642,7 @@ def clean_up_old_dashboard(task_dir):
         removed = True
     stopped = None
     record_path = os.path.join(task_dir, OLD_SERVER_RECORD)
-    record = read_json(record_path)
+    record = read_json(record_path) if written_by_atm(record_path) else None
     if record is not None:
         info = whoami(record.get("port")) if isinstance(record, dict) else None
         if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):
@@ -4803,6 +4838,11 @@ def main(argv):
         return e.code
     except AtmExit as e:
         return e.code
+    except Exception as e:  # noqa: BLE001
+        # A file atm didn't expect (a hostile or damaged one) is an error message, not a traceback: the skills and
+        # the merge driver read stderr (docs/security-review.md F12)
+        report(AtmError(f"unexpected error ({type(e).__name__}: {e}); run atm check, and report it if that is clean"), as_json)
+        return 1
     return 0
 
 

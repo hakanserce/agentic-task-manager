@@ -55,6 +55,18 @@ def dashboard_head(p):
     return page_tags(head)
 
 
+def written_by_atm(path):
+    """Whether an old server record is one atm wrote here: owned by this user and not tracked by git (atm always kept
+    it out of git). A record that came with the repository is only deleted: atm never contacts its port or signals its
+    pid (docs/security-review.md F14)."""
+    try:
+        if os.stat(path).st_uid != os.getuid():
+            return False
+    except (OSError, AttributeError):  # missing, or no uids (Windows)
+        return False
+    return not is_tracked(os.path.dirname(path), path)
+
+
 def clean_up_old_dashboard(task_dir):
     """Per-project dashboards (0.10.0-0.14.0): delete the project's copy of the dashboard, stop its server if one still
     runs (only when whoami confirms it serves this folder), and remove the server's record and log. Returns what was
@@ -66,7 +78,7 @@ def clean_up_old_dashboard(task_dir):
         removed = True
     stopped = None
     record_path = os.path.join(task_dir, OLD_SERVER_RECORD)
-    record = read_json(record_path)
+    record = read_json(record_path) if written_by_atm(record_path) else None
     if record is not None:
         info = whoami(record.get("port")) if isinstance(record, dict) else None
         if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):

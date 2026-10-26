@@ -52,14 +52,22 @@ def lock_is_stale(lock, owner):
 
 
 def break_lock(lock, owner):
-    """Move a stale lock aside. Re-checks the owner first, so a lock that another waiter broke and re-took meanwhile
-    is left alone. Returns True if this process broke it."""
-    if lock_owner(lock) != owner:
-        return False
+    """Move a stale lock aside. Returns True if this process broke it.
+
+    Rename first, then check the owner inside the renamed directory (docs/security-review.md F13): checking first and
+    renaming after leaves a gap in which another waiter breaks the same stale lock and takes a fresh one, and this
+    process would then move the fresh lock aside, leaving two holders. If what was moved isn't the stale lock judged
+    here, it goes back."""
     aside = f"{lock}.stale.{os.getpid()}.{os.urandom(4).hex()}"
     try:
         os.rename(lock, aside)
     except OSError:
+        return False
+    if lock_owner(aside) != owner:
+        try:
+            os.rename(aside, lock)  # someone else's live lock: put it back
+        except OSError:
+            pass  # a newer lock is in place already; the moved one was broken by another waiter too
         return False
     shutil.rmtree(aside, ignore_errors=True)
     return True

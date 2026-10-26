@@ -8474,14 +8474,14 @@
       "description": "§4.2 of `docs/security-review.md`.\n\n## Do\n\nWrite `docs/security-architecture.md`:\n\n- **Threat model**: the assets, actors, boundaries and threats from §2 of the review, as the maintained version.\n- **Invariants** every change must keep, e.g.: task text is data for agents; atm never runs a shell or follows a symlink out of the repo; nothing changes state over HTTP; the server answers only loopback with a matching Host; every link the dashboard renders is http(s)/mailto/#; no `{@html}` on data; skills pre-approve no command runner; CI tokens are read-only by default.\n- For **each invariant**, the test or check that enforces it (existing or to build).\n- **Keeping it current**: which changes must update the threat model (a new entry point, file format, HTTP route or skill instruction), and a line about it in `CLAUDE.md`.\n\nReview the draft with the user before committing it as done.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/security-architecture.md",
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:51:59Z",
+      "updated_at": "2026-10-26T22:52:09Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8496,10 +8496,19 @@
           "kind": "rejection",
           "text": "Approved; continuing with: record the review outcome in §5 of `docs/security-architecture.md`",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T22:52:09Z",
+          "kind": "outcome",
+          "text": "Security architecture approved in Crit: `docs/security-architecture.md` (threat model, 21 invariants with their checks, keeping it current; every PR to `main` is a release) and a Security section in `CLAUDE.md`. The skills now put a task in review before reviewing it with the user, and check for work left after approval.",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-26T22:51:59Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "867504e5c7e3c05e47f8565ff2a7e3e065ec0338",
+      "completed_at": "2026-10-26T22:52:09Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-233",

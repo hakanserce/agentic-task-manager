@@ -90,6 +90,18 @@ def valid_task_id(value):
     return isinstance(value, str) and bool(TASK_ID.fullmatch(value))
 
 
+def split_id(task_id):
+    """(prefix, digits) of an ID that ends in a number ("T-001" -> ("T-", "001")), else None. A plain scan from the
+    end, not a regex: `^(.*?)(\\d+)$` backtracks quadratically on a long run of digits without an end (a hostile ID,
+    docs/security-review.md F12)."""
+    if not isinstance(task_id, str):
+        return None
+    end = len(task_id)
+    while end and task_id[end - 1].isdigit():
+        end -= 1
+    return (task_id[:end], task_id[end:]) if end < len(task_id) else None
+
+
 def check_workflow(workflow):
     """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
     if workflow is None:
@@ -305,12 +317,19 @@ def load_tasks(paths):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
     # Agents put task IDs into shell commands: an ID with shell characters stops every command (atm check lists them)
-    for task in data["tasks"]:
-        if isinstance(task, dict) and isinstance(task.get("id"), str) and not valid_task_id(task["id"]):
+    for i, task in enumerate(data["tasks"]):
+        # Every command looks tasks up by ID and follows dependencies: a malformed task stops them all with a clear
+        # message instead of a traceback halfway through (docs/security-review.md F12). atm check lists them all.
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str):
+            raise AtmError(f"{paths['tasks']}: task #{i + 1} isn't a task (an object with an \"id\"); run atm check")
+        if not valid_task_id(task["id"]):
             raise AtmError(
                 f"{paths['tasks']}: the task ID {task['id']!r} has characters atm doesn't allow (letters, digits, '.', "
                 "'_' and '-' only): fix it in the file, then run atm check"
             )
+        deps = task.get("dependencies", [])
+        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+            raise AtmError(f"{paths['tasks']}: {task['id']}'s dependencies aren't a list of IDs; run atm check")
     _archive["paths"], _archive["data"] = paths, None
     return data
 

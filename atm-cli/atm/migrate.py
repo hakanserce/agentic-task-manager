@@ -39,6 +39,12 @@ BUILD_META = re.compile(r'<meta name="atm-dashboard-build" content="([^"]*)"')
 HEAD_BYTES = 16384
 
 
+def page_tags(head):
+    """(version, build ID) from the start of a dashboard page (text), "" for a missing tag."""
+    version, build = VERSION_META.search(head), BUILD_META.search(head)
+    return (version.group(1) if version else "", build.group(1) if build else "")
+
+
 def dashboard_head(p):
     """(version, build ID) of a dashboard file, "" for a missing tag; None if there is no file."""
     try:
@@ -46,8 +52,7 @@ def dashboard_head(p):
             head = f.read(HEAD_BYTES)
     except OSError:
         return None
-    version, build = VERSION_META.search(head), BUILD_META.search(head)
-    return (version.group(1) if version else "", build.group(1) if build else "")
+    return page_tags(head)
 
 
 def clean_up_old_dashboard(task_dir):

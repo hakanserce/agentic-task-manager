@@ -4,6 +4,57 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.17.0] - 2026-10-26
+
+**Overview polish, project identity, and parallel agents that don't trip over each other.** Phase 17 was built by
+three agents at once in separate git worktrees; what that turned up is fixed here too.
+
+### Added
+- **Project logos.** `atm logo [set PATH | unset]` (`meta.logo`: an SVG, PNG, WebP or ICO file inside the project, at
+  most 512 KB); without one, a `logo.svg`, `.github/logo.png` and similar are found by themselves. The server serves
+  it at `/p/<id>/logo` and lists `logo` in `/api/projects`. The dashboard shows it on project cards, in the project
+  selector and next to the title, or the project's initials on a colour from its id.
+- **The ATM logo** as the browser tab icon (an inline `data:` favicon), in About, and with "Agentic Task Manager
+  (atm)" at the start of the status bar.
+- **Phase rings on project cards.** The server summary has `recent_phases` (the lowest 4 phases with open work, filled
+  up with the most recently finished ones; phases of only skipped tasks left out); each card shows up to 4 rings on
+  one line, the project-wide count in their tooltip.
+- **"Needs you" opens the task.** The chip in the title bar and on project cards opens the one task waiting for you,
+  or a list of them (`NeedsYouMenu`); the summary has `needs_you_tasks` (`[{id, name, reason}]`). An older server
+  still gets the filtered Kanban.
+- **Kanban completion ring** for the tasks shown, with "67% · 24 of 36 done · 2 skipped" beside it.
+- **`atm run <id> [--every SECONDS] -- <command>`** runs a long command (a test suite, a build, a wait on CI) while
+  keeping the claim on `<id>` alive: renewed at the start (refused before the command runs when it isn't yours), then
+  three times per lease. Output and exit code pass through. The do-task, loop-tasks and push skills use it for long
+  checks; the PostToolUse hook renews only between tool calls.
+- `docs/project-cards-proposal.md`: what project cards should show, reviewed; phase 18 builds it.
+
+### Changed
+- **One title bar for every page** (`TitleBar.svelte`): the overview has the same controls, at the same place, as a
+  project page. The status bar sits at the bottom of the window on All projects too.
+- **"Active phases only"** keeps every unfinished phase and the one that finished last (a phase of only skipped tasks
+  counts as finished), instead of those finished within N days; the days field is gone (an old saved `days` is
+  ignored). It is **on by default**.
+- **Project cards** are taller (more padding, 220 px at least), the name gets two lines on every card (longer names
+  end in "…", the full name and folder on hover), and a long phase name stays on one line, so the cards of a row line
+  up.
+- **Agent identity per worktree:** an agent identified by its Claude Code session is `claude:<session>@<folder>` in a
+  linked git worktree (subagents share their parent's session ID); the main worktree keeps `claude:<session>`. The
+  hook computes the same from its `cwd`, so it renews only that agent's claims.
+- **Blocked and in-review tasks are shared across worktrees:** the claims store records `waiting` tasks, so `atm next`
+  doesn't hand them out in another worktree; `unblock`, `skip`, `done` and `reject` work from any worktree and are
+  applied where the task waits with its next atm command (`resolved`). `atm status` lists them, and the server leaves
+  a worktree's stale copy out of `worktrees.json`.
+- The update notice is a toast at the bottom right, never under the title bar; it shows only once per new build, and
+  not at all when the page already is that build (a same-version server restarts only for a rebuild in its own plugin
+  folder, and whoami's `build` comes from the bytes it serves).
+
+### Fixed
+- Each checkout's e2e server gets its own port (from its folder), so tests in parallel worktrees don't test each
+  other's build.
+- Section screenshots wait for the title bar to settle after scrolling and leave the sticky status bar out, which
+  made them flaky on a busy machine.
+
 ## [0.16.0] - 2026-10-26
 
 **All of a project's git worktrees on one board, links to commits and PRs, and clearer progress.**

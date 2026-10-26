@@ -1,0 +1,6 @@
+/* Applied to screenshots of the view under the title bar (visual.spec.ts, sectionScreenshot): the status bar is
+   pinned to the bottom of the window and would cover the bottom of the view, at a height that depends on how far
+   the page scrolled. Out of the way, it can't move the picture; the footer screenshots cover its own look. */
+.site-footer {
+  position: static !important;
+}

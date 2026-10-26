@@ -1,5 +1,28 @@
 import path from 'node:path';
+import type { Page } from '@playwright/test';
 import { expect, openDashboard, summary, test } from './helpers';
+
+/**
+ * Screenshot of the view under the title bar (#graph-section). The section is scrolled into view first, and the
+ * title bar is given time to compact (it does once the page scrolls, from a scroll handler): otherwise, on a busy
+ * machine, the screenshot could land between the scroll and the compacting, with everything shifted.
+ */
+async function sectionScreenshot(page: Page, name: string) {
+  const section = page.locator('#graph-section');
+  await section.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => page.evaluate(() => document.querySelector('.topbar')!.classList.contains('scrolled') === scrollY > 8))
+    .toBe(true);
+  await expect(section).toHaveScreenshot(name, {
+    // A long view reaches under the sticky title bar (and the status bar): its versions are masked, like on the
+    // full-page shots, so a release doesn't change these baselines
+    mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+    stylePath: [
+      path.join(import.meta.dirname, 'screenshot.css'),
+      path.join(import.meta.dirname, 'section-screenshot.css'),
+    ],
+  });
+}
 
 // The version chip and the footer's version are masked: they show the version (and a "new" marker) and would
 // otherwise change every page baseline on each release; whats-new.spec and footer.spec cover them. They also get a
@@ -25,7 +48,7 @@ for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
     });
 
     test('dependency graph', async ({ page }) => {
-      await expect(page.locator('#graph-section')).toHaveScreenshot(`${fixture}-graph.png`);
+      await sectionScreenshot(page, `${fixture}-graph.png`);
     });
   });
 }
@@ -41,7 +64,7 @@ for (const fixture of ['standard', 'kanban']) {
     await openDashboard(page, tasksServer, fixture);
     await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
-    await expect(page.locator('#graph-section')).toHaveScreenshot(`${fixture}-kanban.png`);
+    await sectionScreenshot(page, `${fixture}-kanban.png`);
   });
 }
 
@@ -50,12 +73,12 @@ test('visual: progress tab', async ({ page, tasksServer }) => {
   await openDashboard(page, tasksServer, 'progress');
   await page.locator('#tab-progress').click();
   await expect(page.locator('#burndown svg')).toBeVisible();
-  await expect(page.locator('#graph-section')).toHaveScreenshot('progress-progress.png');
+  await sectionScreenshot(page, 'progress-progress.png');
 });
 
 test('visual: list tab', async ({ page, tasksServer }) => {
   await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
-  await expect(page.locator('#graph-section')).toHaveScreenshot('standard-list.png');
+  await sectionScreenshot(page, 'standard-list.png');
 });
 
 // The Agents tab and the top-bar widgets depend on the time: fixtures/agents.md, with a fixed clock
@@ -65,14 +88,14 @@ test('visual: agents tab', async ({ page, tasksServer }) => {
   await page.clock.setFixedTime(AGENTS_NOW);
   await openDashboard(page, tasksServer, 'agents', { tab: 'agents' });
   await expect(page.locator('.agent-bar').first()).toBeVisible();
-  await expect(page.locator('#graph-section')).toHaveScreenshot('agents-agents.png');
+  await sectionScreenshot(page, 'agents-agents.png');
 });
 
 test('visual: agents tab, zoomed in', async ({ page, tasksServer }) => {
   await page.clock.setFixedTime(AGENTS_NOW);
   await openDashboard(page, tasksServer, 'agents', { tab: 'agents' });
   await page.getByRole('button', { name: 'Zoom in' }).click();
-  await expect(page.locator('#graph-section')).toHaveScreenshot('agents-agents-zoomed.png');
+  await sectionScreenshot(page, 'agents-agents-zoomed.png');
 });
 
 test('visual: progress and activity details', async ({ page, tasksServer }) => {
@@ -110,14 +133,14 @@ test.describe('visual: light mode', () => {
 
   test('dependency graph', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'large-90');
-    await expect(page.locator('#graph-section')).toHaveScreenshot('light-large-90-graph.png');
+    await sectionScreenshot(page, 'light-large-90-graph.png');
   });
 
   test('kanban board', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'kanban');
     await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
-    await expect(page.locator('#graph-section')).toHaveScreenshot('light-kanban.png');
+    await sectionScreenshot(page, 'light-kanban.png');
   });
 
   test('progress tab', async ({ page, tasksServer }) => {
@@ -125,14 +148,14 @@ test.describe('visual: light mode', () => {
     await openDashboard(page, tasksServer, 'progress');
     await page.locator('#tab-progress').click();
     await expect(page.locator('#burndown svg')).toBeVisible();
-    await expect(page.locator('#graph-section')).toHaveScreenshot('light-progress.png');
+    await sectionScreenshot(page, 'light-progress.png');
   });
 
   test('agents tab', async ({ page, tasksServer }) => {
     await page.clock.setFixedTime(AGENTS_NOW);
     await openDashboard(page, tasksServer, 'agents', { tab: 'agents' });
     await expect(page.locator('.agent-bar').first()).toBeVisible();
-    await expect(page.locator('#graph-section')).toHaveScreenshot('light-agents.png');
+    await sectionScreenshot(page, 'light-agents.png');
   });
 
   test('activity details', async ({ page, tasksServer }) => {
@@ -171,12 +194,12 @@ for (const mode of ['dark', 'light'] as const) {
     test('kanban board: review, blocked, stages in Done', async ({ page, tasksServer }) => {
       await openDashboard(page, tasksServer, 'v4', { tab: 'kanban' });
       await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
-      await expect(page.locator('#graph-section')).toHaveScreenshot(`v4-${mode}-kanban.png`);
+      await sectionScreenshot(page, `v4-${mode}-kanban.png`);
     });
 
     test('list: labels, priorities, stages', async ({ page, tasksServer }) => {
       await openDashboard(page, tasksServer, 'v4', { tab: 'list' });
-      await expect(page.locator('#graph-section')).toHaveScreenshot(`v4-${mode}-list.png`);
+      await sectionScreenshot(page, `v4-${mode}-list.png`);
     });
 
     test('detail panel: notes, actors, stage', async ({ page, tasksServer }) => {
@@ -238,6 +261,21 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The "new version is ready" toast in the bottom right corner, over the cards and clear of the title bar (T-185)
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: update notice (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await tasksServer.serverBuild('newer-build');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
+    await expect(page.locator('#update-notice')).toBeVisible();
+    await expect(page).toHaveScreenshot(`update-notice-${mode}.png`, {
+      mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+      stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
+  });
+}
+
 // The project selector, open, with progress, a "needs you" dot and a project that is gone
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: project selector (${mode})`, async ({ page, tasksServer }) => {
@@ -251,6 +289,16 @@ for (const mode of ['dark', 'light'] as const) {
     await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
     await page.locator('#project-selector').click();
     await expect(page.locator('#project-menu')).toHaveScreenshot(`project-selector-${mode}.png`);
+  });
+}
+
+// The "need you" chip, open on the list of the tasks that need you (fixtures/v4.json: one in review, one blocked)
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: needs-you list (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await openDashboard(page, tasksServer, 'v4', { tab: 'list' });
+    await page.locator('#attention-count').click();
+    await expect(page.locator('#needs-you-menu')).toHaveScreenshot(`needs-you-menu-${mode}.png`);
   });
 }
 
@@ -270,15 +318,39 @@ for (const mode of ['dark', 'light'] as const) {
           skipped: 2,
           percent: 50,
           current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
+          recent_phases: [
+            { id: 1, name: 'Setup', done: 5, total: 5, percent: 100 },
+            { id: 2, name: 'Core', done: 3, total: 7, percent: 43 },
+            { id: 3, name: 'Polish', done: 1, total: 4, percent: 25 },
+            { id: 4, name: null, done: 0, total: 2, percent: 0 },
+          ],
           agents_working: 2,
           last_activity: '2026-01-01T11:48:00Z',
         }),
       )
-      .addProject('asks', 'minimal', 'Waiting Project', summary({ needs_you: { review: 1, blocked_on_user: 1 } }))
-      .goneProject('old1234', 'Old Project');
+      .addProject(
+        'asks',
+        'minimal',
+        'Waiting Project',
+        summary({
+          needs_you: { review: 1, blocked_on_user: 1 },
+          recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
+        }),
+      )
+      .goneProject('old1234', 'Old Project')
+      .logo(
+        'busy',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#2f81f7"/>' +
+          '<path d="m4.5 8.2 2.3 2.3 4.7-5" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+      );
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('.project-card')).toHaveCount(4);
-    await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-${mode}.png`);
+    await expect(page.locator('.project-card[data-id="busy"] .project-logo img')).toHaveJSProperty('complete', true);
+    // The whole page: the title bar has to look exactly like the project page's (controls at the right)
+    await expect(page).toHaveScreenshot(`projects-overview-${mode}.png`, {
+      mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+      stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
   });
 }
 
@@ -304,7 +376,7 @@ for (const theme of [
       await openDashboard(page, tasksServer, 'kanban');
       await page.locator('#tab-kanban').click();
       await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
-      await expect(page.locator('#graph-section')).toHaveScreenshot(`theme-${theme}-${mode}.png`);
+      await sectionScreenshot(page, `theme-${theme}-${mode}.png`);
     });
   }
 }

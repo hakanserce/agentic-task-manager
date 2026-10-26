@@ -169,6 +169,8 @@ describe('serve', () => {
         task('T-5', 2, 'in_review', { review_requested_at: '2026-03-15T09:00:00Z' }),
         task('T-6', 2, 'blocked', { waiting_on: 'user', questions: ['?'], blocked_at: '2026-03-15T11:00:00Z' }),
         task('T-7', 3, 'todo'),
+        // Blocked on an agent: open, but it doesn't need the user
+        task('T-8', 3, 'blocked', { waiting_on: 'agent', questions: ['?'] }),
       ],
     });
     const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
@@ -181,19 +183,33 @@ describe('serve', () => {
     const first = await fetch(url);
     const byId = Object.fromEntries((await first.json()).projects.map((p) => [p.id, p]));
     assert.deepEqual(byId.abcd1234.summary, {
-      total: 7,
+      total: 8,
       done: 3,
       skipped: 1,
-      percent: 50,
+      percent: 43,
       current_phase: { id: 2, name: 'Two', done: 1, total: 3 },
+      recent_phases: [
+        { id: 1, name: null, done: 2, total: 2, percent: 100 },
+        { id: 2, name: 'Two', done: 1, total: 3, percent: 33 },
+        { id: 3, name: null, done: 0, total: 2, percent: 0 },
+      ],
       agents_working: 0,
       needs_you: { review: 1, blocked_on_user: 1 },
+      needs_you_tasks: [
+        { id: 'T-5', name: 'T-5', reason: 'review' },
+        { id: 'T-6', name: 'T-6', reason: 'blocked' },
+      ],
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     });
     assert.deepEqual(
-      [byId.eeee5555.summary.percent, byId.eeee5555.summary.current_phase, byId.eeee5555.summary.last_activity],
-      [100, null, null],
+      [
+        byId.eeee5555.summary.percent,
+        byId.eeee5555.summary.current_phase,
+        byId.eeee5555.summary.recent_phases,
+        byId.eeee5555.summary.last_activity,
+      ],
+      [100, null, [], null],
     );
     assert.deepEqual([byId.ffff6666.missing, byId.ffff6666.summary], [true, null]);
 
@@ -206,6 +222,126 @@ describe('serve', () => {
     const summary = (await changed.json()).projects.find((p) => p.id === 'abcd1234').summary;
     assert.deepEqual([summary.agents_working, summary.last_activity], [1, '2026-03-15T12:00:00Z']);
     atm(['serve', 'stop'], root);
+  });
+
+  test('recent_phases: the lowest open phases, then the most recently finished, up to four, in phase order', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const done = (id, phase, at) => task(id, phase, 'done', { completed_at: at });
+    const projects = {
+      // No tasks: no phases
+      empty1: [],
+      // All done: the four most recently finished (phase 2 last finished long ago, so it goes), shown in phase order
+      alldone: [
+        done('T-1', 1, '2026-03-05T00:00:00Z'),
+        done('T-2', 2, '2026-01-01T00:00:00Z'),
+        done('T-3', 3, '2026-03-02T00:00:00Z'),
+        done('T-4', 4, '2026-03-03T00:00:00Z'),
+        done('T-5', 5, '2026-03-04T00:00:00Z'),
+      ],
+      // One active phase, filled up with the finished ones; a phase of only skipped tasks has nothing to show
+      oneopen: [
+        done('T-1', 1, '2026-03-01T00:00:00Z'),
+        task('T-2', 2, 'skipped'),
+        done('T-3', 3, '2026-03-02T00:00:00Z'),
+        task('T-4', 3, 'skipped'),
+        task('T-5', 4, 'in_progress'),
+        done('T-6', 4, '2026-03-03T00:00:00Z'),
+      ],
+      // More than four open phases: the lowest four; finished phases don't get in
+      manyopen: [
+        done('T-1', 1, '2026-03-09T00:00:00Z'),
+        ...[2, 3, 4, 5, 6].map((phase) => task(`T-${phase}`, phase, 'todo')),
+      ],
+    };
+    const roots = Object.entries(projects).map(([id, tasks]) => project({ meta: { id, project: id }, tasks }));
+    for (const root of roots) assert.equal(atm(['projects', 'add'], root).code, 0);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], roots[0]).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const recent = Object.fromEntries(
+      api.projects.map((p) => [p.id, p.summary.recent_phases.map((r) => [r.id, r.done, r.total, r.percent])]),
+    );
+    assert.deepEqual(recent, {
+      empty1: [],
+      alldone: [
+        [1, 1, 1, 100],
+        [3, 1, 1, 100],
+        [4, 1, 1, 100],
+        [5, 1, 1, 100],
+      ],
+      oneopen: [
+        [1, 1, 1, 100],
+        [3, 1, 1, 100],
+        [4, 1, 2, 50],
+      ],
+      manyopen: [
+        [2, 0, 1, 0],
+        [3, 0, 1, 0],
+        [4, 0, 1, 0],
+        [5, 0, 1, 0],
+      ],
+    });
+    atm(['serve', 'stop'], roots[0]);
+  });
+
+  test('a project logo: served at p/<id>/logo with its type, listed in api/projects; none, outside or too large is 404', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>';
+    const withLogo = project(
+      { meta: { id: 'logo0001', project: 'Set', logo: 'brand/mark.svg' }, tasks: [] },
+      { 'brand/mark.svg': svg },
+    );
+    const found = project({ meta: { id: 'logo0002', project: 'Found' }, tasks: [] }, { '.github/logo.png': 'png' });
+    const none = project({ meta: { id: 'logo0003', project: 'None' }, tasks: [] });
+    const elsewhere = tempDir('atm-elsewhere-');
+    cleanups.push(() => removeDir(elsewhere));
+    fs.writeFileSync(path.join(elsewhere, 'logo.svg'), svg);
+    const outside = project({
+      meta: { id: 'logo0004', project: 'Outside', logo: path.join(elsewhere, 'logo.svg') },
+      tasks: [],
+    });
+    const big = project(
+      { meta: { id: 'logo0005', project: 'Big' }, tasks: [] },
+      { 'logo.png': 'x'.repeat(513 * 1024) },
+    );
+    for (const p of [withLogo, found, none, outside, big]) assert.equal(atm(['projects', 'add'], p).code, 0);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], withLogo).code, 0);
+    const base = `http://localhost:${port}`;
+
+    const api = await (await fetch(`${base}/api/projects`)).json();
+    assert.deepEqual(Object.fromEntries(api.projects.map((p) => [p.id, p.logo])), {
+      logo0001: 'p/logo0001/logo',
+      logo0002: 'p/logo0002/logo',
+      logo0003: null,
+      logo0004: null,
+      logo0005: null,
+    });
+
+    const logo = await fetch(`${base}/p/logo0001/logo`);
+    assert.equal(logo.status, 200);
+    assert.equal(logo.headers.get('content-type'), 'image/svg+xml');
+    assert.equal(logo.headers.get('cache-control'), 'no-cache');
+    assert.match(logo.headers.get('content-security-policy'), /default-src 'none'.*sandbox/);
+    assert.equal(await logo.text(), svg);
+    const again = await fetch(`${base}/p/logo0001/logo`, { headers: { 'If-None-Match': logo.headers.get('etag') } });
+    assert.equal(again.status, 304);
+    assert.equal((await fetch(`${base}/p/logo0002/logo`)).headers.get('content-type'), 'image/png');
+    for (const id of ['logo0003', 'logo0004', 'logo0005']) {
+      const r = await fetch(`${base}/p/${id}/logo`);
+      assert.deepEqual([id, r.status, (await r.json()).error], [id, 404, 'no logo']);
+    }
+
+    // A logo added later changes the ETag of api/projects
+    const etag = (await fetch(`${base}/api/projects`)).headers.get('etag');
+    fs.writeFileSync(path.join(none, 'logo.svg'), svg);
+    const changed = await fetch(`${base}/api/projects`, { headers: { 'If-None-Match': etag } });
+    assert.equal(changed.status, 200);
+    assert.equal((await changed.json()).projects.find((p) => p.id === 'logo0003').logo, 'p/logo0003/logo');
+    atm(['serve', 'stop'], withLogo);
   });
 
   test('files and /api/projects have ETags; a poll with one gets 304 until something changes', async () => {
@@ -284,6 +420,18 @@ describe('serve', () => {
     );
     const mainTasks = await (await fetch(`${base}/p/abcd1234/tasks.json`)).json();
     assert.equal(mainTasks.tasks[0].status, 'todo');
+
+    // T-1 is blocked in the linked worktree and answered in the main one (T-204): the linked worktree's blocked copy
+    // is stale until atm runs there, so it isn't listed (it would outrank the answer on the board)
+    const block = ['block', 'T-1', '--agent', 'claude:tree', '--on', 'user', '--question', 'Which?'];
+    assert.equal(atm(block, linked).code, 0);
+    const blocked = (await (await fetch(`${base}/p/abcd1234/worktrees.json`)).json()).worktrees[1].tasks;
+    assert.deepEqual(
+      blocked.map((t) => [t.id, t.status]),
+      [['T-1', 'blocked']],
+    );
+    assert.equal(atm(['unblock', 'T-1', '--answer', 'This one'], root).code, 0);
+    assert.deepEqual((await (await fetch(`${base}/p/abcd1234/worktrees.json`)).json()).worktrees[1].tasks, []);
     atm(['serve', 'stop'], root);
   });
 
@@ -408,28 +556,85 @@ describe('serve', () => {
     run(['serve', 'stop']);
   });
 
-  /** A copy of the plugin whose dashboard claims to be `version`, as an older or newer install would be. */
-  function pluginAt(version) {
-    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
-    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
-    cleanups.push(() => removeDir(path.dirname(plugin)));
+  /** Stamps `version` and `build` into the dashboard of the plugin copy at `plugin`, as a rebuild would. */
+  function stamp(plugin, version, build) {
     const page = path.join(plugin, 'templates/tasks-dashboard.html');
     fs.writeFileSync(
       page,
       fs
         .readFileSync(page, 'utf8')
         .replace(/(name="atm-dashboard-version" content=")[^"]*/, `$1${version}`)
-        .replace(/(name="atm-dashboard-build" content=")[^"]*/, '$1old-build'),
+        .replace(/(name="atm-dashboard-build" content=")[^"]*/, `$1${build}`),
     );
-    return (args, cwd, atmHome) =>
+  }
+
+  /** A copy of the plugin whose dashboard claims to be `version` (and `build`), as another install would be. */
+  function pluginAt(version, build = 'old-build') {
+    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
+    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
+    cleanups.push(() => removeDir(path.dirname(plugin)));
+    stamp(plugin, version, build);
+    const run = (args, cwd, atmHome) =>
       spawnSync(path.join(plugin, 'scripts/atm'), args, {
         cwd,
         encoding: 'utf8',
         env: { ...baseEnv(), ATM_HOME: atmHome },
       });
+    run.plugin = plugin;
+    return run;
   }
 
   const whoami = async (port) => (await fetch(`http://localhost:${port}/__atm/whoami`)).json();
+  /** The build in the <meta> of the page the server serves. */
+  const pageBuild = async (port) =>
+    /name="atm-dashboard-build" content="([^"]*)"/.exec(await (await fetch(`http://localhost:${port}/`)).text())?.[1];
+
+  test("the page's build is the build whoami reports, so a current page never offers a reload", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    assert.equal(await pageBuild(port), PLUGIN_BUILD);
+    assert.equal((await whoami(port)).build, await pageBuild(port));
+    atm(['serve', 'stop'], root);
+  });
+
+  test("another install of the same version doesn't take the server over, so they don't restart it in turn", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    const other = pluginAt(PLUGIN_VERSION, 'other-build');
+    assert.equal(other(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const pid = record(atmHome).pid;
+    assert.equal(atm(['serve', '--refresh'], root).stdout, '');
+    assert.equal(atm(['status'], root).code, 0);
+    assert.equal(record(atmHome).pid, pid, 'left alone');
+    assert.equal(other(['serve', '--refresh'], root, atmHome).stdout, '');
+    assert.equal(record(atmHome).pid, pid);
+    assert.equal((await whoami(port)).build, await pageBuild(port));
+    atm(['serve', 'stop'], root);
+  });
+
+  test('serve --refresh restarts a server whose own dashboard was rebuilt under the same version', async () => {
+    const atmHome = home();
+    const root = project();
+    const port = ports();
+    const install = pluginAt(PLUGIN_VERSION, 'first-build');
+    assert.equal(install(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const old = await whoami(port);
+    assert.equal(old.build, 'first-build');
+    stamp(install.plugin, PLUGIN_VERSION, 'second-build');
+    const refreshed = install(['serve', '--refresh'], root, atmHome);
+    assert.equal(refreshed.status, 0, refreshed.stderr);
+    assert.match(refreshed.stdout, /restarted/);
+    const now = await whoami(port);
+    assert.notEqual(now.pid, old.pid);
+    assert.equal(now.build, 'second-build');
+    assert.equal(await pageBuild(port), 'second-build');
+    install(['serve', 'stop'], root, atmHome);
+  });
 
   test('serve --refresh restarts a server with an older dashboard, on the same port', async () => {
     const atmHome = home();

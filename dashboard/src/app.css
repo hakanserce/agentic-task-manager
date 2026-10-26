@@ -49,6 +49,15 @@ body {
   flex-direction: column;
 }
 
+/* Every page's main area (App.svelte), between the title bar and the status bar: it takes the rest of the
+   window, so the status bar sits at the bottom even when the page is short */
+.app-main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 /* Title and version chip share a row; the row carries the title's bottom margin */
 .title-row {
   display: flex;
@@ -59,7 +68,15 @@ body {
 .title-row h1 {
   margin-bottom: 0;
 }
-
+/* The ATM logo (Logo.svelte): in the accent colour, next to the title and in About */
+.atm-logo {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.atm-logo svg {
+  display: block;
+}
 .version-chip {
   font-size: 12px;
   font-weight: 500;
@@ -109,6 +126,20 @@ body {
   font-size: 12px;
   color: var(--text-muted);
 }
+/* The ATM logo and name, then the copyright: one group, so they stay together when the bar wraps */
+.footer-start {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-weight: 600;
+}
 .footer-links {
   display: flex;
   flex-wrap: wrap;
@@ -132,6 +163,9 @@ body {
 
 /* About dialog */
 .about .about-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 16px;
   font-weight: 600;
 }
@@ -907,6 +941,30 @@ button.menu-trigger:hover,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A project's logo, or its monogram (ProjectLogo.svelte): a fixed box, so nothing moves while the image loads */
+.project-logo {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+  line-height: 1;
+}
+.project-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.project-logo.monogram {
+  background: color-mix(in srgb, var(--monogram-color) 22%, var(--surface));
+  color: color-mix(in srgb, var(--monogram-color) 60%, var(--text));
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.project-logo.monogram::before {
+  content: attr(data-initials);
+}
 .project-option-note,
 .project-option-empty {
   font-size: 12px;
@@ -942,6 +1000,8 @@ button.menu-trigger:hover,
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  /* At the right edge on every page, with or without the charts before them */
+  margin-left: auto;
 }
 .menu-label {
   font-size: 11px;
@@ -1887,8 +1947,21 @@ svg.graph-minimap.hidden {
 .kanban-toolbar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 16px;
   margin-bottom: 8px;
+}
+/* The completion of the tasks shown (KanbanBoard.svelte), at the toolbar's start; the options stay at its end */
+.kanban-completion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.kanban-completion-pct {
+  color: var(--text);
 }
 .kanban-lane + .kanban-lane {
   margin-top: 16px;
@@ -2113,6 +2186,56 @@ svg.graph-minimap.hidden {
   background: color-mix(in srgb, var(--yellow) 12%, transparent);
   color: var(--yellow);
   cursor: pointer;
+}
+/* Several tasks need you: the chip opens a list of them (NeedsYouMenu.svelte) */
+.needs-you-menu {
+  left: 8px;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  gap: 2px;
+}
+.needs-you-menu.align-right {
+  left: auto;
+  right: 0;
+}
+.needs-you-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.needs-you-row:hover,
+.needs-you-row:focus-visible {
+  background: var(--surface2);
+  outline: none;
+}
+.needs-you-id {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.needs-you-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.needs-you-reason {
+  color: var(--yellow);
+  font-size: 12px;
+  flex-shrink: 0;
 }
 .kanban-empty {
   font-size: 12px;
@@ -2339,15 +2462,6 @@ svg.graph-minimap.hidden {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-.phase-filter-days {
-  color: var(--text-muted);
-}
-.phase-filter-days.disabled {
-  opacity: 0.6;
-}
-.phase-filter-days input {
-  width: 3.5em;
 }
 .phase-filter-hidden {
   color: var(--text-muted);
@@ -2946,16 +3060,24 @@ svg.graph-minimap.hidden {
   box-shadow: inset 3px 0 0 var(--yellow);
 }
 
-/* A newer dashboard is ready after a plugin update (UpdateNotice.svelte) */
+/* A newer dashboard is ready after a plugin update (UpdateNotice.svelte). A toast in the bottom right corner, above
+   the footer: in the page flow the sticky title bar covered it, and as a banner it would push the filters down.
+   Over the title and footer bars (40), under menus (50) and dialogs (100). */
 .update-notice {
+  position: fixed;
+  right: 24px;
+  bottom: 64px;
+  z-index: 45;
+  max-width: calc(100vw - 48px);
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 8px 0;
   padding: 8px 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
   border-radius: 8px;
+  /* Opaque: the toast floats over cards */
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 45%, transparent);
   color: var(--text);
   font-size: 13px;
 }
@@ -3034,11 +3156,12 @@ svg.graph-minimap.hidden {
 .project-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  min-height: 220px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 18px 18px 16px;
 }
 .project-card:hover {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
@@ -3049,14 +3172,22 @@ svg.graph-minimap.hidden {
 .project-card-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 8px;
 }
+/* Two lines for the name on every card, so the cards of a row line up; a longer name ends in "…" (full name on hover) */
 .project-card-name {
-  margin: 0;
+  flex: 1;
+  margin: 2px 0 0;
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.3;
   min-width: 0;
+  min-height: 2.6em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 .project-card-open {
@@ -3067,6 +3198,13 @@ svg.graph-minimap.hidden {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  /* A button is one box to its parent's line clamp: it clamps its own text */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .project-card-open:hover {
   color: var(--accent);
@@ -3076,18 +3214,45 @@ svg.graph-minimap.hidden {
   flex-shrink: 0;
   margin-left: 0;
 }
-.project-card-progress .progress-bar {
-  margin-top: 0;
+/* Up to 4 rings for the recent phases, on one line at any card width: each cell shrinks, and its ring (an SVG with a
+   viewBox) scales down with it */
+.project-card-rings {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
+.project-card-ring {
+  flex: 0 1 56px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.project-card-ring .ring {
+  width: 100%;
+  max-width: 48px;
+  height: auto;
+}
+.project-card-ring-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* The whole project, quietly under the rings */
 .project-card-counts {
   display: flex;
   justify-content: space-between;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
-}
-.project-card-percent {
-  font-weight: 600;
 }
 .project-card-phase,
 .project-card-note {
@@ -3097,13 +3262,29 @@ svg.graph-minimap.hidden {
 .project-card-note {
   color: var(--text-muted);
 }
+/* One line, so the cards of a row keep their feet level: the name gives way (ellipsis), the counts don't */
+.project-card-phase {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+.project-card-phase-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-card-phase-count {
+  flex-shrink: 0;
+}
 .project-card-note code {
   color: var(--text);
 }
+/* At the bottom of the card: the cards of a row are as tall as the tallest, so their feet line up */
 .project-card-foot {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: auto;
   font-size: 12px;
 }
 .project-card-agents {

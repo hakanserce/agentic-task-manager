@@ -16,17 +16,15 @@
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
   const statusLabel = (status: string) => vocabStatusLabel(dashboard.vocab, status);
 
-  // "Active phases only", shared with the Progress tab (one saved choice per project): By phase keeps unfinished
-  // phases and those finished in the last N days. Overall and By type stay whole.
+  // "Active phases only", shared with the Progress tab (one saved choice per project): By phase keeps the unfinished
+  // phases and the one that finished last. Overall and By type stay whole.
   const active = $derived(dashboard.progressActive);
   const byPhase = $derived.by(() => {
     if (!active.only) return p.byPhase;
     const keep = new Set(
-      activePhases(
-        forecastPhases(dashboard.tasks, Date.now(), dashboard.tasks, dashboard.vocab).phases,
-        Date.now(),
-        active.days,
-      ).map((f) => String(f.phase)),
+      activePhases(forecastPhases(dashboard.tasks, Date.now(), dashboard.tasks, dashboard.vocab).phases).map((f) =>
+        String(f.phase),
+      ),
     );
     return p.byPhase.filter((s) => keep.has(s.key));
   });
@@ -116,12 +114,12 @@
 </div>
 
 {#snippet phaseFilter()}
-  <label class="ring-group-filter" title="Unfinished phases, and those finished within the last {active.days} days">
+  <label class="ring-group-filter" title="Unfinished phases, and the one that finished last">
     <input
       type="checkbox"
       id="panel-active-phases-only"
       checked={active.only}
-      onchange={(e) => (dashboard.progressActive = { ...active, only: e.currentTarget.checked })}
+      onchange={(e) => (dashboard.progressActive = { only: e.currentTarget.checked })}
     />
     Active phases only
   </label>

@@ -8,6 +8,7 @@ import contextlib
 import json
 import os
 import socket
+import subprocess
 import sys
 from datetime import timedelta
 
@@ -38,7 +39,7 @@ from .model import (
     vocabulary,
 )
 from .paths import find_paths, project_root
-from .registry import register_if_needed
+from .registry import main_worktree, register_if_needed
 
 CLAIMS_STORE = "claims.json"  # in <git common dir>/atm/, shared by all worktrees of a clone
 CLAIMS_STORE_NO_GIT = "claims-store.json"  # in the task folder, outside git
@@ -46,15 +47,26 @@ CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the das
 DEFAULT_LEASE_MINUTES = 30
 
 
+def session_identity(session_id, cwd):
+    """A Claude Code session's identity: "claude:" and 8 characters of its ID; in a linked git worktree, also
+    "@<worktree folder>". Subagents share their parent's session ID, so agents spawned in separate worktrees still get
+    identities of their own. The main worktree keeps the plain form, so its claims and history still match."""
+    identity = "claude:" + str(session_id)[:8]
+    root = project_root(cwd)
+    if main_worktree(root) != root:
+        identity += "@" + os.path.basename(root)
+    return identity
+
+
 def agent_identity(agent=None):
-    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session, else the git
-    user's name (a person in a terminal), else user@host."""
+    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session (per linked
+    worktree, see session_identity), else the git user's name (a person in a terminal), else user@host."""
     if agent:
         return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
-        return "claude:" + os.environ["CLAUDE_CODE_SESSION_ID"][:8]
+        return session_identity(os.environ["CLAUDE_CODE_SESSION_ID"], os.getcwd())
     name = git(["config", "user.name"], project_root(os.getcwd()))
     if name:
         return name
@@ -86,12 +98,63 @@ def locked_with_claims(paths):
 
 def read_store(paths):
     """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
-    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); and `hints`,
-    when each hint was last shown (so `done` repeats one at most once a day)."""
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); `waiting`
+    tasks (blocked or sent for review in some worktree, likewise); `resolved` ones (answered, passed, rejected or
+    skipped in another worktree than the one they wait in, to be applied there); and `hints`, when each hint was last
+    shown (so `done` repeats one at most once a day)."""
     data = read_json(claims_store_path(paths))
     data = data if isinstance(data, dict) else {}
-    hints = data.get("hints") if isinstance(data.get("hints"), dict) else {}
-    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}, "hints": hints}
+
+    def section(key):
+        return data.get(key) if isinstance(data.get(key), dict) else {}
+
+    return {
+        "claims": data.get("claims") or {},
+        "completed": data.get("completed") or {},
+        "waiting": section("waiting"),
+        "resolved": section("resolved"),
+        "hints": section("hints"),
+    }
+
+
+def waiting_record(paths, task):
+    """The shared record of a task blocked or sent for review in this worktree (T-204)."""
+    return {
+        "task": task["id"],
+        "status": task.get("status"),
+        "waiting_on": task.get("waiting_on"),
+        "questions": list(task.get("questions") or []),
+        "worktree": paths["root"],
+        "branch": git(["rev-parse", "--abbrev-ref", "HEAD"], paths["root"]),
+        "at": now_iso(),
+    }
+
+
+def apply_resolutions(paths, data, store):
+    """Apply what was decided in another worktree about a task waiting in this one (store["resolved"]): the answer,
+    the passed or rejected review, the skip, as if given here, so this worktree's copy stops waiting too. A task changed
+    here in the meantime is left as it is. Returns the IDs applied."""
+    applied = []
+    for task_id, record in list(store["resolved"].items()):
+        if not isinstance(record, dict) or record.get("worktree") != paths["root"]:
+            continue
+        store["resolved"].pop(task_id)
+        task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+        if task is None:
+            continue
+        try:
+            change_status(
+                task,
+                data,
+                record.get("command"),
+                agent=record.get("by"),
+                reason=record.get("reason"),
+                answers=record.get("answers") or [],
+            )
+            applied.append(task_id)
+        except (AtmError, KeyError):
+            pass
+    return applied
 
 
 def write_store(paths, store):
@@ -199,7 +262,7 @@ def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
     Returns (task, reason) where reason explains an empty result."""
-    claims, completed = store["claims"], store["completed"]
+    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
     vocab = vocabulary(data)
     candidates = [
         t
@@ -208,7 +271,7 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed)
+    taken = set(claims) | set(completed) | set(waiting)
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
         order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
@@ -217,11 +280,14 @@ def next_task(data, store, phase=None, task_type=None):
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
     done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
+    waiting_elsewhere = [t["id"] for t in candidates if t.get("id") in waiting]
     reason = f"{len(candidates)} todo task(s) waiting on dependencies"
     if claimed:
         reason += f" or claimed by other agents ({', '.join(claimed)})"
     if done_elsewhere:
         reason += f"; done in another worktree, not merged yet: {', '.join(done_elsewhere)}"
+    if waiting_elsewhere:
+        reason += f"; blocked or in review in another worktree: {', '.join(waiting_elsewhere)}"
     return None, reason
 
 
@@ -233,11 +299,12 @@ def cmd_next(args):
         store = read_store(paths)
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
+        applied = apply_resolutions(paths, data, store)
         task, reason = next_task(data, store, args.phase, args.type)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
-        if expired or (task and args.claim):
+        if expired or applied or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
     report_expired(expired)
@@ -280,11 +347,12 @@ def auto_heartbeat(args):
     and never fails, so a tool call is never disturbed."""
     try:
         payload = hook_input()
+        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
         if payload.get("session_id") and not (args.agent or os.environ.get("ATM_AGENT")):
-            agent = "claude:" + str(payload["session_id"])[:8]
+            # The same identity atm commands get in that folder: a subagent in a linked worktree renews its own claims
+            agent = session_identity(payload["session_id"], cwd)
         else:
             agent = agent_identity(args.agent)
-        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
         paths = find_paths(cwd)
         if not paths["tasks_exists"]:
             return
@@ -348,6 +416,64 @@ def cmd_heartbeat(args):
         out(to_json(claim))
     else:
         out(f"{task_id}: lease extended to {claim['lease_expires_at']}")
+
+
+def renew_claim(paths, task_id, agent):
+    """Renew `agent`'s live claim on `task_id`. Returns the lease length in minutes; raises AtmError (exit code 4)
+    when the task has no live claim or another agent holds it."""
+    with locked_with_claims(paths):
+        data = load_tasks(paths)
+        store = read_store(paths)
+        claim = store["claims"].get(task_id)
+        try:
+            alive = claim is not None and parse_iso(claim["lease_expires_at"]) > now()
+        except (KeyError, TypeError, ValueError):
+            alive = False
+        if not alive:
+            raise AtmError(f"{task_id} has no live claim", 4)
+        check_holder(store["claims"], task_id, agent, "renew the claim on")
+        claim["lease_expires_at"] = lease_until(data)
+        claim["renewed_at"] = now_iso()
+        write_store(paths, store)
+    return lease_minutes(data)
+
+
+def cmd_run(args):
+    """`atm run <id> -- <command>`: run a long command (a full test suite, a build, a wait on CI) while keeping the
+    claim on <id> alive. The plugin's hook renews claims only when the agent makes a tool call, and an agent waiting
+    for a command makes none, so a wait longer than the lease would hand the task to someone else (T-203). The claim
+    is renewed at the start (so a wrong ID or someone else's claim fails before anything runs) and then three times per
+    lease; the command's output passes through unchanged, and atm exits with its exit code."""
+    if not args.child:
+        raise AtmError("atm run needs a command after --: atm run <id> -- <command> [args...]", 2)
+    if args.every is not None and args.every <= 0:
+        raise AtmError("--every must be more than 0 seconds", 2)
+    agent = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    minutes = renew_claim(paths, args.id, agent)
+    every = args.every if args.every is not None else max(60.0, minutes * 60 / 3)
+    try:
+        child = subprocess.Popen(args.child)
+    except OSError as e:
+        raise AtmError(f"can't run {args.child[0]}: {e.strerror}", 127)
+    # Renewed from this (the main) thread between waits: the lock uses signals, which only work here
+    renewing = True
+    while True:
+        try:
+            code = child.wait(timeout=every)
+            break
+        except subprocess.TimeoutExpired:
+            pass
+        except KeyboardInterrupt:  # the command got the same interrupt; wait for it to end
+            continue
+        if renewing:
+            try:
+                renew_claim(paths, args.id, agent)
+            except Exception as e:  # never stops the command; say so once and stop renewing
+                sys.stderr.write(f"atm run: stopped renewing the claim on {args.id}: {e}\n")
+                renewing = False
+    if code:
+        raise AtmExit(128 - code if code < 0 else code)  # a signal -N ends like a shell's 128+N
 
 
 def cmd_claims(args):

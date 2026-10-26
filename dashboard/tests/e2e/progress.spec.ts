@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, filterButton, openDashboard, test, type TasksData, openFilters } from './helpers';
+import { expect, filterButton, loadFixture, openDashboard, test, type TasksData, openFilters } from './helpers';
 
 // Expected numbers: tests/fixtures/progress.md (now = 2026-04-06 12:00 UTC; the tests run in UTC, en-US)
 const NOW = new Date('2026-04-06T12:00:00Z');
@@ -41,58 +41,70 @@ test.describe('Progress tab: phase table', () => {
     await expect(cells(page, 2).nth(5)).toContainText('If the loop keeps running: 12:51 PM');
   });
 
-  test('"Active phases only" hides phases finished more than N days ago, and is remembered', async ({
+  // The progress fixture plus phase 3, finished on Mar 1, before phase 0 (Apr 1): two finished phases, of which
+  // "Active phases only" keeps only the one that finished last. No start time, so the pace doesn't change.
+  function twoFinishedPhases(): TasksData {
+    const data = loadFixture('progress');
+    data.tasks.push({
+      id: 'T-099',
+      name: 'Early wrap-up',
+      phase: 3,
+      type: 'docs',
+      description: '',
+      status: 'done',
+      completed_at: '2026-03-01T10:00:00Z',
+    });
+    return data;
+  }
+
+  test('"Active phases only" (on by default) keeps the unfinished phases and the one that finished last; remembered', async ({
     page,
     tasksServer,
   }) => {
-    await openProgress(page, tasksServer, 'progress');
-    await expect(page.locator('#active-phases-only')).not.toBeChecked();
-    await expect(page.locator('#active-phases-days')).toBeDisabled();
-    // Phase 0 was finished on Apr 1, five days before now: still within the default 7 days
-    await page.locator('#active-phases-only').check();
+    await openProgress(page, tasksServer, twoFinishedPhases());
+    await expect(page.locator('#active-phases-only')).toBeChecked();
+    // Phase 0 finished last (Apr 1) and stays; phase 3 finished earlier (Mar 1) and goes
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
-    await expect(page.locator('#phases-hidden')).toHaveCount(0);
-    await page.locator('#active-phases-days').fill('3');
-    await page.locator('#active-phases-days').press('Tab');
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
-    await expect(row(page, 0)).toHaveCount(0);
+    await expect(row(page, 0)).toHaveCount(1);
+    await expect(row(page, 3)).toHaveCount(0);
     await expect(page.locator('#phases-hidden')).toHaveText('1 older phase hidden');
     // The burndown still covers every phase
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
 
+    // Turned off: every phase, and the choice is remembered for the project
+    await page.locator('#active-phases-only').uncheck();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
+    await expect(page.locator('#phases-hidden')).toHaveCount(0);
     await page.reload();
     await page.locator('#tab-progress').click();
-    await expect(page.locator('#active-phases-only')).toBeChecked();
-    await expect(page.locator('#active-phases-days')).toHaveValue('3');
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
+    await expect(page.locator('#active-phases-only')).not.toBeChecked();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
   });
 
   test('the Progress panel shares "Active phases only": By phase follows it, Overall and By type stay whole', async ({
     page,
     tasksServer,
   }) => {
-    await openProgress(page, tasksServer, 'progress');
+    await openProgress(page, tasksServer, twoFinishedPhases());
     await page.locator('#active-phases-only').check();
-    await page.locator('#active-phases-days').fill('3');
-    await page.locator('#active-phases-days').press('Tab');
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
 
     await page.locator('#progress-card').click();
     const panel = page.locator('#progress-panel');
     const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
     await expect(panel.locator('#panel-active-phases-only')).toBeChecked();
-    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 1', 'Phase 2']);
+    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2']);
     await expect(panel.locator('#panel-phases-hidden')).toHaveText('1 older phase hidden');
     const typesBefore = await section('By type').locator('.ring-label').count();
 
     // Turned off in the panel: off in the tab too
     await panel.locator('#panel-active-phases-only').uncheck();
-    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2']);
+    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2', 'Phase 3']);
     await expect(panel.locator('#panel-phases-hidden')).toHaveCount(0);
     await expect(section('By type').locator('.ring-label')).toHaveCount(typesBefore);
     await page.keyboard.press('Escape');
     await expect(page.locator('#active-phases-only')).not.toBeChecked();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
   });
 
   test('progress bars show each phase', async ({ page, tasksServer }) => {

@@ -94,7 +94,9 @@ errors (the message says what).
    definition), and the status commands. Every command takes `--json`.
 2. Get work only from `atm next --claim` (or `atm start <id>`).
 3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
-   out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand).
+   out and the task goes back to `todo` for someone else (`atm heartbeat <id>` renews it by hand). The hook renews
+   only after a tool call, so run long commands (a full test suite, a build, waiting on CI) as
+   `atm run <id> -- <command> [args...]`: it keeps the claim alive while the command runs.
 4. **Commit first, then finish.** Commit with `atm commit <id> --file <path> ...` while the task is still in
    progress, naming every file you changed for the task: it commits exactly those plus `tasks.json`. Never
    `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree. Only then finish with
@@ -142,7 +144,8 @@ while true:
          and move on
 
     4. VERIFY the task:
-       - Run build/test/lint if available (same as /atm:do-task Step 6)
+       - Run build/test/lint if available (same as /atm:do-task Step 6); a long one as
+         `atm run $TASK_ID -- <command>`, so the claim stays alive while it runs
        - If verification fails after 2 attempts:
          - `atm fail $TASK_ID --reason "<one line on what failed>"`
          - Log the failure

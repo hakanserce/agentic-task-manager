@@ -537,13 +537,16 @@ Merge each branch back as usual (or open a PR per branch).
   re-reads `tasks.json`, changes one task and writes the file atomically. The dashboard and other agents never see a
   half-written file, and two changes never overwrite each other.
 - **Claims.** `atm next --claim` picks the next task and claims it in one step. Claims record the agent (each Claude
-  Code session has its own identity), branch and worktree. They are stored in the clone's `.git` directory, so agents
-  in different worktrees of the clone see each other's claims straight away. A task finished in one worktree isn't
-  handed out again in another before the branches merge. The dashboard shows every worktree's tasks and claims on
-  the project's board, before anything merges.
+  Code session has its own identity, and so does each worktree a session's subagents work in, e.g.
+  `claude:e5ea9db0@agent-2`), branch and worktree. They are stored in the clone's `.git` directory, so agents
+  in different worktrees of the clone see each other's claims straight away. A task finished, blocked or sent for
+  review in one worktree isn't handed out again in another before the branches merge, and a block or a review can be
+  answered from any worktree: the one where the task waits picks the answer up with its next atm command. The
+  dashboard shows every worktree's tasks and claims on the project's board, before anything merges.
 - **Leases.** A claim lasts 30 minutes (`"lease_minutes"` in `tasks.json`'s `meta` changes the length) and the
-  plugin's hook renews it while the agent works. If an agent crashes, its task goes back to `todo` when the lease
-  runs out, with a failure note saying whose lease expired.
+  plugin's hook renews it while the agent works. A long command (a full test suite, a build) runs as
+  `atm run <id> -- <command>`, which keeps the claim alive while it runs. If an agent crashes, its task goes back to
+  `todo` when the lease runs out, with a failure note saying whose lease expired.
 - **Merging `tasks.json`.** A git merge driver (registered automatically) merges `tasks.json` task by task. Status
   changes from different branches combine (the further-along status wins, e.g. `done` over `in_progress`). Tasks
   added on both branches are both kept, and the incoming ones are renumbered if their IDs collide. Only conflicting

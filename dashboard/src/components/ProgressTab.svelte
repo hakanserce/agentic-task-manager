@@ -24,16 +24,11 @@
 
   const toggle = (phase: number) => (dashboard.progressPhase = focus === phase ? null : phase);
 
-  // With many phases the table gets long: "Active phases only" keeps unfinished phases and those finished in the
-  // last N days (saved with the project's view). The burndown still covers every task.
+  // With many phases the table gets long: "Active phases only" keeps the unfinished phases and the one that finished
+  // last (saved with the project's view). The burndown still covers every task.
   const active = $derived(dashboard.progressActive);
-  const shownPhases = $derived(
-    active.only ? { ...forecast, phases: activePhases(forecast.phases, now, active.days) } : forecast,
-  );
+  const shownPhases = $derived(active.only ? { ...forecast, phases: activePhases(forecast.phases) } : forecast);
   const hidden = $derived(forecast.phases.length - shownPhases.phases.length);
-  function setDays(value: number) {
-    if (Number.isFinite(value) && value >= 1) dashboard.progressActive = { ...active, days: Math.round(value) };
-  }
 </script>
 
 <div class="progress-view" id="progress">
@@ -48,27 +43,14 @@
     </div>
     <BurndownChart data={chart} {now} />
     <div class="phase-filter" id="phase-filter">
-      <label>
+      <label title="Unfinished phases, and the one that finished last">
         <input
           type="checkbox"
           id="active-phases-only"
           checked={active.only}
-          onchange={(e) => (dashboard.progressActive = { ...active, only: e.currentTarget.checked })}
+          onchange={(e) => (dashboard.progressActive = { only: e.currentTarget.checked })}
         />
         Active phases only
-      </label>
-      <label class="phase-filter-days" class:disabled={!active.only}>
-        (finished within the last
-        <input
-          type="number"
-          id="active-phases-days"
-          min="1"
-          max="365"
-          value={active.days}
-          disabled={!active.only}
-          onchange={(e) => setDays(e.currentTarget.valueAsNumber)}
-        />
-        days)
       </label>
       {#if active.only && hidden > 0}
         <span class="phase-filter-hidden" id="phases-hidden">{hidden} older phase{hidden === 1 ? '' : 's'} hidden</span>

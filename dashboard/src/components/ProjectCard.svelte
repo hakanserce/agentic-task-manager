@@ -4,14 +4,21 @@
   import type { ProjectEntry } from '../lib/load';
   import { needsYou } from '../lib/projects';
   import { dashboard } from '../lib/state.svelte';
+  import { phaseColor } from '../lib/theme';
   import Icon from './Icon.svelte';
+  import NeedsYouMenu from './NeedsYouMenu.svelte';
+  import ProjectLogo from './ProjectLogo.svelte';
+  import Ring from './Ring.svelte';
 
   let { project }: { project: ProjectEntry } = $props();
 
   const s = $derived(project.summary);
   const need = $derived(needsYou(project));
+  const needItems = $derived(project.missing ? [] : (s?.needs_you_tasks ?? []));
   const counted = $derived(s ? s.total - s.skipped : 0);
   const phase = $derived(s?.current_phase);
+  // An older server sends no recent_phases: no rings then
+  const phases = $derived(s?.recent_phases ?? []);
 
   // Completions per day over the last 14 days: thin bars, like the Activity widget
   const W = 112;
@@ -23,16 +30,28 @@
 
 <article class="project-card" class:missing={project.missing} data-id={project.id}>
   <div class="project-card-head">
+    <ProjectLogo {project} size={24} />
     {#if project.missing}
-      <h3 class="project-card-name" title={project.path}>{project.name}</h3>
+      <h3 class="project-card-name" title="{project.name}&#10;{project.path}">{project.name}</h3>
     {:else}
       <h3 class="project-card-name">
-        <button class="project-card-open" title={project.path} onclick={() => dashboard.openProject(project.id)}
-          >{project.name}</button
+        <button
+          class="project-card-open"
+          title="{project.name}&#10;{project.path}"
+          onclick={() => dashboard.openProject(project.id)}>{project.name}</button
         >
       </h3>
     {/if}
-    {#if need}
+    {#if needItems.length}
+      <!-- The tasks, from the server's summary: one opens the project on it, several are listed under the chip -->
+      <NeedsYouMenu
+        items={needItems}
+        onopen={(task) => dashboard.openProject(project.id, { task })}
+        chipClass="project-card-need"
+        align="right"
+      />
+    {:else if need}
+      <!-- A server without the list (before 0.17): the project's Kanban, filtered to review and blocked -->
       <button
         class="attention-chip project-card-need"
         title="Open its Kanban board, filtered to the tasks in review and blocked"
@@ -50,27 +69,41 @@
     <p class="project-card-note">No numbers yet</p>
   {:else}
     <div class="project-card-progress">
-      <div
-        class="progress-bar"
-        role="progressbar"
-        aria-label="{s.percent}% done"
-        aria-valuenow={s.percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div class="progress-fill" style:width="{s.percent}%" style:background="var(--green)"></div>
-      </div>
+      {#if phases.length}
+        <!-- One ring per recent phase, always on one line: the rings shrink to fit the card -->
+        <ul class="project-card-rings" aria-label="Recent phases">
+          {#each phases as p (p.id)}
+            {@const name = `Phase ${p.id}${p.name ? ` · ${p.name}` : ''}`}
+            <li class="project-card-ring" title="{name}: {p.done} / {p.total} done">
+              <Ring
+                ratio={p.total ? p.done / p.total : 0}
+                color={phaseColor(p.id)}
+                size={48}
+                stroke={5}
+                ariaLabel="{name}: {p.done} of {p.total} done"
+              />
+              <span class="project-card-ring-label">Phase {p.id}</span>
+            </li>
+          {/each}
+        </ul>
+      {/if}
       <div class="project-card-counts">
         <span class="project-card-done"
-          >{s.done} / {counted}{#if s.skipped}&nbsp;<span class="muted">· {s.skipped} skipped</span>{/if}</span
+          >{s.done} / {counted} done{#if s.skipped}&nbsp;· {s.skipped} skipped{/if}</span
         >
         <span class="project-card-percent">{s.percent}%</span>
       </div>
     </div>
 
-    <p class="project-card-phase">
+    <!-- One line: a long phase name is cut off (the full one in the title), its counts stay visible -->
+    <p
+      class="project-card-phase"
+      title={phase ? `Phase ${phase.id}${phase.name ? ` · ${phase.name}` : ''} — ${phase.done} / ${phase.total}` : null}
+    >
       {#if phase}
-        Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if} — {phase.done} / {phase.total}
+        <span class="project-card-phase-name"
+          >Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if}</span
+        ><span class="project-card-phase-count">&nbsp;— {phase.done} / {phase.total}</span>
       {:else}
         Every phase is finished
       {/if}

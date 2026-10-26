@@ -23,7 +23,8 @@ Every command takes `--json`; `atm help` lists them all.
   [--archived]`, `atm claims`, `atm workflow`
 - Work: `atm next --claim`, `atm start <id>`, `atm done <id> [--note]`, `atm review <id> --note`,
   `atm block <id> --on user|agent --question ...`, `atm fail <id> --reason`, `atm release <id> --note`,
-  `atm note <id> TEXT`
+  `atm note <id> TEXT`, `atm run <id> -- <command>` (a long command, e.g. the test suite, that keeps your claim
+  alive while it runs)
 - Answer: `atm unblock <id> --answer ...` (a block), `atm done <id>` / `atm reject <id> --reason` (a review)
 - Not needed: `atm skip <id> --reason ...` (a to-do or blocked task)
 - Undo: `atm reopen <id> --reason ...` takes a done or skipped task back to to-do (never edit its status by hand)

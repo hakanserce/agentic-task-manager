@@ -1,6 +1,7 @@
 // Loading from atm serve's API (docs/multi-project-api.md): the registered projects from api/projects, and each
 // project's files from p/<id>/. URLs are relative to the page, which the server serves at /.
 import type { Task, TasksFile } from './types';
+import type { NeedsYouItem } from './waiting';
 
 export const DEFAULT_PROJECT_NAME = 'Task Dashboard';
 export const PROJECTS_URL = 'api/projects';
@@ -19,8 +20,12 @@ export interface ProjectSummary {
   skipped: number;
   percent: number;
   current_phase: { id: number; name: string | null; done: number; total: number } | null;
+  /** Up to 4 phases, in phase order: the lowest with open work, then the most recently finished */
+  recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
   agents_working: number;
   needs_you: { review: number; blocked_on_user: number };
+  /** The tasks behind needs_you (absent from servers before 0.17) */
+  needs_you_tasks?: NeedsYouItem[];
   last_activity: string | null;
   completions_14d: number[];
 }
@@ -35,6 +40,8 @@ export interface ProjectEntry {
   summary: ProjectSummary | null;
   /** Its git worktrees, main first (empty outside git, or for a missing project) */
   worktrees?: { path: string; branch: string | null; main: boolean }[];
+  /** Where its logo is served (p/<id>/logo), or null without one; older servers don't send it */
+  logo?: string | null;
 }
 
 export interface LoadedTasks {
@@ -103,6 +110,9 @@ export function fetchProjectFile(
   return fetchFile(projectFileUrl(project, file), fetchFn, since, missing);
 }
 
+/** A project's logo, as api/projects gives it: p/<id>/logo, relative to the dashboard */
+const LOGO_URL = /^p\/[^/?#:]+\/logo$/;
+
 const isProject = (p: unknown): p is ProjectEntry =>
   !!p && typeof p === 'object' && typeof (p as ProjectEntry).id === 'string' && !!(p as ProjectEntry).id;
 
@@ -128,6 +138,8 @@ export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Valida
           .filter((w) => !!w && typeof w === 'object' && typeof w.path === 'string')
           .map((w) => ({ path: w.path, branch: typeof w.branch === 'string' ? w.branch : null, main: w.main === true }))
       : [],
+    // Only the server's own route: never an address elsewhere (the dashboard makes no outside requests)
+    logo: typeof p.logo === 'string' && LOGO_URL.test(p.logo) ? p.logo : null,
   }));
   return { unchanged: false, projects, validators: file.validators };
 }
@@ -149,9 +161,12 @@ export async function serverBuild(fetchFn: typeof fetch = fetch): Promise<string
   }
 }
 
-/** A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. */
-export function newBuildReady(pageBuild: string | undefined, server: string | null): boolean {
-  return !!pageBuild && !!server && pageBuild !== server;
+/**
+ * A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. The
+ * build the user said "Not now" to (`dismissed`) isn't offered again; another one is.
+ */
+export function newBuildReady(pageBuild: string | undefined, server: string | null, dismissed?: string): boolean {
+  return !!pageBuild && !!server && pageBuild !== server && server !== dismissed;
 }
 
 export type LoadResult = { unchanged: true } | { unchanged: false; loaded: LoadedTasks; validators: Validators };

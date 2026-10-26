@@ -215,6 +215,36 @@ def parse_time(text):
         return None
 
 
+RECENT_PHASES = 4
+
+
+def recent_phases(tasks, kinds, open_phases, names):
+    """Up to four phases for the overview's rings, in phase order: the lowest phases with open work first, then the
+    most recently finished ones (by their last completed_at) to fill up. A phase of only skipped tasks has nothing to
+    show and is left out."""
+    chosen = list(open_phases[:RECENT_PHASES])
+    finished = {}  # finished phase -> its last completion ("" when none is recorded)
+    for t, k in zip(tasks, kinds):
+        phase = phase_of(t)
+        if phase in open_phases or k != "done":
+            continue
+        finished[phase] = max(finished.get(phase, ""), t.get("completed_at") or "")
+    for phase in sorted(finished, key=lambda p: (finished[p], p), reverse=True)[: RECENT_PHASES - len(chosen)]:
+        chosen.append(phase)
+    result = []
+    for phase in sorted(chosen):
+        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
+        done, total = in_phase.count("done"), len(in_phase) - in_phase.count("skipped")
+        result.append({
+            "id": as_phase_id(phase),
+            "name": names.get(phase) or None,
+            "done": done,
+            "total": total,
+            "percent": round(100 * done / total),
+        })
+    return result
+
+
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
     status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
@@ -229,10 +259,10 @@ def project_summary(paths):
 
     current_phase = None
     open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
+    names = {p.get("id"): p.get("name") for p in vocab["phases"]}
     if open_phases:
         phase = open_phases[0]
         in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        names = {p.get("id"): p.get("name") for p in vocab["phases"]}
         current_phase = {
             "id": as_phase_id(phase),
             "name": names.get(phase) or None,
@@ -260,17 +290,26 @@ def project_summary(paths):
             if 0 <= age < SUMMARY_DAYS:
                 completions[SUMMARY_DAYS - 1 - age] += 1
 
+    # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
+    needs_you_tasks = [
+        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        for t, k in zip(tasks, kinds)
+        if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
+    ]
+
     return {
         "total": len(tasks),
         "done": done,
         "skipped": skipped,
         "percent": percent,
         "current_phase": current_phase,
+        "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "agents_working": agents_working,
         "needs_you": {
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
         },
+        "needs_you_tasks": needs_you_tasks,
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }
@@ -319,6 +358,17 @@ def cmd_status(args):
         for t in tasks
         if kind_of(vocab, t.get("status")) == "review"
     ]
+    # Blocked or in review in another worktree (T-204): this worktree's copy doesn't say so until the branches merge
+    task_names = {t.get("id"): t.get("name", "") for t in tasks}
+    listed = {i["id"] for i in blocked + in_review}
+    for record in store["waiting"].values():
+        if not isinstance(record, dict) or record.get("worktree") == paths["root"] or record.get("task") in listed:
+            continue
+        item = {"id": record.get("task"), "name": task_names.get(record.get("task"), ""), "branch": record.get("branch")}
+        if kind_of(vocab, record.get("status")) == "review":
+            in_review.append({**item, "since": record.get("at")})
+        else:
+            blocked.append({**item, "waiting_on": record.get("waiting_on"), "questions": record.get("questions") or []})
     nxt, reason = next_task(data, store)
     sizes = sorted(((len(json.dumps(t, ensure_ascii=False)), t.get("id")) for t in tasks), reverse=True)
     result = {
@@ -346,6 +396,7 @@ def cmd_status(args):
         out(to_json(result))
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
+    elsewhere = lambda i: f" [in another worktree, {i['branch'] or 'detached'}]" if "branch" in i else ""
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
     names = result["phase_names"]
     out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
@@ -354,8 +405,8 @@ def cmd_status(args):
         out(f"by label: {pairs(result['by_label'])}")
     for title, items, extra in (
         ("in progress", in_progress, lambda i: f" ({i['by']})" if i["by"] else ""),
-        ("in review", in_review, lambda i: f" (since {i['since']})" if i["since"] else ""),
-        ("blocked", blocked, lambda i: f" (on {i['waiting_on']})" if i["waiting_on"] else ""),
+        ("in review", in_review, lambda i: (f" (since {i['since']})" if i["since"] else "") + elsewhere(i)),
+        ("blocked", blocked, lambda i: (f" (on {i['waiting_on']})" if i["waiting_on"] else "") + elsewhere(i)),
         ("waiting on dependencies", waiting, lambda i: f" (on {', '.join(i['on'])})"),
     ):
         if items:

@@ -1205,6 +1205,98 @@ def cmd_repository(args):
     out(to_json({"repository": url}) if args.json else f"Repository address set: {url}")
 
 
+# ==== logo.py ====
+# `atm logo`: the project's logo for the dashboard, in meta.logo (a path relative to the project root), or else one
+# found in the usual places. atm serve serves it at /p/<id>/logo (docs/multi-project-api.md).
+
+LOGO_TYPES = {
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
+}
+MAX_LOGO_BYTES = 512 * 1024
+# Where a logo usually is, first match wins: logo.svg/logo.png in the root, then .github/logo.*, public/favicon.* and
+# assets/logo.*, each in the order of LOGO_TYPES
+LOGO_CANDIDATES = ["logo.svg", "logo.png"] + [
+    f"{base}{ext}" for base in (".github/logo", "public/favicon", "assets/logo") for ext in LOGO_TYPES
+]
+
+
+def logo_file(root, relative):
+    """(absolute path, content type) of the image at `relative` in the project at `root`. AtmError (exit code 2) if
+    it isn't a supported image type, is outside the project (symbolic links followed), is missing or too large."""
+    if not isinstance(relative, str) or not relative.strip():
+        raise AtmError("no logo path given", 2)
+    content_type = LOGO_TYPES.get(os.path.splitext(relative)[1].lower())
+    if not content_type:
+        raise AtmError(f"{relative}: a logo is an SVG, PNG, WebP or ICO image", 2)
+    real_root = os.path.realpath(root)
+    full = os.path.realpath(os.path.join(real_root, relative))
+    if os.path.commonpath([real_root, full]) != real_root:
+        raise AtmError(f"{relative}: the logo must be inside the project folder", 2)
+    if not os.path.isfile(full):
+        raise AtmError(f"{relative}: no such file", 2)
+    if os.path.getsize(full) > MAX_LOGO_BYTES:
+        raise AtmError(f"{relative}: the logo is larger than {MAX_LOGO_BYTES // 1024} KB", 2)
+    return full, content_type
+
+
+def find_logo(root, meta):
+    """(path relative to root, absolute path, content type, how it was found: "set" or "found") of the project's
+    logo, or None. meta.logo wins when it is set (a logo it names that is unusable means no logo); otherwise the first
+    usable LOGO_CANDIDATES file."""
+    if meta.get("logo"):
+        try:
+            return (meta["logo"], *logo_file(root, meta["logo"]), "set")
+        except AtmError:
+            return None
+    for candidate in LOGO_CANDIDATES:
+        try:
+            return (candidate, *logo_file(root, candidate), "found")
+        except AtmError:
+            continue
+    return None
+
+
+def cmd_logo(args):
+    paths = find_paths(os.getcwd())
+    root = paths["root"]
+    if args.action is None:
+        if args.path is not None:
+            raise AtmError(f"unexpected argument '{args.path}' (atm logo set PATH)", 2)
+        meta = load_tasks(paths).get("meta", {})
+        logo = find_logo(root, meta)
+        if args.json:
+            found = {"logo": logo[0], "source": logo[3]} if logo else {"logo": None, "source": None}
+            out(to_json({**found, "set": meta.get("logo")}))
+        elif logo:
+            out(f"{logo[0]}" + (" (found; set one with `atm logo set <path>`)" if logo[3] == "found" else ""))
+        elif meta.get("logo"):
+            out(f"meta.logo is {meta['logo']}, which isn't a usable logo (missing, too large, or outside the project).")
+        else:
+            out("No logo. Set one with `atm logo set <path>` (SVG, PNG, WebP or ICO, inside the project).")
+        return
+    if args.action == "unset":
+        with locked(paths["dir"]):
+            data = load_tasks(paths)
+            removed = data.get("meta", {}).pop("logo", None)
+            if removed is not None:
+                write_json_atomic(paths["tasks"], data)
+        out(to_json({"logo": None}) if args.json else "Logo unset." if removed else "No logo was set.")
+        return
+    if args.path is None:
+        raise AtmError("atm logo set needs a path", 2)
+    # The path is relative to where atm runs, like every path atm takes; it is kept relative to the project root
+    relative = os.path.relpath(os.path.abspath(args.path), os.path.realpath(root)).replace(os.sep, "/")
+    logo_file(root, relative)
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        data.setdefault("meta", {})["logo"] = relative
+        write_json_atomic(paths["tasks"], data)
+    out(to_json({"logo": relative}) if args.json else f"Logo set: {relative}")
+
+
 # ==== claims.py ====
 # Claims: which agent works on which task, until when (the lease); and `next`.
 #
@@ -1217,15 +1309,26 @@ CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the das
 DEFAULT_LEASE_MINUTES = 30
 
 
+def session_identity(session_id, cwd):
+    """A Claude Code session's identity: "claude:" and 8 characters of its ID; in a linked git worktree, also
+    "@<worktree folder>". Subagents share their parent's session ID, so agents spawned in separate worktrees still get
+    identities of their own. The main worktree keeps the plain form, so its claims and history still match."""
+    identity = "claude:" + str(session_id)[:8]
+    root = project_root(cwd)
+    if main_worktree(root) != root:
+        identity += "@" + os.path.basename(root)
+    return identity
+
+
 def agent_identity(agent=None):
-    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session, else the git
-    user's name (a person in a terminal), else user@host."""
+    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session (per linked
+    worktree, see session_identity), else the git user's name (a person in a terminal), else user@host."""
     if agent:
         return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
-        return "claude:" + os.environ["CLAUDE_CODE_SESSION_ID"][:8]
+        return session_identity(os.environ["CLAUDE_CODE_SESSION_ID"], os.getcwd())
     name = git(["config", "user.name"], project_root(os.getcwd()))
     if name:
         return name
@@ -1257,12 +1360,63 @@ def locked_with_claims(paths):
 
 def read_store(paths):
     """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
-    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); and `hints`,
-    when each hint was last shown (so `done` repeats one at most once a day)."""
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); `waiting`
+    tasks (blocked or sent for review in some worktree, likewise); `resolved` ones (answered, passed, rejected or
+    skipped in another worktree than the one they wait in, to be applied there); and `hints`, when each hint was last
+    shown (so `done` repeats one at most once a day)."""
     data = read_json(claims_store_path(paths))
     data = data if isinstance(data, dict) else {}
-    hints = data.get("hints") if isinstance(data.get("hints"), dict) else {}
-    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}, "hints": hints}
+
+    def section(key):
+        return data.get(key) if isinstance(data.get(key), dict) else {}
+
+    return {
+        "claims": data.get("claims") or {},
+        "completed": data.get("completed") or {},
+        "waiting": section("waiting"),
+        "resolved": section("resolved"),
+        "hints": section("hints"),
+    }
+
+
+def waiting_record(paths, task):
+    """The shared record of a task blocked or sent for review in this worktree (T-204)."""
+    return {
+        "task": task["id"],
+        "status": task.get("status"),
+        "waiting_on": task.get("waiting_on"),
+        "questions": list(task.get("questions") or []),
+        "worktree": paths["root"],
+        "branch": git(["rev-parse", "--abbrev-ref", "HEAD"], paths["root"]),
+        "at": now_iso(),
+    }
+
+
+def apply_resolutions(paths, data, store):
+    """Apply what was decided in another worktree about a task waiting in this one (store["resolved"]): the answer,
+    the passed or rejected review, the skip, as if given here, so this worktree's copy stops waiting too. A task changed
+    here in the meantime is left as it is. Returns the IDs applied."""
+    applied = []
+    for task_id, record in list(store["resolved"].items()):
+        if not isinstance(record, dict) or record.get("worktree") != paths["root"]:
+            continue
+        store["resolved"].pop(task_id)
+        task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+        if task is None:
+            continue
+        try:
+            change_status(
+                task,
+                data,
+                record.get("command"),
+                agent=record.get("by"),
+                reason=record.get("reason"),
+                answers=record.get("answers") or [],
+            )
+            applied.append(task_id)
+        except (AtmError, KeyError):
+            pass
+    return applied
 
 
 def write_store(paths, store):
@@ -1370,7 +1524,7 @@ def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
     Returns (task, reason) where reason explains an empty result."""
-    claims, completed = store["claims"], store["completed"]
+    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
     vocab = vocabulary(data)
     candidates = [
         t
@@ -1379,7 +1533,7 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed)
+    taken = set(claims) | set(completed) | set(waiting)
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
         order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
@@ -1388,11 +1542,14 @@ def next_task(data, store, phase=None, task_type=None):
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
     done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
+    waiting_elsewhere = [t["id"] for t in candidates if t.get("id") in waiting]
     reason = f"{len(candidates)} todo task(s) waiting on dependencies"
     if claimed:
         reason += f" or claimed by other agents ({', '.join(claimed)})"
     if done_elsewhere:
         reason += f"; done in another worktree, not merged yet: {', '.join(done_elsewhere)}"
+    if waiting_elsewhere:
+        reason += f"; blocked or in review in another worktree: {', '.join(waiting_elsewhere)}"
     return None, reason
 
 
@@ -1404,11 +1561,12 @@ def cmd_next(args):
         store = read_store(paths)
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
+        applied = apply_resolutions(paths, data, store)
         task, reason = next_task(data, store, args.phase, args.type)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
-        if expired or (task and args.claim):
+        if expired or applied or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
     report_expired(expired)
@@ -1451,11 +1609,12 @@ def auto_heartbeat(args):
     and never fails, so a tool call is never disturbed."""
     try:
         payload = hook_input()
+        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
         if payload.get("session_id") and not (args.agent or os.environ.get("ATM_AGENT")):
-            agent = "claude:" + str(payload["session_id"])[:8]
+            # The same identity atm commands get in that folder: a subagent in a linked worktree renews its own claims
+            agent = session_identity(payload["session_id"], cwd)
         else:
             agent = agent_identity(args.agent)
-        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
         paths = find_paths(cwd)
         if not paths["tasks_exists"]:
             return
@@ -1519,6 +1678,64 @@ def cmd_heartbeat(args):
         out(to_json(claim))
     else:
         out(f"{task_id}: lease extended to {claim['lease_expires_at']}")
+
+
+def renew_claim(paths, task_id, agent):
+    """Renew `agent`'s live claim on `task_id`. Returns the lease length in minutes; raises AtmError (exit code 4)
+    when the task has no live claim or another agent holds it."""
+    with locked_with_claims(paths):
+        data = load_tasks(paths)
+        store = read_store(paths)
+        claim = store["claims"].get(task_id)
+        try:
+            alive = claim is not None and parse_iso(claim["lease_expires_at"]) > now()
+        except (KeyError, TypeError, ValueError):
+            alive = False
+        if not alive:
+            raise AtmError(f"{task_id} has no live claim", 4)
+        check_holder(store["claims"], task_id, agent, "renew the claim on")
+        claim["lease_expires_at"] = lease_until(data)
+        claim["renewed_at"] = now_iso()
+        write_store(paths, store)
+    return lease_minutes(data)
+
+
+def cmd_run(args):
+    """`atm run <id> -- <command>`: run a long command (a full test suite, a build, a wait on CI) while keeping the
+    claim on <id> alive. The plugin's hook renews claims only when the agent makes a tool call, and an agent waiting
+    for a command makes none, so a wait longer than the lease would hand the task to someone else (T-203). The claim
+    is renewed at the start (so a wrong ID or someone else's claim fails before anything runs) and then three times per
+    lease; the command's output passes through unchanged, and atm exits with its exit code."""
+    if not args.child:
+        raise AtmError("atm run needs a command after --: atm run <id> -- <command> [args...]", 2)
+    if args.every is not None and args.every <= 0:
+        raise AtmError("--every must be more than 0 seconds", 2)
+    agent = agent_identity(args.agent)
+    paths = find_paths(os.getcwd())
+    minutes = renew_claim(paths, args.id, agent)
+    every = args.every if args.every is not None else max(60.0, minutes * 60 / 3)
+    try:
+        child = subprocess.Popen(args.child)
+    except OSError as e:
+        raise AtmError(f"can't run {args.child[0]}: {e.strerror}", 127)
+    # Renewed from this (the main) thread between waits: the lock uses signals, which only work here
+    renewing = True
+    while True:
+        try:
+            code = child.wait(timeout=every)
+            break
+        except subprocess.TimeoutExpired:
+            pass
+        except KeyboardInterrupt:  # the command got the same interrupt; wait for it to end
+            continue
+        if renewing:
+            try:
+                renew_claim(paths, args.id, agent)
+            except Exception as e:  # never stops the command; say so once and stop renewing
+                sys.stderr.write(f"atm run: stopped renewing the claim on {args.id}: {e}\n")
+                renewing = False
+    if code:
+        raise AtmExit(128 - code if code < 0 else code)  # a signal -N ends like a shell's 128+N
 
 
 def cmd_claims(args):
@@ -1738,6 +1955,36 @@ def parse_time(text):
         return None
 
 
+RECENT_PHASES = 4
+
+
+def recent_phases(tasks, kinds, open_phases, names):
+    """Up to four phases for the overview's rings, in phase order: the lowest phases with open work first, then the
+    most recently finished ones (by their last completed_at) to fill up. A phase of only skipped tasks has nothing to
+    show and is left out."""
+    chosen = list(open_phases[:RECENT_PHASES])
+    finished = {}  # finished phase -> its last completion ("" when none is recorded)
+    for t, k in zip(tasks, kinds):
+        phase = phase_of(t)
+        if phase in open_phases or k != "done":
+            continue
+        finished[phase] = max(finished.get(phase, ""), t.get("completed_at") or "")
+    for phase in sorted(finished, key=lambda p: (finished[p], p), reverse=True)[: RECENT_PHASES - len(chosen)]:
+        chosen.append(phase)
+    result = []
+    for phase in sorted(chosen):
+        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
+        done, total = in_phase.count("done"), len(in_phase) - in_phase.count("skipped")
+        result.append({
+            "id": as_phase_id(phase),
+            "name": names.get(phase) or None,
+            "done": done,
+            "total": total,
+            "percent": round(100 * done / total),
+        })
+    return result
+
+
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
     status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
@@ -1752,10 +1999,10 @@ def project_summary(paths):
 
     current_phase = None
     open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
+    names = {p.get("id"): p.get("name") for p in vocab["phases"]}
     if open_phases:
         phase = open_phases[0]
         in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        names = {p.get("id"): p.get("name") for p in vocab["phases"]}
         current_phase = {
             "id": as_phase_id(phase),
             "name": names.get(phase) or None,
@@ -1783,17 +2030,26 @@ def project_summary(paths):
             if 0 <= age < SUMMARY_DAYS:
                 completions[SUMMARY_DAYS - 1 - age] += 1
 
+    # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
+    needs_you_tasks = [
+        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        for t, k in zip(tasks, kinds)
+        if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
+    ]
+
     return {
         "total": len(tasks),
         "done": done,
         "skipped": skipped,
         "percent": percent,
         "current_phase": current_phase,
+        "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "agents_working": agents_working,
         "needs_you": {
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
         },
+        "needs_you_tasks": needs_you_tasks,
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }
@@ -1842,6 +2098,17 @@ def cmd_status(args):
         for t in tasks
         if kind_of(vocab, t.get("status")) == "review"
     ]
+    # Blocked or in review in another worktree (T-204): this worktree's copy doesn't say so until the branches merge
+    task_names = {t.get("id"): t.get("name", "") for t in tasks}
+    listed = {i["id"] for i in blocked + in_review}
+    for record in store["waiting"].values():
+        if not isinstance(record, dict) or record.get("worktree") == paths["root"] or record.get("task") in listed:
+            continue
+        item = {"id": record.get("task"), "name": task_names.get(record.get("task"), ""), "branch": record.get("branch")}
+        if kind_of(vocab, record.get("status")) == "review":
+            in_review.append({**item, "since": record.get("at")})
+        else:
+            blocked.append({**item, "waiting_on": record.get("waiting_on"), "questions": record.get("questions") or []})
     nxt, reason = next_task(data, store)
     sizes = sorted(((len(json.dumps(t, ensure_ascii=False)), t.get("id")) for t in tasks), reverse=True)
     result = {
@@ -1869,6 +2136,7 @@ def cmd_status(args):
         out(to_json(result))
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
+    elsewhere = lambda i: f" [in another worktree, {i['branch'] or 'detached'}]" if "branch" in i else ""
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
     names = result["phase_names"]
     out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
@@ -1877,8 +2145,8 @@ def cmd_status(args):
         out(f"by label: {pairs(result['by_label'])}")
     for title, items, extra in (
         ("in progress", in_progress, lambda i: f" ({i['by']})" if i["by"] else ""),
-        ("in review", in_review, lambda i: f" (since {i['since']})" if i["since"] else ""),
-        ("blocked", blocked, lambda i: f" (on {i['waiting_on']})" if i["waiting_on"] else ""),
+        ("in review", in_review, lambda i: (f" (since {i['since']})" if i["since"] else "") + elsewhere(i)),
+        ("blocked", blocked, lambda i: (f" (on {i['waiting_on']})" if i["waiting_on"] else "") + elsewhere(i)),
         ("waiting on dependencies", waiting, lambda i: f" (on {', '.join(i['on'])})"),
     ):
         if items:
@@ -1898,6 +2166,30 @@ def cmd_status(args):
 # The commands an agent runs on its own claimed task: if that claim just expired, they explain it instead of refusing
 OWN_LEASE_COMMANDS = ("done", "release", "fail", "review", "block")
 
+# Decisions that may be made in any worktree about a task waiting in another (T-204): the command, and the kinds the
+# waiting task must have there
+REMOTE_DECISIONS = {"unblock": ("blocked",), "skip": ("blocked",), "done": ("review",), "reject": ("review",)}
+
+
+def adopt_waiting(task, data, store, paths, command):
+    """When `task` waits in another worktree (blocked or in review there, per the shared store) but not in this one,
+    and `command` decides it: give this copy the waiting state, so the command applies here as it would there. Returns
+    the worktree it waits in (where the decision is applied too, by apply_resolutions), or None."""
+    record = store["waiting"].get(task["id"])
+    if command not in REMOTE_DECISIONS or not isinstance(record, dict) or record.get("worktree") == paths["root"]:
+        return None
+    vocab = vocabulary(data)
+    if kind_of(vocab, task.get("status")) in REMOTE_DECISIONS[command]:
+        return None  # it waits here too: decided here as usual
+    if kind_of(vocab, record.get("status")) not in REMOTE_DECISIONS[command]:
+        return None
+    task["status"] = record["status"]
+    if record.get("waiting_on"):
+        task["waiting_on"] = record["waiting_on"]
+    if record.get("questions"):
+        task["questions"] = list(record["questions"])
+    return record.get("worktree")
+
 
 def cmd_status_change(command):
     def run(args):
@@ -1908,6 +2200,7 @@ def cmd_status_change(command):
             store = read_store(paths)
             claims = store["claims"]
             expired = expire_claims(paths, data, claims)
+            apply_resolutions(paths, data, store)
             task = find_task(data, task_id)
             if command in OWN_LEASE_COMMANDS:
                 own = own_lease_expired(expired, data, task_id, agent, f"atm {command} {task_id}")
@@ -1917,6 +2210,7 @@ def cmd_status_change(command):
                     write_store(paths, store)
                     raise own
             check_holder(claims, task_id, agent, command)
+            waits_in = adopt_waiting(task, data, store, paths, command)
             previous = change_status(
                 task,
                 data,
@@ -1940,6 +2234,24 @@ def cmd_status_change(command):
                 claims.pop(task_id, None)
             if command == "done":
                 store["completed"][task_id] = completion(paths, task_id, agent)
+            # Blocked or in review: recorded for every worktree (T-204); any other change ends the wait
+            if command in ("block", "review"):
+                store["waiting"][task_id] = waiting_record(paths, task)
+            else:
+                store["waiting"].pop(task_id, None)
+                resolution = store["resolved"].pop(task_id, None)
+                if waits_in:
+                    store["resolved"][task_id] = {
+                        "task": task_id,
+                        "command": command,
+                        "answers": list(getattr(args, "answer", None) or []),
+                        "reason": getattr(args, "reason", None),
+                        "by": agent,
+                        "at": now_iso(),
+                        "worktree": waits_in,
+                    }
+                elif resolution and resolution.get("worktree") != paths["root"]:
+                    store["resolved"][task_id] = resolution  # still to be applied where it waits
             unblocked = newly_ready(data, task_id) if command == "done" else []
             write_json_atomic(paths["tasks"], data)
             # The archive hint after done, at most once a day per clone (CLI-5.2), so a loop doesn't repeat it
@@ -3104,6 +3416,12 @@ BUILD_META = re.compile(r'<meta name="atm-dashboard-build" content="([^"]*)"')
 HEAD_BYTES = 16384
 
 
+def page_tags(head):
+    """(version, build ID) from the start of a dashboard page (text), "" for a missing tag."""
+    version, build = VERSION_META.search(head), BUILD_META.search(head)
+    return (version.group(1) if version else "", build.group(1) if build else "")
+
+
 def dashboard_head(p):
     """(version, build ID) of a dashboard file, "" for a missing tag; None if there is no file."""
     try:
@@ -3111,8 +3429,7 @@ def dashboard_head(p):
             head = f.read(HEAD_BYTES)
     except OSError:
         return None
-    version, build = VERSION_META.search(head), BUILD_META.search(head)
-    return (version.group(1) if version else "", build.group(1) if build else "")
+    return page_tags(head)
 
 
 def clean_up_old_dashboard(task_dir):
@@ -3312,7 +3629,12 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
-PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
+PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
+# A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
+LOGO_HEADERS = {
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+}
 
 
 def server_url(port, project=None):
@@ -3422,11 +3744,17 @@ def serve_stop(home):
 
 def outdated(record):
     """True when the server runs an older dashboard than this plugin's: an older version, or the same version but
-    another build. A newer server is left alone, so a session still on an older plugin never downgrades it."""
+    another build of this plugin's own dashboard file (it was rebuilt since the server started). A newer server is
+    left alone, so a session still on an older plugin never downgrades it. Another install of the same version (a
+    development checkout, a worktree, the plugin cache) is left alone too: neither build is newer, and replacing it
+    would make each install restart the server in turn, every open page offering a reload each time."""
     mine, mine_build = dashboard_head(TEMPLATE) or ("", "")
     theirs, theirs_build = str(record.get("version") or ""), str(record.get("build") or "")
     if parse_version(mine) != parse_version(theirs):
         return parse_version(mine) > parse_version(theirs)
+    theirs_root = record.get("plugin_root")
+    if theirs_root and os.path.realpath(str(theirs_root)) != os.path.realpath(PLUGIN_ROOT):
+        return False
     return bool(mine_build) and mine_build != theirs_build
 
 
@@ -3566,17 +3894,29 @@ class Summaries:
         return summary
 
 
+def project_logo(entry):
+    """(absolute path, content type) of a registered project's logo (meta.logo, or one found), or None."""
+    logo = find_logo(entry["path"], project_meta(entry["path"]) or {})
+    return (logo[1], logo[2]) if logo else None
+
+
 def api_projects(registry, summaries):
-    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
-    and the day."""
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
+    logo and the day."""
     entries = registry.entries()
     stamps = [summaries.stamp(e) for e in entries]
     trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps + trees).encode("utf-8")).hexdigest()[:16] + '"'
+    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
+    etag = (
+        '"'
+        + hashlib.sha1(repr([registry.stamp] + stamps + trees + logo_stamps).encode("utf-8")).hexdigest()[:16]
+        + '"'
+    )
 
     def body():
         projects = []
-        for entry, stamp, tree in zip(entries, stamps, trees):
+        for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
             summary = summaries.summary(entry, stamp) if stamp else None
             projects.append(
                 {
@@ -3586,6 +3926,8 @@ def api_projects(registry, summaries):
                     "missing": summary is None,
                     "summary": summary,
                     "worktrees": tree if summary else [],
+                    # Relative to the dashboard, like the project's files; a new one shows as a new ETag
+                    "logo": f"p/{entry.get('id')}/logo" if logo and summary else None,
                 }
             )
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
@@ -3611,13 +3953,15 @@ def api_claims(summaries, entry):
     return body, file_etag(stamp)
 
 
-def api_worktrees(entry):
+def api_worktrees(entry, store):
     """(body, ETag) of a project's worktrees.json: its git worktrees, main first, and for each linked one the tasks
     whose copy there differs from the main worktree's (or that only it has). The dashboard shows them all on one
-    board, each task from the worktree where it got furthest."""
+    board, each task from the worktree where it got furthest. A linked worktree's copy of a task decided in another
+    worktree (answered, reviewed: the claims store's `resolved`, T-204) is left out: it is stale until atm next runs
+    there, and would otherwise outrank the decision."""
     trees = worktrees(entry["path"])
     stamps = [file_stamp(os.path.join(t["path"], TASK_DIR, TASKS_FILE)) for t in trees]
-    etag = '"' + hashlib.sha1(repr([trees, stamps]).encode("utf-8")).hexdigest()[:16] + '"'
+    etag = '"' + hashlib.sha1(repr([trees, stamps, file_stamp(store)]).encode("utf-8")).hexdigest()[:16] + '"'
 
     def tasks_of(tree):
         data = read_json(os.path.join(tree["path"], TASK_DIR, TASKS_FILE))
@@ -3625,6 +3969,9 @@ def api_worktrees(entry):
         return [t for t in tasks or [] if isinstance(t, dict) and isinstance(t.get("id"), str)]
 
     def body():
+        data = read_json(store)
+        resolved = data.get("resolved") if isinstance(data, dict) and isinstance(data.get("resolved"), dict) else {}
+        stale = {(r.get("worktree"), task_id) for task_id, r in resolved.items() if isinstance(r, dict)}
         listed_trees = []
         main = {}
         for tree in trees:
@@ -3632,7 +3979,9 @@ def api_worktrees(entry):
                 main = {t["id"]: t for t in tasks_of(tree)}
                 listed_trees.append(tree)
             else:
-                differing = [t for t in tasks_of(tree) if main.get(t["id"]) != t]
+                differing = [
+                    t for t in tasks_of(tree) if main.get(t["id"]) != t and (tree["path"], t["id"]) not in stale
+                ]
                 listed_trees.append({**tree, "tasks": differing})
         return to_json({"generated_at": now_iso(), "worktrees": listed_trees}).encode("utf-8")
 
@@ -3648,21 +3997,24 @@ def cmd_serve_child(args):
     record_path = os.path.join(home, SERVER_RECORD)
     with open(TEMPLATE, "rb") as f:
         page = f.read()
-    version, build = dashboard_head(TEMPLATE)
+    # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
+    # report another build than the page has, and the page would offer a reload forever
+    version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
     registry = Registry(home)
     summaries = Summaries()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
 
-        def send(self, status, body=b"", content_type="application/json", etag=None):
+        def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
             if body or status == 200:
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            self.send_header("Cache-Control", "no-store")
+            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+                self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
                 self.wfile.write(body)
@@ -3670,12 +4022,12 @@ def cmd_serve_child(args):
         def send_error_json(self, status, message):
             self.send(status, to_json({"error": message}).encode("utf-8"))
 
-        def send_conditional(self, body_fn, etag, content_type="application/json"):
+        def send_conditional(self, body_fn, etag, content_type="application/json", headers=None):
             if self.headers.get("If-None-Match") == etag:
                 # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
-                self.send(304, etag=etag)
+                self.send(304, etag=etag, headers=headers)
                 return
-            self.send(200, body_fn(), content_type, etag)
+            self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
             port_now = self.server.server_address[1]
@@ -3710,9 +4062,12 @@ def cmd_serve_child(args):
             if not os.path.isfile(task_file(entry, TASKS_FILE)):
                 self.send_error_json(404, "not found")
                 return
+            if name == "logo":
+                self.serve_logo(entry)
+                return
             computed = None
             if name == "worktrees.json":
-                computed = api_worktrees(entry)
+                computed = api_worktrees(entry, summaries.store(entry))
             elif name == "claims.json":
                 computed = api_claims(summaries, entry)
             if computed:
@@ -3729,6 +4084,21 @@ def cmd_serve_child(args):
                     return f.read()
 
             self.send_conditional(read, file_etag(stamp))
+
+        def serve_logo(self, entry):
+            """The project's logo (logo.find_logo checks it is inside the project and small enough). The browser
+            may keep it, asking again each time (no-cache) and getting a 304 while it is unchanged."""
+            logo = project_logo(entry)
+            stamp = file_stamp(logo[0]) if logo else None
+            if stamp is None:
+                self.send_error_json(404, "no logo")
+                return
+
+            def read():
+                with open(logo[0], "rb") as f:
+                    return f.read()
+
+            self.send_conditional(read, file_etag(stamp), logo[1], {**LOGO_HEADERS, "Cache-Control": "no-cache"})
 
         def not_allowed(self):
             self.send_error_json(405, "only GET and HEAD")
@@ -3840,6 +4210,9 @@ commands:
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
+  run <id> [--every SECONDS] -- <command> [args...]
+                 run a long command (tests, a build, a wait on CI) while keeping your claim on <id> alive; the
+                 hook renews claims only between tool calls. Exits with the command's exit code
   init [--meta-file F]
                  give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
@@ -3851,6 +4224,9 @@ commands:
   repository [set URL]
                  print or set the repository's web address (meta.repository), for commit and PR links; a git
                  remote is turned into one; atm init fills it from origin
+  logo [set PATH | unset]
+                 print, set or unset the project's logo for the dashboard (meta.logo: an SVG, PNG, WebP or ICO
+                 file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -4088,6 +4464,16 @@ def build_parser():
     )
     agent_option(heartbeat)
 
+    run = command("run", cmd_run, "run a long command while keeping your claim on a task alive")
+    run.add_argument("id", help="the task ID")
+    run.add_argument(
+        "--every",
+        type=float,
+        metavar="SECONDS",
+        help="renew this often (default: three times per lease, at least once a minute)",
+    )
+    agent_option(run)
+
     init = command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
     init.add_argument(
         "--meta-file",
@@ -4101,6 +4487,9 @@ def build_parser():
     repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
     repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
     repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
+    logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
+    logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
+    logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")
     phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
     phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
     phases.add_argument("number", nargs="?", help="the phase number")
@@ -4130,6 +4519,11 @@ def main(argv):
         sys.stdout.write(USAGE)
         return 0
     parser, commands = build_parser()
+    # `atm run <id> -- <command>`: what follows -- is the command to run, never atm's own options
+    child = None
+    if argv[0] == "run" and "--" in argv:
+        split = argv.index("--")
+        argv, child = argv[:split], argv[split + 1 :]
     as_json = "--json" in argv
     if argv[0] not in commands:
         if as_json:
@@ -4139,6 +4533,7 @@ def main(argv):
         return 2
     try:
         args, extra = parser.parse_known_args(argv)
+        args.child = child
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")

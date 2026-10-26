@@ -34,7 +34,8 @@ from .core import (
     write_json_atomic,
 )
 from .claims import claims_store_path
-from .migrate import TEMPLATE, dashboard_head, describe_migration, migrate
+from .logo import find_logo
+from .migrate import HEAD_BYTES, TEMPLATE, dashboard_head, describe_migration, migrate, page_tags
 from .paths import find_paths
 from .query import project_summary
 from .registry import (
@@ -53,7 +54,12 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
-PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
+PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
+# A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
+LOGO_HEADERS = {
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+}
 
 
 def server_url(port, project=None):
@@ -163,11 +169,17 @@ def serve_stop(home):
 
 def outdated(record):
     """True when the server runs an older dashboard than this plugin's: an older version, or the same version but
-    another build. A newer server is left alone, so a session still on an older plugin never downgrades it."""
+    another build of this plugin's own dashboard file (it was rebuilt since the server started). A newer server is
+    left alone, so a session still on an older plugin never downgrades it. Another install of the same version (a
+    development checkout, a worktree, the plugin cache) is left alone too: neither build is newer, and replacing it
+    would make each install restart the server in turn, every open page offering a reload each time."""
     mine, mine_build = dashboard_head(TEMPLATE) or ("", "")
     theirs, theirs_build = str(record.get("version") or ""), str(record.get("build") or "")
     if parse_version(mine) != parse_version(theirs):
         return parse_version(mine) > parse_version(theirs)
+    theirs_root = record.get("plugin_root")
+    if theirs_root and os.path.realpath(str(theirs_root)) != os.path.realpath(PLUGIN_ROOT):
+        return False
     return bool(mine_build) and mine_build != theirs_build
 
 
@@ -307,17 +319,29 @@ class Summaries:
         return summary
 
 
+def project_logo(entry):
+    """(absolute path, content type) of a registered project's logo (meta.logo, or one found), or None."""
+    logo = find_logo(entry["path"], project_meta(entry["path"]) or {})
+    return (logo[1], logo[2]) if logo else None
+
+
 def api_projects(registry, summaries):
-    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
-    and the day."""
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
+    logo and the day."""
     entries = registry.entries()
     stamps = [summaries.stamp(e) for e in entries]
     trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps + trees).encode("utf-8")).hexdigest()[:16] + '"'
+    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
+    etag = (
+        '"'
+        + hashlib.sha1(repr([registry.stamp] + stamps + trees + logo_stamps).encode("utf-8")).hexdigest()[:16]
+        + '"'
+    )
 
     def body():
         projects = []
-        for entry, stamp, tree in zip(entries, stamps, trees):
+        for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
             summary = summaries.summary(entry, stamp) if stamp else None
             projects.append(
                 {
@@ -327,6 +351,8 @@ def api_projects(registry, summaries):
                     "missing": summary is None,
                     "summary": summary,
                     "worktrees": tree if summary else [],
+                    # Relative to the dashboard, like the project's files; a new one shows as a new ETag
+                    "logo": f"p/{entry.get('id')}/logo" if logo and summary else None,
                 }
             )
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
@@ -352,13 +378,15 @@ def api_claims(summaries, entry):
     return body, file_etag(stamp)
 
 
-def api_worktrees(entry):
+def api_worktrees(entry, store):
     """(body, ETag) of a project's worktrees.json: its git worktrees, main first, and for each linked one the tasks
     whose copy there differs from the main worktree's (or that only it has). The dashboard shows them all on one
-    board, each task from the worktree where it got furthest."""
+    board, each task from the worktree where it got furthest. A linked worktree's copy of a task decided in another
+    worktree (answered, reviewed: the claims store's `resolved`, T-204) is left out: it is stale until atm next runs
+    there, and would otherwise outrank the decision."""
     trees = worktrees(entry["path"])
     stamps = [file_stamp(os.path.join(t["path"], TASK_DIR, TASKS_FILE)) for t in trees]
-    etag = '"' + hashlib.sha1(repr([trees, stamps]).encode("utf-8")).hexdigest()[:16] + '"'
+    etag = '"' + hashlib.sha1(repr([trees, stamps, file_stamp(store)]).encode("utf-8")).hexdigest()[:16] + '"'
 
     def tasks_of(tree):
         data = read_json(os.path.join(tree["path"], TASK_DIR, TASKS_FILE))
@@ -366,6 +394,9 @@ def api_worktrees(entry):
         return [t for t in tasks or [] if isinstance(t, dict) and isinstance(t.get("id"), str)]
 
     def body():
+        data = read_json(store)
+        resolved = data.get("resolved") if isinstance(data, dict) and isinstance(data.get("resolved"), dict) else {}
+        stale = {(r.get("worktree"), task_id) for task_id, r in resolved.items() if isinstance(r, dict)}
         listed_trees = []
         main = {}
         for tree in trees:
@@ -373,7 +404,9 @@ def api_worktrees(entry):
                 main = {t["id"]: t for t in tasks_of(tree)}
                 listed_trees.append(tree)
             else:
-                differing = [t for t in tasks_of(tree) if main.get(t["id"]) != t]
+                differing = [
+                    t for t in tasks_of(tree) if main.get(t["id"]) != t and (tree["path"], t["id"]) not in stale
+                ]
                 listed_trees.append({**tree, "tasks": differing})
         return to_json({"generated_at": now_iso(), "worktrees": listed_trees}).encode("utf-8")
 
@@ -389,21 +422,24 @@ def cmd_serve_child(args):
     record_path = os.path.join(home, SERVER_RECORD)
     with open(TEMPLATE, "rb") as f:
         page = f.read()
-    version, build = dashboard_head(TEMPLATE)
+    # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
+    # report another build than the page has, and the page would offer a reload forever
+    version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
     registry = Registry(home)
     summaries = Summaries()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
 
-        def send(self, status, body=b"", content_type="application/json", etag=None):
+        def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
             if body or status == 200:
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            self.send_header("Cache-Control", "no-store")
+            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+                self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
                 self.wfile.write(body)
@@ -411,12 +447,12 @@ def cmd_serve_child(args):
         def send_error_json(self, status, message):
             self.send(status, to_json({"error": message}).encode("utf-8"))
 
-        def send_conditional(self, body_fn, etag, content_type="application/json"):
+        def send_conditional(self, body_fn, etag, content_type="application/json", headers=None):
             if self.headers.get("If-None-Match") == etag:
                 # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
-                self.send(304, etag=etag)
+                self.send(304, etag=etag, headers=headers)
                 return
-            self.send(200, body_fn(), content_type, etag)
+            self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
             port_now = self.server.server_address[1]
@@ -451,9 +487,12 @@ def cmd_serve_child(args):
             if not os.path.isfile(task_file(entry, TASKS_FILE)):
                 self.send_error_json(404, "not found")
                 return
+            if name == "logo":
+                self.serve_logo(entry)
+                return
             computed = None
             if name == "worktrees.json":
-                computed = api_worktrees(entry)
+                computed = api_worktrees(entry, summaries.store(entry))
             elif name == "claims.json":
                 computed = api_claims(summaries, entry)
             if computed:
@@ -470,6 +509,21 @@ def cmd_serve_child(args):
                     return f.read()
 
             self.send_conditional(read, file_etag(stamp))
+
+        def serve_logo(self, entry):
+            """The project's logo (logo.find_logo checks it is inside the project and small enough). The browser
+            may keep it, asking again each time (no-cache) and getting a 304 while it is unchanged."""
+            logo = project_logo(entry)
+            stamp = file_stamp(logo[0]) if logo else None
+            if stamp is None:
+                self.send_error_json(404, "no logo")
+                return
+
+            def read():
+                with open(logo[0], "rb") as f:
+                    return f.read()
+
+            self.send_conditional(read, file_etag(stamp), logo[1], {**LOGO_HEADERS, "Cache-Control": "no-cache"})
 
         def not_allowed(self):
             self.send_error_json(405, "only GET and HEAD")

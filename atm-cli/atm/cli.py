@@ -7,13 +7,14 @@ usage line; with --json, every error is {"error": "...", "code": N} on stderr, w
 import argparse
 import sys
 
-from .claims import cmd_claims, cmd_heartbeat, cmd_next
+from .claims import cmd_claims, cmd_heartbeat, cmd_next, cmd_run
 from .core import AtmError, AtmExit, out, plugin_version, to_json
 from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .phases import cmd_phases
+from .logo import cmd_logo
 from .registry import cmd_projects
 from .repository import cmd_repository
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
@@ -84,6 +85,9 @@ commands:
                  the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
                  lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
+  run <id> [--every SECONDS] -- <command> [args...]
+                 run a long command (tests, a build, a wait on CI) while keeping your claim on <id> alive; the
+                 hook renews claims only between tool calls. Exits with the command's exit code
   init [--meta-file F]
                  give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
                  clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
@@ -95,6 +99,9 @@ commands:
   repository [set URL]
                  print or set the repository's web address (meta.repository), for commit and PR links; a git
                  remote is turned into one; atm init fills it from origin
+  logo [set PATH | unset]
+                 print, set or unset the project's logo for the dashboard (meta.logo: an SVG, PNG, WebP or ICO
+                 file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -332,6 +339,16 @@ def build_parser():
     )
     agent_option(heartbeat)
 
+    run = command("run", cmd_run, "run a long command while keeping your claim on a task alive")
+    run.add_argument("id", help="the task ID")
+    run.add_argument(
+        "--every",
+        type=float,
+        metavar="SECONDS",
+        help="renew this often (default: three times per lease, at least once a minute)",
+    )
+    agent_option(run)
+
     init = command("init", cmd_init, "give tasks.json a meta.id, and register the tasks.json merge driver")
     init.add_argument(
         "--meta-file",
@@ -345,6 +362,9 @@ def build_parser():
     repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
     repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
     repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
+    logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
+    logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
+    logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")
     phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
     phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
     phases.add_argument("number", nargs="?", help="the phase number")
@@ -374,6 +394,11 @@ def main(argv):
         sys.stdout.write(USAGE)
         return 0
     parser, commands = build_parser()
+    # `atm run <id> -- <command>`: what follows -- is the command to run, never atm's own options
+    child = None
+    if argv[0] == "run" and "--" in argv:
+        split = argv.index("--")
+        argv, child = argv[:split], argv[split + 1 :]
     as_json = "--json" in argv
     if argv[0] not in commands:
         if as_json:
@@ -383,6 +408,7 @@ def main(argv):
         return 2
     try:
         args, extra = parser.parse_known_args(argv)
+        args.child = child
         if extra:
             # Reported by the command's own parser, so the usage line is the command's
             commands[argv[0]].error(f"unrecognized arguments: {' '.join(extra)}")

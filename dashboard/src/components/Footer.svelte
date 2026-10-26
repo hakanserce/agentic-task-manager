@@ -2,6 +2,7 @@
   import { archiveNotice } from '../lib/archive';
   import { copyright, pluginInfo } from '../lib/plugin-info';
   import { dashboard } from '../lib/state.svelte';
+  import Logo from './Logo.svelte';
 
   // tasks.json has grown past the archive threshold (D-5.4); agents act on the same hint from atm
   const notice = $derived(
@@ -10,7 +11,12 @@
 </script>
 
 <footer class="site-footer" id="site-footer">
-  <span class="footer-copyright">{copyright(pluginInfo)}</span>
+  <span class="footer-start">
+    <span class="footer-brand" id="footer-brand"
+      ><Logo size={16} id="footer-logo" />{pluginInfo.fullName} ({pluginInfo.name})</span
+    >
+    <span class="footer-copyright">{copyright(pluginInfo)}</span>
+  </span>
   {#if notice}<span class="archive-notice" id="archive-notice">{notice}</span>{/if}
   <nav class="footer-links" aria-label="About this dashboard">
     <button class="footer-link" id="footer-version" title="What's new" onclick={() => dashboard.openWhatsNew()}

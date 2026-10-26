@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
-import { blockSummary, blockWait, latestNote, needingUser, reviewSummary, reviewWait } from '../../src/lib/waiting';
+import {
+  blockSummary,
+  blockWait,
+  latestNote,
+  needingUser,
+  needsYouItems,
+  reviewSummary,
+  reviewWait,
+} from '../../src/lib/waiting';
 
 const M = 60_000;
 const T0 = Date.parse('2026-04-01T08:00:00Z');
@@ -84,6 +92,18 @@ describe('needingUser', () => {
       task('todo', { id: 'E', waiting_on: 'user' }),
     ];
     expect(needingUser(tasks).map((t) => t.id)).toEqual(['A', 'B']);
+  });
+
+  it('lists them for the chips with why, as atm serve does', () => {
+    const tasks = [
+      task('in_review', { id: 'A', name: 'Alpha' }),
+      task('blocked', { id: 'B', name: 'Beta', waiting_on: 'user' }),
+      task('todo', { id: 'E', name: 'Eps' }),
+    ];
+    expect(needsYouItems(tasks)).toEqual([
+      { id: 'A', name: 'Alpha', reason: 'review' },
+      { id: 'B', name: 'Beta', reason: 'blocked' },
+    ]);
   });
 });
 

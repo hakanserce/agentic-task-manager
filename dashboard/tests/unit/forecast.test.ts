@@ -127,7 +127,7 @@ describe('forecastPhases', () => {
 
 describe('activePhases', () => {
   const NOW = Date.parse('2026-04-20T12:00:00Z');
-  const DAY = 86_400_000;
+  const HOUR = 3_600_000;
   const phase = (n: number, state: PhaseForecast['state'], completedAt?: number): PhaseForecast => ({
     phase: n,
     total: 2,
@@ -139,22 +139,37 @@ describe('activePhases', () => {
     state,
     ...(completedAt === undefined ? {} : { completedAt }),
   });
-  const phases = [
-    phase(0, 'done', NOW - 30 * DAY),
-    phase(1, 'done', NOW - 3 * DAY),
-    phase(2, 'done'),
-    phase(3, 'in_progress'),
-    phase(4, 'not_started'),
-  ];
+  const ids = (phases: PhaseForecast[]) => activePhases(phases).map((p) => p.phase);
 
-  it('keeps unfinished phases and those finished within the last N days (7 by default)', () => {
-    expect(activePhases(phases, NOW).map((p) => p.phase)).toEqual([1, 3, 4]);
-    expect(activePhases(phases, NOW, 2).map((p) => p.phase)).toEqual([3, 4]);
-    expect(activePhases(phases, NOW, 31).map((p) => p.phase)).toEqual([0, 1, 3, 4]);
+  it('keeps every unfinished phase and only the one that finished last, however recent the others', () => {
+    // A fast project: three phases finished within a few hours
+    const phases = [
+      phase(0, 'done', NOW - 5 * HOUR),
+      phase(1, 'done', NOW - 1 * HOUR),
+      phase(2, 'done', NOW - 3 * HOUR),
+      phase(3, 'in_progress'),
+      phase(4, 'not_started'),
+    ];
+    expect(ids(phases)).toEqual([1, 3, 4]);
   });
 
-  it('a finished phase without completion times is not active', () => {
-    expect(activePhases([phase(2, 'done')], NOW)).toEqual([]);
+  it('on a tie the higher phase; without any completion times the highest finished phase', () => {
+    expect(ids([phase(0, 'done', NOW), phase(1, 'done', NOW), phase(2, 'in_progress')])).toEqual([1, 2]);
+    expect(ids([phase(0, 'done'), phase(1, 'done'), phase(2, 'in_progress')])).toEqual([1, 2]);
+    // A phase with completion times beats one without
+    expect(ids([phase(0, 'done', NOW - HOUR), phase(1, 'done'), phase(2, 'not_started')])).toEqual([0, 2]);
+  });
+
+  it('a phase of only skipped tasks counts as finished', () => {
+    const skippedOnly: PhaseForecast = { ...phase(1, 'done'), total: 0, done: 0, skipped: 2 };
+    expect(ids([phase(0, 'done', NOW - HOUR), skippedOnly, phase(2, 'in_progress')])).toEqual([0, 2]);
+    expect(ids([skippedOnly, phase(2, 'in_progress')])).toEqual([1, 2]);
+  });
+
+  it('nothing finished: every phase; nothing unfinished: just the last one', () => {
+    expect(ids([phase(0, 'in_progress'), phase(1, 'not_started')])).toEqual([0, 1]);
+    expect(ids([phase(0, 'done', NOW - HOUR), phase(1, 'done', NOW)])).toEqual([1]);
+    expect(ids([])).toEqual([]);
   });
 });
 

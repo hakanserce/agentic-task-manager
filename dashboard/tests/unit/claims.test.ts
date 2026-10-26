@@ -61,6 +61,8 @@ describe('loadClaims', () => {
 describe('labels', () => {
   it('shortAgent drops the worktree path of a user@host identity', () => {
     expect(shortAgent('claude:e5ea9db0')).toBe('claude:e5ea9db0');
+    // A session's agent in a linked worktree (T-202) keeps its worktree folder: that's what tells it apart
+    expect(shortAgent('claude:e5ea9db0@agent-a74a')).toBe('claude:e5ea9db0@agent-a74a');
     expect(shortAgent('hakan@mac.local:/Users/hakan/proj')).toBe('hakan@mac.local');
     expect(shortAgent('ci-runner')).toBe('ci-runner');
   });

@@ -6,6 +6,7 @@
   import type { ProjectEntry } from '../lib/load';
   import { dashboard } from '../lib/state.svelte';
   import Icon from './Icon.svelte';
+  import ProjectLogo from './ProjectLogo.svelte';
 
   const OVERVIEW = '';
 
@@ -147,6 +148,7 @@
             onkeydown={() => {}}
             onmouseenter={() => !project.missing && (active = project.id)}
           >
+            <ProjectLogo {project} size={16} />
             <span class="project-option-name">{project.name}</span>
             {#if project.missing}
               <span class="project-option-note">not found</span>

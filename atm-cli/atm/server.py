@@ -378,13 +378,15 @@ def api_claims(summaries, entry):
     return body, file_etag(stamp)
 
 
-def api_worktrees(entry):
+def api_worktrees(entry, store):
     """(body, ETag) of a project's worktrees.json: its git worktrees, main first, and for each linked one the tasks
     whose copy there differs from the main worktree's (or that only it has). The dashboard shows them all on one
-    board, each task from the worktree where it got furthest."""
+    board, each task from the worktree where it got furthest. A linked worktree's copy of a task decided in another
+    worktree (answered, reviewed: the claims store's `resolved`, T-204) is left out: it is stale until atm next runs
+    there, and would otherwise outrank the decision."""
     trees = worktrees(entry["path"])
     stamps = [file_stamp(os.path.join(t["path"], TASK_DIR, TASKS_FILE)) for t in trees]
-    etag = '"' + hashlib.sha1(repr([trees, stamps]).encode("utf-8")).hexdigest()[:16] + '"'
+    etag = '"' + hashlib.sha1(repr([trees, stamps, file_stamp(store)]).encode("utf-8")).hexdigest()[:16] + '"'
 
     def tasks_of(tree):
         data = read_json(os.path.join(tree["path"], TASK_DIR, TASKS_FILE))
@@ -392,6 +394,9 @@ def api_worktrees(entry):
         return [t for t in tasks or [] if isinstance(t, dict) and isinstance(t.get("id"), str)]
 
     def body():
+        data = read_json(store)
+        resolved = data.get("resolved") if isinstance(data, dict) and isinstance(data.get("resolved"), dict) else {}
+        stale = {(r.get("worktree"), task_id) for task_id, r in resolved.items() if isinstance(r, dict)}
         listed_trees = []
         main = {}
         for tree in trees:
@@ -399,7 +404,9 @@ def api_worktrees(entry):
                 main = {t["id"]: t for t in tasks_of(tree)}
                 listed_trees.append(tree)
             else:
-                differing = [t for t in tasks_of(tree) if main.get(t["id"]) != t]
+                differing = [
+                    t for t in tasks_of(tree) if main.get(t["id"]) != t and (tree["path"], t["id"]) not in stale
+                ]
                 listed_trees.append({**tree, "tasks": differing})
         return to_json({"generated_at": now_iso(), "worktrees": listed_trees}).encode("utf-8")
 
@@ -485,7 +492,7 @@ def cmd_serve_child(args):
                 return
             computed = None
             if name == "worktrees.json":
-                computed = api_worktrees(entry)
+                computed = api_worktrees(entry, summaries.store(entry))
             elif name == "claims.json":
                 computed = api_claims(summaries, entry)
             if computed:

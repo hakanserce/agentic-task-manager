@@ -68,8 +68,10 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
   `.git/worktrees/*/gitdir` and `HEAD`). A linked worktree whose folder is gone is left out. `branch` is the checked-out
   branch, the short SHA of a detached HEAD, or `null`. Outside git the list is empty.
 - Each linked worktree lists the tasks of its own `tasks.json` that differ from the main worktree's copy, or that only
-  it has; the main worktree's tasks are `tasks.json` itself.
-- The ETag changes when a worktree is added or removed, switches branch, or its `tasks.json` changes.
+  it has; the main worktree's tasks are `tasks.json` itself. A task blocked or in review there but already decided in
+  another worktree (the claims store's `resolved`) is left out: that copy is stale until atm runs there next.
+- The ETag changes when a worktree is added or removed, switches branch, its `tasks.json` changes, or the claims
+  store does.
 - The dashboard shows all of them on one board: each task from the worktree where it got furthest (by status kind:
   todo, blocked, active, review, then done or skipped; the main worktree's copy on a tie), with that worktree's branch
   on its card.

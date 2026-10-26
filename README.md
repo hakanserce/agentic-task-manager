@@ -539,9 +539,10 @@ Merge each branch back as usual (or open a PR per branch).
 - **Claims.** `atm next --claim` picks the next task and claims it in one step. Claims record the agent (each Claude
   Code session has its own identity, and so does each worktree a session's subagents work in, e.g.
   `claude:e5ea9db0@agent-2`), branch and worktree. They are stored in the clone's `.git` directory, so agents
-  in different worktrees of the clone see each other's claims straight away. A task finished in one worktree isn't
-  handed out again in another before the branches merge. The dashboard shows every worktree's tasks and claims on
-  the project's board, before anything merges.
+  in different worktrees of the clone see each other's claims straight away. A task finished, blocked or sent for
+  review in one worktree isn't handed out again in another before the branches merge, and a block or a review can be
+  answered from any worktree: the one where the task waits picks the answer up with its next atm command. The
+  dashboard shows every worktree's tasks and claims on the project's board, before anything merges.
 - **Leases.** A claim lasts 30 minutes (`"lease_minutes"` in `tasks.json`'s `meta` changes the length) and the
   plugin's hook renews it while the agent works. A long command (a full test suite, a build) runs as
   `atm run <id> -- <command>`, which keeps the claim alive while it runs. If an agent crashes, its task goes back to

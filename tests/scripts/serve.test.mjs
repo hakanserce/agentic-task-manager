@@ -420,6 +420,18 @@ describe('serve', () => {
     );
     const mainTasks = await (await fetch(`${base}/p/abcd1234/tasks.json`)).json();
     assert.equal(mainTasks.tasks[0].status, 'todo');
+
+    // T-1 is blocked in the linked worktree and answered in the main one (T-204): the linked worktree's blocked copy
+    // is stale until atm runs there, so it isn't listed (it would outrank the answer on the board)
+    const block = ['block', 'T-1', '--agent', 'claude:tree', '--on', 'user', '--question', 'Which?'];
+    assert.equal(atm(block, linked).code, 0);
+    const blocked = (await (await fetch(`${base}/p/abcd1234/worktrees.json`)).json()).worktrees[1].tasks;
+    assert.deepEqual(
+      blocked.map((t) => [t.id, t.status]),
+      [['T-1', 'blocked']],
+    );
+    assert.equal(atm(['unblock', 'T-1', '--answer', 'This one'], root).code, 0);
+    assert.deepEqual((await (await fetch(`${base}/p/abcd1234/worktrees.json`)).json()).worktrees[1].tasks, []);
     atm(['serve', 'stop'], root);
   });
 

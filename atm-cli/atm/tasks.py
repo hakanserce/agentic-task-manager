@@ -4,6 +4,7 @@ import os
 
 from .claims import (
     agent_identity,
+    apply_resolutions,
     check_holder,
     completion,
     expire_claims,
@@ -12,17 +13,42 @@ from .claims import (
     own_lease_expired,
     read_store,
     report_expired,
+    waiting_record,
     write_store,
 )
 from .core import now_iso, out, to_json, write_json_atomic
 from .lock import locked
-from .model import add_note, archive_hint, change_status, find_task, load_tasks, touch
+from .model import add_note, archive_hint, change_status, find_task, kind_of, load_tasks, touch, vocabulary
 from .paths import find_paths
 from .query import describe_task, ready_tasks
 
 
 # The commands an agent runs on its own claimed task: if that claim just expired, they explain it instead of refusing
 OWN_LEASE_COMMANDS = ("done", "release", "fail", "review", "block")
+
+# Decisions that may be made in any worktree about a task waiting in another (T-204): the command, and the kinds the
+# waiting task must have there
+REMOTE_DECISIONS = {"unblock": ("blocked",), "skip": ("blocked",), "done": ("review",), "reject": ("review",)}
+
+
+def adopt_waiting(task, data, store, paths, command):
+    """When `task` waits in another worktree (blocked or in review there, per the shared store) but not in this one,
+    and `command` decides it: give this copy the waiting state, so the command applies here as it would there. Returns
+    the worktree it waits in (where the decision is applied too, by apply_resolutions), or None."""
+    record = store["waiting"].get(task["id"])
+    if command not in REMOTE_DECISIONS or not isinstance(record, dict) or record.get("worktree") == paths["root"]:
+        return None
+    vocab = vocabulary(data)
+    if kind_of(vocab, task.get("status")) in REMOTE_DECISIONS[command]:
+        return None  # it waits here too: decided here as usual
+    if kind_of(vocab, record.get("status")) not in REMOTE_DECISIONS[command]:
+        return None
+    task["status"] = record["status"]
+    if record.get("waiting_on"):
+        task["waiting_on"] = record["waiting_on"]
+    if record.get("questions"):
+        task["questions"] = list(record["questions"])
+    return record.get("worktree")
 
 
 def cmd_status_change(command):
@@ -34,6 +60,7 @@ def cmd_status_change(command):
             store = read_store(paths)
             claims = store["claims"]
             expired = expire_claims(paths, data, claims)
+            apply_resolutions(paths, data, store)
             task = find_task(data, task_id)
             if command in OWN_LEASE_COMMANDS:
                 own = own_lease_expired(expired, data, task_id, agent, f"atm {command} {task_id}")
@@ -43,6 +70,7 @@ def cmd_status_change(command):
                     write_store(paths, store)
                     raise own
             check_holder(claims, task_id, agent, command)
+            waits_in = adopt_waiting(task, data, store, paths, command)
             previous = change_status(
                 task,
                 data,
@@ -66,6 +94,24 @@ def cmd_status_change(command):
                 claims.pop(task_id, None)
             if command == "done":
                 store["completed"][task_id] = completion(paths, task_id, agent)
+            # Blocked or in review: recorded for every worktree (T-204); any other change ends the wait
+            if command in ("block", "review"):
+                store["waiting"][task_id] = waiting_record(paths, task)
+            else:
+                store["waiting"].pop(task_id, None)
+                resolution = store["resolved"].pop(task_id, None)
+                if waits_in:
+                    store["resolved"][task_id] = {
+                        "task": task_id,
+                        "command": command,
+                        "answers": list(getattr(args, "answer", None) or []),
+                        "reason": getattr(args, "reason", None),
+                        "by": agent,
+                        "at": now_iso(),
+                        "worktree": waits_in,
+                    }
+                elif resolution and resolution.get("worktree") != paths["root"]:
+                    store["resolved"][task_id] = resolution  # still to be applied where it waits
             unblocked = newly_ready(data, task_id) if command == "done" else []
             write_json_atomic(paths["tasks"], data)
             # The archive hint after done, at most once a day per clone (CLI-5.2), so a loop doesn't repeat it

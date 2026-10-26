@@ -269,6 +269,62 @@ describe('claims', () => {
     }
   });
 
+  test('a task blocked or in review in one worktree waits in all of them, and is decided from any (T-204)', () => {
+    const root = repo();
+    const wt = path.join(tempDir(), 'wt2');
+    const store = () => JSON.parse(fs.readFileSync(path.join(root, '.git/atm/claims.json'), 'utf8'));
+    const notes = (dir, id) => (statusOf(dir, id).notes || []).map((n) => [n.kind, n.text]);
+    try {
+      git(['worktree', 'add', '-q', '-b', 'agent-2', wt], root);
+      // alice blocks T-001 in the main worktree; her claim is released, but the task isn't handed out elsewhere
+      runAtm(['start', 'T-001'], root, as('alice'));
+      const block = ['block', 'T-001', '--on', 'user', '--question', 'Which provider?'];
+      assert.equal(runAtm(block, root, as('alice', 1)).code, 0);
+      assert.deepEqual(
+        [store().waiting['T-001'].status, store().waiting['T-001'].questions, store().waiting['T-001'].branch],
+        ['blocked', ['Which provider?'], 'main'],
+      );
+      assert.equal(JSON.parse(runAtm(['next', '--json'], wt, as('bob', 2)).stdout).task.id, 'T-002');
+      runAtm(['next', '--claim'], wt, as('bob', 2));
+      const none = runAtm(['next'], wt, as('bob', 3));
+      assert.equal(none.code, 3);
+      assert.match(none.stdout, /blocked or in review in another worktree: T-001/);
+      // atm status there lists it as blocked, in the other worktree
+      assert.match(
+        runAtm(['status'], wt, as('bob', 3)).stdout,
+        /blocked: T-001 T-001 \(on user\) \[in another worktree, main\]/,
+      );
+
+      // The user answers in the other worktree: the answer counts there at once ...
+      assert.equal(statusOf(wt, 'T-001').status, 'todo');
+      const answer = runAtm(['unblock', 'T-001', '--answer', 'Postmark'], wt, as('carol', 4));
+      assert.equal(answer.code, 0, answer.stderr);
+      assert.deepEqual(notes(wt, 'T-001'), [['answer', 'Which provider? → Postmark']]);
+      assert.equal(store().waiting['T-001'], undefined);
+      assert.equal(store().resolved['T-001'].worktree, root);
+      // ... and in the main worktree with its next command, which also gives the task out again
+      assert.equal(statusOf(root, 'T-001').status, 'blocked');
+      assert.equal(JSON.parse(runAtm(['next', '--json'], root, as('dave', 5)).stdout).task.id, 'T-001');
+      assert.equal(statusOf(root, 'T-001').status, 'todo');
+      assert.deepEqual(notes(root, 'T-001'), [['answer', 'Which provider? → Postmark']]);
+      assert.equal(store().resolved['T-001'], undefined);
+
+      // bob sends T-002 for review in his worktree; the review is passed from the main worktree
+      assert.equal(runAtm(['review', 'T-002', '--note', 'check it'], wt, as('bob', 6)).code, 0);
+      assert.equal(store().waiting['T-002'].status, 'in_review');
+      const pass = runAtm(['done', 'T-002'], root, as('erin', 7));
+      assert.equal(pass.code, 0, pass.stderr);
+      assert.equal(statusOf(root, 'T-002').status, 'done');
+      runAtm(['next', '--json'], wt, as('bob', 8));
+      assert.equal(statusOf(wt, 'T-002').status, 'done');
+      assert.deepEqual(Object.keys(store().waiting), []);
+      assert.deepEqual(Object.keys(store().resolved), []);
+    } finally {
+      removeDir(root);
+      removeDir(path.dirname(wt));
+    }
+  });
+
   test('a task done in one worktree is not handed out again in another before the branches merge', () => {
     const root = repo();
     const wt = path.join(tempDir(), 'wt2');

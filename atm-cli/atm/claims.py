@@ -98,12 +98,63 @@ def locked_with_claims(paths):
 
 def read_store(paths):
     """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
-    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); and `hints`,
-    when each hint was last shown (so `done` repeats one at most once a day)."""
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); `waiting`
+    tasks (blocked or sent for review in some worktree, likewise); `resolved` ones (answered, passed, rejected or
+    skipped in another worktree than the one they wait in, to be applied there); and `hints`, when each hint was last
+    shown (so `done` repeats one at most once a day)."""
     data = read_json(claims_store_path(paths))
     data = data if isinstance(data, dict) else {}
-    hints = data.get("hints") if isinstance(data.get("hints"), dict) else {}
-    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}, "hints": hints}
+
+    def section(key):
+        return data.get(key) if isinstance(data.get(key), dict) else {}
+
+    return {
+        "claims": data.get("claims") or {},
+        "completed": data.get("completed") or {},
+        "waiting": section("waiting"),
+        "resolved": section("resolved"),
+        "hints": section("hints"),
+    }
+
+
+def waiting_record(paths, task):
+    """The shared record of a task blocked or sent for review in this worktree (T-204)."""
+    return {
+        "task": task["id"],
+        "status": task.get("status"),
+        "waiting_on": task.get("waiting_on"),
+        "questions": list(task.get("questions") or []),
+        "worktree": paths["root"],
+        "branch": git(["rev-parse", "--abbrev-ref", "HEAD"], paths["root"]),
+        "at": now_iso(),
+    }
+
+
+def apply_resolutions(paths, data, store):
+    """Apply what was decided in another worktree about a task waiting in this one (store["resolved"]): the answer,
+    the passed or rejected review, the skip, as if given here, so this worktree's copy stops waiting too. A task changed
+    here in the meantime is left as it is. Returns the IDs applied."""
+    applied = []
+    for task_id, record in list(store["resolved"].items()):
+        if not isinstance(record, dict) or record.get("worktree") != paths["root"]:
+            continue
+        store["resolved"].pop(task_id)
+        task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+        if task is None:
+            continue
+        try:
+            change_status(
+                task,
+                data,
+                record.get("command"),
+                agent=record.get("by"),
+                reason=record.get("reason"),
+                answers=record.get("answers") or [],
+            )
+            applied.append(task_id)
+        except (AtmError, KeyError):
+            pass
+    return applied
 
 
 def write_store(paths, store):
@@ -211,7 +262,7 @@ def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
     Returns (task, reason) where reason explains an empty result."""
-    claims, completed = store["claims"], store["completed"]
+    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
     vocab = vocabulary(data)
     candidates = [
         t
@@ -220,7 +271,7 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed)
+    taken = set(claims) | set(completed) | set(waiting)
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
         order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
@@ -229,11 +280,14 @@ def next_task(data, store, phase=None, task_type=None):
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
     done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
+    waiting_elsewhere = [t["id"] for t in candidates if t.get("id") in waiting]
     reason = f"{len(candidates)} todo task(s) waiting on dependencies"
     if claimed:
         reason += f" or claimed by other agents ({', '.join(claimed)})"
     if done_elsewhere:
         reason += f"; done in another worktree, not merged yet: {', '.join(done_elsewhere)}"
+    if waiting_elsewhere:
+        reason += f"; blocked or in review in another worktree: {', '.join(waiting_elsewhere)}"
     return None, reason
 
 
@@ -245,11 +299,12 @@ def cmd_next(args):
         store = read_store(paths)
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
+        applied = apply_resolutions(paths, data, store)
         task, reason = next_task(data, store, args.phase, args.type)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
-        if expired or (task and args.claim):
+        if expired or applied or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
     report_expired(expired)

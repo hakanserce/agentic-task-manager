@@ -358,6 +358,17 @@ def cmd_status(args):
         for t in tasks
         if kind_of(vocab, t.get("status")) == "review"
     ]
+    # Blocked or in review in another worktree (T-204): this worktree's copy doesn't say so until the branches merge
+    task_names = {t.get("id"): t.get("name", "") for t in tasks}
+    listed = {i["id"] for i in blocked + in_review}
+    for record in store["waiting"].values():
+        if not isinstance(record, dict) or record.get("worktree") == paths["root"] or record.get("task") in listed:
+            continue
+        item = {"id": record.get("task"), "name": task_names.get(record.get("task"), ""), "branch": record.get("branch")}
+        if kind_of(vocab, record.get("status")) == "review":
+            in_review.append({**item, "since": record.get("at")})
+        else:
+            blocked.append({**item, "waiting_on": record.get("waiting_on"), "questions": record.get("questions") or []})
     nxt, reason = next_task(data, store)
     sizes = sorted(((len(json.dumps(t, ensure_ascii=False)), t.get("id")) for t in tasks), reverse=True)
     result = {
@@ -385,6 +396,7 @@ def cmd_status(args):
         out(to_json(result))
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
+    elsewhere = lambda i: f" [in another worktree, {i['branch'] or 'detached'}]" if "branch" in i else ""
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
     names = result["phase_names"]
     out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
@@ -393,8 +405,8 @@ def cmd_status(args):
         out(f"by label: {pairs(result['by_label'])}")
     for title, items, extra in (
         ("in progress", in_progress, lambda i: f" ({i['by']})" if i["by"] else ""),
-        ("in review", in_review, lambda i: f" (since {i['since']})" if i["since"] else ""),
-        ("blocked", blocked, lambda i: f" (on {i['waiting_on']})" if i["waiting_on"] else ""),
+        ("in review", in_review, lambda i: (f" (since {i['since']})" if i["since"] else "") + elsewhere(i)),
+        ("blocked", blocked, lambda i: (f" (on {i['waiting_on']})" if i["waiting_on"] else "") + elsewhere(i)),
         ("waiting on dependencies", waiting, lambda i: f" (on {', '.join(i['on'])})"),
     ):
         if items:

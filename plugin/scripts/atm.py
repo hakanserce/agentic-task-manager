@@ -1360,12 +1360,63 @@ def locked_with_claims(paths):
 
 def read_store(paths):
     """The shared store: live `claims`, and `completed` tasks (done in some worktree; its tasks.json may be the only
-    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); and `hints`,
-    when each hint was last shown (so `done` repeats one at most once a day)."""
+    one that says so until the branches merge, so `next` must not hand those tasks out again elsewhere); `waiting`
+    tasks (blocked or sent for review in some worktree, likewise); `resolved` ones (answered, passed, rejected or
+    skipped in another worktree than the one they wait in, to be applied there); and `hints`, when each hint was last
+    shown (so `done` repeats one at most once a day)."""
     data = read_json(claims_store_path(paths))
     data = data if isinstance(data, dict) else {}
-    hints = data.get("hints") if isinstance(data.get("hints"), dict) else {}
-    return {"claims": data.get("claims") or {}, "completed": data.get("completed") or {}, "hints": hints}
+
+    def section(key):
+        return data.get(key) if isinstance(data.get(key), dict) else {}
+
+    return {
+        "claims": data.get("claims") or {},
+        "completed": data.get("completed") or {},
+        "waiting": section("waiting"),
+        "resolved": section("resolved"),
+        "hints": section("hints"),
+    }
+
+
+def waiting_record(paths, task):
+    """The shared record of a task blocked or sent for review in this worktree (T-204)."""
+    return {
+        "task": task["id"],
+        "status": task.get("status"),
+        "waiting_on": task.get("waiting_on"),
+        "questions": list(task.get("questions") or []),
+        "worktree": paths["root"],
+        "branch": git(["rev-parse", "--abbrev-ref", "HEAD"], paths["root"]),
+        "at": now_iso(),
+    }
+
+
+def apply_resolutions(paths, data, store):
+    """Apply what was decided in another worktree about a task waiting in this one (store["resolved"]): the answer,
+    the passed or rejected review, the skip, as if given here, so this worktree's copy stops waiting too. A task changed
+    here in the meantime is left as it is. Returns the IDs applied."""
+    applied = []
+    for task_id, record in list(store["resolved"].items()):
+        if not isinstance(record, dict) or record.get("worktree") != paths["root"]:
+            continue
+        store["resolved"].pop(task_id)
+        task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+        if task is None:
+            continue
+        try:
+            change_status(
+                task,
+                data,
+                record.get("command"),
+                agent=record.get("by"),
+                reason=record.get("reason"),
+                answers=record.get("answers") or [],
+            )
+            applied.append(task_id)
+        except (AtmError, KeyError):
+            pass
+    return applied
 
 
 def write_store(paths, store):
@@ -1473,7 +1524,7 @@ def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
     Returns (task, reason) where reason explains an empty result."""
-    claims, completed = store["claims"], store["completed"]
+    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
     vocab = vocabulary(data)
     candidates = [
         t
@@ -1482,7 +1533,7 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed)
+    taken = set(claims) | set(completed) | set(waiting)
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     if ready:
         order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
@@ -1491,11 +1542,14 @@ def next_task(data, store, phase=None, task_type=None):
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
     done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
+    waiting_elsewhere = [t["id"] for t in candidates if t.get("id") in waiting]
     reason = f"{len(candidates)} todo task(s) waiting on dependencies"
     if claimed:
         reason += f" or claimed by other agents ({', '.join(claimed)})"
     if done_elsewhere:
         reason += f"; done in another worktree, not merged yet: {', '.join(done_elsewhere)}"
+    if waiting_elsewhere:
+        reason += f"; blocked or in review in another worktree: {', '.join(waiting_elsewhere)}"
     return None, reason
 
 
@@ -1507,11 +1561,12 @@ def cmd_next(args):
         store = read_store(paths)
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
+        applied = apply_resolutions(paths, data, store)
         task, reason = next_task(data, store, args.phase, args.type)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
-        if expired or (task and args.claim):
+        if expired or applied or (task and args.claim):
             write_json_atomic(paths["tasks"], data)
             write_store(paths, store)
     report_expired(expired)
@@ -2043,6 +2098,17 @@ def cmd_status(args):
         for t in tasks
         if kind_of(vocab, t.get("status")) == "review"
     ]
+    # Blocked or in review in another worktree (T-204): this worktree's copy doesn't say so until the branches merge
+    task_names = {t.get("id"): t.get("name", "") for t in tasks}
+    listed = {i["id"] for i in blocked + in_review}
+    for record in store["waiting"].values():
+        if not isinstance(record, dict) or record.get("worktree") == paths["root"] or record.get("task") in listed:
+            continue
+        item = {"id": record.get("task"), "name": task_names.get(record.get("task"), ""), "branch": record.get("branch")}
+        if kind_of(vocab, record.get("status")) == "review":
+            in_review.append({**item, "since": record.get("at")})
+        else:
+            blocked.append({**item, "waiting_on": record.get("waiting_on"), "questions": record.get("questions") or []})
     nxt, reason = next_task(data, store)
     sizes = sorted(((len(json.dumps(t, ensure_ascii=False)), t.get("id")) for t in tasks), reverse=True)
     result = {
@@ -2070,6 +2136,7 @@ def cmd_status(args):
         out(to_json(result))
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
+    elsewhere = lambda i: f" [in another worktree, {i['branch'] or 'detached'}]" if "branch" in i else ""
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
     names = result["phase_names"]
     out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
@@ -2078,8 +2145,8 @@ def cmd_status(args):
         out(f"by label: {pairs(result['by_label'])}")
     for title, items, extra in (
         ("in progress", in_progress, lambda i: f" ({i['by']})" if i["by"] else ""),
-        ("in review", in_review, lambda i: f" (since {i['since']})" if i["since"] else ""),
-        ("blocked", blocked, lambda i: f" (on {i['waiting_on']})" if i["waiting_on"] else ""),
+        ("in review", in_review, lambda i: (f" (since {i['since']})" if i["since"] else "") + elsewhere(i)),
+        ("blocked", blocked, lambda i: (f" (on {i['waiting_on']})" if i["waiting_on"] else "") + elsewhere(i)),
         ("waiting on dependencies", waiting, lambda i: f" (on {', '.join(i['on'])})"),
     ):
         if items:
@@ -2099,6 +2166,30 @@ def cmd_status(args):
 # The commands an agent runs on its own claimed task: if that claim just expired, they explain it instead of refusing
 OWN_LEASE_COMMANDS = ("done", "release", "fail", "review", "block")
 
+# Decisions that may be made in any worktree about a task waiting in another (T-204): the command, and the kinds the
+# waiting task must have there
+REMOTE_DECISIONS = {"unblock": ("blocked",), "skip": ("blocked",), "done": ("review",), "reject": ("review",)}
+
+
+def adopt_waiting(task, data, store, paths, command):
+    """When `task` waits in another worktree (blocked or in review there, per the shared store) but not in this one,
+    and `command` decides it: give this copy the waiting state, so the command applies here as it would there. Returns
+    the worktree it waits in (where the decision is applied too, by apply_resolutions), or None."""
+    record = store["waiting"].get(task["id"])
+    if command not in REMOTE_DECISIONS or not isinstance(record, dict) or record.get("worktree") == paths["root"]:
+        return None
+    vocab = vocabulary(data)
+    if kind_of(vocab, task.get("status")) in REMOTE_DECISIONS[command]:
+        return None  # it waits here too: decided here as usual
+    if kind_of(vocab, record.get("status")) not in REMOTE_DECISIONS[command]:
+        return None
+    task["status"] = record["status"]
+    if record.get("waiting_on"):
+        task["waiting_on"] = record["waiting_on"]
+    if record.get("questions"):
+        task["questions"] = list(record["questions"])
+    return record.get("worktree")
+
 
 def cmd_status_change(command):
     def run(args):
@@ -2109,6 +2200,7 @@ def cmd_status_change(command):
             store = read_store(paths)
             claims = store["claims"]
             expired = expire_claims(paths, data, claims)
+            apply_resolutions(paths, data, store)
             task = find_task(data, task_id)
             if command in OWN_LEASE_COMMANDS:
                 own = own_lease_expired(expired, data, task_id, agent, f"atm {command} {task_id}")
@@ -2118,6 +2210,7 @@ def cmd_status_change(command):
                     write_store(paths, store)
                     raise own
             check_holder(claims, task_id, agent, command)
+            waits_in = adopt_waiting(task, data, store, paths, command)
             previous = change_status(
                 task,
                 data,
@@ -2141,6 +2234,24 @@ def cmd_status_change(command):
                 claims.pop(task_id, None)
             if command == "done":
                 store["completed"][task_id] = completion(paths, task_id, agent)
+            # Blocked or in review: recorded for every worktree (T-204); any other change ends the wait
+            if command in ("block", "review"):
+                store["waiting"][task_id] = waiting_record(paths, task)
+            else:
+                store["waiting"].pop(task_id, None)
+                resolution = store["resolved"].pop(task_id, None)
+                if waits_in:
+                    store["resolved"][task_id] = {
+                        "task": task_id,
+                        "command": command,
+                        "answers": list(getattr(args, "answer", None) or []),
+                        "reason": getattr(args, "reason", None),
+                        "by": agent,
+                        "at": now_iso(),
+                        "worktree": waits_in,
+                    }
+                elif resolution and resolution.get("worktree") != paths["root"]:
+                    store["resolved"][task_id] = resolution  # still to be applied where it waits
             unblocked = newly_ready(data, task_id) if command == "done" else []
             write_json_atomic(paths["tasks"], data)
             # The archive hint after done, at most once a day per clone (CLI-5.2), so a loop doesn't repeat it
@@ -3842,13 +3953,15 @@ def api_claims(summaries, entry):
     return body, file_etag(stamp)
 
 
-def api_worktrees(entry):
+def api_worktrees(entry, store):
     """(body, ETag) of a project's worktrees.json: its git worktrees, main first, and for each linked one the tasks
     whose copy there differs from the main worktree's (or that only it has). The dashboard shows them all on one
-    board, each task from the worktree where it got furthest."""
+    board, each task from the worktree where it got furthest. A linked worktree's copy of a task decided in another
+    worktree (answered, reviewed: the claims store's `resolved`, T-204) is left out: it is stale until atm next runs
+    there, and would otherwise outrank the decision."""
     trees = worktrees(entry["path"])
     stamps = [file_stamp(os.path.join(t["path"], TASK_DIR, TASKS_FILE)) for t in trees]
-    etag = '"' + hashlib.sha1(repr([trees, stamps]).encode("utf-8")).hexdigest()[:16] + '"'
+    etag = '"' + hashlib.sha1(repr([trees, stamps, file_stamp(store)]).encode("utf-8")).hexdigest()[:16] + '"'
 
     def tasks_of(tree):
         data = read_json(os.path.join(tree["path"], TASK_DIR, TASKS_FILE))
@@ -3856,6 +3969,9 @@ def api_worktrees(entry):
         return [t for t in tasks or [] if isinstance(t, dict) and isinstance(t.get("id"), str)]
 
     def body():
+        data = read_json(store)
+        resolved = data.get("resolved") if isinstance(data, dict) and isinstance(data.get("resolved"), dict) else {}
+        stale = {(r.get("worktree"), task_id) for task_id, r in resolved.items() if isinstance(r, dict)}
         listed_trees = []
         main = {}
         for tree in trees:
@@ -3863,7 +3979,9 @@ def api_worktrees(entry):
                 main = {t["id"]: t for t in tasks_of(tree)}
                 listed_trees.append(tree)
             else:
-                differing = [t for t in tasks_of(tree) if main.get(t["id"]) != t]
+                differing = [
+                    t for t in tasks_of(tree) if main.get(t["id"]) != t and (tree["path"], t["id"]) not in stale
+                ]
                 listed_trees.append({**tree, "tasks": differing})
         return to_json({"generated_at": now_iso(), "worktrees": listed_trees}).encode("utf-8")
 
@@ -3949,7 +4067,7 @@ def cmd_serve_child(args):
                 return
             computed = None
             if name == "worktrees.json":
-                computed = api_worktrees(entry)
+                computed = api_worktrees(entry, summaries.store(entry))
             elif name == "claims.json":
                 computed = api_claims(summaries, entry)
             if computed:

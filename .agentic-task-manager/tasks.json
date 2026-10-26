@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 202,
+    "next_id": 203,
     "labels": [
       {
         "id": "dashboard",
@@ -6875,6 +6875,34 @@
       ],
       "created_at": "2026-10-26T05:00:29Z",
       "updated_at": "2026-10-26T05:00:29Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-202",
+      "name": "Agent identity: tell apart subagents of one session in different worktrees",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "cli"
+      ],
+      "description": "### Today\n`agent_identity()` in `atm-cli/atm/claims.py` is `\"claude:\" + CLAUDE_CODE_SESSION_ID[:8]`. Subagents inherit their parent's session ID, so three loop agents spawned in separate git worktrees all claim as `claude:e5ea9db0` (seen on 2026-10-26, running phase 17 with three parallel agents). atm's claims still kept them on different tasks, but:\n- `check_holder` lets one agent finish, release or fail another agent's task (same name);\n- `own_lease_expired` can tell the wrong agent its lease expired;\n- `atm claims` and the dashboard show one agent for all of them.\n\n### Change\n- When the identity comes from `CLAUDE_CODE_SESSION_ID` and the project root is a **linked** git worktree, append the worktree's folder name: `claude:e5ea9db0@agent-a74a…` (or a short form of it). The main worktree keeps plain `claude:<8 hex>`, so existing claims and task history still match.\n- If Claude Code gives subagents an environment variable of their own (check the Claude Code docs for hooks and subagents), prefer it, so two subagents in the same worktree also differ.\n- `--agent` and `ATM_AGENT` still win, unchanged.\n- The PostToolUse heartbeat hook (`atm heartbeat --auto`) runs in the agent's current directory, so it must compute the same identity and renew that agent's claims. Check it does, and that a subagent's heartbeat doesn't renew the parent's claims or another subagent's claims.\n- Dashboard: `shortAgent`/`claimSummary` in `dashboard/src/lib/claims.ts` show the new form readably on cards and in the Agents tab (e.g. `claude:e5ea9db0@agent-a74a`); add unit tests.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` (or a `*.test.mjs` with real `git worktree add` if scenarios can't express it): two worktrees with the same `CLAUDE_CODE_SESSION_ID` get different identities, each claims its own task, and one can't `done`/`release` the other's (exit 4). The main worktree's identity is unchanged.\n\n### Docs\n`docs/v4/atm-cli.md` (identity rules), README's parallel-agents section, `plugin/CLAUDE.md` if it describes identities.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/claims.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/",
+        "dashboard/src/lib/claims.ts",
+        "dashboard/tests/unit/claims.test.ts",
+        "docs/v4/atm-cli.md",
+        "README.md"
+      ],
+      "created_at": "2026-10-26T05:13:52Z",
+      "updated_at": "2026-10-26T05:13:52Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

@@ -6107,7 +6107,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.6.\n\n### Today\nOnly the main worktree is registered, and its dashboard **doesn't see agents working in other worktrees** until their branches merge: each worktree has its own `tasks.json` and `claims.json` snapshot; only the claims store in `.git/atm/` is shared.\n\n### Design first, then implement\n1. List a project's worktrees (`git worktree list`) in `/api/projects`.\n2. Make claims from every worktree visible, e.g. the server reads the shared claims store instead of the per-worktree snapshot.\n3. In the dashboard, either *switch* between worktrees on the project page, or show *all of them on one Kanban*, with a branch chip per card.\n\n> **Ask the user** to choose between those two before building it (`atm block --on user`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-178"
       ],
@@ -6118,7 +6118,7 @@
         "docs/multi-project-api.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T04:23:37Z",
+      "updated_at": "2026-10-26T04:36:20Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -6127,10 +6127,19 @@
           "kind": "answer",
           "text": "Worktrees on the dashboard: (1) a worktree switcher on the project page (one worktree's tasks at a time, like the project selector), or (2) all worktrees on one Kanban, each card with a branch chip (a task can be in progress in one worktree and todo in another, so cards would merge by the most advanced status)? I'd suggest (1): simpler and no merging rules; claims from every worktree show either way. → (2) All worktrees of a project on one Kanban, each card with a branch chip.",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T04:36:20Z",
+          "kind": "outcome",
+          "text": "All worktrees on one board: server lists worktrees in /api/projects, serves claims.json from the shared store and worktrees.json (tasks differing per linked worktree); dashboard merges by furthest status kind, with a branch chip on Kanban/list cards and details.",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-26T04:23:37Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "e5882cc64c90603118a4fcaa53d33e3bf50e357b",
+      "completed_at": "2026-10-26T04:36:20Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-180",

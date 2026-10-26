@@ -2,6 +2,14 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.16.0] - 2026-10-26
+
+- Agents working in separate git worktrees all show on one board, each task with the branch it's on.
+- Commits and pull requests in a task's details link to GitHub, GitLab, Bitbucket or Codeberg.
+- Progress leaves out skipped tasks, so a phase with only skipped tasks left counts as finished.
+- Task details show when work started, when it finished and how long it took.
+- When an agent's time on a task ran out, it now says so and how to carry on.
+
 ## [0.15.0] - 2026-10-25
 
 - One dashboard now shows all your projects: switch between them with the arrow next to the title.

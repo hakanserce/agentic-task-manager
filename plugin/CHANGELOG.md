@@ -4,6 +4,45 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.16.0] - 2026-10-26
+
+**All of a project's git worktrees on one board, links to commits and PRs, and clearer progress.**
+
+### Added
+- **Git worktrees on the dashboard.** `/api/projects` lists each project's worktrees (`worktrees: [{path, branch,
+  main}]`, main first, read from the git directory without running git). A new route, `/p/<id>/worktrees.json`, lists
+  them with, for each linked worktree, the tasks whose copy there differs from the main worktree's. The dashboard
+  shows all of them on one board: each task from the worktree where it got furthest (by status kind; the main
+  worktree's copy on a tie), with a branch chip on its Kanban and list card and in its details. Tasks only a branch
+  has are shown too. Format: `docs/multi-project-api.md` §2.2.
+- `atm repository [set URL]` records the repository's web address in `meta.repository` (git remotes are turned into
+  `https` addresses, without credentials or `.git`); `atm init` fills it from `origin`. `/atm:create-tasks` asks for it
+  when it's missing.
+- **Commit and PR links** in the task details and on the In PR and Merged chips, built from `meta.repository` for
+  GitHub, GitLab (also nested groups), Bitbucket and Gitea/Forgejo/Codeberg; a PR's recorded URL wins. A self-hosted
+  server is recognised by its name (`gitlab.*`, `github.*`, ...) or by `meta.repository_type`. Other hosts show plain
+  text; without an address, a click explains `atm repository set`.
+- Task details show Started, Sent for review, Finished (or Skipped) and Duration (work time, "so far" while active),
+  besides Created and Updated: only the times a task has.
+- Progress panel: **Active phases only** on the By phase card, sharing the Progress tab's saved setting.
+
+### Changed
+- **Completion leaves out skipped tasks**: done / (total − skipped), so 7 done and 3 skipped is 100%. The rings draw
+  the skipped share as a thin muted arc outside the ring, screen readers hear the count, and the phase table says
+  "· N skipped". Forecasts and insights count skipped tasks as neither done nor left.
+- `claims.json` is served from the clone's shared claims store, so agents at work in any worktree show on the board.
+- The Progress panel has one card for By phase and one for By type.
+- The theme picker in the Appearance menu is a drop-down list (the menu is 136 px tall instead of 456 px).
+- The Status filter lists every status in the project's vocabulary, also those no task has yet (showing 0).
+- The task description in the details panel sits in its own box, with smaller headings.
+- `atm done`, `release`, `fail`, `review`, `block` and `heartbeat` on a task whose lease of the same agent expired
+  now say so, when it expired and what to run next (`atm start <id>`, then the command again), with exit code 4. The
+  expiry is saved before the error. An expired lease and `atm release` keep the task's commit; `fail`, `reject` and
+  `reopen` still drop it.
+
+### Fixed
+- Opening another task scrolls the details panel back to the top; an auto-refresh of the same task keeps the scroll.
+
 ## [0.15.0] - 2026-10-25
 
 **One dashboard for all your projects.** The dashboard is no longer copied into each project and served per project:

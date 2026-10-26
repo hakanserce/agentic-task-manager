@@ -238,6 +238,21 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The "new version is ready" toast in the bottom right corner, over the cards and clear of the title bar (T-185)
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: update notice (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await tasksServer.serverBuild('newer-build');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
+    await expect(page.locator('#update-notice')).toBeVisible();
+    await expect(page).toHaveScreenshot(`update-notice-${mode}.png`, {
+      mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+      stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
+  });
+}
+
 // The project selector, open, with progress, a "needs you" dot and a project that is gone
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: project selector (${mode})`, async ({ page, tasksServer }) => {
@@ -270,14 +285,34 @@ for (const mode of ['dark', 'light'] as const) {
           skipped: 2,
           percent: 50,
           current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
+          recent_phases: [
+            { id: 1, name: 'Setup', done: 5, total: 5, percent: 100 },
+            { id: 2, name: 'Core', done: 3, total: 7, percent: 43 },
+            { id: 3, name: 'Polish', done: 1, total: 4, percent: 25 },
+            { id: 4, name: null, done: 0, total: 2, percent: 0 },
+          ],
           agents_working: 2,
           last_activity: '2026-01-01T11:48:00Z',
         }),
       )
-      .addProject('asks', 'minimal', 'Waiting Project', summary({ needs_you: { review: 1, blocked_on_user: 1 } }))
-      .goneProject('old1234', 'Old Project');
+      .addProject(
+        'asks',
+        'minimal',
+        'Waiting Project',
+        summary({
+          needs_you: { review: 1, blocked_on_user: 1 },
+          recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
+        }),
+      )
+      .goneProject('old1234', 'Old Project')
+      .logo(
+        'busy',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#2f81f7"/>' +
+          '<path d="m4.5 8.2 2.3 2.3 4.7-5" fill="none" stroke="#fff" stroke-width="2"/></svg>',
+      );
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('.project-card')).toHaveCount(4);
+    await expect(page.locator('.project-card[data-id="busy"] .project-logo img')).toHaveJSProperty('complete', true);
     // The whole page: the title bar has to look exactly like the project page's (controls at the right)
     await expect(page).toHaveScreenshot(`projects-overview-${mode}.png`, {
       mask: [page.locator('#version-chip'), page.locator('#footer-version')],

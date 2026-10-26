@@ -30,6 +30,21 @@ export function isActive(p: ProjectEntry, now: number, days = ACTIVE_DAYS): bool
   return openTasks(p) > 0 || lastActivity(p) >= now - days * DAY_MS;
 }
 
+/** A project's monogram, for a project without a logo: the initials of its first two words, else the first two
+ * letters of its one word ("Agentic Task Manager" → "AT", "atm" → "AT"), upper case; "?" without letters. */
+export function monogram(name: string): string {
+  const [first = '', second] = name.match(/[\p{L}\p{N}]+/gu) ?? [];
+  const letters = second ? first.slice(0, 1) + second.slice(0, 1) : first.slice(0, 2);
+  return letters.toUpperCase() || '?';
+}
+
+/** A stable number for a project id, to pick its monogram's colour (the same project always gets the same one) */
+export function idHash(id: string): number {
+  let h = 0;
+  for (const c of id) h = (h * 31 + (c.codePointAt(0) ?? 0)) >>> 0;
+  return h;
+}
+
 /** Projects that need the user first, then the most recently active, then by name; gone ones last. */
 export function orderProjects(projects: readonly ProjectEntry[]): ProjectEntry[] {
   return [...projects].sort(

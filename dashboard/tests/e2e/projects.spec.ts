@@ -165,11 +165,118 @@ test.describe('projects', () => {
     const cards = page.locator('.project-card');
     await expect(cards.locator('.project-card-name')).toHaveText(['Asks', 'Busy', 'Standard Project']);
     const busy = page.locator('.project-card[data-id="busy"]');
-    await expect(busy.locator('.project-card-counts')).toHaveText(/9 \/ 18\s*· 2 skipped\s*50%/);
+    await expect(busy.locator('.project-card-counts')).toHaveText(/9 \/ 18 done\s*· 2 skipped\s*50%/);
     await expect(busy.locator('.project-card-phase')).toHaveText('Phase 3 · Polish — 1 / 4');
     await expect(busy.locator('.project-card-agents')).toHaveText('2 agents working');
     await expect(busy.locator('.project-card-last')).toHaveText('12 m ago');
     await expect(page.locator('.project-card[data-id="asks"] .project-card-need')).toHaveText('2 need you');
+  });
+
+  // T-193: up to 4 rings, one per recent phase, never wrapping, at the narrowest card (the grid's 280px minimum, two
+  // columns) and on a phone (one column, narrower still)
+  for (const width of [620, 340]) {
+    test(`overview cards: the recent phases' rings sit on one row (${width}px window)`, async ({
+      page,
+      tasksServer,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      const recent_phases = [14, 15, 16, 17].map((id) => ({
+        id,
+        name: `Phase name ${id}`,
+        done: 3,
+        total: 4,
+        percent: 75,
+      }));
+      tasksServer.addProject('busy', 'minimal', 'Busy', summary({ recent_phases }));
+      await openDashboard(page, tasksServer, 'standard');
+      const card = page.locator('.project-card[data-id="busy"]');
+      await expect(card.locator('.project-card-ring')).toHaveCount(4);
+      await expect(card.locator('.project-card-ring svg').first()).toHaveAttribute(
+        'aria-label',
+        'Phase 14 · Phase name 14: 3 of 4 done',
+      );
+      const layout = await card.evaluate((el) => {
+        const row = el.querySelector('.project-card-rings')!;
+        const boxes = [...row.querySelectorAll('.project-card-ring')].map((r) => r.getBoundingClientRect());
+        const inner = el.getBoundingClientRect();
+        return {
+          cardWidth: Math.round(inner.width),
+          oneRow: new Set(boxes.map((b) => Math.round(b.top))).size === 1,
+          inside: boxes.every((b) => b.left >= inner.left && b.right <= inner.right),
+          ringsVisible: boxes.every((b) => b.width >= 32),
+        };
+      });
+      expect(layout.cardWidth).toBeLessThanOrEqual(width === 620 ? 280 : 292);
+      expect(layout).toMatchObject({ oneRow: true, inside: true, ringsVisible: true });
+    });
+  }
+
+  // T-190: a long phase name is cut off on one line instead of wrapping and pushing the foot down
+  test('overview cards: a long phase name stays on one line; the feet of a row line up', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const name = 'A very long phase name that would never fit on one line of a project card, not even close';
+    tasksServer
+      .addProject('long', 'minimal', 'Long', summary({ current_phase: { id: 7, name, done: 2, total: 9 } }))
+      .addProject('short', 'minimal', 'Short', summary({ agents_working: 1 }));
+    await openDashboard(page, tasksServer, 'standard');
+    const line = page.locator('.project-card[data-id="long"] .project-card-phase');
+    await expect(line).toHaveAttribute('title', `Phase 7 · ${name} — 2 / 9`);
+    await expect(line.locator('.project-card-phase-count')).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const phase = document.querySelector('.project-card[data-id="long"] .project-card-phase')!;
+      const count = phase.querySelector('.project-card-phase-count')!.getBoundingClientRect();
+      const feet = [...document.querySelectorAll('.project-card')]
+        .map((c) => c.querySelector('.project-card-foot')?.getBoundingClientRect())
+        .filter((b) => b !== undefined);
+      return {
+        oneLine: phase.getBoundingClientRect().height < 24,
+        countInside: count.right <= phase.getBoundingClientRect().right + 0.5,
+        feetLevel: new Set(feet.map((b) => Math.round(b.top))).size === 1,
+        cards: feet.length,
+      };
+    });
+    expect(geometry).toEqual({ oneLine: true, countInside: true, feetLevel: true, cards: 2 });
+  });
+
+  // T-197: each project's logo (p/<id>/logo), or its monogram, in the cards, the selector and the title bar
+  test('project logos: the image when there is one, else the monogram, also when the image fails', async ({
+    page,
+    tasksServer,
+  }) => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="red"/></svg>';
+    tasksServer
+      .addProject('withlogo', 'minimal', 'With Logo', summary())
+      .addProject('broken', 'minimal', 'Broken Logo', summary())
+      .logo('withlogo', svg)
+      .logo('broken', null);
+    await openDashboard(page, tasksServer, 'standard');
+    const logo = (id: string) => page.locator(`.project-card[data-id="${id}"] .project-logo`);
+    await expect(logo('withlogo').locator('img')).toHaveJSProperty('complete', true);
+    expect(
+      await logo('withlogo')
+        .locator('img')
+        .evaluate((img: HTMLImageElement) => img.naturalWidth),
+    ).toBeGreaterThan(0);
+    await expect(logo('broken')).toHaveAttribute('data-initials', 'BL');
+    await expect(logo('broken').locator('img')).toHaveCount(0);
+    await expect(logo(tasksServer.projectId)).toHaveAttribute('data-initials', 'SP');
+    for (const id of ['withlogo', 'broken', tasksServer.projectId]) {
+      const box = await logo(id).boundingBox();
+      expect([id, Math.round(box!.width), Math.round(box!.height)]).toEqual([id, 24, 24]);
+    }
+
+    await page.locator('#project-selector').click();
+    await expect(page.locator('.project-option[data-id="withlogo"] .project-logo img')).toHaveCount(1);
+    await expect(page.locator('.project-option[data-id="broken"] .project-logo')).toHaveAttribute(
+      'data-initials',
+      'BL',
+    );
+    await page.locator('.project-option[data-id="withlogo"]').click();
+    await expect(page.locator('.title-row .project-logo img')).toHaveAttribute('src', 'p/withlogo/logo');
   });
 
   test('“needs you” opens the project’s Kanban, filtered to review and blocked', async ({ page, tasksServer }) => {

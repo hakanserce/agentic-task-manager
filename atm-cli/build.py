@@ -27,6 +27,7 @@ MODULES = [
     "registry",
     "model",
     "repository",
+    "logo",
     "claims",
     "query",
     "tasks",

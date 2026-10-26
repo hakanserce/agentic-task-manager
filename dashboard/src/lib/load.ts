@@ -19,6 +19,8 @@ export interface ProjectSummary {
   skipped: number;
   percent: number;
   current_phase: { id: number; name: string | null; done: number; total: number } | null;
+  /** Up to 4 phases, in phase order: the lowest with open work, then the most recently finished */
+  recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
   agents_working: number;
   needs_you: { review: number; blocked_on_user: number };
   last_activity: string | null;
@@ -35,6 +37,8 @@ export interface ProjectEntry {
   summary: ProjectSummary | null;
   /** Its git worktrees, main first (empty outside git, or for a missing project) */
   worktrees?: { path: string; branch: string | null; main: boolean }[];
+  /** Where its logo is served (p/<id>/logo), or null without one; older servers don't send it */
+  logo?: string | null;
 }
 
 export interface LoadedTasks {
@@ -103,6 +107,9 @@ export function fetchProjectFile(
   return fetchFile(projectFileUrl(project, file), fetchFn, since, missing);
 }
 
+/** A project's logo, as api/projects gives it: p/<id>/logo, relative to the dashboard */
+const LOGO_URL = /^p\/[^/?#:]+\/logo$/;
+
 const isProject = (p: unknown): p is ProjectEntry =>
   !!p && typeof p === 'object' && typeof (p as ProjectEntry).id === 'string' && !!(p as ProjectEntry).id;
 
@@ -128,6 +135,8 @@ export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Valida
           .filter((w) => !!w && typeof w === 'object' && typeof w.path === 'string')
           .map((w) => ({ path: w.path, branch: typeof w.branch === 'string' ? w.branch : null, main: w.main === true }))
       : [],
+    // Only the server's own route: never an address elsewhere (the dashboard makes no outside requests)
+    logo: typeof p.logo === 'string' && LOGO_URL.test(p.logo) ? p.logo : null,
   }));
   return { unchanged: false, projects, validators: file.validators };
 }

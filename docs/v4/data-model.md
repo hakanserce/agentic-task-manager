@@ -87,6 +87,7 @@ New fields, all optional:
 | `waiting_on` | `block` | `unblock` | `user` or `agent` |
 | `questions` | `block` | `unblock` (moved to `notes` with the answers) | the open questions, a list of strings |
 | `blocked_at` | `block` | `unblock` | when it started waiting |
+| `skipped_at` | `skip` | `reopen` (a return to `todo`) | when it was skipped: a skipped task's finish time, as `completed_at` is a done one's (T-181). `atm migrate` fills in `completed_at` and `skipped_at` from `updated_at` for finished tasks from before these existed, so a later edit (which moves `updated_at`) doesn't move them in time |
 | `notes` | `note`, `--note`, `--reason`, `--answer` | — | `[{at, by, kind, text}]`; kind is `handoff`, `outcome`, `review`, `rejection`, `failure`, `answer` or `note` |
 | `commit` | `commit`, `done --commit` | a return to `todo` | the SHA of the task's commit |
 | `pr` | `pr` | — | `{number, url}` of the PR that contains the task |

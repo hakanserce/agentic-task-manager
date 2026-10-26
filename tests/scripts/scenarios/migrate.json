@@ -65,7 +65,8 @@
         "warning": null,
         "gitignore_updated": true,
         "merge_driver_updated": true,
-        "cleaned_up": null
+        "cleaned_up": null,
+        "finish_times_filled": 0
       }
     }
   },
@@ -223,7 +224,8 @@
         "warning": null,
         "gitignore_updated": false,
         "merge_driver_updated": false,
-        "cleaned_up": { "dashboard": false, "server": null }
+        "cleaned_up": { "dashboard": false, "server": null },
+        "finish_times_filled": 0
       },
       "files": {
         ".agentic-task-manager/.server.json": false,

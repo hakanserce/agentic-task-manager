@@ -217,7 +217,9 @@ def archive_settings(data):
 
 
 def finished_at(task):
-    for key in ("completed_at", "updated_at"):
+    """When a finished task finished: completed_at (done) or skipped_at (skipped), else updated_at for files from
+    before those were written (atm migrate fills them in)."""
+    for key in ("completed_at", "skipped_at", "updated_at"):
         try:
             return parse_iso(task[key])
         except (KeyError, TypeError, ValueError):
@@ -361,6 +363,7 @@ def back_to_todo(task, vocab, actor, stamp):
     for field in (
         "started_at",
         "completed_at",
+        "skipped_at",
         "started_by",
         "completed_by",
         "agent",
@@ -458,6 +461,7 @@ def change_status(
     elif command == "skip":
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
+        task["skipped_at"] = stamp
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp

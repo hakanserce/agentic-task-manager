@@ -5905,7 +5905,7 @@
       "description": "Phase names live in `meta.phases` (`[{ id, name }]`), but:\n- the only way to set them is `atm init --meta-file`, which **replaces the whole list**;\n- **no command prints them**.\n\nSo an agent can't add a name without wiping the others.\n\n### Commands\nAdd a `phases` command to atm-cli (`atm-cli/atm/cli.py`; logic next to the vocabulary code in `model.py`, or a small module added to `build.py`'s `MODULES`):\n- **`atm phases [--json]`**: every phase that has tasks or a name, in numeric order: number, name (if any), and task counts by status kind (todo, active, review, blocked, done, skipped). Archived tasks count only with `--archived`, like `atm list`.\n- **`atm phases name <n> \"<name>\"`**: set or replace that one entry under the tasks lock (atomic write; other entries and their order untouched; keep the list sorted by id). Refuse an empty name.\n- **`atm phases unname <n>`**: remove the entry.\n\nBoth change commands print what changed and take `--json`.\n\n### Elsewhere\n- `atm status` shows names next to phase numbers in *by phase* (and, in `--json`, a names map). `atm list` stays as it is.\n- `atm check` **warns** (not errors) about a named phase with no tasks in `tasks.json` or the archive.\n\n### Tests\nScenarios in `tests/scripts/scenarios/phases.json`:\n- listing with and without names;\n- name, rename, unname;\n- other names kept;\n- an invalid number or an empty name refused;\n- `check`'s warning;\n- `status` output.\n\n### Docs\n- `plugin/skills/create-tasks/SKILL.md`: name phases with `atm phases name` (Step 4 no longer puts `phases` in `--meta-file`; read existing names with `atm phases`).\n- `plugin/CLAUDE.md`'s command list, `docs/v4/atm-cli.md`, and the CHANGELOG `[Unreleased]` notes if the release task hasn't run.\n\n### Finally\nName this repo's phases 15 and 16 with the new command. Suggested: **15** *One dashboard for all projects*, **16** *Dashboard polish and worktrees*. Check `atm phases` for existing names first.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/cli.py",
@@ -5919,11 +5919,22 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-25T21:18:54Z",
-      "updated_at": "2026-10-25T23:48:09Z",
+      "updated_at": "2026-10-25T23:52:45Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:48:09Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "30160f34e6a9fe617f1f8d46262886d80afd7d16",
+      "completed_at": "2026-10-25T23:52:45Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-25T23:52:45Z",
+          "kind": "outcome",
+          "text": "atm phases lists phases with names and counts by kind; phases name/unname change one meta.phases entry under the lock; check warns about named phases without tasks; status shows names; create-tasks names phases one at a time; this repo's phases 15 and 16 named",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-181",
@@ -5938,7 +5949,7 @@
       "description": "Done tasks from before 0.7.0 have no `completed_at`, and skipped tasks never get a finish time, so the dashboard falls back to `updated_at` (`timeline.ts`, `kanban.ts`, `archive.ts`). Any later `atm edit` (a label, a description) then moves the task's finish time to *now*: it shows up as finished today in Activity, the burndown and the Kanban's Done order, and its archiving is delayed.\n\n### atm-cli\n- **`atm skip`** records `skipped_at` (the skip time); `atm reopen` clears it, like `completed_at`.\n- **`atm migrate`** backfills, once and idempotently:\n  - a done-kind task without `completed_at` gets `completed_at = updated_at`;\n  - a skipped-kind task without `skipped_at` gets `skipped_at = updated_at`.\n\n  It writes under the lock, leaves `updated_at` / `updated_by` as they are, and reports how many tasks it filled in (one line, and in `--json`). Run it on `tasks-archive.json` too.\n- **Archiving** (`atm archive`, `archivable()` in `model.py`) uses `skipped_at` for skipped tasks, falling back to `updated_at`.\n\n### Dashboard\n`lib/archive.ts` (and anything else that dates a skipped task) uses `skipped_at`, then `updated_at`. Add `skipped_at` to the `Task` type.\n\n### Tests and docs\n- Scenarios: backfill of done and skipped tasks; a second run changes nothing; tasks that have the field are untouched; `skip` sets and `reopen` clears `skipped_at`; archive eligibility by `skipped_at`.\n- A dashboard unit test for `archive.ts`.\n- `docs/v4/data-model.md` and `plugin/CLAUDE.md` list `skipped_at`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -5952,9 +5963,11 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T21:35:18Z",
-      "updated_at": "2026-10-25T21:35:18Z",
+      "updated_at": "2026-10-25T23:52:48Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-25T23:52:48Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-182",

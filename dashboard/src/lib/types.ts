@@ -28,6 +28,8 @@ export interface Task {
   started_at?: string;
   /** ISO 8601 UTC; set when the task moves to done */
   completed_at?: string;
+  /** ISO 8601 UTC; set when the task is skipped (atm skip) */
+  skipped_at?: string;
   /** Before v4: the agent that started the task. Now started_by (read both: work.ts startedBy) */
   agent?: string;
   /** Who created, last changed, started and completed the task (docs/v4/data-model.md §4.1) */

@@ -38,6 +38,12 @@ describe('archivableCount', () => {
     ];
     expect(archivableCount(tasks, archiveSettings(undefined), NOW)).toBe(4);
   });
+
+  it('dates a skipped task by skipped_at, not by a later edit', () => {
+    const skipped = (updated_at: string) =>
+      task('S', { status: 'skipped', completed_at: undefined, skipped_at: '2026-03-01T00:00:00Z', updated_at });
+    expect(archivableCount([skipped('2026-04-30T00:00:00Z')], archiveSettings(undefined), NOW)).toBe(1);
+  });
 });
 
 describe('archiveNotice', () => {

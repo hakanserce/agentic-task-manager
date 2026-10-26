@@ -1,0 +1,212 @@
+[
+  {
+    "name": "migrate gives finished tasks without a finish time their last update, in tasks.json and the archive",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2026-01-01T10:00:00Z"
+            },
+            {
+              "id": "T-2",
+              "name": "b",
+              "phase": 0,
+              "type": "feature",
+              "status": "skipped",
+              "updated_at": "2026-01-02T10:00:00Z"
+            },
+            {
+              "id": "T-3",
+              "name": "c",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2026-01-05T10:00:00Z",
+              "completed_at": "2026-01-03T10:00:00Z"
+            },
+            {
+              "id": "T-4",
+              "name": "d",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "updated_at": "2026-01-04T10:00:00Z"
+            }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": { "archived_at": "2026-01-06T00:00:00Z" },
+          "tasks": [
+            {
+              "id": "T-0",
+              "name": "z",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2025-12-01T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Filled in the finish time of 3 finished tasks that had none, from the last update (completed_at/skipped_at).\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2026-01-01T10:00:00Z",
+              "completed_at": "2026-01-01T10:00:00Z"
+            },
+            {
+              "id": "T-2",
+              "name": "b",
+              "phase": 0,
+              "type": "feature",
+              "status": "skipped",
+              "updated_at": "2026-01-02T10:00:00Z",
+              "skipped_at": "2026-01-02T10:00:00Z"
+            },
+            {
+              "id": "T-3",
+              "name": "c",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2026-01-05T10:00:00Z",
+              "completed_at": "2026-01-03T10:00:00Z"
+            },
+            {
+              "id": "T-4",
+              "name": "d",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "updated_at": "2026-01-04T10:00:00Z"
+            }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": { "archived_at": "2026-01-06T00:00:00Z" },
+          "tasks": [
+            {
+              "id": "T-0",
+              "name": "z",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2025-12-01T10:00:00Z",
+              "completed_at": "2025-12-01T10:00:00Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "a second migrate has nothing to fill in",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "updated_at": "2026-01-01T10:00:00Z"
+            }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "\"$ATM\" migrate"]]
+    },
+    "args": ["migrate"],
+    "expect": { "stdout": "Nothing to migrate.\n" }
+  },
+  {
+    "name": "skip records skipped_at; reopen clears it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 0, "type": "feature", "status": "todo" }]
+        }
+      },
+      "commands": [["sh", "-c", "ATM_NOW=2026-01-01T09:00:00Z ATM_AGENT=me \"$ATM\" skip T-1 --reason 'not needed'"]]
+    },
+    "args": ["reopen", "T-1", "--reason", "needed after all"],
+    "env": { "ATM_NOW": "2026-01-02T09:00:00Z", "ATM_AGENT": "me" },
+    "expect": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "updated_at": "2026-01-02T09:00:00Z",
+              "updated_by": "me",
+              "notes": [
+                { "at": "2026-01-01T09:00:00Z", "by": "me", "kind": "note", "text": "Skipped: not needed" },
+                { "at": "2026-01-02T09:00:00Z", "by": "me", "kind": "note", "text": "Reopened: needed after all" }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "skip records skipped_at",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 0, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["skip", "T-1", "--reason", "not needed", "--json"],
+    "env": { "ATM_NOW": "2026-01-01T09:00:00Z", "ATM_AGENT": "me" },
+    "expect": { "stdoutIncludes": ["\"skipped_at\": \"2026-01-01T09:00:00Z\""] }
+  },
+  {
+    "name": "archive dates a skipped task by skipped_at, not by a later edit",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "phase": 0,
+              "type": "feature",
+              "status": "skipped",
+              "skipped_at": "2026-01-01T00:00:00Z",
+              "updated_at": "2026-03-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["archive", "--dry-run"],
+    "env": { "ATM_NOW": "2026-03-02T00:00:00Z" },
+    "expect": { "stdoutIncludes": ["T-1"] }
+  }
+]

@@ -26,8 +26,10 @@ export function archiveSettings(meta: TasksFile['meta']): ArchiveSettings {
   };
 }
 
+// When a finished task finished, as atm archive dates it: completed_at (done) or skipped_at (skipped), else updated_at
+// for files from before those were written
 const finishedAt = (t: Task) => {
-  for (const when of [t.completed_at, t.updated_at]) {
+  for (const when of [t.completed_at, t.skipped_at, t.updated_at]) {
     const ms = Date.parse(when ?? '');
     if (!Number.isNaN(ms)) return ms;
   }

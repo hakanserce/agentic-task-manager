@@ -44,7 +44,7 @@ atm-cli writes these fields; this is for reading `atm show --json` output, not f
   dependencies (task IDs), priority (`P0`–`P3` by default; none counts as `P2`), labels (tags like `spike-2`, `ux`),
   requirements, use_cases, files
 - Status: status (todo/in_progress/in_review/blocked/done/skipped by default, each with a kind), created_at,
-  updated_at, started_at, completed_at, review_requested_at (ISO 8601 UTC)
+  updated_at, started_at, completed_at, skipped_at, review_requested_at (ISO 8601 UTC)
 - Actors: created_by, updated_by, started_by (the claim's owner; older files have `agent`), completed_by. An actor
   starting with `claude:` is an agent; anything else is a person
 - Blocked: waiting_on (`user` or `agent`), questions (the open questions), blocked_at

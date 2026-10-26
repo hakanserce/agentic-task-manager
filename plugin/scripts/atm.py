@@ -827,7 +827,9 @@ def archive_settings(data):
 
 
 def finished_at(task):
-    for key in ("completed_at", "updated_at"):
+    """When a finished task finished: completed_at (done) or skipped_at (skipped), else updated_at for files from
+    before those were written (atm migrate fills them in)."""
+    for key in ("completed_at", "skipped_at", "updated_at"):
         try:
             return parse_iso(task[key])
         except (KeyError, TypeError, ValueError):
@@ -971,6 +973,7 @@ def back_to_todo(task, vocab, actor, stamp):
     for field in (
         "started_at",
         "completed_at",
+        "skipped_at",
         "started_by",
         "completed_by",
         "agent",
@@ -1068,6 +1071,7 @@ def change_status(
     elif command == "skip":
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
+        task["skipped_at"] = stamp
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
@@ -2333,6 +2337,7 @@ PROGRESS_FIELDS = (
     "updated_at",
     "started_at",
     "completed_at",
+    "skipped_at",
     "last_failure",
     "agent",
     "started_by",
@@ -2986,6 +2991,46 @@ def clean_up_old_dashboard(task_dir):
     return {"dashboard": removed, "server": stopped}
 
 
+FINISH_FIELDS = {"done": "completed_at", "skipped": "skipped_at"}
+
+
+def missing_finish_times(tasks, vocab):
+    """The finished tasks without their finish time (done ones from before completed_at existed; skipped ones from
+    before skipped_at existed), with the field each one needs."""
+    result = []
+    for task in tasks:
+        field = FINISH_FIELDS.get(kind_of(vocab, task.get("status"))) if isinstance(task, dict) else None
+        if field and not task.get(field) and task.get("updated_at"):
+            result.append((task, field))
+    return result
+
+
+def backfill_finish_times(paths):
+    """Give finished tasks without a finish time their updated_at, which is what the dashboard showed for them anyway,
+    so a later edit (which moves updated_at) doesn't move them in time. In tasks.json and the archive; once per task;
+    updated_at and updated_by stay. Returns how many tasks were filled in."""
+    archive = archive_path(paths)
+    try:
+        data = load_tasks(paths)
+        vocab = vocabulary(data)
+        if not missing_finish_times(data["tasks"], vocab) and not missing_finish_times(load_archive(paths)["tasks"], vocab):
+            return 0
+    except AtmError:
+        return 0  # an unreadable file: the command the skill runs next reports the problem
+    filled = 0
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        files = [(paths["tasks"], data)] + ([(archive, load_archive(paths))] if os.path.isfile(archive) else [])
+        for path, contents in files:
+            missing = missing_finish_times(contents["tasks"], vocab)
+            for task, field in missing:
+                task[field] = task["updated_at"]
+            if missing:
+                write_json_atomic(path, contents)
+                filled += len(missing)
+    return filled
+
+
 def ensure_gitignore(task_dir):
     """Add any missing runtime entries to the folder's .gitignore, keeping the user's lines. Returns True if changed."""
     p = os.path.join(task_dir, ".gitignore")
@@ -3017,6 +3062,7 @@ def migrate(paths):
         "gitignore_updated": False,
         "merge_driver_updated": False,
         "cleaned_up": None,
+        "finish_times_filled": 0,
     }
     if legacy and paths["tasks_exists"]:
         result["warning"] = (
@@ -3048,6 +3094,7 @@ def migrate(paths):
         # So the dashboard finds the file from the start instead of logging a 404 on every refresh
         write_claims_snapshot(paths, read_store(paths)["claims"])
     result["cleaned_up"] = clean_up_old_dashboard(task_dir)
+    result["finish_times_filled"] = backfill_finish_times(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))
     except AtmError:
@@ -3076,6 +3123,10 @@ def describe_migration(r, paths):
         if cleaned["server"]:
             line += f" and stopped its old dashboard server (pid {cleaned['server']})"
         lines.append(line + ": one dashboard for all your projects now comes with the plugin (/atm:serve).")
+    filled = r.get("finish_times_filled")
+    if filled:
+        tasks = "1 finished task" if filled == 1 else f"{filled} finished tasks"
+        lines.append(f"Filled in the finish time of {tasks} that had none, from the last update (completed_at/skipped_at).")
     if not lines:
         lines.append("Nothing to migrate.")
     if r.get("suggest"):

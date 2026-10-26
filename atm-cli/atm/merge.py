@@ -28,6 +28,7 @@ PROGRESS_FIELDS = (
     "updated_at",
     "started_at",
     "completed_at",
+    "skipped_at",
     "last_failure",
     "agent",
     "started_by",

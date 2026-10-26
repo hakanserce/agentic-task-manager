@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 210,
+    "next_id": 216,
     "labels": [
       {
         "id": "dashboard",
@@ -43,6 +43,10 @@
       {
         "id": 18,
         "name": "Project cards"
+      },
+      {
+        "id": 19,
+        "name": "Insights, stats and security review"
       }
     ],
     "repository": "https://github.com/hakanserce/agentic-task-manager"
@@ -7604,6 +7608,154 @@
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
       },
       "merged_at": "2026-10-26T09:11:52Z"
+    },
+    {
+      "id": "T-210",
+      "name": "Activity popup: Idle box fits on one line; explain or fix its color bar",
+      "phase": 19,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "activity"
+      ],
+      "description": "In the Activity per hour/day/week popup (ActivityDeepDive.svelte), the 'Idle (no agent working)' box wraps its value: '75 h 39 m' puts 'm' on a second line. Keep the value on one line at every popup width (non-breaking spaces between number and unit, white-space: nowrap, or a shorter format such as '75h 39m' consistently with the other boxes), and check the sibling boxes for the same problem. The user also doesn't understand the color bar on the left side of the box: find what it encodes (insights.ts), and either remove it if it carries no meaning, or make it self-explanatory (a legend or a tooltip saying what the color means). Add an e2e check that the value doesn't wrap at the popup's narrowest width, and update the affected screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ActivityDeepDive.svelte",
+        "dashboard/src/lib/insights.ts",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-211",
+      "name": "Security review of the whole repo; security tasks for each gap",
+      "phase": 19,
+      "type": "docs",
+      "priority": "P1",
+      "labels": [
+        "security"
+      ],
+      "description": "Do an overall security review: atm-cli (atm-cli/atm/*.py: file locking, path handling for --file/--dir/--meta-file, shell-outs to git, JSON parsing of untrusted tasks.json), the dashboard server (server.py: localhost binding, Host/Origin checks against DNS rebinding, path traversal on p/<id>/ routes, the projects registry, process restart via --refresh), the dashboard (Svelte: rendering task text and Markdown as HTML (XSS), external URLs, links from meta.repository), the skills and hook (plugin/skills, plugin/hooks: commands run from task text, prompt injection via task descriptions), and CI (.github/workflows: permissions, pinned actions). Write the findings to docs/security-review.md (each with severity, where, scenario, suggested fix). Then add one task per gap with /atm:create-tasks, labeled `security` (plus the area label), prioritized by severity, in phase 20 'Security fixes'. Don't fix anything in this task.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/security-review.md"
+      ],
+      "created_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-212",
+      "name": "Progress tab: review every chart and number with the user, then add the agreed helpers",
+      "phase": 19,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress",
+        "interactive"
+      ],
+      "description": "Interactive with the user. Go through the Progress tab (ProgressTab.svelte, ProgressWidget.svelte, BurndownChart.svelte, PhaseTable.svelte, Ring.svelte, forecast.ts) piece by piece: for each diagram and number, write what it shows, how it's computed, when it misleads (few tasks, skipped tasks, parallel agents, archived tasks) and what question it answers for the user. Put that in a short proposal (docs/progress-tab-review.md) with a recommendation per item: keep, change, or drop, and the helper text (tooltip, info popover or empty-state message) each kept item gets. Review it with the user (start the preview server and/or a crit review of the proposal; block with `atm block --on user` for decisions you can't make). Then implement what's approved, or, if it's large, add follow-up tasks with /atm:create-tasks.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/progress-tab-review.md",
+        "dashboard/src/components/ProgressTab.svelte"
+      ],
+      "created_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-213",
+      "name": "Activity popup: review every chart and number with the user, then add the agreed helpers",
+      "phase": 19,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "activity",
+        "interactive"
+      ],
+      "description": "Interactive with the user, the same pass as the Progress tab review, for the Activity per hour/day/week popup (ActivityWidget.svelte, ActivityDeepDive.svelte, UtilizationPanel.svelte, insights.ts): for each chart, box and number (throughput, cumulative done, cycle time, WIP, idle time, utilization), write what it shows, how it's computed, when it misleads, and what question it answers. Short proposal in docs/activity-popup-review.md with keep/change/drop and the helper text for each. Review it with the user (preview server and/or crit; `atm block --on user` for open decisions). Then implement what's approved, or add follow-up tasks with /atm:create-tasks.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-210"
+      ],
+      "files": [
+        "docs/activity-popup-review.md",
+        "dashboard/src/components/ActivityDeepDive.svelte"
+      ],
+      "created_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-214",
+      "name": "Project stats: decide with the user what to show, where and how",
+      "phase": 19,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "stats",
+        "interactive"
+      ],
+      "description": "Interactive with the user. Propose where (Progress tab, a new Stats section, the project card, About-like dialog) and how to show overall project stats: project start; project duration (earliest task start to latest task completion); total agent time used (sum of in-progress spans); task duration avg/min/max (propose the best visualization, e.g. a box plot or histogram by type, with the slowest tasks listed); max parallelization (most agents working at once); overall parallelization (define it, e.g. agent time / wall-clock time while any agent works); number of commits, pull requests, phases and tasks. For each stat, say how it's computed from tasks.json (and the archive), and where data is missing (tasks without started_at, reopened tasks, skipped tasks). Write docs/project-stats-proposal.md with mock-ups, review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/project-stats-proposal.md"
+      ],
+      "created_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-215",
+      "name": "All Projects Kanban: decide the design with the user",
+      "phase": 19,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview",
+        "kanban",
+        "interactive"
+      ],
+      "description": "Interactive with the user. Explore an All Projects Kanban in the overview: one board with cards from every project (project chip on each card, like the branch chip). Options to weigh: (a) cross-project phase and filter selection (phases differ per project, so how would that work?); (b) no phase filter: every task in Review, Blocked and In Progress, plus the N most recently updated in To Do and Done; (c) per-project swimlanes. Consider load (api/projects already sends summaries; would the board need every project's tasks.json, and how often?), sorting, the Needs-you menu, and how it fits next to the project cards. Write docs/all-projects-kanban-proposal.md with mock-ups and a recommendation, review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/all-projects-kanban-proposal.md"
+      ],
+      "created_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

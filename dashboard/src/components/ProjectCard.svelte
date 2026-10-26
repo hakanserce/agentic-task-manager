@@ -19,6 +19,14 @@
   const phase = $derived(s?.current_phase);
   // An older server sends no recent_phases: no rings then
   const phases = $derived(s?.recent_phases ?? []);
+  // What's going on, by task name (T-207): the agents' tasks, or else what the loop takes next. Two lines at most, so
+  // the cards of a row line up; more work than that ends the second line with "+N more". A server before 0.18 sends
+  // neither: the foot then counts the agents instead.
+  const working = $derived(s?.working ?? []);
+  const nextUp = $derived(s?.next ?? []);
+  const byName = $derived(s?.working !== undefined);
+  const workLines = $derived(working.length ? working.slice(0, 2) : nextUp.slice(0, 2));
+  const moreWork = $derived(Math.max(0, working.length - 2));
 
   // Completions per day over the last 14 days: thin bars, like the Activity widget
   const W = 112;
@@ -109,8 +117,31 @@
       {/if}
     </p>
 
+    {#if byName}
+      <ul
+        class="project-card-work"
+        class:next={!working.length}
+        aria-label={working.length ? 'Working now' : 'Next up'}
+      >
+        {#each workLines as line, i (i)}
+          {@const id = 'task' in line ? line.task : line.id}
+          {@const who = 'agent' in line ? [line.agent, line.branch].filter(Boolean).join(' · ') : 'next up'}
+          <li class="project-card-work-line" title="{id} {line.name} — {who}">
+            {#if working.length}
+              <Icon name="bot" size={13} />
+            {:else}
+              <span class="project-card-next">Next:</span>
+            {/if}
+            <span class="project-card-work-id">{id}</span>
+            <span class="project-card-work-name">{line.name}</span>
+            {#if i === 1 && moreWork}<span class="project-card-more">+{moreWork} more</span>{/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
     <div class="project-card-foot">
-      {#if s.agents_working}
+      {#if s.agents_working && !byName}
         <span class="project-card-agents"
           ><Icon name="bot" size={13} /> {s.agents_working} agent{s.agents_working === 1 ? '' : 's'} working</span
         >

@@ -3280,6 +3280,47 @@ svg.graph-minimap.hidden {
   color: var(--text);
 }
 /* At the bottom of the card: the cards of a row are as tall as the tallest, so their feet line up */
+/* Working now, or next up: two lines on every card, so the cards of a row line up (T-207) */
+.project-card-work {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: calc(2 * 1.4em + 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.project-card-work-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.project-card-work-line .icon,
+.project-card-work-id,
+.project-card-next,
+.project-card-more {
+  flex-shrink: 0;
+}
+.project-card-work-id {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-muted);
+}
+.project-card-work-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-card-next,
+.project-card-more {
+  color: var(--text-muted);
+}
+.project-card-more {
+  margin-left: auto;
+}
 .project-card-foot {
   display: flex;
   align-items: center;

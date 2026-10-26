@@ -157,6 +157,8 @@ test.describe('projects', () => {
           percent: 50,
           current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
           agents_working: 2,
+          // A server before 0.18 sends no working list (undefined isn't serialized): the card counts the agents
+          working: undefined,
           last_activity: '2026-01-01T11:48:00Z',
         }),
       )
@@ -267,6 +269,40 @@ test.describe('projects', () => {
       };
     });
     expect(geometry).toEqual({ twoLines: true, sameNameHeight: true, ringsLevel: true });
+  });
+
+  // T-207: who works on what, by name, or what comes next; two lines on every card
+  test('overview cards: the tasks at work or next, by name, in a section of the same height on every card', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const claim = (task: string, name: string) => ({ task, name, agent: 'claude:e5ea9db0', branch: 'dev/x' });
+    tasksServer
+      .addProject(
+        'busy',
+        'minimal',
+        'Busy',
+        summary({
+          agents_working: 3,
+          working: [claim('T-1', 'Build the board'), claim('T-2', 'Write the tests'), claim('T-3', 'Polish')],
+        }),
+      )
+      .addProject('idle', 'minimal', 'Idle', summary({ next: [{ id: 'T-9', name: 'Next thing' }] }))
+      .addProject('done', 'minimal', 'Done', summary());
+    await openDashboard(page, tasksServer, 'standard');
+    const work = (id: string) => page.locator(`.project-card[data-id="${id}"] .project-card-work-line`);
+    await expect(work('busy')).toHaveText([/T-1\s*Build the board/, /T-2\s*Write the tests\s*\+1 more/]);
+    await expect(work('idle')).toHaveText([/Next:\s*T-9\s*Next thing/]);
+    await expect(work('done')).toHaveCount(0);
+    const tops = await page.evaluate(() =>
+      ['busy', 'idle', 'done'].map((id) => {
+        const card = document.querySelector(`.project-card[data-id="${id}"]`)!;
+        const box = card.querySelector('.project-card-work')!.getBoundingClientRect();
+        return [Math.round(box.top), Math.round(box.height)];
+      }),
+    );
+    expect(new Set(tops.map((t) => t.join(','))).size).toBe(1);
   });
 
   // T-197: each project's logo (p/<id>/logo), or its monogram, in the cards, the selector and the title bar

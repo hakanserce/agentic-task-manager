@@ -59,7 +59,8 @@ export function defaultView(): SavedView {
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
     progressPhase: null,
-    progressActive: { only: false },
+    // On by default: the unfinished phases and the last finished one are what most projects want to see
+    progressActive: { only: true },
     graphFiltered: 'hide',
     graph: null,
     agents: null,

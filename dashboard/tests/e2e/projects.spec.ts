@@ -241,6 +241,34 @@ test.describe('projects', () => {
     expect(geometry).toEqual({ oneLine: true, countInside: true, feetLevel: true, cards: 2 });
   });
 
+  // T-194 review: two lines for every card's name, so a long one doesn't push its card's rings below the others'
+  test('overview cards: a long project name takes at most two lines; the rings of a row line up', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const recent_phases = [{ id: 1, name: null, done: 1, total: 2, percent: 50 }];
+    const long = 'A project with a very long name that would take three or more lines on a card of this width';
+    tasksServer
+      .addProject('long', 'minimal', long, summary({ recent_phases }))
+      .addProject('short', 'minimal', 'Short', summary({ recent_phases }));
+    await openDashboard(page, tasksServer, 'standard');
+    const name = page.locator('.project-card[data-id="long"] .project-card-name');
+    await expect(name.locator('.project-card-open')).toHaveAttribute('title', new RegExp(`^${long}\\n`));
+    const geometry = await page.evaluate(() => {
+      const card = (id: string) => document.querySelector(`.project-card[data-id="${id}"]`)!;
+      const lineHeight = parseFloat(getComputedStyle(card('long').querySelector('.project-card-name')!).lineHeight);
+      const nameHeight = (id: string) => card(id).querySelector('.project-card-name')!.getBoundingClientRect().height;
+      const ringsTop = (id: string) => card(id).querySelector('.project-card-rings')!.getBoundingClientRect().top;
+      return {
+        twoLines: Math.round(nameHeight('long') / lineHeight) <= 2 && nameHeight('long') <= 2 * lineHeight + 4,
+        sameNameHeight: Math.round(nameHeight('long')) === Math.round(nameHeight('short')),
+        ringsLevel: Math.round(ringsTop('long')) === Math.round(ringsTop('short')),
+      };
+    });
+    expect(geometry).toEqual({ twoLines: true, sameNameHeight: true, ringsLevel: true });
+  });
+
   // T-197: each project's logo (p/<id>/logo), or its monogram, in the cards, the selector and the title bar
   test('project logos: the image when there is one, else the monogram, also when the image fails', async ({
     page,

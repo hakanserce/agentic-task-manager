@@ -130,7 +130,7 @@ export class DashboardState {
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
   /** The Progress tab lists only active phases (the unfinished ones and the one that finished last) */
-  progressActive = $state.raw<{ only: boolean }>({ only: false });
+  progressActive = $state.raw<{ only: boolean }>({ only: true });
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */

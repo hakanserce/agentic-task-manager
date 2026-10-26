@@ -57,14 +57,12 @@ test.describe('Progress tab: phase table', () => {
     return data;
   }
 
-  test('"Active phases only" keeps the unfinished phases and the one that finished last; remembered', async ({
+  test('"Active phases only" (on by default) keeps the unfinished phases and the one that finished last; remembered', async ({
     page,
     tasksServer,
   }) => {
     await openProgress(page, tasksServer, twoFinishedPhases());
-    await expect(page.locator('#active-phases-only')).not.toBeChecked();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
-    await page.locator('#active-phases-only').check();
+    await expect(page.locator('#active-phases-only')).toBeChecked();
     // Phase 0 finished last (Apr 1) and stays; phase 3 finished earlier (Mar 1) and goes
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
     await expect(row(page, 0)).toHaveCount(1);
@@ -73,10 +71,14 @@ test.describe('Progress tab: phase table', () => {
     // The burndown still covers every phase
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
 
+    // Turned off: every phase, and the choice is remembered for the project
+    await page.locator('#active-phases-only').uncheck();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
+    await expect(page.locator('#phases-hidden')).toHaveCount(0);
     await page.reload();
     await page.locator('#tab-progress').click();
-    await expect(page.locator('#active-phases-only')).toBeChecked();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+    await expect(page.locator('#active-phases-only')).not.toBeChecked();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
   });
 
   test('the Progress panel shares "Active phases only": By phase follows it, Overall and By type stay whole', async ({

@@ -32,11 +32,13 @@
   <div class="project-card-head">
     <ProjectLogo {project} size={24} />
     {#if project.missing}
-      <h3 class="project-card-name" title={project.path}>{project.name}</h3>
+      <h3 class="project-card-name" title="{project.name}&#10;{project.path}">{project.name}</h3>
     {:else}
       <h3 class="project-card-name">
-        <button class="project-card-open" title={project.path} onclick={() => dashboard.openProject(project.id)}
-          >{project.name}</button
+        <button
+          class="project-card-open"
+          title="{project.name}&#10;{project.path}"
+          onclick={() => dashboard.openProject(project.id)}>{project.name}</button
         >
       </h3>
     {/if}

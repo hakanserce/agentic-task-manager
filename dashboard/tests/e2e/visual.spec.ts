@@ -13,7 +13,7 @@ async function sectionScreenshot(page: Page, name: string) {
   await expect
     .poll(() => page.evaluate(() => document.querySelector('.topbar')!.classList.contains('scrolled') === scrollY > 8))
     .toBe(true);
-  await expect(section).toHaveScreenshot(name);
+  await expect(section).toHaveScreenshot(name, { stylePath: path.join(import.meta.dirname, 'section-screenshot.css') });
 }
 
 // The version chip and the footer's version are masked: they show the version (and a "new" marker) and would

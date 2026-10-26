@@ -55,11 +55,12 @@ describe('reading and writing', () => {
     expect(readView(key)).toEqual(view);
   });
 
-  it('"Active phases only" falls back to off when malformed; an older view\'s `days` is ignored', () => {
+  it('"Active phases only" is on by default and when malformed; a saved choice is kept; `days` is ignored', () => {
+    expect(defaultView().progressActive).toEqual({ only: true });
     localStorage.setItem(key, JSON.stringify({ progressActive: { only: 'yes', days: 0 } }));
-    expect(readView(key).progressActive).toEqual({ only: false });
-    localStorage.setItem(key, JSON.stringify({ progressActive: { only: true, days: 14 } }));
     expect(readView(key).progressActive).toEqual({ only: true });
+    localStorage.setItem(key, JSON.stringify({ progressActive: { only: false, days: 14 } }));
+    expect(readView(key).progressActive).toEqual({ only: false });
   });
 
   it('projects are kept apart', () => {

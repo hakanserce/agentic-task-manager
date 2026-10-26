@@ -6797,7 +6797,7 @@
       "description": "The user wants the phase rings **tested live** before they're settled.\n\n## Do\n- Run `atm serve` with several real projects (this repo and others the user has registered) and open `#overview`.\n- Check with the user: are the right phases picked? Do the rings fit on one line at different window widths? Are they readable in light and dark?\n- Fix what comes up, or record follow-up tasks.\n\nThis is a review with the user: move the task to review and **ask** rather than finishing it on your own.",
       "requirements": [],
       "use_cases": [],
-      "status": "blocked",
+      "status": "in_progress",
       "dependencies": [
         "T-193"
       ],
@@ -6805,16 +6805,19 @@
         "dashboard/src/components/ProjectCard.svelte"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:47:08Z",
+      "updated_at": "2026-10-26T08:05:55Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "started_at": "2026-10-26T05:46:49Z",
-      "started_by": "claude:e5ea9db0",
-      "waiting_on": "user",
-      "questions": [
-        "Live check of the phase rings (T-192/T-193): after the merge, run the merged checkout's 'plugin/scripts/atm serve --all --refresh' (restarts your server on the new dashboard; npm run dev shows no summaries) and open #overview. Are the right phases picked (lowest 4 open, else the most recently finished)? Do the rings fit on one line at your window widths and read well in light and dark? Anything to change, or follow-up tasks to record?"
+      "notes": [
+        {
+          "at": "2026-10-26T08:05:55Z",
+          "kind": "answer",
+          "text": "Live check of the phase rings (T-192/T-193): after the merge, run the merged checkout's 'plugin/scripts/atm serve --all --refresh' (restarts your server on the new dashboard; npm run dev shows no summaries) and open #overview. Are the right phases picked (lowest 4 open, else the most recently finished)? Do the rings fit on one line at your window widths and read well in light and dark? Anything to change, or follow-up tasks to record? → Approved, with changes (see done note).",
+          "by": "claude:e5ea9db0"
+        }
       ],
-      "blocked_at": "2026-10-26T05:47:08Z"
+      "started_at": "2026-10-26T08:05:55Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-195",

@@ -8,12 +8,15 @@ test.describe('Footer', () => {
     await openDashboard(page, tasksServer, 'standard');
   });
 
-  test('shows the copyright, the version and a GitHub link on every view', async ({ page }) => {
+  test('shows the logo and name, the copyright, the version and a GitHub link on every view', async ({ page }) => {
     const footer = page.locator('#site-footer');
     for (const view of ['graph', 'kanban', 'list', 'agents', 'progress']) {
       await page.locator(`#tab-${view}`).click();
       await expect(footer).toBeVisible();
-      await expect(footer).toContainText(/© \d{4} Hakan Serce · MIT License/);
+      // The ATM logo and name come first, before the copyright
+      await expect(footer.locator('#footer-brand')).toHaveText('Agentic Task Manager (atm)');
+      await expect(footer.locator('#footer-brand #footer-logo svg')).toBeVisible();
+      await expect(footer).toContainText(/Agentic Task Manager \(atm\)\s*© \d{4} Hakan Serce · MIT License/);
       await expect(footer.locator('#footer-github')).toHaveAttribute('href', plugin.repository);
     }
   });

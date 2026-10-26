@@ -7710,19 +7710,29 @@
       "description": "**Interactive with the user.** Make every diagram and number on the Progress tab meaningful, with help that makes it useful.\n\n## Review\nGo through the Progress tab piece by piece (`ProgressTab.svelte`, `ProgressWidget.svelte`, `BurndownChart.svelte`, `PhaseTable.svelte`, `Ring.svelte`, `forecast.ts`). For each diagram and number, write:\n- what it shows and how it's computed;\n- when it misleads (few tasks, skipped tasks, parallel agents, archived tasks);\n- what question it answers for the user.\n\n## Proposal\nPut that in `docs/progress-tab-review.md`, with a recommendation per item (*keep*, *change* or *drop*) and the help each kept item gets: a tooltip, an info popover or an empty-state message.\n\n## With the user\nReview it with the user (the preview server and/or a crit review of the proposal; `atm block --on user` for decisions you can't make). Then implement what's approved, or, if it's large, add follow-up tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/progress-tab-review.md",
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T20:46:17Z",
+      "updated_at": "2026-10-26T21:09:24Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T20:45:08Z",
       "started_by": "claude:e5ea9db0",
-      "commit": "ffde76cf4bc1484f40a01174dd028b458688e397"
+      "commit": "9444cb5f225bdfc059d517e9ebc3dec2a2e27132",
+      "completed_at": "2026-10-26T21:09:24Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:09:24Z",
+          "kind": "outcome",
+          "text": "Review in docs/progress-tab-review.md, approved in Crit (filters: keep with a banner; one-agent estimates; agent time / waiting on you / idle). Implementation as T-238..T-243 in phase 21.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-213",
@@ -7738,7 +7748,7 @@
       "description": "**Interactive with the user.** The same pass as the Progress tab review (T-212), for the Activity per hour/day/week popup.\n\n## Review\nGo through `ActivityWidget.svelte`, `ActivityDeepDive.svelte`, `UtilizationPanel.svelte` and `insights.ts`. For each chart, box and number (throughput, cumulative done, cycle time, WIP, idle time, utilization), write:\n- what it shows and how it's computed;\n- when it misleads;\n- what question it answers.\n\n## Proposal\n`docs/activity-popup-review.md`, with *keep*, *change* or *drop* and the help text for each.\n\n## With the user\nReview it with the user (the preview server and/or crit; `atm block --on user` for open decisions). Then implement what's approved, or add follow-up tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-210"
       ],
@@ -7747,9 +7757,11 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:19:38Z",
+      "updated_at": "2026-10-26T21:09:27Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:09:27Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-214",

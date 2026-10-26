@@ -6645,26 +6645,34 @@
       "description": "The project cards show **too little** about each project. Brainstorm what would help someone glancing at all their projects, and write it up.\n\n## Do\n- Write `docs/project-cards-proposal.md` with options, each with a sketch and what the server summary must add. Ideas to weigh:\n  - recent phases as rings (see the phase-rings tasks)\n  - what agents are doing now (task names, not just a count)\n  - tasks needing you, with their names\n  - the next ready tasks\n  - open PR / branch / CI state (`meta.repository`, task PRs)\n  - last finished task and when\n  - project logo and description\n- Recommend a layout that fits a card, and list follow-up tasks.\n- Review it with the user before follow-up tasks are added (`/atm:create-tasks`).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/project-cards-proposal.md"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T06:43:42Z",
+      "updated_at": "2026-10-26T06:44:21Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "commit": "5a2fa28462786cb70f3e9ff7660fcdea5a514f03",
+      "commit": "4fa5fd37e1f523bb4d05793578c59fc6ead9c190",
       "notes": [
         {
           "at": "2026-10-26T06:43:37Z",
           "kind": "answer",
           "text": "Review docs/project-cards-proposal.md: is the recommended card layout right (needs-you line, recent-phase rings, agents working now / next ready, git branch + PR, last finished task)? Answer its §5 questions (first needing-you task inline or chip popup only; CI state via an opt-in cached gh call or not; keep overall done/total; add meta.description), then I add the §6 follow-up tasks with /atm:create-tasks. → Approved in Crit: popup only; branch + latest PR, no CI; rest as recommended.",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T06:44:21Z",
+          "kind": "outcome",
+          "text": "Proposal reviewed in Crit and approved: chip popup only, branch + latest PR (no CI), rest as recommended. Follow-ups T-205..T-209 in phase 18 (Project cards).",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-26T06:43:42Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "completed_at": "2026-10-26T06:44:21Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-192",

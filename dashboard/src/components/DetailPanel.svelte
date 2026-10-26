@@ -7,6 +7,8 @@
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import { parseMarkdown } from '../lib/markdown';
   import { taskTimes } from '../lib/work';
+  import { commitRef } from '../lib/repo';
+  import RepoRef from './RepoRef.svelte';
   import LabelChips from './LabelChips.svelte';
   import Markdown from './Markdown.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
@@ -186,7 +188,11 @@
       {#if task.commit}
         <div class="detail-section" id="detail-commit">
           <div class="label">Commit</div>
-          <div class="value"><code title={task.commit}>{shortSha(task.commit)}</code></div>
+          <div class="value">
+            <RepoRef ref={commitRef(dashboard.meta, task.commit)} title={task.commit}
+              ><code>{shortSha(task.commit)}</code></RepoRef
+            >
+          </div>
         </div>
       {/if}
       {#if times.length}

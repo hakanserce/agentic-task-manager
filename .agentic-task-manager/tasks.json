@@ -5177,7 +5177,7 @@
       "description": "The details panel's *Timestamps* shows only **Created** and **Updated**, but atm already records `started_at`, `completed_at`, `review_requested_at` and `blocked_at`.\n\n### Show them\n- **Started** (with who, if not already in *Who*)\n- **Sent for review**\n- **Finished**\n- **Duration**: the work time `workSpan()` in `lib/work.ts` already computes (start to review request or completion; for a task in progress, *so far*, marked as running), formatted like the rest of the dashboard (`format.ts`, e.g. `42 m`, `2 h 5 m`).\n\nLeave out what a task doesn't have: a todo task shows only *Created* / *Updated*.\n\n### Tests\n- Unit tests for the formatting of each state.\n- e2e on the v4 fixture.\n- Detail panel screenshots in both modes (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -5185,11 +5185,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-26T00:36:50Z",
+      "updated_at": "2026-10-26T00:38:35Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:36:50Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "d6d7bb2d1497273a60bf4bb2d6c30c2578ee6f27",
+      "completed_at": "2026-10-26T00:38:35Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:38:35Z",
+          "kind": "outcome",
+          "text": "Details panel timestamps: Created, Started, Sent for review, Finished (or Skipped), Duration (work time, 'so far' while active) and Updated, only what the task has",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-160",
@@ -5204,7 +5215,7 @@
       "description": "Build the links in the dashboard from `meta.repository` (T-158), **never stored per task**:\n\n```\ncommit -> <repository>/commit/<sha>\nPR     -> <repository>/pull/<number>\n```\n\n### Where\n- The details panel (`DetailPanel.svelte` `#detail-commit`, now plain text).\n- The *In PR* and *Merged* stage chips (`StageChip.svelte`; *Merged* isn't a link today).\n\n### How\n- **GitHub only for now**: a lib function (e.g. `repoLinks(meta)` in a new `lib/repo.ts`) that returns `null` for other hosts, which then show plain text.\n- Open in a new tab (`rel=noopener`).\n- **When `meta.repository` isn't set**, the commit and PR still look clickable, and clicking shows a hint instead of navigating: how to set it (`atm repository set <url>`, or ask your agent).\n\n### Tests\n- Unit tests: GitHub URLs, trailing slash, other host → `null`.\n- e2e for both links and the hint.\n- Detail panel screenshots in both modes (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-158"
       ],
@@ -5215,9 +5226,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:21:58Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T00:38:38Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:38:38Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-161",

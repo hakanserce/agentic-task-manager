@@ -73,6 +73,8 @@ export interface TasksFile {
     id?: string;
     created?: string;
     description?: string;
+    /** The repository's web address (atm repository), for commit and PR links (lib/repo.ts) */
+    repository?: string;
     lease_minutes?: number;
     // Project vocabularies (docs/v4/data-model.md §2); validated by vocab.ts, so typed loosely here
     statuses?: unknown;

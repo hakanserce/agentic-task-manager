@@ -1356,12 +1356,48 @@ button.menu-trigger:hover,
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-a.stage-chip.in-pr:hover {
+a.stage-chip:hover,
+button.stage-chip:hover {
   text-decoration: underline;
 }
 .stage-chip.merged {
   color: var(--purple);
   background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+
+/* Commit and PR references (RepoRef.svelte): links, or, without a repository address, a button with a hint */
+a.repo-ref {
+  color: var(--accent);
+}
+button.repo-ref {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.repo-ref-unset:not(.stage-chip) {
+  padding: 0;
+  background: none;
+  color: var(--accent);
+}
+.repo-ref-wrap {
+  position: relative;
+  display: inline-block;
+}
+.repo-hint {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 260px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 50%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: normal;
 }
 .kanban-section {
   display: flex;

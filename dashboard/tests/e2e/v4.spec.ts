@@ -1,7 +1,7 @@
 // Every v4 dashboard feature on one project (fixtures/v4.json, with fixtures/archive.json as its archive):
 // labels, stages, actors, In Review and Blocked, notes, the attention count (docs/v4/dashboard.md).
 import type { Page } from '@playwright/test';
-import { expect, filterButton, matchCount, openDashboard, openFilters, test } from './helpers';
+import { expect, filterButton, loadFixture, matchCount, openDashboard, openFilters, test } from './helpers';
 
 const NOW = new Date('2026-04-10T12:00:00Z');
 const card = (page: Page, id: string) => page.locator(`.kanban-card[data-id="${id}"]`);
@@ -79,6 +79,27 @@ test.describe('v4 project', () => {
     await page.locator('.task-card[data-id="T-009"] .task-name').click();
     await expect(page.locator('#detail-notes .note-kind')).toHaveText(['Rejected', 'Failure']);
     await expect(page.locator('.detail-dep-item[data-archived="T-091"]')).toHaveText(/T-091\s*· archived, done/);
+  });
+
+  test('commit and PR link to GitHub with meta.repository; without it a click says how to set it', async ({
+    page,
+    tasksServer,
+  }) => {
+    const data = loadFixture('v4');
+    data.meta = { ...data.meta, repository: 'https://github.com/acme/demo' };
+    await openDashboard(page, tasksServer, data, { tab: 'list' });
+    await page.locator('.task-card[data-id="T-003"] .task-name').click();
+    await expect(page.locator('#detail-commit a.repo-ref')).toHaveAttribute(
+      'href',
+      /^https:\/\/github\.com\/acme\/demo\/commit\/0f1e2d3/,
+    );
+    await page.keyboard.press('Escape');
+
+    tasksServer.use('v4'); // no repository address
+    await page.locator('#reload-btn').click();
+    await page.locator('.task-card[data-id="T-003"] .task-name').click();
+    await page.locator('#detail-commit button.repo-ref').click();
+    await expect(page.locator('#detail-commit .repo-hint')).toContainText('atm repository set <url>');
   });
 
   test('actors: lanes for agents and people, an approval mark, and a Started by filter', async ({

@@ -149,9 +149,12 @@ export async function serverBuild(fetchFn: typeof fetch = fetch): Promise<string
   }
 }
 
-/** A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. */
-export function newBuildReady(pageBuild: string | undefined, server: string | null): boolean {
-  return !!pageBuild && !!server && pageBuild !== server;
+/**
+ * A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. The
+ * build the user said "Not now" to (`dismissed`) isn't offered again; another one is.
+ */
+export function newBuildReady(pageBuild: string | undefined, server: string | null, dismissed?: string): boolean {
+  return !!pageBuild && !!server && pageBuild !== server && server !== dismissed;
 }
 
 export type LoadResult = { unchanged: true } | { unchanged: false; loaded: LoadedTasks; validators: Validators };

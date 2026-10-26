@@ -191,6 +191,89 @@ describe('DashboardState auto-refresh preference', () => {
   });
 });
 
+describe('DashboardState update notice', () => {
+  let held = 'b2';
+  let meta: HTMLMetaElement;
+  beforeEach(() => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
+    held = 'b2';
+    // This page is build b1; the server's whoami says which build it holds now
+    meta = Object.assign(document.createElement('meta'), { name: 'atm-dashboard-build', content: 'b1' });
+    document.head.append(meta);
+    const files = server();
+    const whoami = () => ok({ atm: true, build: held });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => (url === '__atm/whoami' ? whoami() : files(url))),
+    );
+  });
+  afterEach(() => {
+    meta.remove();
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  /** A poll, then the whoami check it starts in the background. */
+  async function poll(s: DashboardState) {
+    await s.load();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  it('dismissing a build keeps it away after a reload and in other tabs; another build brings it back', async () => {
+    const s = new DashboardState();
+    await poll(s);
+    expect(s.newVersionReady).toBe(true);
+    s.dismissNewVersion();
+    expect(s.newVersionReady).toBe(false);
+    await poll(s);
+    expect(s.newVersionReady).toBe(false);
+
+    const reloaded = new DashboardState(); // a reload, or another tab
+    await poll(reloaded);
+    expect(reloaded.newVersionReady).toBe(false);
+
+    held = 'b3';
+    await poll(reloaded);
+    expect(reloaded.newVersionReady).toBe(true);
+  });
+
+  it('dismissed in another tab: this one hides it on its next check', async () => {
+    const s = new DashboardState();
+    const other = new DashboardState();
+    await poll(s);
+    await poll(other);
+    expect([s.newVersionReady, other.newVersionReady]).toEqual([true, true]);
+    other.dismissNewVersion();
+    await poll(s);
+    expect(s.newVersionReady).toBe(false);
+  });
+
+  it('without storage, dismissing still holds for this page', async () => {
+    const s = new DashboardState();
+    await poll(s);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    s.dismissNewVersion();
+    await poll(s);
+    expect(s.newVersionReady).toBe(false);
+    vi.restoreAllMocks();
+  });
+
+  it('a failed check leaves the notice as it was', async () => {
+    const s = new DashboardState();
+    await poll(s);
+    expect(s.newVersionReady).toBe(true);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new TypeError('offline'))),
+    );
+    await poll(s);
+    expect(s.newVersionReady).toBe(true);
+  });
+});
+
 describe('DashboardState saved view', () => {
   beforeEach(() => {
     localStorage.clear();

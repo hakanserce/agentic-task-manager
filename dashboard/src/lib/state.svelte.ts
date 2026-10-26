@@ -168,7 +168,9 @@ export class DashboardState {
   #validators: Validators | undefined;
   #projectsValidators: Validators | undefined;
   #pendingNeedsYou = false;
-  #newVersionDismissed = false;
+  // The build the server last said it holds, and the one dismissed in this page (for when storage is unavailable)
+  #serverBuild: string | null = null;
+  #dismissedBuild = '';
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
   // The main worktree's tasks as loaded, and the project's worktrees: `tasks` is the two merged
@@ -287,14 +289,22 @@ export class DashboardState {
     if (JSON.stringify(route) !== JSON.stringify(this.route)) void this.reload();
   }
 
-  /** Whether the server now holds a newer dashboard than this page (the plugin was updated): offer a reload */
+  /** Whether the server now holds a newer dashboard than this page (the plugin was updated): offer a reload, unless
+   * the user dismissed this build already (in this tab, another, or before a reload). A failed check changes nothing. */
   private async checkServerBuild() {
-    if (!this.#newVersionDismissed && newBuildReady(dashboardBuild(), await serverBuild())) this.newVersionReady = true;
+    const server = await serverBuild();
+    if (server === null) return;
+    this.#serverBuild = server;
+    const dismissed = getPref('dismissedBuild', '') || this.#dismissedBuild;
+    this.newVersionReady = newBuildReady(dashboardBuild(), server, dismissed);
   }
 
-  /** "Not now": the bar stays away until the page is reloaded */
+  /** "Not now": the bar stays away for this build, also after a reload; only another build brings it back */
   dismissNewVersion() {
-    this.#newVersionDismissed = true;
+    if (this.#serverBuild) {
+      this.#dismissedBuild = this.#serverBuild;
+      setPref('dismissedBuild', this.#serverBuild);
+    }
     this.newVersionReady = false;
   }
 

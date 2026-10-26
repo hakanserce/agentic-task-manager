@@ -21,14 +21,30 @@ test.describe('new version notice', () => {
     await reloaded;
   });
 
-  test('“Not now” hides it until the page is reloaded', async ({ page, tasksServer }) => {
+  test('“Not now” hides it for that build, also after a reload; another build brings it back', async ({
+    page,
+    tasksServer,
+  }) => {
     await tasksServer.serverBuild('newer-build');
     await openDashboard(page, tasksServer, 'standard');
-    await expect(page.locator('#update-notice')).toBeVisible();
+    await expect(page.locator('#update-notice')).toHaveCount(1);
     await page.getByRole('button', { name: 'Not now' }).click();
+    // Each check asks the server's whoami; wait for its answer before looking
+    const checked = () => page.waitForResponse((r) => r.url().endsWith('/__atm/whoami'));
+    let answer = checked();
     await page.locator('#reload-btn').click();
-    await expect(page.locator('#dashboard-title')).toBeVisible();
+    await answer;
     await expect(page.locator('#update-notice')).toHaveCount(0);
+
+    answer = checked();
+    await page.reload();
+    await answer;
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#update-notice')).toHaveCount(0);
+
+    await tasksServer.serverBuild('newest-build');
+    await page.locator('#reload-btn').click();
+    await expect(page.locator('#update-notice')).toHaveCount(1);
   });
 
   test('a server that doesn’t say its build never shows it', async ({ page, tasksServer }) => {

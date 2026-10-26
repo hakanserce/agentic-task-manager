@@ -7390,7 +7390,7 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:37:42Z",
+      "updated_at": "2026-10-26T09:11:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:32:47Z",
@@ -7405,7 +7405,11 @@
           "text": "Summary has working (live claims with task names), next (up to 2 by the loop's order, via a shared ready_in_order) and last_done; task names capped at 80 chars. Server tests, API doc, ProjectSummary type.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 14,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+      }
     },
     {
       "id": "T-206",
@@ -7432,7 +7436,7 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:41:52Z",
+      "updated_at": "2026-10-26T09:11:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:37:43Z",
@@ -7447,7 +7451,11 @@
           "text": "Summary has git: {branch (from .git/HEAD), pr (latest recorded on the tasks: number, url, open/merged)}; no gh call. HEAD is part of the summary stamp, so a branch switch changes the ETag.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 14,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+      }
     },
     {
       "id": "T-207",
@@ -7473,7 +7481,7 @@
         "dashboard/tests/e2e/projects.spec.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:47:12Z",
+      "updated_at": "2026-10-26T09:11:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:41:53Z",
@@ -7488,7 +7496,11 @@
           "text": "Cards list the agents' tasks by ID and name (agent and branch in the title), or 'Next:' with up to 2 tasks; a fixed 2-line section, '+N more' past two, so a row lines up. Older servers keep the agent count.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 14,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+      }
     },
     {
       "id": "T-208",
@@ -7515,7 +7527,7 @@
         "dashboard/tests/e2e/projects.spec.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:51:20Z",
+      "updated_at": "2026-10-26T09:11:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:47:13Z",
@@ -7530,7 +7542,11 @@
           "text": "Cards show the branch and latest PR (linked, open/merged; left out when neither) and the task finished last with its time, replacing the bare time; older servers keep the last activity.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 14,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+      }
     },
     {
       "id": "T-209",
@@ -7563,7 +7579,7 @@
         "dashboard/tests/e2e/projects.spec.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:57:29Z",
+      "updated_at": "2026-10-26T09:11:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:51:21Z",
@@ -7578,7 +7594,11 @@
           "text": "Cards in the approved order (head, rings, working/next, git, last done + sparkline), each section a fixed height so a row lines up; whole count in the rings' tooltip; current-phase line only for older servers; meta.description as the name's tooltip. Screenshots wide and at 280px.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 14,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+      }
     }
   ]
 }

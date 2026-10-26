@@ -1,6 +1,24 @@
-/* Applied to screenshots of the view under the title bar (visual.spec.ts, sectionScreenshot): the status bar is
-   pinned to the bottom of the window and would cover the bottom of the view, at a height that depends on how far
-   the page scrolled. Out of the way, it can't move the picture; the footer screenshots cover its own look. */
+/* Applied to screenshots of the view under the title bar (visual.spec.ts, sectionScreenshot). Playwright scrolls the
+   view into place just before it captures it, so anything that moves with the scroll position could land in the
+   picture in either state. The title bar and the status bar are pinned (sticky) and would cover the edges of the
+   view; the title bar also compacts once the page scrolls, which shifts the whole view by about 50px (seen on CI,
+   where one such shifted picture was even committed as the baseline). Here neither is pinned, and the compact title
+   bar keeps the full one's size, so the picture is the same whatever the scroll position. The header and footer
+   screenshots cover their own look. */
+.topbar,
 .site-footer {
   position: static !important;
+}
+.topbar.scrolled {
+  padding: 24px 24px 14px !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+.topbar.scrolled h1 {
+  font-size: 28px !important;
+  transition: none !important;
+}
+.topbar.scrolled .subtitle {
+  display: block !important;
 }

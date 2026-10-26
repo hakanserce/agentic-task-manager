@@ -205,6 +205,12 @@ Once the commit is in, decide how the task ends:
   (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
   moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
   Report the task as **waiting for review**.
+
+  **A review you hold with the user** (the task says to review a draft or proposal with them, e.g. in a review tool
+  or the preview): commit the draft, run `atm review` *before* you show it, so the dashboard shows it waiting on
+  them, then open the review. Address their comments while it stays in review (`atm commit` works in any status).
+  When they approve, finish it from review with `atm done $TASK_ID --note '…'`; if their comments mean more work than
+  a round of edits, `atm reject $TASK_ID --reason '…'` sends it back to to do with what's left.
 - **Otherwise**: run `atm done $TASK_ID --note '<one-line outcome>'`. It sets the status and `completed_at`, records
   the outcome as a note (the commit atm recorded stays), drops your claim, and prints the tasks it made ready
   ("Now ready:").

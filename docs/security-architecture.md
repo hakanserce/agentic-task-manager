@@ -99,7 +99,10 @@ How each kind of check runs, and when, is decided in T-233 (the sandbox) and T-2
 review proposed:
 
 - **Every PR (CI)**: everything in §2 that is a test.
-- **Before each release**: the agent sandbox's red-team run (I1).
+- **Every PR that changes what agents read** (a skill, `plugin/CLAUDE.md`, or atm's output agents act on), before
+  it is merged: the agent sandbox's red-team run (I1). Here **every PR to `main` is a release** (the version is
+  bumped and `/plugin marketplace update` delivers it), so "before a release" means "before merging such a PR". PRs
+  that change only the dashboard or atm-cli don't need the sandbox run: their invariants are covered by CI.
 - **Each quarter**: a review against this document, like `docs/security-review.md`.
 
 ## 4. Keeping it current

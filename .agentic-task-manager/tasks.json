@@ -8331,7 +8331,7 @@
       "description": "Findings **F10** and **F18** in `docs/security-review.md`.\n\n## Do\n\n- First confirm F10: does a listener on `[::1]:<port>` win over our 127.0.0.1 server for `http://localhost:<port>` (browser and urllib)? If yes, use `127.0.0.1` in printed URLs and in `whoami`. Note that this changes the dashboard's origin, which resets views saved in localStorage; say so in the changelog.\n- Catch `RecursionError` in `read_json`; compute each project's entry in `/api/projects` on its own, so a failing project shows as missing; a top-level try in `do_GET` that returns 500.\n- A handler timeout (30 s) and a size cap on served files.\n- Unique project ids at registration (a suffix on collision); ids limited to `[A-Za-z0-9._-]{1,64}`.\n- Create `ATM_HOME` with mode 0700.\n\n## Verify\n\nTests: a project whose `tasks.json` is 100k `[`; `/api/projects` still answers 200 with it missing. Two projects with the same `meta.id` both stay reachable. `ATM_HOME` mode after a fresh `atm serve`.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/server.py",
@@ -8340,11 +8340,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:39:41Z",
+      "updated_at": "2026-10-26T22:46:14Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:39:41Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "63cd1d2ec04b71c487cc47d9f0a3b91a08f31676",
+      "completed_at": "2026-10-26T22:46:14Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:46:14Z",
+          "kind": "outcome",
+          "text": "F10 confirmed (curl, urllib and Chromium all reach a `[::1]` listener first). Instead of changing the origin, the server listens on `[::1]` too, and moves on when that is taken, so saved views keep working. Also: unreadable JSON is unreadable, not a crash; one bad project is listed as missing; 500 instead of a dead handler; 30 s timeout; 100 MB cap; unique, valid project ids; `ATM_HOME` created 0700.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-228",
@@ -8359,7 +8370,7 @@
       "description": "Findings **F12**, **F13** and **F14** in `docs/security-review.md`.\n\n## Do\n\n- Catch `RecursionError` in `read_json`; make `find_cycle` iterative; check task shapes on load (each task a dict, dependencies a list of strings).\n- A catch-all in `main` (and the merge driver) that reports a clean error instead of a traceback.\n- The ID regex `^(.*?)(\\d+)$`: time it on `'1'*20000+'x'`; if slow, cap ID length or strip trailing digits by hand.\n- Fix the lock-breaking race in `lock.py` (rename first, then check the owner inside the renamed directory).\n- Delete a legacy `.agentic-task-manager/.server.json` without contacting its port or signalling its pid.\n\n## Verify\n\nScenarios with deeply nested JSON, a 2000-task dependency chain, a non-dict task, a long numeric ID; a concurrency test for the lock.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/core.py",
@@ -8371,9 +8382,11 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:46:15Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:46:15Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-229",
@@ -8461,19 +8474,28 @@
       "description": "§4.2 of `docs/security-review.md`.\n\n## Do\n\nWrite `docs/security-architecture.md`:\n\n- **Threat model**: the assets, actors, boundaries and threats from §2 of the review, as the maintained version.\n- **Invariants** every change must keep, e.g.: task text is data for agents; atm never runs a shell or follows a symlink out of the repo; nothing changes state over HTTP; the server answers only loopback with a matching Host; every link the dashboard renders is http(s)/mailto/#; no `{@html}` on data; skills pre-approve no command runner; CI tokens are read-only by default.\n- For **each invariant**, the test or check that enforces it (existing or to build).\n- **Keeping it current**: which changes must update the threat model (a new entry point, file format, HTTP route or skill instruction), and a line about it in `CLAUDE.md`.\n\nReview the draft with the user before committing it as done.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "in_review",
       "dependencies": [],
       "files": [
         "docs/security-architecture.md",
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:39:29Z",
+      "updated_at": "2026-10-26T22:46:29Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:38:45Z",
       "started_by": "claude:e5ea9db0",
-      "commit": "2e1118630087a934621937285a0d01277566040f"
+      "commit": "2e1118630087a934621937285a0d01277566040f",
+      "review_requested_at": "2026-10-26T22:46:29Z",
+      "notes": [
+        {
+          "at": "2026-10-26T22:46:29Z",
+          "kind": "review",
+          "text": "Draft in `docs/security-architecture.md` (threat model, 21 invariants with their checks, how it stays current), under review with Hakan in Crit.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-233",

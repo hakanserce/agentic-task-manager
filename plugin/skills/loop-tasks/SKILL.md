@@ -179,6 +179,10 @@ while true:
          or by another agent): `atm review $TASK_ID --note '<what the reviewer should check>'` (with `--status`
          when one of several review statuses fits). The claim is released and the tasks that depend on it keep
          waiting; the loop goes on with other ready tasks. Count it as waiting for review, not completed.
+         A review held with the user (a draft or proposal the task says to review with them): `atm review` as soon
+         as the draft is committed, *before* opening the review, so the dashboard shows it waiting on them; address
+         their comments while it stays in review, and `atm done` it from review once they approve (/atm:do-task
+         Step 7b).
        - If it needs a decision: `atm block $TASK_ID --on user --question '<question>' [--question ...]`
          (`--on agent` when the project or the user hands such decisions to a reviewer agent). The claim is
          released and its dependents wait; the loop goes on with other ready tasks. Count it as blocked. Whoever

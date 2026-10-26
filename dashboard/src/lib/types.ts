@@ -75,6 +75,8 @@ export interface TasksFile {
     description?: string;
     /** The repository's web address (atm repository), for commit and PR links (lib/repo.ts) */
     repository?: string;
+    /** The host's kind when its name doesn't say (a self-hosted server): github, gitlab, bitbucket or gitea */
+    repository_type?: string;
     lease_minutes?: number;
     // Project vocabularies (docs/v4/data-model.md §2); validated by vocab.ts, so typed loosely here
     statuses?: unknown;

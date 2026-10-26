@@ -53,7 +53,9 @@ atm-cli writes these fields; this is for reading `atm show --json` output, not f
   at most 500 characters each). Older files may have `last_failure` instead of failure notes
 - Git: commit (the task's SHA), pr (`{number, url}`), merged_at. Stages of Done are derived from them: Done, In PR,
   Merged; they never affect dependencies
-- `meta`: project, id, repository (the web address, e.g. `https://github.com/o/r`), phases, statuses, types, priorities, default_priority, labels, workflow
+- `meta`: project, id, repository (the web address, e.g. `https://github.com/o/r`; commit and PR links work for
+  GitHub, GitLab, Bitbucket and Gitea/Codeberg), repository_type (`github`, `gitlab`, `bitbucket` or `gitea`, for a
+  self-hosted server whose name doesn't say; set with `atm init --meta-file`), phases, statuses, types, priorities, default_priority, labels, workflow
   (`{type: direct|pull-request, base, verify, max_rounds, commit_template, trailers}`), archive (thresholds),
   archived (how many tasks are in `tasks-archive.json`), next_id
 

@@ -5110,7 +5110,7 @@
       "description": "The top bar's Progress panel lists **every** phase under *By Phase* (this repo has 15), while the Progress tab has an **Active phases only** checkbox (T-145).\n\n### What to build\n- Add the same option to the panel's *By Phase* group, **sharing the Progress tab's setting**: one saved choice per project (view-store `progressActive`, and its *N* days), so turning it on in either place applies to both.\n- Reuse `activePhases()` from `forecast.ts`.\n- When phases are hidden, say how many: *\"2 older phases hidden\"*.\n- *Overall* and *By Type* stay unfiltered.\n\n### Tests\n- e2e: the toggle in the panel, and that it follows the Progress tab's setting.\n- Screenshots of the panel in both modes.\n\n> Depends on the By Phase card task (T-156), which changes the same markup.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-156"
       ],
@@ -5120,11 +5120,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:01:20Z",
-      "updated_at": "2026-10-26T01:37:44Z",
+      "updated_at": "2026-10-26T01:42:28Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:37:44Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "2373c5ce71b0fcb4e7b2760ea9410f81d75e549e",
+      "completed_at": "2026-10-26T01:42:28Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:42:28Z",
+          "kind": "outcome",
+          "text": "By phase has an 'Active phases only' checkbox sharing the Progress tab's saved setting (and its days); says how many phases are hidden",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-158",
@@ -5262,7 +5273,7 @@
       "description": "T-160 builds commit and PR links for **GitHub only**. Add the other common hosts to `lib/repo.ts`:\n\n- **GitLab:** `<repo>/-/commit/<sha>`, `<repo>/-/merge_requests/<n>`\n- **Bitbucket:** `<repo>/commits/<sha>`, `<repo>/pull-requests/<n>`\n- **Self-hosted** ones where the host can be recognised (or a `meta.repository_type` hint).\n\nUnit tests per host.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-160"
       ],
@@ -5271,9 +5282,11 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-25T08:22:05Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T01:42:31Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:42:31Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-162",

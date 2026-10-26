@@ -966,8 +966,9 @@ def touch(task, actor, stamp):
         task["updated_by"] = actor
 
 
-def back_to_todo(task, vocab, actor, stamp):
-    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
+def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
+    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4). The commit
+    goes too, unless `keep_commit`: an expired lease or a release leaves the work in git, to be finished later."""
     task["status"] = status_for(vocab, "todo")
     touch(task, actor, stamp)
     for field in (
@@ -977,13 +978,14 @@ def back_to_todo(task, vocab, actor, stamp):
         "started_by",
         "completed_by",
         "agent",
-        "commit",
         "review_requested_at",
         "waiting_on",
         "questions",
         "blocked_at",
     ):
         task.pop(field, None)
+    if not keep_commit:
+        task.pop("commit", None)
 
 
 def answer_note(questions, answers):
@@ -1042,7 +1044,8 @@ def change_status(
         check_note(answered)
     stamp = now_iso()
     if new_kind == "todo":
-        back_to_todo(task, vocab, agent, stamp)
+        # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
+        back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
         if answered:
             add_note(task, "answer", answered, agent, stamp)
         if command == "fail":
@@ -1265,7 +1268,7 @@ def expire_claims(paths, data, claims):
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
         if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            back_to_todo(task, vocab, None, stamp)
+            back_to_todo(task, vocab, None, stamp, keep_commit=True)
             add_note(task, "failure", f"lease expired ({claim.get('agent')})", None, stamp)
     return expired
 
@@ -1298,6 +1301,26 @@ def check_holder(claims, task_id, agent, command):
             f"can't {command} {task_id}: it is claimed by {claim.get('agent')} until {claim.get('lease_expires_at')}",
             4,
         )
+
+
+def own_lease_expired(expired, data, task_id, agent, then):
+    """When `agent`'s own claim on `task_id` is among the claims that just expired and the task went back to todo: an
+    error that says so and how to go on (`then`, the command to run after `atm start`). Exit code 4, like a claim
+    conflict. Another agent's expired claim, or none: None."""
+    claim = next((c for c in expired if c.get("task") == task_id and c.get("agent") == agent), None)
+    task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+    if not claim or not task or kind_of(vocabulary(data), task.get("status")) != "todo":
+        return None
+    until = str(claim.get("lease_expires_at", ""))
+    at = f"{until[11:16]} UTC" if len(until) >= 16 else until
+    minutes = lease_minutes(data)
+    idle = f"{minutes:g} min"
+    kept = " Your commit is kept." if task.get("commit") else ""
+    next_steps = f"Run `atm start {task_id}`" + (f", then `{then}` again." if then else " to claim it again.")
+    return AtmError(
+        f"{task_id}: your lease expired at {at} (no heartbeat for {idle}), so it went back to todo.{kept} {next_steps}",
+        4,
+    )
 
 
 def report_expired(expired):
@@ -1449,6 +1472,9 @@ def cmd_heartbeat(args):
             write_json_atomic(paths["tasks"], data)
         write_store(paths, store)
     if not claim:
+        own = own_lease_expired(expired, data, task_id, agent, None)
+        if own:
+            raise own
         gone = any(c["task"] == task_id for c in expired)
         raise AtmError(f"{task_id} has no live claim" + (" (its lease expired)" if gone else ""), 4)
     if args.json:
@@ -1831,6 +1857,10 @@ def cmd_status(args):
 # ==== tasks.py ====
 # The status commands (start, review, done, fail, release, reject) and notes.
 
+# The commands an agent runs on its own claimed task: if that claim just expired, they explain it instead of refusing
+OWN_LEASE_COMMANDS = ("done", "release", "fail", "review", "block")
+
+
 def cmd_status_change(command):
     def run(args):
         task_id, agent = args.id, agent_identity(args.agent)
@@ -1841,6 +1871,13 @@ def cmd_status_change(command):
             claims = store["claims"]
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
+            if command in OWN_LEASE_COMMANDS:
+                own = own_lease_expired(expired, data, task_id, agent, f"atm {command} {task_id}")
+                if own:
+                    # Write the expiry first, so `atm show` agrees with the error
+                    write_json_atomic(paths["tasks"], data)
+                    write_store(paths, store)
+                    raise own
             check_holder(claims, task_id, agent, command)
             previous = change_status(
                 task,

@@ -181,7 +181,8 @@ Once the commit is in, decide how the task ends:
   ("Now ready:").
 
 This status change is written to `tasks.json` after the commit, so it goes in with the next commit, like the commit's
-SHA. If either command says your lease expired and another agent holds the task, tell the user.
+SHA. If either command says your lease expired (exit code 4), the task went back to todo with your commit kept: run
+`atm start $TASK_ID`, then the same command again. If another agent has claimed it in the meantime, tell the user.
 
 **Reviewing a task** (when the user or another agent asks you to review one that is in review): read its `review`
 note and the commit, then either pass it with `atm done <id>`, or send it back with

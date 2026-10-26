@@ -1,0 +1,249 @@
+[
+  {
+    "name": "done after the agent's own lease expired: says so (exit 4), the expiry is written, the commit kept",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "project": "L" },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Long one",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "started_at": "2026-05-01T10:00:00Z",
+              "started_by": "alice",
+              "commit": "abc1234"
+            }
+          ]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-1": {
+              "task": "T-1",
+              "agent": "alice",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T10:30:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["done", "T-1", "--note", "finished"],
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T11:00:00Z" },
+    "expect": {
+      "exit": 4,
+      "stderrIncludes": [
+        "T-1: your lease expired at 10:30 UTC (no heartbeat for 30 min), so it went back to todo. Your commit is kept. Run `atm start T-1`, then `atm done T-1` again."
+      ],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "project": "L" },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Long one",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "commit": "abc1234",
+              "updated_at": "2026-05-01T11:00:00Z",
+              "notes": [{ "at": "2026-05-01T11:00:00Z", "kind": "failure", "text": "lease expired (alice)" }]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "release explains it too, naming itself as the command to run again; without a commit, nothing is said about one",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "One", "phase": 0, "type": "feature", "status": "in_progress" }]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-1": {
+              "task": "T-1",
+              "agent": "alice",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T10:30:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["release", "T-1"],
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T11:00:00Z" },
+    "expect": {
+      "exit": 4,
+      "stderrIncludes": [
+        "T-1: your lease expired at 10:30 UTC (no heartbeat for 30 min), so it went back to todo. Run `atm start T-1`, then `atm release T-1` again."
+      ]
+    }
+  },
+  {
+    "name": "after the expiry, start then done works without --commit: the commit is still there",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Long one",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "commit": "abc1234",
+              "updated_at": "2026-05-01T11:00:00Z",
+              "notes": [{ "at": "2026-05-01T11:00:00Z", "kind": "failure", "text": "lease expired (alice)" }]
+            }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "ATM_AGENT=alice ATM_NOW=2026-05-01T11:05:00Z \"$ATM\" start T-1"]]
+    },
+    "args": ["done", "T-1"],
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T11:10:00Z" },
+    "expect": {
+      "stdout": "T-1: in_progress -> done\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "Long one",
+              "phase": 0,
+              "type": "feature",
+              "status": "done",
+              "commit": "abc1234",
+              "updated_at": "2026-05-01T11:10:00Z",
+              "notes": [{ "at": "2026-05-01T11:00:00Z", "kind": "failure", "text": "lease expired (alice)" }],
+              "updated_by": "alice",
+              "started_at": "2026-05-01T11:05:00Z",
+              "started_by": "alice",
+              "completed_at": "2026-05-01T11:10:00Z",
+              "completed_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "another agent's expired claim: the usual refusal",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "One", "phase": 0, "type": "feature", "status": "in_progress" }]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-1": {
+              "task": "T-1",
+              "agent": "bob",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T10:30:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["done", "T-1"],
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T11:00:00Z" },
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["can't done T-1: it is todo, not in_progress"]
+    }
+  },
+  {
+    "name": "heartbeat after the agent's own lease expired says so too",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "lease_minutes": 45 },
+          "tasks": [{ "id": "T-1", "name": "One", "phase": 0, "type": "feature", "status": "in_progress" }]
+        },
+        ".agentic-task-manager/claims-store.json": {
+          "claims": {
+            "T-1": {
+              "task": "T-1",
+              "agent": "alice",
+              "claimed_at": "2026-05-01T10:00:00Z",
+              "lease_expires_at": "2026-05-01T10:45:00Z"
+            }
+          }
+        }
+      }
+    },
+    "args": ["heartbeat", "T-1"],
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T11:00:00Z" },
+    "expect": {
+      "exit": 4,
+      "stderrIncludes": [
+        "T-1: your lease expired at 10:45 UTC (no heartbeat for 45 min), so it went back to todo. Run `atm start T-1` to claim it again."
+      ]
+    }
+  },
+  {
+    "name": "release keeps the commit; fail drops it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "One",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "commit": "abc1234"
+            },
+            {
+              "id": "T-2",
+              "name": "Two",
+              "phase": 0,
+              "type": "feature",
+              "status": "in_progress",
+              "commit": "def5678"
+            }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "ATM_AGENT=alice ATM_NOW=2026-05-01T11:00:00Z \"$ATM\" fail T-2 --reason broke"]]
+    },
+    "args": ["release", "T-1"],
+    "env": { "ATM_AGENT": "alice", "ATM_NOW": "2026-05-01T11:00:00Z" },
+    "expect": {
+      "stdout": "T-1: in_progress -> todo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "One",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "commit": "abc1234",
+              "updated_at": "2026-05-01T11:00:00Z",
+              "updated_by": "alice"
+            },
+            {
+              "id": "T-2",
+              "name": "Two",
+              "phase": 0,
+              "type": "feature",
+              "status": "todo",
+              "updated_at": "2026-05-01T11:00:00Z",
+              "updated_by": "alice",
+              "notes": [{ "at": "2026-05-01T11:00:00Z", "kind": "failure", "text": "broke", "by": "alice" }]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

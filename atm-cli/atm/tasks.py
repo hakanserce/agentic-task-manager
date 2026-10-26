@@ -9,6 +9,7 @@ from .claims import (
     expire_claims,
     locked_with_claims,
     new_claim,
+    own_lease_expired,
     read_store,
     report_expired,
     write_store,
@@ -18,6 +19,10 @@ from .lock import locked
 from .model import add_note, archive_hint, change_status, find_task, load_tasks, touch
 from .paths import find_paths
 from .query import describe_task, ready_tasks
+
+
+# The commands an agent runs on its own claimed task: if that claim just expired, they explain it instead of refusing
+OWN_LEASE_COMMANDS = ("done", "release", "fail", "review", "block")
 
 
 def cmd_status_change(command):
@@ -30,6 +35,13 @@ def cmd_status_change(command):
             claims = store["claims"]
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
+            if command in OWN_LEASE_COMMANDS:
+                own = own_lease_expired(expired, data, task_id, agent, f"atm {command} {task_id}")
+                if own:
+                    # Write the expiry first, so `atm show` agrees with the error
+                    write_json_atomic(paths["tasks"], data)
+                    write_store(paths, store)
+                    raise own
             check_holder(claims, task_id, agent, command)
             previous = change_status(
                 task,

@@ -135,7 +135,7 @@ def expire_claims(paths, data, claims):
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
         if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            back_to_todo(task, vocab, None, stamp)
+            back_to_todo(task, vocab, None, stamp, keep_commit=True)
             add_note(task, "failure", f"lease expired ({claim.get('agent')})", None, stamp)
     return expired
 
@@ -168,6 +168,26 @@ def check_holder(claims, task_id, agent, command):
             f"can't {command} {task_id}: it is claimed by {claim.get('agent')} until {claim.get('lease_expires_at')}",
             4,
         )
+
+
+def own_lease_expired(expired, data, task_id, agent, then):
+    """When `agent`'s own claim on `task_id` is among the claims that just expired and the task went back to todo: an
+    error that says so and how to go on (`then`, the command to run after `atm start`). Exit code 4, like a claim
+    conflict. Another agent's expired claim, or none: None."""
+    claim = next((c for c in expired if c.get("task") == task_id and c.get("agent") == agent), None)
+    task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+    if not claim or not task or kind_of(vocabulary(data), task.get("status")) != "todo":
+        return None
+    until = str(claim.get("lease_expires_at", ""))
+    at = f"{until[11:16]} UTC" if len(until) >= 16 else until
+    minutes = lease_minutes(data)
+    idle = f"{minutes:g} min"
+    kept = " Your commit is kept." if task.get("commit") else ""
+    next_steps = f"Run `atm start {task_id}`" + (f", then `{then}` again." if then else " to claim it again.")
+    return AtmError(
+        f"{task_id}: your lease expired at {at} (no heartbeat for {idle}), so it went back to todo.{kept} {next_steps}",
+        4,
+    )
 
 
 def report_expired(expired):
@@ -319,6 +339,9 @@ def cmd_heartbeat(args):
             write_json_atomic(paths["tasks"], data)
         write_store(paths, store)
     if not claim:
+        own = own_lease_expired(expired, data, task_id, agent, None)
+        if own:
+            raise own
         gone = any(c["task"] == task_id for c in expired)
         raise AtmError(f"{task_id} has no live claim" + (" (its lease expired)" if gone else ""), 4)
     if args.json:

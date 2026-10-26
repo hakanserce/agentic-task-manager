@@ -6251,7 +6251,7 @@
       "description": "Since descriptions render as Markdown (T-142), their `###` headings look like the details panel's own sections (*Dependencies*, *Files*, *Notes*, …), so it's hard to tell **where the description ends and the task's attributes begin**.\n\n### Make the description read as one block\n- Give `#detail-description` a container: for example a subtle border and/or a `surface2` background, rounded corners, inner padding, using **theme tokens only** (no hard-coded colours).\n- Keep its *Description* label outside the box, like the other sections.\n- Scale the Markdown headings inside it down so they stay below the panel's section labels in the visual hierarchy (smaller, muted, or both).\n- Long code blocks scroll horizontally inside the box, not the panel.\n\nTry one or two variants and pick the clearest; check every theme in both modes, and that contrast stays readable (text 4.5:1, borders visible).\n\n### Tests\n- Update the detail panel screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n- The theme screenshots that show the details panel, if any.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -6259,11 +6259,22 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T21:49:53Z",
-      "updated_at": "2026-10-26T01:27:19Z",
+      "updated_at": "2026-10-26T01:31:46Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:27:19Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "70a3b56d6f29248d81e8e13f782ca9ddf93e27a2",
+      "completed_at": "2026-10-26T01:31:46Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:31:46Z",
+          "kind": "outcome",
+          "text": "Description in a bordered box on the page background (theme tokens), Markdown headings scaled down; checked default, Nord, Solarized, High contrast in both modes",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-184",
@@ -6277,7 +6288,7 @@
       "description": "Seen on T-171: the agent's lease ran out during a long test run (no tool calls, so no heartbeat), after which:\n\n1. `atm done T-171` refused with *\"it is todo, not in_progress or in_review\"*, though `atm show` still said `in_progress`: the command expired the claim in memory, then refused **before writing**, so the file kept the old status;\n2. `atm release` refused the same way, and this time the expiry was written (a `failure` note: *lease expired*);\n3. the expiry had dropped the task's `commit` (`back_to_todo` clears it), so `atm done` needed `--commit` again.\n\n### Fix\n- When a status command (`done`, `release`, `fail`, `review`, `block`, `heartbeat`) finds that **this agent's own** claim on the task just expired, say so: *\"T-171: your lease expired at 23:00 (no heartbeat for 30 min), so it went back to todo. Your commit is kept. Run `atm start T-171`, then `atm done T-171` again.\"* Exit code 4, like a claim conflict.\n- Write the expiry **before** refusing, so `atm show` agrees with the error.\n- An expiry keeps the task's `commit` (the work is in git): `back_to_todo` drops it only when called by `reopen`, `reject` and `fail`.\n- Another agent's expired claim keeps today's message.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` with `ATM_NOW` past the lease: `done` by the claim's own agent (the message, exit 4, status `todo` on disk, `commit` kept); `start` then `done` works without `--commit`; another agent's expired claim unchanged. Update `docs/v4/atm-cli.md` (4.2) and the skills' error handling line on expired leases (do-task, loop-tasks).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/claims.py",
@@ -6290,9 +6301,11 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-26T00:24:09Z",
-      "updated_at": "2026-10-26T00:24:09Z",
+      "updated_at": "2026-10-26T01:31:49Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:31:49Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-185",

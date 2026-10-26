@@ -20,8 +20,10 @@ should say so.
   - On a long project the bars are weeks; the last bar is the current, unfinished week, so the sparkline always seems
     to end in a drop.
 - **Answers:** "are agents getting things done lately?"
-- **Recommend: change.** Show the **last 14 days, per day** (a steady unit), the current day drawn lighter (in
-  progress). Drop the average line. Tooltip: *Tasks completed per day, last 14 days: 23 · today 4 so far*.
+- **Recommend: keep all time** (a fixed window like 14 days fails small or fast projects that do a lot in a few
+  days), and fix what misleads: draw the **last bar lighter** (its period isn't over), and say what the line is in
+  the tooltip: *Tasks completed per week, all time: 236 · the line is the average of the last 3 weeks · this week
+  so far: 12*.
 
 ## 2. The popup header: period and presets
 
@@ -36,16 +38,41 @@ should say so.
 |---|---|---|---|
 | **Tasks completed** | completions in the period | — | **keep** |
 | **Completion rate** (`/ hour` or `/ day`) | completions ÷ the period's calendar time, nights and idle time included | it mostly measures how much of the period agents ran, not how fast they work; overlaps with *tasks completed* | **drop** (the chart shows the rhythm; *time per task* shows speed) |
-| **Typical time per task** | median of start → review request (or completion) for tasks completed in the period | includes time an `in_progress` task waited on the user (interactive tasks); a lease-expired task measures only from its restart | **keep**, leave out `interactive` tasks (as the pace does, T-240); tooltip with the definition |
+| **Typical time per task** | median of start → review request (or completion) for tasks completed in the period | mixes two different things: tasks agents do alone, and `interactive` tasks that include working with you; a lease-expired task measures only from its restart | **change** into **two medians in one card**: *agents alone* (tasks without the `interactive` label) and *with you* (`interactive` tasks). The first says what agents achieve alone, the second how you and the agents work together. (The forecast pace, T-240, still uses only the first.) |
 | **Agents busy on average · N now** | average over buckets of the agents at work (an agent on two tasks counts once) | "1.3" is hard to read; "N now" counts distinct `started_by` of active tasks, not live claims, and says *now* even when looking at last month | **change** to **Agent time** (*14 h 20 m*, parallel agents add up); show *2 working now* only for a period that includes now, from the claims |
 | **Idle (no agent working)** | gaps ≥ 10 min with no agent at work, from the first work in the period to its end | **nights, weekends and waiting on you all count as idle**: the 75 h the T-210 bug showed was mostly nights. It doesn't say whether agents had nothing to do or were waiting on a decision | **change** into two numbers: **Waiting on you** (time with no agent working while a task was in review or blocked on the user) and **Idle** (the rest: no agent working, nothing waiting on you) |
 
-So the row becomes: **Tasks completed · Typical time per task · Agent time · Waiting on you · Idle**, the same
-three time numbers the Progress tab gets (T-242), computed by the same code.
+### 3.1 Layout: three cards instead of five boxes
+
+Five or six equal boxes become a wall of numbers. Group them by question instead: **what got done**, **how long
+tasks take**, and **where the time went**, the last one as a bar rather than three more numbers:
+
+```
+┌───────────────┐ ┌────────────────────────────┐ ┌──────────────────────────────────────────────────┐
+│ 23            │ │ 18 m        │ 1 h 40 m     │ │ Where the time went                       ⓘ     │
+│ tasks done    │ │ agents alone│ with you     │ │ ███████████████▒▒▒▒▒▒░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│               │ │ (19 tasks)  │ (4 tasks)    │ │ ■ Agents working 14 h   ▒ Waiting on you 6 h   │
+│               │ │             │              │ │ ░ Idle 31 h · up to 3 agents in parallel         │
+└───────────────┘ └────────────────────────────┘ └──────────────────────────────────────────────────┘
+```
+
+- **Tasks done**: one big number.
+- **Time per task**: one card, two values side by side with their task counts; a side shows *–* when it has no
+  tasks.
+- **Where the time went**: one 100% bar over the period (from the first work on): *agents working* (at least one
+  agent at work), *waiting on you* and *idle*, in the same colours and hatching as the charts below. Under it, the
+  three durations, and the agent time with parallelism (*14 h of agent time, up to 3 agents at once*) as one line.
+  The same component goes on the Progress tab (T-242).
+- On narrow screens the cards stack; the bar keeps its full width.
+
+The colours: *agents working* in the accent, *waiting on you* in the review/blocked colour, *idle* as the hatching
+(T-210), so the bar is the key to the charts.
 
 ## 4. Charts
 
-All three share one time axis and one hover; idle stretches are hatched behind them.
+All three share one time axis and one hover; idle stretches are hatched behind them. **Each chart's title gets an
+ⓘ** (`InfoTip`) with *what it shows*, *how it's counted* and *when to be careful*, as listed per chart below; the
+KPI cards get one each too.
 
 ### 4.1 Tasks completed, by type
 
@@ -76,8 +103,8 @@ All three share one time axis and one hover; idle stretches are hatched behind t
   - Same definition caveats as the KPI.
 - **Answers:** "are tasks taking longer than usual? which ones stuck?"
 - **Recommend: change.** Cap the scale at the 90th percentile and draw slower tasks as triangles on the top edge
-  (their tooltip has the real time); mark `interactive` tasks as hollow dots (shown, but not in the median).
-  Clicking a dot opens the task.
+  (their tooltip has the real time). `interactive` tasks are hollow dots with their own dashed median line (*with
+  you*), next to the solid one (*agents alone*), matching the KPI card. Clicking a dot opens the task.
 
 ### 4.4 Hover tooltip
 
@@ -105,19 +132,22 @@ The Progress tab (T-242) and this popup show the same three time numbers. Define
 
 | # | Item | Recommendation | Help |
 |---|---|---|---|
-| 1 | Sparkline | change: last 14 days per day, no average line | tooltip |
+| 1 | Sparkline | keep all time; last bar lighter; the line explained | tooltip |
 | 2 | Period header | keep | ⓘ for the popup |
-| 3 | KPIs | completed, time per task (no interactive), agent time, waiting on you, idle; drop the rate | tooltips |
-| 4.1 | Completed by type | keep | — |
+| 3 | KPIs | three cards: tasks done; time per task (alone / with you); where the time went (bar); drop the rate | ⓘ per card |
+| 4.1 | Completed by type | keep | ⓘ |
 | 4.2 | Agents working | change: agents / people / waiting on you, not per session | ⓘ, empty state |
-| 4.3 | Time per task | change: p90 scale, outliers on the edge, interactive hollow | tooltip |
+| 4.3 | Time per task | change: p90 scale, outliers on the edge, interactive hollow with its own median | ⓘ, tooltip |
 | 5 | Shared definitions | one module for Progress and Activity | — |
 | 6 | Unused fields | drop | — |
 
-## 8. Questions for you
+## 8. Decisions
 
-1. **Sparkline**: last 14 days per day, or keep all time?
-2. **Waiting on you vs idle**: worth the extra data (block intervals) to split them? Without it, the popup can only
-   say *no agent working*.
-3. **Agents chart**: by kind (agents / people) instead of per session?
-4. **Implementation**: follow-up tasks in phase 21, with the Progress ones?
+1. **Sparkline**: keep all time (with the fixes in §1).
+2. **Waiting on you vs idle**: split them; atm records block and unblock times if the notes aren't enough.
+3. **Agents chart**: by kind (agents / people), plus waiting on you.
+4. **Time per task**: two medians, agents alone and with you.
+5. **Implementation**: follow-up tasks in phase 21, together with the Progress ones (shared definitions and the
+   *where the time went* bar serve both): T-244 (atm keeps block intervals), T-245 (shared time use and the bar;
+   T-242 builds on it), T-246 (KPI cards), T-247 (agents chart), T-248 (time per task chart), T-249 (sparkline,
+   ⓘs, clean-up).

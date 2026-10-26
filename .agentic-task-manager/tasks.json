@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 244,
+    "next_id": 250,
     "labels": [
       {
         "id": "dashboard",
@@ -7757,11 +7757,12 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:09:27Z",
+      "updated_at": "2026-10-26T21:10:19Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:09:27Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "db47491035742e41ad71944c01f2ab3c11c1e12e"
     },
     {
       "id": "T-214",
@@ -8554,16 +8555,17 @@
       "use_cases": [],
       "status": "todo",
       "dependencies": [
-        "T-240"
+        "T-240",
+        "T-245"
       ],
       "files": [
         "dashboard/src/components/UtilizationPanel.svelte",
         "dashboard/src/lib/utilization.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:28:27Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-243",
@@ -8588,6 +8590,168 @@
       ],
       "created_at": "2026-10-26T21:09:17Z",
       "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-244",
+      "name": "atm: keep each block's start and end, so waiting time can be measured",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "atm-cli",
+        "activity"
+      ],
+      "description": "`docs/activity-popup-review.md` §5 (approved).\n\n`atm block` sets `blocked_at` and `atm unblock` clears it (`atm-cli/atm/model.py`), so a past block's start is lost; the answer notes only give its end.\n\n## Do\n\n- Keep the intervals: on unblock (and when a blocked task is completed, skipped or released), append `{\"from\": <blocked_at>, \"to\": <now>, \"on\": <waiting_on>}` to a new task field `blocks` (a list). Review intervals are already known (`review_requested_at` → completion or rejection: check rejections keep enough too, else record them the same way as `reviews`).\n- The merge driver merges `blocks` like notes (union by `from`).\n- Document the field in the tasks.json format doc and `dashboard/src/lib/types.ts`.\n\n## Verify\n\nScenarios: block → unblock → block → done leaves two intervals; merge of two branches keeps both.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/model.py",
+        "atm-cli/atm/merge.py",
+        "dashboard/src/lib/types.ts",
+        "tests/scripts/scenarios/"
+      ],
+      "created_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T21:28:23Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-245",
+      "name": "Shared time use: agents working, waiting on you, idle, and the Where the time went bar",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "activity",
+        "progress"
+      ],
+      "description": "`docs/activity-popup-review.md` §3.1 and §5 (approved). Used by the Activity popup and the Progress tab (T-242).\n\n## Do\n\n- `src/lib/timeuse.ts`: for a period, from the first work on:\n  - **agents working**: time with at least one agent at work (work spans as in `work.ts`), plus total **agent time** (parallel agents add up) and the most agents at once;\n  - **waiting on you**: no agent working while a task is in review or blocked on the user (review intervals, and `blocks` from the atm task; `blocked_at` for a current block);\n  - **idle**: the rest, in stretches of 10 min or more (`MIN_IDLE_MS`).\n  Also per bucket, for the charts.\n- `TimeSplitBar.svelte`: one 100% bar (accent / review-blocked colour / the idle hatching from T-210) with the three durations under it and *14 h of agent time, up to 3 agents at once*; an ⓘ (`InfoTip`).\n\n## Verify\n\nUnit tests with overlapping work, a review wait, a block, and gaps under 10 min; a component test for the bar.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-244"
+      ],
+      "files": [
+        "dashboard/src/lib/timeuse.ts",
+        "dashboard/src/components/TimeSplitBar.svelte",
+        "dashboard/tests/unit/timeuse.test.ts"
+      ],
+      "created_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T21:28:23Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-246",
+      "name": "Activity popup: three KPI cards (done, time per task alone and with you, where the time went)",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "activity"
+      ],
+      "description": "`docs/activity-popup-review.md` §3 and §3.1 (approved).\n\n- Replace the KPI row with three cards: **Tasks done**; **Time per task** with two medians, *agents alone* (no `interactive` label) and *with you* (`interactive`), each with its count (*–* when none); **Where the time went** (`TimeSplitBar`).\n- Drop *completion rate* and *agents busy on average*; *N working now* only when the period includes now, from the claims.\n- An ⓘ on each card; cards stack on narrow screens.\n\n## Verify\n\ne2e for the cards and the two medians; the T-210 one-line test still holds; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-245",
+        "T-240"
+      ],
+      "files": [
+        "dashboard/src/components/ActivityDeepDive.svelte",
+        "dashboard/src/lib/insights.ts",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T21:28:23Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-247",
+      "name": "Activity: the agents chart by kind, with waiting on you",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "activity"
+      ],
+      "description": "`docs/activity-popup-review.md` §4.2 (approved).\n\n- Stack per bucket by **kind** (agents, people; as the Agents tab tells them apart), not per session; cap Unattributed like the rest.\n- A **waiting on you** band per bucket in the review/blocked colour, so the chart reads working / waiting on you / idle (hatched) over time, matching the bar.\n- Per-session detail stays in the hover tooltip; an ⓘ on the title; empty state as today.\n\n## Verify\n\nUnit tests for the per-bucket split; e2e for the legend and tooltip; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-245",
+        "T-240"
+      ],
+      "files": [
+        "dashboard/src/components/ActivityDeepDive.svelte",
+        "dashboard/src/lib/insights.ts"
+      ],
+      "created_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T21:28:23Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-248",
+      "name": "Activity: time per task chart readable with outliers; interactive tasks apart",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "activity"
+      ],
+      "description": "`docs/activity-popup-review.md` §4.3 (approved).\n\n- Cap the y-scale at the 90th percentile; slower tasks are triangles on the top edge, with the real time in their tooltip.\n- `interactive` tasks as hollow dots with their own dashed median (*with you*), next to the solid one (*agents alone*).\n- Clicking a dot opens the task's details; an ⓘ on the title.\n\n## Verify\n\nUnit test for the scale cap; e2e for an outlier triangle, hollow dots and the click; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-240"
+      ],
+      "files": [
+        "dashboard/src/components/ActivityDeepDive.svelte",
+        "dashboard/src/lib/insights.ts"
+      ],
+      "created_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T21:28:23Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-249",
+      "name": "Activity: sparkline explained, info on the popup and the completed chart, unused fields dropped",
+      "phase": 21,
+      "type": "polish",
+      "priority": "P3",
+      "labels": [
+        "dashboard",
+        "activity"
+      ],
+      "description": "`docs/activity-popup-review.md` §1, §2, §4.1 and §6 (approved).\n\n- Sparkline (all time, as today): the last bar lighter (its period isn't over); the tooltip says what the line is (average of the last 3 buckets) and what the current bucket has so far.\n- An ⓘ on the popup heading: the shared definitions, and that filters don't apply here (whole project, archived tasks too). An ⓘ on *Tasks completed, by type*.\n- Drop `cumulativeDone`, `scope` and `wip` from `activitySeries`' buckets (unused).\n\n## Verify\n\nUnit tests updated; e2e for the tooltip; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-240"
+      ],
+      "files": [
+        "dashboard/src/components/ActivityWidget.svelte",
+        "dashboard/src/components/ActivityDeepDive.svelte",
+        "dashboard/src/lib/insights.ts"
+      ],
+      "created_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T21:28:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

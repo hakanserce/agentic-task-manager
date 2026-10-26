@@ -7545,7 +7545,7 @@
       "description": "Finish the project-card layout approved in review (`docs/project-cards-proposal.md` §4; questions 1, 4 and 5 follow its recommendations).\n\n- **Order:** head (logo, name, \"needs you\" chip), recent-phase rings, working/next, git, last finished with the sparkline.\n- **Fixed section heights,** so cards in a row line up even when a section is empty.\n- **The project-wide count** (\"9 / 18 done · 2 skipped\", 50%) moves into the rings' tooltip; the small line under the rings goes.\n- **`meta.description`:** a new, optional meta key, set with `atm init --meta-file`. Document it in `plugin/CLAUDE.md`'s meta list, and `atm check` accepts it. It is shown only as the project name's tooltip, from a `description` field in the summary (capped at 200 characters).\n- **Tests:** screenshots at 280 px and wide, in light and dark (darwin; git rm the matching -linux.png); an e2e test that cards in a row have equal section offsets.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-207",
         "T-208",
@@ -7563,11 +7563,22 @@
         "dashboard/tests/e2e/projects.spec.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:51:21Z",
+      "updated_at": "2026-10-26T08:57:29Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:51:21Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "b369ac09abee8c753a7ff5528055c5413851efa7",
+      "completed_at": "2026-10-26T08:57:29Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T08:57:29Z",
+          "kind": "outcome",
+          "text": "Cards in the approved order (head, rings, working/next, git, last done + sparkline), each section a fixed height so a row lines up; whole count in the rings' tooltip; current-phase line only for older servers; meta.description as the name's tooltip. Screenshots wide and at 280px.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

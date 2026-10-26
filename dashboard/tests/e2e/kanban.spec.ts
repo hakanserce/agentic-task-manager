@@ -189,6 +189,19 @@ test.describe('Kanban board', () => {
     await expect(column(page, 'done').locator('.kanban-card')).toHaveCount(20);
   });
 
+  test('columns reach down to the bottom of the window, and scroll inside (T-237)', async ({ page, tasksServer }) => {
+    for (const height of [1600, 720]) {
+      await page.setViewportSize({ width: 1280, height });
+      await openKanban(page, tasksServer, 'kanban');
+      const done = column(page, 'done');
+      const box = (await done.boundingBox())!;
+      expect(height - (box.y + box.height)).toBeGreaterThanOrEqual(0);
+      expect(height - (box.y + box.height)).toBeLessThanOrEqual(height > 1000 ? 32 : 400);
+      const cards = done.locator('.kanban-cards');
+      expect(await cards.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    }
+  });
+
   test('filters apply; a status filter limits the columns', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await openFilters(page);

@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 237,
+    "next_id": 238,
     "labels": [
       {
         "id": "dashboard",
@@ -7713,11 +7713,12 @@
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T20:45:08Z",
+      "updated_at": "2026-10-26T20:46:17Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T20:45:08Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "ffde76cf4bc1484f40a01174dd028b458688e397"
     },
     {
       "id": "T-213",
@@ -8377,6 +8378,32 @@
       "updated_at": "2026-10-26T20:44:53Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-237",
+      "name": "Kanban: columns use the full page height",
+      "phase": 19,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "kanban"
+      ],
+      "description": "On a large monitor the Kanban's status columns start scrolling at about half the page height: `.kanban-column` has a fixed `max-height: 640px` (`dashboard/src/app.css`).\n\n## Do\n\n- Let the columns grow to the bottom of the viewport: a height based on the space below the board's top (e.g. `max-height: calc(100vh - <offset>)` or `100dvh` with the board as a flex child that fills the rest of the page), with a sensible minimum on short windows.\n- Each column keeps scrolling on its own when its cards don't fit; the page itself shouldn't get a second scrollbar for the board.\n- Check grouped-by-phase mode, the Done column's sections, and the All projects view if it shows a board.\n\n## Verify\n\nAn e2e test at 1280×1600 with a fixture that has many cards in one column: the column's bottom is within ~24 px of the viewport bottom and it scrolls internally; at 1280×720 it still fits. Update the Kanban screenshots (remove the matching `-linux.png`).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/app.css",
+        "dashboard/tests/e2e/kanban.spec.ts"
+      ],
+      "created_at": "2026-10-26T20:46:34Z",
+      "updated_at": "2026-10-26T21:05:29Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:05:29Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

@@ -2005,7 +2005,8 @@ svg.graph-minimap.hidden {
 .kanban-column {
   flex: 1 1 200px;
   min-width: 200px;
-  max-height: 640px;
+  /* Set by KanbanColumns.svelte from the space below the board */
+  max-height: var(--kanban-height, 640px);
   display: flex;
   flex-direction: column;
   background: var(--surface);

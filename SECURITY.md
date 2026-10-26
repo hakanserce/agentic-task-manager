@@ -4,8 +4,8 @@
 
 Please report it privately: open **Security → Report a vulnerability** on this repository (GitHub's private
 vulnerability reporting), rather than a public issue. Say what you found, how to reproduce it, and what it lets an
-attacker do. You'll get an answer within a week; a fix ships as a new plugin version, with a note in
-`plugin/CHANGELOG.md` once it's out.
+attacker do. A fix ships as a new plugin version, with a note in `plugin/CHANGELOG.md` once it's out. This is a
+personal project: there is no promised response time.
 
 ## What the plugin runs on your machine
 

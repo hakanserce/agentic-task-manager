@@ -8700,7 +8700,7 @@
       "description": "§4.2 of `docs/security-review.md`. Write the schedule into `docs/security-architecture.md` and wire it up.\n\n- **Every PR (CI)**: the hostile-repo suite, the header and link checks, the skills-template check, build freshness, Dependabot alerts.\n- **Before each release**: run the agent sandbox; a checklist item in `CLAUDE.md` *Versions* that the threat model covers any new entry point.\n- **Periodically** (each quarter, or when Claude Code's permission model changes): a review like `docs/security-review.md` against the threat model, and a pass over pinned action and image versions. Decide with the user how to be reminded (e.g. a scheduled workflow that opens an issue).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "in_review",
       "dependencies": [
         "T-234",
         "T-235"
@@ -8711,11 +8711,21 @@
         ".github/workflows/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:04:30Z",
+      "updated_at": "2026-10-26T23:05:19Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:04:30Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "55d789e6884f4aae23371d8f3969eed1236e04e8",
+      "review_requested_at": "2026-10-26T23:05:19Z",
+      "notes": [
+        {
+          "at": "2026-10-26T23:05:19Z",
+          "kind": "review",
+          "text": "Schedule in §3 of `docs/security-architecture.md`: CI on every PR, the agent sandbox and an architecture update before merging agent-facing PRs (checklist in `CLAUDE.md` Versions), and a quarterly issue from `.github/workflows/security-review-reminder.yml`. Question for Hakan: is the quarterly issue the right reminder?",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-237",
@@ -8771,7 +8781,7 @@
       "description": "`docs/progress-tab-review.md` §1.6 and §2.1 (approved).\n\n- The header Progress widget (`ProgressWidget.svelte`, `progressBreakdown(dashboard.tasks)`) counts only `tasks.json`'s tasks, so archiving done tasks *lowers* the percentage. Count archived tasks: the overall number from `meta.archived` (all archived tasks are done), without loading the archive; phase and type breakdowns from the history once the archive is loaded. Tooltip: *62 of 120 tasks done (180 archived, done)*.\n- `UtilizationPanel.svelte` uses `dashboard.filtered` and a period from `dashboard.tasks`, while the burndown uses the history: use `dashboard.historyFiltered` and the history for the period.\n\n## Verify\n\nUnit tests for `insights.ts` with `meta.archived`; e2e with the `archive` fixture: the widget's % includes archived tasks; the utilisation's work includes them.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -8779,9 +8789,11 @@
         "dashboard/src/components/UtilizationPanel.svelte"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T23:05:28Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:05:28Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-239",

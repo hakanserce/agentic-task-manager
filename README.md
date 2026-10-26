@@ -537,7 +537,8 @@ Merge each branch back as usual (or open a PR per branch).
   re-reads `tasks.json`, changes one task and writes the file atomically. The dashboard and other agents never see a
   half-written file, and two changes never overwrite each other.
 - **Claims.** `atm next --claim` picks the next task and claims it in one step. Claims record the agent (each Claude
-  Code session has its own identity), branch and worktree. They are stored in the clone's `.git` directory, so agents
+  Code session has its own identity, and so does each worktree a session's subagents work in, e.g.
+  `claude:e5ea9db0@agent-2`), branch and worktree. They are stored in the clone's `.git` directory, so agents
   in different worktrees of the clone see each other's claims straight away. A task finished in one worktree isn't
   handed out again in another before the branches merge. The dashboard shows every worktree's tasks and claims on
   the project's board, before anything merges.

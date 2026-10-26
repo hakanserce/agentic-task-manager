@@ -7098,7 +7098,7 @@
       "description": "### Today\n\"Active phases only\" (Progress tab, and the Progress panel's By phase card, which share the saved setting) keeps every unfinished phase plus the finished phases whose last completion is within the last N days (`DEFAULT_ACTIVE_DAYS` = 7, the days field on the Progress tab). On a fast-paced project many phases finish within a week, so the filter hides almost nothing.\n\n### Change\nActive phases = **every unfinished phase, plus the most recently finished phase** (the finished one with the latest last completion). A phase is finished when none of its tasks is left to do; a phase of only skipped tasks counts as finished. Ties on completion time: the higher phase. A finished phase without completion times can still be the last finished one if no other finished phase has times (then the highest such phase).\n\n- `dashboard/src/lib/forecast.ts`: rewrite `activePhases(phases)` (no `now`/`days`), drop `DEFAULT_ACTIVE_DAYS` if nothing else uses it.\n- `ProgressTab.svelte`: remove the days field (`#active-phases-days`) and its label; keep the checkbox. Update the tooltip/label text if it mentions days.\n- `ProgressWidget.svelte`: call the new `activePhases`; the \"N older phase(s) hidden\" note stays.\n- `view-store.ts`: `progressActive` becomes `{ only: boolean }`; a saved view with `days` still loads (the value is ignored).\n- Tests: `tests/unit/forecast.test.ts` (several phases finished the same week: only the latest finished one stays; skipped-only phase; no completion times), the view-store sanitize test, `tests/e2e/progress.spec.ts` (the days field is gone; the filter keeps the last finished phase). Update the progress screenshot baselines if the Progress tab header changes (darwin; delete the matching -linux.png).\n- `docs/help.md`: describe the new rule where Active phases only is mentioned.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/forecast.ts",
@@ -7110,11 +7110,22 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-26T05:00:29Z",
-      "updated_at": "2026-10-26T07:15:25Z",
+      "updated_at": "2026-10-26T07:29:34Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T07:15:25Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "c0d2f13e279c7751de3e05a4afa324991de5d73a",
+      "completed_at": "2026-10-26T07:29:34Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T07:29:34Z",
+          "kind": "outcome",
+          "text": "Active phases only = every unfinished phase + the one that finished last (latest completion, higher on a tie; skipped-only counts as finished). Days field and progressActive.days removed; old saved views still load.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-202",
@@ -7128,7 +7139,7 @@
       "description": "### Today\n`agent_identity()` in `atm-cli/atm/claims.py` is `\"claude:\" + CLAUDE_CODE_SESSION_ID[:8]`. Subagents inherit their parent's session ID, so three loop agents spawned in separate git worktrees all claim as `claude:e5ea9db0` (seen on 2026-10-26, running phase 17 with three parallel agents). atm's claims still kept them on different tasks, but:\n- `check_holder` lets one agent finish, release or fail another agent's task (same name);\n- `own_lease_expired` can tell the wrong agent its lease expired;\n- `atm claims` and the dashboard show one agent for all of them.\n\n### Change\n- When the identity comes from `CLAUDE_CODE_SESSION_ID` and the project root is a **linked** git worktree, append the worktree's folder name: `claude:e5ea9db0@agent-a74a…` (or a short form of it). The main worktree keeps plain `claude:<8 hex>`, so existing claims and task history still match.\n- If Claude Code gives subagents an environment variable of their own (check the Claude Code docs for hooks and subagents), prefer it, so two subagents in the same worktree also differ.\n- `--agent` and `ATM_AGENT` still win, unchanged.\n- The PostToolUse heartbeat hook (`atm heartbeat --auto`) runs in the agent's current directory, so it must compute the same identity and renew that agent's claims. Check it does, and that a subagent's heartbeat doesn't renew the parent's claims or another subagent's claims.\n- Dashboard: `shortAgent`/`claimSummary` in `dashboard/src/lib/claims.ts` show the new form readably on cards and in the Agents tab (e.g. `claude:e5ea9db0@agent-a74a`); add unit tests.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` (or a `*.test.mjs` with real `git worktree add` if scenarios can't express it): two worktrees with the same `CLAUDE_CODE_SESSION_ID` get different identities, each claims its own task, and one can't `done`/`release` the other's (exit 4). The main worktree's identity is unchanged.\n\n### Docs\n`docs/v4/atm-cli.md` (identity rules), README's parallel-agents section, `plugin/CLAUDE.md` if it describes identities.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/claims.py",
@@ -7140,9 +7151,11 @@
         "README.md"
       ],
       "created_at": "2026-10-26T05:13:52Z",
-      "updated_at": "2026-10-26T05:13:52Z",
+      "updated_at": "2026-10-26T07:29:35Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T07:29:35Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-203",

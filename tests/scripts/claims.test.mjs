@@ -191,6 +191,46 @@ describe('claims', () => {
     }
   });
 
+  test('subagents of one session in different worktrees get identities of their own (T-202)', () => {
+    const root = repo();
+    const wt = path.join(tempDir(), 'wt2');
+    const session = (minutes) => ({ CLAUDE_CODE_SESSION_ID: 'abcdef1234567890', ATM_NOW: at(minutes) });
+    const hook = (cwd, minutes) =>
+      spawnSync(ATM, ['heartbeat', '--auto'], {
+        cwd,
+        input: JSON.stringify({ session_id: 'abcdef1234567890', cwd, hook_event_name: 'PostToolUse' }),
+        encoding: 'utf8',
+        env: { ...baseEnv(), ATM_NOW: at(minutes) },
+      });
+    const claims = () => JSON.parse(fs.readFileSync(path.join(root, '.git/atm/claims.json'), 'utf8')).claims;
+    try {
+      git(['worktree', 'add', '-q', '-b', 'agent-2', wt], root);
+      // The main worktree keeps the plain session identity; the linked one adds its folder
+      assert.equal(
+        JSON.parse(runAtm(['start', 'T-001', '--json'], root, session(0)).stdout).claim.agent,
+        'claude:abcdef12',
+      );
+      const linked = JSON.parse(runAtm(['start', 'T-002', '--json'], wt, session(0)).stdout);
+      assert.equal(linked.claim.agent, 'claude:abcdef12@wt2');
+      assert.equal(linked.started_by, 'claude:abcdef12@wt2');
+
+      // Neither can finish or release the other's task
+      const steal = runAtm(['done', 'T-001'], wt, session(1));
+      assert.equal(steal.code, 4);
+      assert.match(steal.stderr, /claimed by claude:abcdef12 until/);
+      assert.equal(runAtm(['release', 'T-002'], root, session(1)).code, 4);
+
+      // The hook in the linked worktree renews only that worktree's claim
+      assert.equal(hook(wt, 12).status, 0);
+      assert.deepEqual([claims()['T-001'].lease_expires_at, claims()['T-002'].lease_expires_at], [at(30), at(42)]);
+      assert.equal(hook(root, 13).status, 0);
+      assert.equal(claims()['T-001'].lease_expires_at, at(43));
+    } finally {
+      removeDir(root);
+      removeDir(path.dirname(wt));
+    }
+  });
+
   test('a task done in one worktree is not handed out again in another before the branches merge', () => {
     const root = repo();
     const wt = path.join(tempDir(), 'wt2');

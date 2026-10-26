@@ -1309,15 +1309,26 @@ CLAIMS_SNAPSHOT = "claims.json"  # in the task folder (gitignored): what the das
 DEFAULT_LEASE_MINUTES = 30
 
 
+def session_identity(session_id, cwd):
+    """A Claude Code session's identity: "claude:" and 8 characters of its ID; in a linked git worktree, also
+    "@<worktree folder>". Subagents share their parent's session ID, so agents spawned in separate worktrees still get
+    identities of their own. The main worktree keeps the plain form, so its claims and history still match."""
+    identity = "claude:" + str(session_id)[:8]
+    root = project_root(cwd)
+    if main_worktree(root) != root:
+        identity += "@" + os.path.basename(root)
+    return identity
+
+
 def agent_identity(agent=None):
-    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session, else the git
-    user's name (a person in a terminal), else user@host."""
+    """Who runs the command (the actor, DM-4.5): --agent, else ATM_AGENT, else this Claude Code session (per linked
+    worktree, see session_identity), else the git user's name (a person in a terminal), else user@host."""
     if agent:
         return agent
     if os.environ.get("ATM_AGENT"):
         return os.environ["ATM_AGENT"]
     if os.environ.get("CLAUDE_CODE_SESSION_ID"):
-        return "claude:" + os.environ["CLAUDE_CODE_SESSION_ID"][:8]
+        return session_identity(os.environ["CLAUDE_CODE_SESSION_ID"], os.getcwd())
     name = git(["config", "user.name"], project_root(os.getcwd()))
     if name:
         return name
@@ -1543,11 +1554,12 @@ def auto_heartbeat(args):
     and never fails, so a tool call is never disturbed."""
     try:
         payload = hook_input()
+        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
         if payload.get("session_id") and not (args.agent or os.environ.get("ATM_AGENT")):
-            agent = "claude:" + str(payload["session_id"])[:8]
+            # The same identity atm commands get in that folder: a subagent in a linked worktree renews its own claims
+            agent = session_identity(payload["session_id"], cwd)
         else:
             agent = agent_identity(args.agent)
-        cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) and os.path.isdir(payload["cwd"]) else os.getcwd()
         paths = find_paths(cwd)
         if not paths["tasks_exists"]:
             return

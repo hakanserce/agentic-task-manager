@@ -144,15 +144,14 @@ Fixed order, top to bottom, at 246 px:
 
 ```
 ┌──────────────────────────────────────────┐
-│ [▣] Agentic Task Manager    ( 2 need you )│  head: logo, name, chip (T-197, T-200)
-│ ! T-194 Check the phase rings live…  blkd │  first task needing you (C), only if any
-│                                          │
+│ [▣] Agentic Task Manager    ( 2 need you )│  head: logo, name, chip (T-197, T-200); the chip's
+│                                          │    popup lists the tasks (no inline line, decided)
 │  ◔ 25%   ◑ 50%   ● 100%  ● 100%          │  recent phases (A: T-192/T-193)
 │   P17     P16     P15     P14            │
 │                                          │
 │ 🤖 T-188 One title bar for every page     │  working now (B), or "Next: …" (D)
 │ 🤖 T-191 Brainstorm: what project…        │    when no agent works
-│ ⎇ dev/phase-17 · PR #12 open             │  git (E, without CI)
+│ ⎇ dev/phase-17 · PR #12 open             │  git: branch + latest PR (E, no CI, decided)
 │ ✓ T-189 Status bar pinned… · 12 m ago  ▁▃▅│  last done (F) + 14-day sparkline
 └──────────────────────────────────────────┘
 ```
@@ -183,11 +182,18 @@ for many projects.
 
 ## 5. Questions for the user
 
+*Reviewed and approved on 2026-10-26. Questions 1, 4 and 5 went unanswered, so they follow the recommendation:
+the order as in §4, the project-wide count in the rings' tooltip, and `meta.description` only as the name's
+tooltip.*
+
 1. Is the order right — needs-you, phases, working/next, git, last done? Or should "working now" come before the
    rings?
-2. Show the first task needing you **inline** (C), or rely on the chip's popup only (T-200)?
-3. Git line: is branch + latest PR from tasks enough, or is CI state worth a server-side `gh` call (opt-in, cached)?
-4. Keep the overall `done / total` anywhere on the card?
+2. ~~Show the first task needing you inline (C), or rely on the chip's popup only (T-200)?~~ **Decided: the chip's
+   popup only.** No inline line on the card.
+3. ~~Git line: branch + latest PR, or CI state too?~~ **Decided: branch and latest PR**, from tasks; no `gh` call.
+4. The **whole project's** count, the small line under the rings today ("9 / 18 done · 2 skipped" and "50%"): once
+   the rings show the recent phases, keep that project-wide line, move it into the rings' tooltip only, or drop it?
+   (The per-phase counts stay under each ring either way.)
 5. `meta.description`: worth adding at all, if it only shows in a tooltip?
 
 ## 6. Follow-up tasks (to add after review)
@@ -195,10 +201,10 @@ for many projects.
 1. **Server summary: working, next, last done** — `working`, `next`, `last_done` in `api/projects`; scenarios; docs.
 2. **Server summary: git branch and latest PR** — `git.branch`, `git.pr` from tasks; scenarios; docs.
 3. **Project card: working now / next** — names instead of the agent count; one-line rows; "+N more".
-4. **Project card: first task needing you inline** — depends on T-200's summary field (if question 2 says yes).
-5. **Project card: git line and last finished task** — replaces "12 m ago".
-6. **Project card layout pass** — fixed section order and heights, screenshots at 280 px and wide.
-7. *(Optional, if question 3 says yes)* **CI state on cards** — opt-in, cached forge lookup.
+4. **Project card: git line and last finished task** — branch and latest PR (no CI); replaces "12 m ago".
+5. **Project card layout pass** — fixed section order and heights, screenshots at 280 px and wide.
+
+Dropped after review: the first task needing you inline (the chip's popup, T-200, covers it) and CI state on cards.
 
 Already planned and part of this layout: T-192/T-193 (recent phases as rings), T-196/T-197 (logos), T-199/T-200
 ("needs you" opens the task), T-190 (long phase name on one line, superseded by the rings once T-193 lands).

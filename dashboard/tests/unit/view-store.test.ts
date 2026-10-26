@@ -44,7 +44,6 @@ describe('reading and writing', () => {
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
       listSort: 'priority',
       progressPhase: 2,
-      progressActive: { only: true },
       filterFinishedPhases: true,
       progressRange: '14d',
       graphFiltered: 'dim',
@@ -57,12 +56,11 @@ describe('reading and writing', () => {
     expect(readView(key)).toEqual(view);
   });
 
-  it('"Active phases only" is on by default and when malformed; a saved choice is kept; `days` is ignored', () => {
-    expect(defaultView().progressActive).toEqual({ only: true });
-    localStorage.setItem(key, JSON.stringify({ progressActive: { only: 'yes', days: 0 } }));
-    expect(readView(key).progressActive).toEqual({ only: true });
-    localStorage.setItem(key, JSON.stringify({ progressActive: { only: false, days: 14 } }));
-    expect(readView(key).progressActive).toEqual({ only: false });
+  it('an old view\'s "Active phases only" is dropped quietly; the burndown range defaults to the phase (T-240, T-243)', () => {
+    localStorage.setItem(key, JSON.stringify({ progressActive: { only: false }, progressRange: 'decade' }));
+    const view = readView(key);
+    expect(view).not.toHaveProperty('progressActive');
+    expect(view.progressRange).toBe('phase');
   });
 
   it('projects are kept apart', () => {

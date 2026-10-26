@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { activePhases, forecastPhases } from '../lib/forecast';
+  import { forecastPhases, phaseRanges } from '../lib/forecast';
+  import { formatWhen } from '../lib/format';
   import { progressBreakdown } from '../lib/insights';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
@@ -26,19 +27,47 @@
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
   const statusLabel = (status: string) => vocabStatusLabel(dashboard.vocab, status);
 
-  // "Active phases only", shared with the Progress tab (one saved choice per project): By phase keeps the unfinished
-  // phases and the one that finished last. Overall and By type stay whole.
-  const active = $derived(dashboard.progressActive);
-  const byPhase = $derived.by(() => {
-    if (!active.only) return p.byPhase;
-    const keep = new Set(
-      activePhases(forecastPhases(dashboard.tasks, Date.now(), dashboard.tasks, dashboard.vocab).phases).map((f) =>
-        String(f.phase),
-      ),
-    );
-    return p.byPhase.filter((s) => keep.has(s.key));
+  // By phase (T-243): a ring for each unfinished phase; finished phases, which would be a row of full rings, are chips
+  // with consecutive phases merged (✓ 0–12). A chip opens the Progress tab on its last phase.
+  const source = $derived(dashboard.archiveLoaded ? dashboard.history : dashboard.tasks);
+  const phases = $derived(forecastPhases(source, Date.now(), source, dashboard.vocab).phases);
+  const finishedAt = $derived(new Map(phases.filter((f) => f.state === 'done').map((f) => [f.phase, f.completedAt])));
+  const openPhases = $derived(p.byPhase.filter((s) => !finishedAt.has(Number(s.key))));
+  const finishedRuns = $derived.by(() => {
+    const runs: number[][] = [];
+    for (const phase of [...finishedAt.keys()].sort((a, b) => a - b)) {
+      const last = runs.at(-1);
+      if (last && last.at(-1) === phase - 1) last.push(phase);
+      else runs.push([phase]);
+    }
+    return runs;
   });
-  const hiddenPhases = $derived(p.byPhase.length - byPhase.length);
+  const runTitle = (run: number[]) => {
+    const when = Math.max(...run.map((phase) => finishedAt.get(phase) ?? -Infinity));
+    const label = run.length > 1 ? `Phases ${phaseRanges(run)}` : `Phase ${run[0]}`;
+    return `${label}: finished${Number.isFinite(when) ? `, the last on ${formatWhen(when, Date.now())}` : ''} · open on the Progress tab`;
+  };
+  function openPhase(phase: number) {
+    dashboard.progressPhase = phase;
+    dashboard.selectTab('progress');
+    open = false;
+  }
+
+  // Go to: the Progress tab, and the Kanban filtered to the statuses that need a look
+  const countOfKind = (kind: string) =>
+    p.byStatus.filter((s) => kindOf(dashboard.vocab, s.status) === kind).reduce((n, s) => n + s.count, 0);
+  const GO_TO = [
+    { kind: 'review', label: 'In review' },
+    { kind: 'blocked', label: 'Blocked' },
+    { kind: 'active', label: 'In progress' },
+  ] as const;
+  function showStatuses(statuses: string[]) {
+    dashboard.clearFilters();
+    for (const status of statuses) dashboard.toggleFilter('status', status);
+    dashboard.selectTab('kanban');
+    open = false;
+  }
+  const statusesOfKind = (kind: string) => dashboard.vocab.statuses.filter((s) => s.kind === kind).map((s) => s.id);
 </script>
 
 <svelte:window
@@ -108,62 +137,111 @@
               ></span>
             {/each}
           </div>
+          <!-- Each status opens the Kanban filtered to it -->
           <ul class="status-legend">
             {#each p.byStatus as s (s.status)}
               <li>
-                <span class="legend-dot" style="background:{statusStyle(s.status).color}"></span>{statusLabel(
-                  s.status,
-                )}<strong>{s.count}</strong>
+                <button
+                  class="status-legend-link"
+                  data-status={s.status}
+                  title="Show {statusLabel(s.status)} tasks on the Kanban"
+                  onclick={() => showStatuses([s.status])}
+                  ><span class="legend-dot" style="background:{statusStyle(s.status).color}"></span>{statusLabel(
+                    s.status,
+                  )}<strong>{s.count}</strong></button
+                >
               </li>
             {/each}
           </ul>
         </div>
       </div>
-      {@render group('By phase', byPhase, (key) => phaseColor(Number(key)), phaseFilter)}
-      {@render group('By type', p.byType, (key) => typeStyle(key).color)}
+
+      <div class="insights-section ring-group" id="progress-by-phase">
+        <div class="ring-group-head"><div class="menu-label">By phase</div></div>
+        {#if openPhases.length}
+          <div class="ring-grid">
+            {#each openPhases as s (s.key)}
+              <button
+                class="ring-cell ring-cell-button"
+                title="{capitalize(s.label)}: {s.done} of {s.total} done{s.skipped
+                  ? `, ${s.skipped} skipped`
+                  : ''} · open on the Progress tab"
+                onclick={() => openPhase(Number(s.key))}
+              >
+                <Ring
+                  ratio={s.ratio}
+                  color={phaseColor(Number(s.key))}
+                  label={s.label}
+                  skipped={s.skipped}
+                  total={s.total}
+                />
+                <span class="ring-label">{capitalize(s.label)}</span>
+                <span class="ring-count">{s.done}/{s.total}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+        {#if finishedRuns.length}
+          <div class="finished-chips" id="progress-finished-chips">
+            {#each finishedRuns as run (run[0])}
+              <button class="finished-chip" title={runTitle(run)} onclick={() => openPhase(run.at(-1)!)}
+                >✓ {phaseRanges(run)}</button
+              >
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <!-- By type: one stacked bar of all tasks, a segment per type, its done part solid and the rest faint -->
+      <div class="insights-section" id="progress-by-type">
+        <div class="menu-label">By type</div>
+        <div class="status-bar" aria-hidden="true">
+          {#each p.byType as s (s.key)}
+            {@const color = typeStyle(s.key).color}
+            <span
+              class="type-bar-segment"
+              style:flex={s.total}
+              title="{capitalize(s.label)}: {s.done} of {s.total} done"
+              style:background="color-mix(in srgb, {color} 28%, transparent)"
+              ><span
+                class="type-bar-done"
+                style:width="{s.total ? (s.done / s.total) * 100 : 0}%"
+                style:background={color}
+              ></span></span
+            >
+          {/each}
+        </div>
+        <ul class="status-legend">
+          {#each p.byType as s (s.key)}
+            <li data-type={s.key}>
+              <span class="legend-dot" style="background:{typeStyle(s.key).color}"></span>{capitalize(s.label)}
+              <strong>{s.done}/{s.total}</strong>
+            </li>
+          {/each}
+        </ul>
+      </div>
+
+      <div class="insights-section progress-go-to" id="progress-go-to">
+        <div class="menu-label">Go to</div>
+        <div class="go-to-links">
+          <button
+            class="go-to-link"
+            data-go="progress"
+            onclick={() => {
+              dashboard.selectTab('progress');
+              open = false;
+            }}>Progress tab</button
+          >
+          {#each GO_TO as item (item.kind)}
+            <button
+              class="go-to-link"
+              data-go={item.kind}
+              disabled={countOfKind(item.kind) === 0}
+              onclick={() => showStatuses(statusesOfKind(item.kind))}>{item.label} ({countOfKind(item.kind)})</button
+            >
+          {/each}
+        </div>
+      </div>
     </div>
   {/if}
 </div>
-
-{#snippet phaseFilter()}
-  <label class="ring-group-filter" title="Unfinished phases, and the one that finished last">
-    <input
-      type="checkbox"
-      id="panel-active-phases-only"
-      checked={active.only}
-      onchange={(e) => (dashboard.progressActive = { only: e.currentTarget.checked })}
-    />
-    Active phases only
-  </label>
-  {#if active.only && hiddenPhases > 0}
-    <span class="phase-filter-hidden" id="panel-phases-hidden"
-      >{hiddenPhases} older phase{hiddenPhases === 1 ? '' : 's'} hidden</span
-    >
-  {/if}
-{/snippet}
-
-{#snippet group(
-  title: string,
-  shares: typeof p.byPhase,
-  color: (key: string) => string,
-  extra?: import('svelte').Snippet,
-)}
-  <div class="insights-section ring-group">
-    <div class="ring-group-head">
-      <div class="menu-label">{title}</div>
-      {#if extra}{@render extra()}{/if}
-    </div>
-    <div class="ring-grid">
-      {#each shares as s (s.key)}
-        <div
-          class="ring-cell"
-          title="{capitalize(s.label)}: {s.done} of {s.total} done{s.skipped ? `, ${s.skipped} skipped` : ''}"
-        >
-          <Ring ratio={s.ratio} color={color(s.key)} label={s.label} skipped={s.skipped} total={s.total} />
-          <div class="ring-label">{capitalize(s.label)}</div>
-          <div class="ring-count">{s.done}/{s.total}</div>
-        </div>
-      {/each}
-    </div>
-  </div>
-{/snippet}

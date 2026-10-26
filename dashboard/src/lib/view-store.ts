@@ -25,8 +25,6 @@ export interface SavedView {
   listSort: ListSort;
   /** The phase the Progress tab focuses on, or null for all phases */
   progressPhase: number | null;
-  /** The Progress tab lists only active phases: the unfinished ones and the one that finished last */
-  progressActive: { only: boolean };
   /** The filter panel's Phase group lists the finished phases too, not just the active ones */
   filterFinishedPhases: boolean;
   /** The Progress tab's burndown range: since the (focused or first unfinished) phase started, 14 days, or all time */
@@ -64,8 +62,6 @@ export function defaultView(): SavedView {
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
     progressPhase: null,
-    // On by default: the unfinished phases and the last finished one are what most projects want to see
-    progressActive: { only: true },
     filterFinishedPhases: false,
     progressRange: 'phase',
     graphFiltered: 'hide',
@@ -109,7 +105,8 @@ export function readView(key: string): SavedView {
   const view = defaultView();
   const filters = (stored.filters ?? {}) as Record<string, unknown>;
   const kanban = (stored.kanban ?? {}) as Record<string, unknown>;
-  const active = (stored.progressActive ?? {}) as Record<string, unknown>;
+  // Views saved before 0.20.0 also have progressActive ("Active phases only", replaced by folding finished phases,
+  // T-241, T-243): ignored
   return {
     filters: {
       phase: strings(filters.phase),
@@ -129,8 +126,6 @@ export function readView(key: string): SavedView {
     },
     listSort: stored.listSort === 'priority' ? 'priority' : 'file',
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
-    // Views saved before 0.17.0 also have `days` (the old "finished within N days" rule): ignored
-    progressActive: { only: bool(active.only, view.progressActive.only) },
     filterFinishedPhases: stored.filterFinishedPhases === true,
     progressRange: (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
       ? (stored.progressRange as BurndownRange)

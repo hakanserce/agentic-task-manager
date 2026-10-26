@@ -95,24 +95,28 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#burndown-focus')).toHaveText('Phase 3');
   });
 
-  test('the Progress panel keeps "Active phases only" for its own rings: By phase follows it, Overall and By type stay whole', async ({
+  test('the Progress panel: rings for unfinished phases, chips for finished ones that open the tab on them (T-243)', async ({
     page,
     tasksServer,
   }) => {
-    await openProgress(page, tasksServer, twoFinishedPhases());
+    const data = twoFinishedPhases();
+    // Phase 4 finished too: 3 and 4 merge into one chip
+    data.tasks.push({ ...data.tasks.at(-1)!, id: 'T-100', phase: 4 });
+    await openProgress(page, tasksServer, data);
+    await page.locator('#tab-kanban').click();
 
     await page.locator('#progress-card').click();
     const panel = page.locator('#progress-panel');
-    const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
-    await expect(panel.locator('#panel-active-phases-only')).toBeChecked();
-    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2']);
-    await expect(panel.locator('#panel-phases-hidden')).toHaveText('1 older phase hidden');
-    const typesBefore = await section('By type').locator('.ring-label').count();
+    await expect(panel.locator('#panel-active-phases-only')).toHaveCount(0);
+    await expect(panel.locator('#progress-by-phase .ring-label')).toHaveText(['Phase 1', 'Phase 2']);
+    const chips = panel.locator('#progress-finished-chips .finished-chip');
+    await expect(chips).toHaveText(['✓ 0', '✓ 3–4']);
+    await expect(chips.nth(1)).toHaveAttribute('title', /^Phases 3–4: finished, the last on Mar 1/);
 
-    await panel.locator('#panel-active-phases-only').uncheck();
-    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2', 'Phase 3']);
-    await expect(panel.locator('#panel-phases-hidden')).toHaveCount(0);
-    await expect(section('By type').locator('.ring-label')).toHaveCount(typesBefore);
+    await chips.nth(1).click();
+    await expect(panel).toHaveCount(0);
+    await expect(page.locator('#progress')).toBeVisible();
+    await expect(page.locator('#burndown-focus')).toHaveText('Phase 4');
   });
 
   test('progress bars show each phase', async ({ page, tasksServer }) => {
@@ -140,9 +144,10 @@ test.describe('Progress tab: phase table', () => {
     await page.locator('#progress-card').click();
     await expect(page.locator('#progress-card')).toHaveAccessibleName('Progress 100%, 2 of 2 tasks done');
     await expect(page.locator('#overall-skipped')).toHaveText('· 1 skipped');
-    // A thin outer arc on the overall ring, phase 1's and feature's; screen readers hear the count
-    await expect(page.locator('#progress-panel .ring-skip-arc')).toHaveCount(3);
-    await expect(page.getByRole('img', { name: 'Phase 1 100% done, 1 skipped' })).toBeVisible();
+    // A thin outer arc on the overall ring; screen readers hear the count. Phase 1 is finished: a chip, not a ring
+    await expect(page.locator('#progress-panel .ring-skip-arc')).toHaveCount(1);
+    await expect(page.getByRole('img', { name: 'All tasks 100% done, 1 skipped' })).toBeVisible();
+    await expect(page.locator('#progress-finished-chips')).toHaveText('✓ 1');
   });
 
   test('says when there is not enough history', async ({ page, tasksServer }) => {

@@ -24,12 +24,46 @@ test.describe('Progress widget', () => {
     await expect(progressPill(page)).toHaveAttribute('aria-expanded', 'true');
     const panel = page.locator('#progress-panel');
     await expect(panel.locator('.insights-title')).toHaveText('6 of 8 tasks done');
-    await expect(panel.locator('.status-legend li')).toHaveText(['Done6', 'In Progress1', 'To Do1']);
-    const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
-    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1']);
-    await expect(section('By phase').locator('.ring-count')).toHaveText(['4/4', '2/4']);
-    await expect(section('By type').locator('.ring-label')).toHaveText(['Bugfix', 'Docs', 'Feature', 'Infra', 'Test']);
-    await expect(section('By type').locator('.ring-count')).toHaveText(['1/1', '1/1', '2/3', '1/1', '1/2']);
+    await expect(panel.locator('.insights-hero .status-legend li')).toHaveText(['Done6', 'In Progress1', 'To Do1']);
+    // Phase 0 is finished: a chip; phase 1 a ring (T-243)
+    await expect(panel.locator('#progress-by-phase .ring-label')).toHaveText(['Phase 1']);
+    await expect(panel.locator('#progress-by-phase .ring-count')).toHaveText(['2/4']);
+    await expect(panel.locator('#progress-finished-chips')).toHaveText('✓ 0');
+    // By type: one stacked bar, a segment per type, and its legend
+    await expect(panel.locator('#progress-by-type .type-bar-segment')).toHaveCount(5);
+    await expect(panel.locator('#progress-by-type li')).toHaveText([
+      'Bugfix 1/1',
+      'Docs 1/1',
+      'Feature 2/3',
+      'Infra 1/1',
+      'Test 1/2',
+    ]);
+  });
+
+  test('Go to: the Progress tab, or the Kanban filtered to a status (T-243)', async ({ page }) => {
+    const panel = page.locator('#progress-panel');
+    await progressPill(page).click();
+    await expect(panel.locator('.go-to-link')).toHaveText([
+      'Progress tab',
+      'In review (0)',
+      'Blocked (0)',
+      'In progress (1)',
+    ]);
+    await expect(panel.locator('.go-to-link[data-go="review"]')).toBeDisabled();
+
+    await panel.locator('.go-to-link[data-go="active"]').click();
+    await expect(panel).toHaveCount(0);
+    await expect(page.locator('#tab-kanban')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.task-card')).toHaveCount(1);
+
+    // A status in the legend does the same
+    await progressPill(page).click();
+    await panel.locator('.status-legend-link[data-status="todo"]').click();
+    await expect(page.locator('.task-card')).toHaveCount(1);
+
+    await progressPill(page).click();
+    await panel.locator('.go-to-link[data-go="progress"]').click();
+    await expect(page.locator('#progress')).toBeVisible();
   });
 
   test('closes on Escape, on a click outside, and with the pill', async ({ page }) => {

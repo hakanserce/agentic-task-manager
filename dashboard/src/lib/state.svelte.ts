@@ -139,8 +139,6 @@ export class DashboardState {
   listSort = $state<ListSort>('file');
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
-  /** The Progress tab lists only active phases (the unfinished ones and the one that finished last) */
-  progressActive = $state.raw<{ only: boolean }>({ only: true });
   /** The filter panel's Phase group lists the finished phases too (part of the saved view) */
   filterFinishedPhases = $state(false);
   /** The Progress tab's burndown range (part of the saved view) */
@@ -463,7 +461,6 @@ export class DashboardState {
       },
       listSort: this.listSort,
       progressPhase: this.progressPhase,
-      progressActive: this.progressActive,
       filterFinishedPhases: this.filterFinishedPhases,
       progressRange: this.progressRange,
       graphFiltered: this.graphFiltered,
@@ -500,7 +497,6 @@ export class DashboardState {
     this.kanbanShowAllDone = view.kanban.showAllDone;
     this.listSort = view.listSort;
     this.progressPhase = view.progressPhase;
-    this.progressActive = view.progressActive;
     this.filterFinishedPhases = view.filterFinishedPhases;
     this.progressRange = view.progressRange;
     this.graphFiltered = view.graphFiltered;

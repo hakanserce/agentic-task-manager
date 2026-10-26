@@ -6081,7 +6081,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.6.\n\n### Today\nOnly the main worktree is registered, and its dashboard **doesn't see agents working in other worktrees** until their branches merge: each worktree has its own `tasks.json` and `claims.json` snapshot; only the claims store in `.git/atm/` is shared.\n\n### Design first, then implement\n1. List a project's worktrees (`git worktree list`) in `/api/projects`.\n2. Make claims from every worktree visible, e.g. the server reads the shared claims store instead of the per-worktree snapshot.\n3. In the dashboard, either *switch* between worktrees on the project page, or show *all of them on one Kanban*, with a branch chip per card.\n\n> **Ask the user** to choose between those two before building it (`atm block --on user`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "blocked",
       "dependencies": [
         "T-178"
       ],
@@ -6092,9 +6092,16 @@
         "docs/multi-project-api.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:55Z",
+      "updated_at": "2026-10-26T01:22:22Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:22:16Z",
+      "started_by": "claude:e5ea9db0",
+      "waiting_on": "user",
+      "questions": [
+        "Worktrees on the dashboard: (1) a worktree switcher on the project page (one worktree's tasks at a time, like the project selector), or (2) all worktrees on one Kanban, each card with a branch chip (a task can be in progress in one worktree and todo in another, so cards would merge by the most advanced status)? I'd suggest (1): simpler and no merging rules; claims from every worktree show either way."
+      ],
+      "blocked_at": "2026-10-26T01:22:22Z"
     },
     {
       "id": "T-180",
@@ -6207,16 +6214,18 @@
       "description": "Opening another task while the details panel is open (a dependency link, *Required By*, a graph node or a card) **keeps the previous task's scroll position**, so the new task opens partway down its description.\n\n### Fix\n- In `DetailPanel.svelte`, reset the scroll container (`#detail-panel`, or whichever element scrolls) to the top whenever the shown task's id changes, e.g. an `$effect` on `task.id`.\n- Re-rendering the **same** task (auto-refresh, a reload) must **not** reset the scroll.\n- Keyboard focus stays where it is today.\n\n### Tests\n- e2e: open a task with a long description, scroll down, follow a dependency link → the panel is at the top.\n- e2e: scroll down, let auto-refresh re-render the same task (swap the fixture response) → the position is kept.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
         "dashboard/tests/e2e/detail.spec.ts"
       ],
       "created_at": "2026-10-25T21:49:53Z",
-      "updated_at": "2026-10-25T21:49:53Z",
+      "updated_at": "2026-10-26T01:22:25Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:22:25Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-183",

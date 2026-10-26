@@ -39,6 +39,17 @@
   // Created, started, sent for review, finished, how long the work took, last updated
   const times = $derived(task ? taskTimes(task, dashboard.loadedAt, dashboard.vocab) : []);
 
+  // Another task opens at its top; the same task re-rendered (auto-refresh, a reload) keeps its scroll position
+  let panel: HTMLElement;
+  let shownId: string | undefined;
+  $effect(() => {
+    const id = task?.id;
+    if (id !== shownId) {
+      shownId = id;
+      if (panel) panel.scrollTop = 0;
+    }
+  });
+
   function onOverlayClick(e: MouseEvent) {
     if (e.target === e.currentTarget) dashboard.closeDetail();
   }
@@ -52,7 +63,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (Escape closes, see above) -->
 <div class="detail-overlay" class:open={dashboard.detailOpen} id="detail-overlay" onclick={onOverlayClick}>
-  <div class="detail-panel" id="detail-panel">
+  <div class="detail-panel" id="detail-panel" bind:this={panel}>
     {#if task}
       {@const ts = typeStyle(task.type)}
       {@const ss = statusStyle(task.status)}

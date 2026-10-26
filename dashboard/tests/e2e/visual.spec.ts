@@ -325,7 +325,18 @@ for (const mode of ['dark', 'light'] as const) {
             { id: 4, name: null, done: 0, total: 2, percent: 0 },
           ],
           agents_working: 2,
+          working: [
+            { task: 'T-14', name: 'Kanban card polish', agent: 'claude:e5ea9db0', branch: 'dev/polish' },
+            {
+              task: 'T-15',
+              name: 'Theme picker with a much longer name that ends in …',
+              agent: 'alice',
+              branch: 'main',
+            },
+          ],
           last_activity: '2026-01-01T11:48:00Z',
+          last_done: { id: 'T-13', name: 'Status bar pinned to the bottom', completed_at: '2026-01-01T11:48:00Z' },
+          git: { branch: 'dev/polish', pr: { number: 12, url: 'https://github.com/acme/busy/pull/12', state: 'open' } },
         }),
       )
       .addProject(
@@ -335,6 +346,7 @@ for (const mode of ['dark', 'light'] as const) {
         summary({
           needs_you: { review: 1, blocked_on_user: 1 },
           recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
+          next: [{ id: 'T-3', name: 'Sign-in page' }],
         }),
       )
       .goneProject('old1234', 'Old Project')
@@ -350,6 +362,11 @@ for (const mode of ['dark', 'light'] as const) {
     await expect(page).toHaveScreenshot(`projects-overview-${mode}.png`, {
       mask: [page.locator('#version-chip'), page.locator('#footer-version')],
       stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
+    // The narrowest cards (two columns of about 280 px): every section still fits and the cards line up (T-209)
+    await page.setViewportSize({ width: 640, height: 900 });
+    await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-narrow-${mode}.png`, {
+      mask: [page.locator('#version-chip')],
     });
   });
 }

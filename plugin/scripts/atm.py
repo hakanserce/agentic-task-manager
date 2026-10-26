@@ -1520,6 +1520,18 @@ def report_expired(expired):
         sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
 
 
+def ready_in_order(data, store, candidates=None):
+    """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
+    completed or waiting in another worktree; lowest phase first, then the most urgent priority, then lowest ID."""
+    vocab = vocabulary(data)
+    if candidates is None:
+        candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
+    taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
+    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
+    order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    return sorted(ready, key=order)
+
+
 def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
@@ -1533,11 +1545,9 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed) | set(waiting)
-    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
+    ready = ready_in_order(data, store, candidates)
     if ready:
-        order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
-        return min(ready, key=order), None
+        return ready[0], None
     if not candidates:
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
@@ -1956,6 +1966,13 @@ def parse_time(text):
 
 
 RECENT_PHASES = 4
+NEXT_TASKS = 2
+NAME_CAP = 80  # task names in the summary, so /api/projects stays small with many projects
+
+
+def capped(name):
+    name = name if isinstance(name, str) else ""
+    return name if len(name) <= NAME_CAP else name[: NAME_CAP - 1] + "…"
 
 
 def recent_phases(tasks, kinds, open_phases, names):
@@ -1985,6 +2002,37 @@ def recent_phases(tasks, kinds, open_phases, names):
     return result
 
 
+DESCRIPTION_CAP = 200
+
+
+def description(meta):
+    """meta.description (an optional line about the project, set with atm init --meta-file), capped at 200 characters
+    for the overview, where it is the project name's tooltip (T-209); None without one."""
+    text = meta.get("description") if isinstance(meta, dict) else None
+    if not isinstance(text, str) or not text.strip():
+        return None
+    text = text.strip()
+    return text if len(text) <= DESCRIPTION_CAP else text[: DESCRIPTION_CAP - 1] + "…"
+
+
+def git_summary(paths, tasks):
+    """The project's git line for its card (T-206): the main worktree's branch (read from .git/HEAD, no git process),
+    and the latest PR recorded on its tasks (`atm pr`; the highest number), `merged` once its tasks have merged_at.
+    No forge call and no CI state."""
+    git_dir = os.path.join(paths["root"], ".git")
+    branch = head_branch(git_dir) if os.path.isdir(git_dir) else None
+    prs = {}
+    for t in tasks:
+        pr = t.get("pr")
+        if isinstance(pr, dict) and isinstance(pr.get("number"), int):
+            entry = prs.setdefault(pr["number"], {"number": pr["number"], "url": None, "state": "open"})
+            if isinstance(pr.get("url"), str) and pr["url"]:
+                entry["url"] = pr["url"]
+            if t.get("merged_at"):
+                entry["state"] = "merged"
+    return {"branch": branch, "pr": prs[max(prs)] if prs else None}
+
+
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
     status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
@@ -2011,9 +2059,34 @@ def project_summary(paths):
         }
 
     current = now()
-    claims = read_store(paths)["claims"].values()
-    agents_working = sum(
-        1 for c in claims if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+    store = read_store(paths)
+    live = sorted(
+        (
+            c
+            for c in store["claims"].values()
+            if isinstance(c, dict) and (parse_time(c.get("lease_expires_at")) or current) > current
+        ),
+        key=lambda c: str(c.get("claimed_at") or ""),
+    )
+    agents_working = len(live)
+    by_id = {t.get("id"): t for t in tasks}
+    # What the cards show by name (T-205): who works on what now, what the loop takes next, the last finished task
+    working = [
+        {
+            "task": c.get("task"),
+            "name": capped((by_id.get(c.get("task")) or {}).get("name")),
+            "agent": c.get("agent"),
+            "branch": c.get("branch"),
+        }
+        for c in live
+    ]
+    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready_in_order(data, store)[:NEXT_TASKS]]
+    finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
+    last_task = max(finished, key=lambda f: f[0])[1] if finished else None
+    last_done = (
+        {"id": last_task.get("id"), "name": capped(last_task.get("name")), "completed_at": last_task.get("completed_at")}
+        if last_task
+        else None
     )
 
     times = [parse_time(t.get(f)) for t in tasks for f in ACTIVITY_FIELDS]
@@ -2032,7 +2105,7 @@ def project_summary(paths):
 
     # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
     needs_you_tasks = [
-        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        {"id": t.get("id"), "name": capped(t.get("name")), "reason": "review" if k == "review" else "blocked"}
         for t, k in zip(tasks, kinds)
         if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
     ]
@@ -2045,11 +2118,16 @@ def project_summary(paths):
         "current_phase": current_phase,
         "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "agents_working": agents_working,
+        "working": working,
+        "next": next_up,
+        "last_done": last_done,
         "needs_you": {
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
         },
         "needs_you_tasks": needs_you_tasks,
+        "git": git_summary(paths, tasks),
+        "description": description(data.get("meta")),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }
@@ -3876,11 +3954,13 @@ class Summaries:
         return self.paths[entry["path"]][1]
 
     def stamp(self, entry):
-        """What the summary depends on, or None when the project is missing."""
+        """What the summary depends on, or None when the project is missing: tasks.json, the claims store, the day,
+        and .git/HEAD (the branch on the card)."""
         tasks = file_stamp(task_file(entry, TASKS_FILE))
         if tasks is None:
             return None
-        return (tasks, file_stamp(self.store(entry)), now().date().isoformat())
+        head = file_stamp(os.path.join(entry["path"], ".git", "HEAD"))
+        return (tasks, file_stamp(self.store(entry)), now().date().isoformat(), head)
 
     def summary(self, entry, stamp):
         cached = self.cache.get(entry["path"])

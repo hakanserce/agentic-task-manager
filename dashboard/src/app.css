@@ -3216,8 +3216,18 @@ svg.graph-minimap.hidden {
 }
 /* Up to 4 rings for the recent phases, on one line at any card width: each cell shrinks, and its ring (an SVG with a
    viewBox) scales down with it */
+/* The rings' row: the same height on every card, with or without phases (T-209) */
+.project-card-progress {
+  display: flex;
+  align-items: center;
+  min-height: 70px;
+}
+.project-card-progress > .project-card-note {
+  color: var(--text-muted);
+}
 .project-card-rings {
   display: flex;
+  flex: 1;
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -3280,6 +3290,101 @@ svg.graph-minimap.hidden {
   color: var(--text);
 }
 /* At the bottom of the card: the cards of a row are as tall as the tallest, so their feet line up */
+/* Working now, or next up: two lines on every card, so the cards of a row line up (T-207) */
+.project-card-work {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: calc(2 * 1.4em + 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.project-card-work-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.project-card-work-line .icon,
+.project-card-work-id,
+.project-card-next,
+.project-card-more {
+  flex-shrink: 0;
+}
+.project-card-work-id {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-muted);
+}
+.project-card-work-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-card-next,
+.project-card-more {
+  color: var(--text-muted);
+}
+.project-card-more {
+  margin-left: auto;
+}
+/* The branch and the latest PR (T-208) */
+.project-card-git {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 20px;
+  margin: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.project-card-git .icon,
+.project-card-pr,
+.project-card-pr-state {
+  flex-shrink: 0;
+}
+.project-card-branch {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text);
+}
+a.project-card-pr {
+  color: var(--accent);
+}
+.project-card-pr-state {
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.project-card-pr-state.merged {
+  color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+/* The task finished last, cut off before its time and the sparkline */
+.project-card-last:has(.project-card-last-name) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.project-card-last .icon {
+  flex-shrink: 0;
+  color: var(--green);
+}
+.project-card-last-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .project-card-foot {
   display: flex;
   align-items: center;

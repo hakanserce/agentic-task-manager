@@ -23,6 +23,16 @@ export interface ProjectSummary {
   /** Up to 4 phases, in phase order: the lowest with open work, then the most recently finished */
   recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
   agents_working: number;
+  /** Live claims, oldest first: who works on what (absent from servers before 0.18; names capped at 80 characters) */
+  working?: { task: string; name: string; agent: string; branch: string | null }[];
+  /** Up to 2 tasks the loop takes next, in its order (absent before 0.18) */
+  next?: { id: string; name: string }[];
+  /** The task completed last (absent before 0.18) */
+  last_done?: { id: string; name: string; completed_at: string } | null;
+  /** meta.description, capped at 200 characters; null without one (absent before 0.18) */
+  description?: string | null;
+  /** The main worktree's branch and the latest PR recorded on the tasks (absent before 0.18) */
+  git?: { branch: string | null; pr: { number: number; url: string | null; state: 'open' | 'merged' } | null };
   needs_you: { review: number; blocked_on_user: number };
   /** The tasks behind needs_you (absent from servers before 0.17) */
   needs_you_tasks?: NeedsYouItem[];

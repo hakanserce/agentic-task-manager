@@ -258,6 +258,18 @@ def report_expired(expired):
         sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
 
 
+def ready_in_order(data, store, candidates=None):
+    """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
+    completed or waiting in another worktree; lowest phase first, then the most urgent priority, then lowest ID."""
+    vocab = vocabulary(data)
+    if candidates is None:
+        candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
+    taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
+    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
+    order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    return sorted(ready, key=order)
+
+
 def next_task(data, store, phase=None, task_type=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
@@ -271,11 +283,9 @@ def next_task(data, store, phase=None, task_type=None):
         and (phase is None or phase_of(t) == phase)
         and (task_type is None or t.get("type") == task_type)
     ]
-    taken = set(claims) | set(completed) | set(waiting)
-    ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
+    ready = ready_in_order(data, store, candidates)
     if ready:
-        order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
-        return min(ready, key=order), None
+        return ready[0], None
     if not candidates:
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]

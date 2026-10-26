@@ -194,11 +194,16 @@ describe('serve', () => {
         { id: 3, name: null, done: 0, total: 2, percent: 0 },
       ],
       agents_working: 0,
+      working: [],
+      next: [{ id: 'T-7', name: 'T-7' }],
+      last_done: { id: 'T-1', name: 'T-1', completed_at: '2026-03-15T10:00:00Z' },
       needs_you: { review: 1, blocked_on_user: 1 },
       needs_you_tasks: [
         { id: 'T-5', name: 'T-5', reason: 'review' },
         { id: 'T-6', name: 'T-6', reason: 'blocked' },
       ],
+      git: { branch: 'main', pr: null },
+      description: null,
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     });
@@ -221,6 +226,73 @@ describe('serve', () => {
     assert.equal(changed.status, 200);
     const summary = (await changed.json()).projects.find((p) => p.id === 'abcd1234').summary;
     assert.deepEqual([summary.agents_working, summary.last_activity], [1, '2026-03-15T12:00:00Z']);
+    // What the agent works on, by name; nothing is left to take next
+    // (branch null: the test repository has no commit yet, so git names no branch)
+    assert.deepEqual(summary.working, [{ task: 'T-7', name: 'T-7', agent: 'claude:test', branch: null }]);
+    assert.deepEqual(summary.next, []);
+    atm(['serve', 'stop'], root);
+  });
+
+  test('working, next and last_done: the next two by the loop rule; names capped at 80 characters', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const long = 'A very long task name '.repeat(6);
+    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const root = project({
+      meta: { id: 'cccc3333', project: 'Next' },
+      tasks: [
+        task('T-1', 2, 'todo'),
+        task('T-2', 1, 'todo', { priority: 'P3' }),
+        task('T-3', 1, 'todo', { priority: 'P0', name: long }),
+        task('T-4', 1, 'todo', { dependencies: ['T-1'] }),
+        task('T-5', 0, 'done', { completed_at: '2026-03-01T10:00:00Z' }),
+        task('T-6', 0, 'done', { completed_at: '2026-03-02T10:00:00Z' }),
+      ],
+    });
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const summary = api.projects.find((p) => p.id === 'cccc3333').summary;
+    // Phase 1 before phase 2, P0 before P3; T-4 waits on T-1
+    assert.deepEqual(
+      summary.next.map((t) => t.id),
+      ['T-3', 'T-2'],
+    );
+    assert.equal(summary.next[0].name.length, 80);
+    assert.ok(summary.next[0].name.endsWith('…'));
+    assert.deepEqual(summary.last_done, { id: 'T-6', name: 'T-6', completed_at: '2026-03-02T10:00:00Z' });
+    atm(['serve', 'stop'], root);
+  });
+
+  test('git: the branch and the latest PR recorded on the tasks; a branch switch changes the ETag', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status: 'done', ...extra });
+    const url = (n) => `https://github.com/acme/demo/pull/${n}`;
+    const root = project({
+      meta: { id: 'dddd4444', project: 'Git', description: '  A tool for agents. '.repeat(20) },
+      tasks: [
+        task('T-1', { pr: { number: 3, url: url(3) }, merged_at: '2026-03-01T10:00:00Z' }),
+        task('T-2', { pr: { number: 5 } }),
+        task('T-3', { pr: { number: 5, url: url(5) } }),
+        task('T-4'),
+      ],
+    });
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = `http://localhost:${port}/api/projects`;
+    const first = await fetch(api);
+    const gitOf = (body) => body.projects.find((p) => p.id === 'dddd4444').summary.git;
+    const body = await first.json();
+    assert.deepEqual(gitOf(body), { branch: 'main', pr: { number: 5, url: url(5), state: 'open' } });
+    // meta.description, trimmed and capped at 200 characters (T-209: the name's tooltip on the card)
+    const summaryDescription = body.projects.find((p) => p.id === 'dddd4444').summary.description;
+    assert.equal(summaryDescription.length, 200);
+    assert.ok(summaryDescription.startsWith('A tool for agents.') && summaryDescription.endsWith('…'));
+    git(['checkout', '-q', '-b', 'feature'], root);
+    const switched = await fetch(api, { headers: { 'If-None-Match': first.headers.get('etag') } });
+    assert.equal(switched.status, 200);
+    assert.equal(gitOf(await switched.json()).branch, 'feature');
     atm(['serve', 'stop'], root);
   });
 

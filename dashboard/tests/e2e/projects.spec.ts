@@ -157,6 +157,10 @@ test.describe('projects', () => {
           percent: 50,
           current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
           agents_working: 2,
+          // A server before 0.17 sends no recent_phases or working list (undefined isn't serialized): the card shows
+          // the count and current phase lines, and counts the agents
+          recent_phases: undefined,
+          working: undefined,
           last_activity: '2026-01-01T11:48:00Z',
         }),
       )
@@ -211,16 +215,24 @@ test.describe('projects', () => {
     });
   }
 
-  // T-190: a long phase name is cut off on one line instead of wrapping and pushing the foot down
-  test('overview cards: a long phase name stays on one line; the feet of a row line up', async ({
+  // T-190: a long phase name is cut off on one line instead of wrapping and pushing the foot down. The current phase
+  // line is shown for servers before 0.17 (no recent_phases); newer ones get the rings (T-209)
+  test('overview cards (older server): a long phase name stays on one line; the feet of a row line up', async ({
     page,
     tasksServer,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const name = 'A very long phase name that would never fit on one line of a project card, not even close';
+    const older = {
+      recent_phases: undefined,
+      working: undefined,
+      next: undefined,
+      last_done: undefined,
+      git: undefined,
+    };
     tasksServer
-      .addProject('long', 'minimal', 'Long', summary({ current_phase: { id: 7, name, done: 2, total: 9 } }))
-      .addProject('short', 'minimal', 'Short', summary({ agents_working: 1 }));
+      .addProject('long', 'minimal', 'Long', summary({ ...older, current_phase: { id: 7, name, done: 2, total: 9 } }))
+      .addProject('short', 'minimal', 'Short', summary({ ...older, agents_working: 1 }));
     await openDashboard(page, tasksServer, 'standard');
     const line = page.locator('.project-card[data-id="long"] .project-card-phase');
     await expect(line).toHaveAttribute('title', `Phase 7 · ${name} — 2 / 9`);
@@ -239,6 +251,50 @@ test.describe('projects', () => {
       };
     });
     expect(geometry).toEqual({ oneLine: true, countInside: true, feetLevel: true, cards: 2 });
+  });
+
+  // T-209: the approved order, and every section at the same height on the cards of a row, whatever they hold
+  test('overview cards: the sections in the approved order, level across a row', async ({ page, tasksServer }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const claim = { task: 'T-1', name: 'Build', agent: 'claude:e5ea9db0', branch: 'dev/x' };
+    tasksServer
+      .addProject(
+        'full',
+        'minimal',
+        'Full',
+        summary({
+          recent_phases: [{ id: 1, name: null, done: 1, total: 2, percent: 50 }],
+          working: [claim],
+          git: { branch: 'dev/x', pr: { number: 4, url: null, state: 'open' } },
+          last_done: { id: 'T-0', name: 'Setup', completed_at: '2026-01-01T00:00:00Z' },
+          description: 'What this project is for',
+        }),
+      )
+      .addProject('empty', 'minimal', 'Empty', summary());
+    await openDashboard(page, tasksServer, 'standard');
+    const sections = [
+      '.project-card-head',
+      '.project-card-progress',
+      '.project-card-work',
+      '.project-card-git',
+      '.project-card-foot',
+    ];
+    const layout = await page.evaluate((selectors) => {
+      const tops = (id: string) => {
+        const card = document.querySelector(`.project-card[data-id="${id}"]`)!;
+        return selectors.map((s) => Math.round(card.querySelector(s)!.getBoundingClientRect().top));
+      };
+      return { full: tops('full'), empty: tops('empty') };
+    }, sections);
+    // Top to bottom in that order, and level with the other card's
+    expect(layout.full).toEqual([...layout.full].sort((a, b) => a - b));
+    expect(layout.empty).toEqual(layout.full);
+    // The whole count lives in the rings' tooltip; the description on the name
+    await expect(page.locator('.project-card[data-id="full"] .project-card-counts')).toHaveCount(0);
+    await expect(page.locator('.project-card[data-id="full"] .project-card-open')).toHaveAttribute(
+      'title',
+      /^Full\nWhat this project is for\n/,
+    );
   });
 
   // T-194 review: two lines for every card's name, so a long one doesn't push its card's rings below the others'
@@ -267,6 +323,40 @@ test.describe('projects', () => {
       };
     });
     expect(geometry).toEqual({ twoLines: true, sameNameHeight: true, ringsLevel: true });
+  });
+
+  // T-207: who works on what, by name, or what comes next; two lines on every card
+  test('overview cards: the tasks at work or next, by name, in a section of the same height on every card', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const claim = (task: string, name: string) => ({ task, name, agent: 'claude:e5ea9db0', branch: 'dev/x' });
+    tasksServer
+      .addProject(
+        'busy',
+        'minimal',
+        'Busy',
+        summary({
+          agents_working: 3,
+          working: [claim('T-1', 'Build the board'), claim('T-2', 'Write the tests'), claim('T-3', 'Polish')],
+        }),
+      )
+      .addProject('idle', 'minimal', 'Idle', summary({ next: [{ id: 'T-9', name: 'Next thing' }] }))
+      .addProject('done', 'minimal', 'Done', summary());
+    await openDashboard(page, tasksServer, 'standard');
+    const work = (id: string) => page.locator(`.project-card[data-id="${id}"] .project-card-work-line`);
+    await expect(work('busy')).toHaveText([/T-1\s*Build the board/, /T-2\s*Write the tests\s*\+1 more/]);
+    await expect(work('idle')).toHaveText([/Next:\s*T-9\s*Next thing/]);
+    await expect(work('done')).toHaveCount(0);
+    const tops = await page.evaluate(() =>
+      ['busy', 'idle', 'done'].map((id) => {
+        const card = document.querySelector(`.project-card[data-id="${id}"]`)!;
+        const box = card.querySelector('.project-card-work')!.getBoundingClientRect();
+        return [Math.round(box.top), Math.round(box.height)];
+      }),
+    );
+    expect(new Set(tops.map((t) => t.join(','))).size).toBe(1);
   });
 
   // T-197: each project's logo (p/<id>/logo), or its monogram, in the cards, the selector and the title bar
@@ -372,9 +462,7 @@ test.describe('projects', () => {
     await expect(page.locator('.project-card[data-id="idle"]')).toHaveCount(0);
     await expect(page.locator('#projects-hidden')).toHaveText('1 inactive project hidden');
     await page.locator('#active-projects-only').uncheck();
-    await expect(page.locator('.project-card[data-id="idle"] .project-card-phase')).toHaveText(
-      'Every phase is finished',
-    );
+    await expect(page.locator('.project-card[data-id="idle"]')).toHaveCount(1);
     await page.reload();
     await expect(page.locator('#active-projects-only')).not.toBeChecked();
   });

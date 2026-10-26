@@ -2,6 +2,13 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.18.0] - 2026-10-26
+
+- Project cards show what agents are working on right now, by task name, or what comes next.
+- Each card shows its branch and latest pull request, with a link.
+- See the last task each project finished, and how long ago.
+- The cards are laid out the same way, so a row of projects lines up neatly.
+
 ## [0.17.0] - 2026-10-26
 
 - Your projects can have logos: on their cards, in the project selector and next to the title.

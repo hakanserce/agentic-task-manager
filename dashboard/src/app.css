@@ -271,6 +271,14 @@ body {
   color: var(--text-muted);
   margin: 20px 0 8px;
 }
+/* The open project's section is headed by its name, with its logo or monogram */
+.about #about-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
 .about .about-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

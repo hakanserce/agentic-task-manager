@@ -19,6 +19,29 @@ test.describe('projects', () => {
     await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
   });
 
+  test("About names the open project, and has no project section on the overview (it was the last project's)", async ({
+    page,
+    tasksServer,
+  }) => {
+    tasksServer.addProject('second', 'minimal', 'Second Project');
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('.project-card[data-id="second"] .project-card-open').click();
+    await page.locator('#footer-about').click();
+    await expect(page.locator('#about-project')).toHaveText('Minimal Project');
+    await expect(page.locator('#about-project .project-logo')).toHaveCount(1);
+    await expect(page.locator('#about-vocab')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    // To All projects in the same page, so the last project's data is still loaded
+    await page.locator('#project-selector').click();
+    await page.locator('#project-option-overview').click();
+    await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
+    await page.locator('#footer-about').click();
+    await expect(page.locator('#about-panel')).toContainText('Version');
+    await expect(page.locator('#about-project')).toHaveCount(0);
+    await expect(page.locator('#about-vocab')).toHaveCount(0);
+  });
+
   test('the title bar is the same on the overview and on a project: controls at the same place', async ({
     page,
     tasksServer,

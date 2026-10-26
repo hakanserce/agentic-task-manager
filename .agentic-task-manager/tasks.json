@@ -7638,7 +7638,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:25:06Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:22:10Z",
@@ -7653,7 +7653,11 @@
           "text": "Key numbers stay on one line (nowrap, 20px, fewer per row in a narrow panel). The idle box's yellow edge (it marked idle time as a warning) is now a swatch of the charts' idle hatching, with a tooltip.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-211",
@@ -7674,7 +7678,7 @@
         "docs/security-review.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T20:45:05Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "commit": "571b233d2113cd55d5f62fef45d2937e220541e9",
@@ -7694,7 +7698,11 @@
       "started_at": "2026-10-26T20:45:04Z",
       "started_by": "claude:e5ea9db0",
       "completed_at": "2026-10-26T20:45:05Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-212",
@@ -7717,7 +7725,7 @@
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:09:24Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T20:45:08Z",
@@ -7732,7 +7740,11 @@
           "text": "Review in docs/progress-tab-review.md, approved in Crit (filters: keep with a banner; one-agent estimates; agent time / waiting on you / idle). Implementation as T-238..T-243 in phase 21.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-213",
@@ -7757,7 +7769,7 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:28:37Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:09:27Z",
@@ -7772,7 +7784,11 @@
           "text": "Review in docs/activity-popup-review.md, approved in Crit (all-time sparkline kept; time per task alone and with you; waiting on you split from idle; three KPI cards with a where-the-time-went bar). Implementation as T-244..T-249 in phase 21.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-214",
@@ -7794,7 +7810,7 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:41:57Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:38Z",
@@ -7809,7 +7825,11 @@
           "text": "Stats part of docs/project-stats-proposal.md, approved in Crit: a Project tab (stats with task commits, agent time, parallelism; a time-per-task histogram), tab order Kanban first. Implementation T-251..T-255 in phase 21.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-215",
@@ -7832,7 +7852,7 @@
         "docs/all-projects-kanban-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:57:13Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:41:59Z",
@@ -7847,7 +7867,11 @@
           "text": "docs/all-projects-kanban-proposal.md approved in Crit: a Board tab on All projects (ready to start; all in progress, review, blocked; done in the last 24 h; 30 per column), group by project, a server-backed search. Implementation T-257..T-261 in phase 21.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-216",
@@ -7869,7 +7893,7 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T19:13:32Z",
-      "updated_at": "2026-10-26T21:41:58Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:43Z",
@@ -7883,7 +7907,11 @@
           "text": "Information part of docs/project-stats-proposal.md, approved in Crit: the Project tab's Information section (repository, workflow, people, agents in one line, vocabulary); About keeps a short vocabulary with a link. Implementation T-252, T-255.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-217",
@@ -7905,7 +7933,7 @@
         "dashboard/tests/unit/AboutDialog.component.test.ts"
       ],
       "created_at": "2026-10-26T19:14:58Z",
-      "updated_at": "2026-10-26T19:29:02Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:26:23Z",
@@ -7920,7 +7948,11 @@
           "text": "About shows the project section only on a project's page, headed by its name (as in the title bar) and its logo or monogram; on All projects only the plugin's facts.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-218",
@@ -7944,7 +7976,7 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T19:32:42Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:32:06Z",
@@ -7959,7 +7991,11 @@
           "text": "create-tasks asks for Markdown descriptions when it helps (with the rendered subset and an example); do-task and loop-tasks: Markdown in descriptions via `--description-file`, inline Markdown in notes. Version bump goes with the phase's release.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-219",
@@ -7982,7 +8018,7 @@
         "dashboard/tests/unit/markdown.test.ts"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T19:32:03Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:29:06Z",
@@ -7997,7 +8033,11 @@
           "text": "Notes and review notes render as Markdown in the detail panel, questions as inline Markdown; card tooltips show the plain text. Same escaping: no HTML, only http(s)/mailto/# links.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-220",
@@ -8464,7 +8504,7 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-26T20:46:34Z",
-      "updated_at": "2026-10-26T21:08:36Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:05:29Z",
@@ -8479,7 +8519,11 @@
           "text": "Kanban columns size to the space below the board (KanbanColumns measures it; min 360 px; lower lanes get a window's height); e2e at 1600 and 720 px high; Kanban and theme screenshots updated, Linux ones removed for CI.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-238",
@@ -8825,7 +8869,7 @@
         "dashboard/tests/e2e/filters.spec.ts"
       ],
       "created_at": "2026-10-26T21:31:20Z",
-      "updated_at": "2026-10-26T21:34:35Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:31:26Z",
@@ -8840,7 +8884,11 @@
           "text": "Phase filter lists All, the active phases (activePhases) and any selected one when there are more than 6; '+ N finished' / 'Hide finished' toggles the rest, saved with the view. Unit and e2e tests; no screenshot changes.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-251",
@@ -8996,7 +9044,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:48:16Z",
-      "updated_at": "2026-10-26T21:51:20Z",
+      "updated_at": "2026-10-26T21:58:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:48:20Z",
@@ -9011,7 +9059,11 @@
           "text": "Kanban cards show the first 2 labels (cut at 14ch, full text on hover) and a +N chip; its popover lists every label on hover or focus, a click pins it without opening the task. List and details unchanged. Component and e2e tests; no screenshot changes.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 15,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+      }
     },
     {
       "id": "T-257",

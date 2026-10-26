@@ -4,6 +4,33 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.18.0] - 2026-10-26
+
+**Project cards that say what's going on.** The layout reviewed in `docs/project-cards-proposal.md`.
+
+### Added
+- **Server summary** (`/api/projects`, `docs/multi-project-api.md` §3.2):
+  - `working`: the live claims, oldest first, as `{task, name, agent, branch}`;
+  - `next`: up to 2 tasks `atm next` would hand out, in its order (one shared `ready_in_order`);
+  - `last_done`: the task completed last, `{id, name, completed_at}`;
+  - `git`: `{branch, pr}`, the main worktree's branch (from `.git/HEAD`, no git process) and the latest PR recorded on
+    the tasks, `open` or `merged`. No forge call, no CI state. `.git/HEAD` is part of the summary's ETag;
+  - `description`: `meta.description`, trimmed and capped at 200 characters.
+
+  Task names in the summary are capped at 80 characters.
+- **Project cards** show the tasks at work by ID and name, with agent and branch on hover, or "Next:" with what the
+  loop takes next. They also show the branch and the latest PR (linked), and the last finished task with how long ago.
+
+### Changed
+- **Project card layout:**
+  - Order: head (logo, name, "needs you"), recent-phase rings, working/next, git, last finished with the 14-day
+    sparkline.
+  - Every section keeps its height, so the cards of a row line up.
+  - The project-wide done / total moved into the rings' tooltip.
+  - The current-phase line shows only for servers before 0.17.
+  - `meta.description` shows on hover over the name.
+  - Servers before 0.18 keep the agent count and the last activity time.
+
 ## [0.17.0] - 2026-10-26
 
 **Overview polish, project identity, and parallel agents that don't trip over each other.** Phase 17 was built by

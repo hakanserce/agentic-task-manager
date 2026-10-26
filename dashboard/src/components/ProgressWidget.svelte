@@ -86,7 +86,7 @@
 </div>
 
 {#snippet group(title: string, shares: typeof p.byPhase, color: (key: string) => string)}
-  <div class="insights-section">
+  <div class="insights-section ring-group">
     <div class="menu-label">{title}</div>
     <div class="ring-grid">
       {#each shares as s (s.key)}

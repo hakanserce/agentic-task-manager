@@ -5067,7 +5067,7 @@
       "description": "T-143 misread the request: it gave **every ring** its own border and background.\n\n### What was meant\n- **One card** (border + background, theme tokens) around the whole **By Phase** group of rings.\n- **A second card** around the **By Type** group.\n- The rings inside have no card of their own.\n\n### Steps\n1. Revert the per-ring card style (`.ring-cell`) to plain cells.\n2. Add the group card in `ProgressWidget.svelte` / `app.css`.\n3. Check every theme in both modes.\n4. Update the `agents-progress-panel` and `light-agents-progress-panel` screenshots (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -5075,9 +5075,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T08:01:19Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T00:31:51Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:31:51Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-157",

@@ -539,16 +539,19 @@ h1 {
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: 8px;
 }
-/* Each ring is a card of its own, like the Activity charts (.dive-chart): theme tokens only (T-143) */
+/* Each group of rings (By phase, By type) is one card, like the Activity charts (.dive-chart): theme tokens only */
+.ring-group {
+  background: color-mix(in srgb, var(--surface2) 60%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px 8px;
+}
 .ring-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 4px 6px;
-  background: color-mix(in srgb, var(--surface2) 60%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 4px 4px 2px;
 }
 .ring-label {
   font-size: 12px;

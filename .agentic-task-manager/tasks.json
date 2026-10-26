@@ -7788,18 +7788,28 @@
       "description": "**Interactive with the user**, done together with T-216 (project information): same proposal, same review.\n\n## Where\nPropose where to show the overall project stats: the Progress tab, a new Stats section, the project card, or an About-like dialog.\n\n## Which stats, and how\n- **Project start**\n- **Project duration:** earliest task start to latest task completion.\n- **Total agent time used:** the sum of in-progress spans.\n- **Task duration** avg/min/max: propose the best visualization (e.g. a box plot or histogram by type, with the slowest tasks listed).\n- **Max parallelization:** the most agents working at once.\n- **Overall parallelization:** define it, e.g. *agent time ÷ wall-clock time while any agent works*.\n- Number of **commits**, **pull requests**, **phases** and **tasks**.\n\nFor each stat, say how it's computed from `tasks.json` (and the archive), and where data is missing (tasks without `started_at`, reopened tasks, skipped tasks).\n\n## Proposal\nWrite `docs/project-stats-proposal.md` with mock-ups, review it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:29:28Z",
+      "updated_at": "2026-10-26T21:41:57Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:38Z",
       "started_by": "claude:e5ea9db0",
-      "commit": "ca440c0c9720e5afadee6fe8f23bd70fde74c07c"
+      "commit": "1c32665c49a6ff7da78d03249858b459b96ccb28",
+      "completed_at": "2026-10-26T21:41:57Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:41:57Z",
+          "kind": "outcome",
+          "text": "Stats part of docs/project-stats-proposal.md, approved in Crit: a Project tab (stats with task commits, agent time, parallelism; a time-per-task histogram), tab order Kanban first. Implementation T-251..T-255 in phase 21.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-215",
@@ -7816,15 +7826,17 @@
       "description": "**Interactive with the user.** Explore an All Projects Kanban in the overview: one board with cards from every project, each card with a project chip (like the branch chip).\n\n## Options to weigh\n1. **Cross-project phases and filters.** Phases differ per project, so how would that work?\n2. **No phase filter:** every task in *Review*, *Blocked* and *In Progress*, plus the N most recently updated in *To Do* and *Done*.\n3. **Per-project swimlanes.**\n\n## Also consider\n- **Load:** `api/projects` already sends summaries; would the board need every project's `tasks.json`, and how often?\n- Sorting, the Needs-you menu, and how it fits next to the project cards.\n\n## Proposal\nWrite `docs/all-projects-kanban-proposal.md` with mock-ups and a recommendation, review it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/all-projects-kanban-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:19:39Z",
+      "updated_at": "2026-10-26T21:41:59Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:41:59Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-216",
@@ -7840,17 +7852,27 @@
       "description": "**Interactive with the user**, done together with T-214: the same proposal (`docs/project-stats-proposal.md`) and the same review.\n\n## Where\nPropose where to show the project's information: e.g. a Project info dialog or tab, the About dialog, the project card's tooltip, or a section next to the stats.\n\n## What\n- **Name** and **description**.\n- **Developers:** who created and worked on tasks, users and agents, with task counts; how to group agent sessions.\n- **Git repository** (a link).\n- **Development workflow:** *direct* or *pull-request*, base branch, verify, commit template.\n- **Project vocabulary:** phases with names and task counts, labels, task types, statuses with their kinds, priorities and the default.\n\nFor each item, say where its data comes from (`tasks.json` `meta`, the tasks, the server) and what's missing.\n\n## With the user\nReview it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T19:13:32Z",
-      "updated_at": "2026-10-26T21:28:43Z",
+      "updated_at": "2026-10-26T21:41:58Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:43Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "completed_at": "2026-10-26T21:41:58Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:41:58Z",
+          "kind": "outcome",
+          "text": "Information part of docs/project-stats-proposal.md, approved in Crit: the Project tab's Information section (repository, workflow, people, agents in one line, vocabulary); About keeps a short vocabulary with a link. Implementation T-252, T-255.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-217",

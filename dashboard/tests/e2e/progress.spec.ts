@@ -149,21 +149,40 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#progress-basis')).toContainText('last 4 completed tasks: about 30 m each (30 m)');
   });
 
-  test('filters choose the rows, but the pace still uses all history', async ({ page, tasksServer }) => {
+  test('filters choose the rows; the pace and each phase’s finish stay the whole project’s (T-239)', async ({
+    page,
+    tasksServer,
+  }) => {
     await openProgress(page, tasksServer, 'progress');
     await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(1);
     await expect(page.locator('#progress-basis')).toContainText('last 8 completed tasks');
-    // Only phase 2's own 5 tasks: 5 × 8.5 = 42.5 min
-    await expect(cells(page, 2).nth(5)).toContainText('≈ 43 m of agent work');
+    // Not phase 2's 5 tasks alone (43 m): the loop finishes phase 1 first, so the whole project's 51 m
+    await expect(cells(page, 2).nth(5)).toContainText('≈ 51 m of agent work');
+    await expect(page.locator('#progress-filter-banner')).toContainText('Showing 6 of 16 tasks: phase 2');
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases · matching tasks');
+    await page.locator('#progress-clear-filters').click();
+    await expect(page.locator('#progress-filter-banner')).toHaveCount(0);
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+  });
+
+  test('the status and stage filters don’t apply on this tab, and the banner says so (T-239)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openProgress(page, tasksServer, 'progress');
+    const summary = await page.locator('#burndown svg').getAttribute('aria-label');
+    await openFilters(page);
+    await filterButton(page, 'status', 'done').click();
+    await expect(page.locator('#progress-filter-ignored')).toHaveText(/^Status filter not applied here/);
+    await expect(page.locator('#burndown svg')).toHaveAttribute('aria-label', summary!);
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
   });
 
   test('empty filter result', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
-    await openFilters(page);
-    await filterButton(page, 'status', 'skipped').click();
-    await filterButton(page, 'type', 'test').click();
+    await page.locator('#task-search').fill('no task is called this');
     await expect(page.locator('#progress')).toContainText('No tasks match current filters');
   });
 });
@@ -252,7 +271,7 @@ test.describe('Progress tab: focus a phase', () => {
     await row(page, 2).click();
     await openFilters(page);
     await filterButton(page, 'phase', '1').click();
-    await expect(page.locator('#burndown-focus')).toHaveText('All phases');
+    await expect(page.locator('#burndown-focus')).toHaveText('All phases · matching tasks');
   });
 });
 

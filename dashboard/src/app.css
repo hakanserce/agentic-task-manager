@@ -2355,6 +2355,37 @@ svg.graph-minimap.hidden {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12px;
 }
+/* Which tasks the Progress tab shows when the search or filters pick a slice (ProgressTab.svelte, T-239) */
+.progress-filter-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.progress-filter-banner strong {
+  color: var(--text);
+}
+.progress-filter-banner .link-button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+}
+.progress-filter-banner .link-button:hover {
+  text-decoration: underline;
+}
+
 .progress-empty {
   color: var(--text-muted);
   font-size: 14px;

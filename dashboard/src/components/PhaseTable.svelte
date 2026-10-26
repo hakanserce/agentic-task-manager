@@ -84,7 +84,12 @@
             >{/if}
         </td>
         <td>{STATE_LABELS[row.state]}</td>
-        <td class="phase-estimate">
+        <td
+          class="phase-estimate"
+          title={row.estimate
+            ? 'For the whole phase, all its tasks, whatever the filters: the loop works through all of it'
+            : undefined}
+        >
           {#if row.state === 'done'}
             Done{#if row.completedAt}&nbsp;{formatWhen(row.completedAt, now)}{/if}
           {:else if row.estimate}

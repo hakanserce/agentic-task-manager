@@ -174,6 +174,24 @@ export function forecastPhases(
 }
 
 /**
+ * A filtered slice's phases with the whole project's estimates (T-239): the loop works through whole phases, so when
+ * a phase finishes doesn't depend on the filter. The slice keeps its own counts and state; a phase the slice has
+ * finished keeps no estimate.
+ */
+export function withWholePhaseEstimates(slice: Forecast, whole: Forecast): Forecast {
+  const estimates = new Map(whole.phases.map((p) => [p.phase, p.estimate]));
+  return {
+    pace: whole.pace,
+    phases: slice.phases.map((p) => {
+      const estimate = p.state === 'done' ? undefined : estimates.get(p.phase);
+      const rest = { ...p };
+      delete rest.estimate;
+      return estimate ? { ...rest, estimate } : rest;
+    }),
+  };
+}
+
+/**
  * The phases worth showing with "Active phases only": every unfinished phase, and the one that finished last (a
  * phase of only skipped tasks counts as finished). That is the phase with the latest completion, the higher one on a
  * tie; when no finished phase has completion times, the highest finished phase.

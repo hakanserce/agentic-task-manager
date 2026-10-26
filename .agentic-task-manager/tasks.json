@@ -8781,7 +8781,7 @@
       "description": "`docs/progress-tab-review.md` §1.6 and §2.1 (approved).\n\n- The header Progress widget (`ProgressWidget.svelte`, `progressBreakdown(dashboard.tasks)`) counts only `tasks.json`'s tasks, so archiving done tasks *lowers* the percentage. Count archived tasks: the overall number from `meta.archived` (all archived tasks are done), without loading the archive; phase and type breakdowns from the history once the archive is loaded. Tooltip: *62 of 120 tasks done (180 archived, done)*.\n- `UtilizationPanel.svelte` uses `dashboard.filtered` and a period from `dashboard.tasks`, while the burndown uses the history: use `dashboard.historyFiltered` and the history for the period.\n\n## Verify\n\nUnit tests for `insights.ts` with `meta.archived`; e2e with the `archive` fixture: the widget's % includes archived tasks; the utilisation's work includes them.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -8789,11 +8789,22 @@
         "dashboard/src/components/UtilizationPanel.svelte"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:05:28Z",
+      "updated_at": "2026-10-26T23:08:27Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:05:28Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "120126792438b75b8b3b284d2bc8337fa93e7439",
+      "completed_at": "2026-10-26T23:08:27Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T23:08:27Z",
+          "kind": "outcome",
+          "text": "The header Progress widget counts archived tasks as done: from `meta.archived` without loading the archive (a skipped one among them counts until the archive loads), exactly once the popover loads it; tooltip says *(N archived, done)*. Utilisation uses the history like the burndown. Unit and e2e tests for the widget; the utilisation change has no test of its own (it only swaps its inputs).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-239",
@@ -8808,7 +8819,7 @@
       "description": "`docs/progress-tab-review.md` §0 (approved: option 2).\n\n- A banner at the top of the Progress tab whenever search or a filter is on: *Showing 12 of 236 tasks: label security · Clear filters*.\n- The **status** and **stage** filters are not applied on this tab; the banner says *Status filter not applied here* when one is set.\n- Titles and tooltips say *matching tasks* when filtered.\n- Phase estimates (*Finished by*) are always computed on all tasks, like the pace; their tooltip says so. The slice gets its own counts, bars and burndown lines.\n\n## Verify\n\ne2e: a label filter shows the banner and changes the counts but not a phase's *Finished by*; a status filter is named in the banner and doesn't change the burndown.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-238"
       ],
@@ -8818,9 +8829,11 @@
         "dashboard/src/lib/forecast.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T23:08:28Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:08:28Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-240",

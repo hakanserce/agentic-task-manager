@@ -35,6 +35,8 @@ import { loadWorktrees, mergeWorktrees, type Worktree, type WorktreesResult } fr
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
+/** A filter group with nothing selected ("All"), for the groups the Progress tab doesn't apply */
+const NO_VALUES = emptyFilters().status;
 
 function releaseNotesUnseen(): boolean {
   const version = dashboardVersion();
@@ -110,9 +112,16 @@ export class DashboardState {
   base = $derived(this.includeArchived ? this.history : this.tasks);
   searched = $derived(searchTasks(this.base, this.query));
   filtered = $derived(filterTasks(this.searched, this.filters, this.vocab));
-  /** History (archived tasks too, once loaded) matching the search and filters: for the Progress tab */
+  /**
+   * The Progress tab's tasks: the history (archived tasks too, once loaded) matching the search and filters, except
+   * the status and stage filters. Progress *is* the split by status, so those would make it meaningless (T-239).
+   */
   historyFiltered = $derived(
-    this.includeArchived ? this.filtered : filterTasks(searchTasks(this.history, this.query), this.filters, this.vocab),
+    filterTasks(
+      searchTasks(this.history, this.query),
+      { ...this.filters, status: NO_VALUES, stage: NO_VALUES },
+      this.vocab,
+    ),
   );
 
   /** Task shown in the detail panel; the panel keeps its last content while closed. */
@@ -385,6 +394,12 @@ export class DashboardState {
 
   toggleFilter(group: FilterGroup, value: string) {
     this.filters = toggleFilter(this.filters, group, value);
+  }
+
+  /** No filters and no search */
+  clearFilters() {
+    this.filters = emptyFilters();
+    this.query = '';
   }
 
   showDetail(id: string) {

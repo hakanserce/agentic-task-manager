@@ -5,6 +5,7 @@ import {
   pace,
   percentile,
   taskDurations,
+  withWholePhaseEstimates,
   type PhaseForecast,
 } from '../../src/lib/forecast';
 import type { Task } from '../../src/lib/types';
@@ -122,6 +123,21 @@ describe('forecastPhases', () => {
     const withHistory = forecastPhases(phase2, NOW, tasks);
     expect(withHistory.pace?.likely).toBe(8.5);
     expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
+  });
+
+  it("a slice keeps its own counts, but each phase's finish is the whole phase's (T-239)", () => {
+    const whole = forecastPhases(tasks, NOW);
+    // One task of phase 2: alone it would be estimated as 1 task after phase 1's, not phase 2's five
+    const slice = forecastPhases(
+      tasks.filter((x) => x.phase !== 2 || x.id === tasks.find((y) => y.phase === 2 && y.status === 'todo')!.id),
+      NOW,
+      tasks,
+    );
+    const merged = withWholePhaseEstimates(slice, whole);
+    expect(merged.phases.map((p) => [p.phase, p.total])).toEqual(slice.phases.map((p) => [p.phase, p.total]));
+    expect(merged.phases[2].estimate).toEqual(whole.phases[2].estimate);
+    expect(slice.phases[2].estimate).not.toEqual(whole.phases[2].estimate);
+    expect(merged.phases[0].estimate).toBeUndefined(); // finished
   });
 });
 

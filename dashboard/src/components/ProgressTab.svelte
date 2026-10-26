@@ -1,6 +1,7 @@
 <script lang="ts">
   import { burndown } from '../lib/burndown';
-  import { activePhases, forecastPhases } from '../lib/forecast';
+  import { FILTER_GROUPS } from '../lib/filters';
+  import { activePhases, forecastPhases, withWholePhaseEstimates } from '../lib/forecast';
   import { dashboard } from '../lib/state.svelte';
   import BurndownChart from './BurndownChart.svelte';
   import PhaseTable from './PhaseTable.svelte';
@@ -15,7 +16,25 @@
 
   // Recomputed whenever tasks or filters change (auto-refresh reloads keep it current)
   const now = $derived.by(() => (dashboard.history, tasks, Date.now()));
-  const forecast = $derived(forecastPhases(tasks, now, dashboard.history, dashboard.vocab));
+  // The search and filters pick a slice of the tasks (the status and stage filters don't apply here: T-239). The slice
+  // gets its own counts and lines, but when a phase finishes is the whole phase's: the loop works through all of it.
+  const filtered = $derived(
+    dashboard.query.trim() !== '' ||
+      FILTER_GROUPS.some((g) => g !== 'status' && g !== 'stage' && dashboard.filters[g].size > 0),
+  );
+  const ignored = $derived((['status', 'stage'] as const).filter((g) => dashboard.filters[g].size > 0));
+  const applied = $derived(
+    [
+      ...FILTER_GROUPS.filter((g) => g !== 'status' && g !== 'stage' && dashboard.filters[g].size > 0).map(
+        (g) => `${g === 'agent' ? 'started by' : g} ${[...dashboard.filters[g]].join(', ')}`,
+      ),
+      ...(dashboard.query.trim() ? [`“${dashboard.query.trim()}”`] : []),
+    ].join(' · '),
+  );
+  const whole = $derived(forecastPhases(dashboard.history, now, dashboard.history, dashboard.vocab));
+  const forecast = $derived(
+    filtered ? withWholePhaseEstimates(forecastPhases(tasks, now, dashboard.history, dashboard.vocab), whole) : whole,
+  );
   // Clicking a phase row focuses the burndown on that phase (FR-4.6); a filter that hides it resets the focus
   // The focused phase is part of the project's saved view (dashboard state)
   const selected = $derived(dashboard.progressPhase);
@@ -32,11 +51,32 @@
 </script>
 
 <div class="progress-view" id="progress">
+  {#if filtered || ignored.length}
+    <div class="progress-filter-banner" id="progress-filter-banner" role="status">
+      {#if filtered}
+        <span
+          >Showing <strong>{tasks.length}</strong> of {dashboard.history.length} tasks: {applied}. Counts, bars and the
+          burndown are the matching tasks'; when a phase finishes is the whole phase's.</span
+        >
+      {/if}
+      {#if ignored.length}
+        <span id="progress-filter-ignored"
+          >{ignored.map((g) => (g === 'status' ? 'Status' : 'Stage')).join(' and ')} filter not applied here: progress is
+          the split by status.</span
+        >
+      {/if}
+      <button class="link-button" id="progress-clear-filters" onclick={() => dashboard.clearFilters()}
+        >Clear filters</button
+      >
+    </div>
+  {/if}
   {#if tasks.length === 0}
     <div class="progress-empty">No tasks match current filters</div>
   {:else}
     <div class="burndown-scope-row">
-      <span class="burndown-focus" id="burndown-focus">{focus === undefined ? 'All phases' : `Phase ${focus}`}</span>
+      <span class="burndown-focus" id="burndown-focus"
+        >{focus === undefined ? 'All phases' : `Phase ${focus}`}{filtered ? ' · matching tasks' : ''}</span
+      >
       {#if focus !== undefined}
         <button class="burndown-all" onclick={() => (dashboard.progressPhase = null)}>Show all phases</button>
       {/if}

@@ -1,6 +1,11 @@
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4173;
+// One port per checkout, from its folder: agents testing in parallel git worktrees each get their own e2e server,
+// instead of reusing another worktree's (reuseExistingServer) and testing its build
+const checkout = fileURLToPath(new URL('.', import.meta.url));
+const PORT = 4173 + (parseInt(createHash('sha1').update(checkout).digest('hex').slice(0, 6), 16) % 800);
 
 export default defineConfig({
   testDir: 'tests/e2e',

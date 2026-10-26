@@ -2,6 +2,14 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.15.0] - 2026-10-25
+
+- One dashboard now shows all your projects: switch between them with the arrow next to the title.
+- **All projects** shows every project at a glance: its progress, what it's working on, and what needs you.
+- The dashboard comes with the plugin, so updating the plugin updates it. No more updating each project.
+- When a new version is ready, the open dashboard offers to reload.
+- Open it with `/atm:serve`, which you only need once for all your projects.
+
 ## [0.14.0] - 2026-10-25
 
 - Five more colour themes: Ayu, Night Owl, Gruvbox, Noctis and Sublime Material, each in light and dark.

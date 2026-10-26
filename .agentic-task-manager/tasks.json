@@ -5771,7 +5771,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.3.\n\n### Behaviour\n- On each auto-refresh (or when a poll fails and then recovers), compare `/__atm/whoami`'s `build` with the page's `atm-dashboard-build` meta tag.\n- When they differ, show a small, non-blocking bar: *\"A new version of the dashboard is ready\"*, with a **Reload** button.\n- **Never reload by itself.**\n- What's new keeps its current *new* marker logic after the reload.\n\n### Tests\n- Unit test for the comparison.\n- e2e where the fixture's `whoami` changes `build` mid-test.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-172"
       ],
@@ -5782,11 +5782,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:00:28Z",
+      "updated_at": "2026-10-26T00:03:02Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:00:28Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "538ea2ca601704fdcf8f8f6d0eab029e7befca22",
+      "completed_at": "2026-10-26T00:03:02Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:03:02Z",
+          "kind": "outcome",
+          "text": "Each refresh asks __atm/whoami for the server's build; when it differs from the page's atm-dashboard-build, a bar offers Reload (never reloads by itself); Not now hides it until the next reload",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-177",
@@ -5845,7 +5856,7 @@
       "description": "### Versions\nBump `plugin.json` and `marketplace.json` to **0.15.0**.\n\n### `CHANGELOG.md`\n- the registry and `atm projects`;\n- the per-user server on 8765 and its API;\n- `serve --refresh` and the SessionStart hook;\n- `migrate`'s cleanup;\n- the selector and the overview;\n- `/atm:update-dashboard` removed;\n- no single-project mode.\n\n### `WHATS-NEW.md`\nSay plainly that the dashboard now **shows all projects in one place**, **updates with the plugin**, and opens with `/atm:serve`.\n\n### Finish\n- Update the footer-version screenshots per `CLAUDE.md`.\n- `npm run verify` and the atm-cli suite green.\n- Ship through `/atm:push`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-169",
         "T-176",
@@ -5861,9 +5872,11 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:35:23Z",
+      "updated_at": "2026-10-26T00:03:06Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:03:06Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-179",

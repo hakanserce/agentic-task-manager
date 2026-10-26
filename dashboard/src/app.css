@@ -1887,8 +1887,21 @@ svg.graph-minimap.hidden {
 .kanban-toolbar {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 16px;
   margin-bottom: 8px;
+}
+/* The completion of the tasks shown (KanbanBoard.svelte), at the toolbar's start; the options stay at its end */
+.kanban-completion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.kanban-completion-pct {
+  color: var(--text);
 }
 .kanban-lane + .kanban-lane {
   margin-top: 16px;

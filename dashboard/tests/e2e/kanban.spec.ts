@@ -203,6 +203,21 @@ test.describe('Kanban board', () => {
       .evaluateAll((cols) => cols.map((c) => (c as HTMLElement).dataset.status));
     expect(columns).toEqual(['blocked', 'done']);
   });
+
+  test('a ring shows the completion of the tasks shown, skipped ones apart', async ({ page, tasksServer }) => {
+    await openKanban(page, tasksServer, 'kanban');
+    const completion = page.locator('#kanban-completion');
+    // 24 done of 36 that count (6 + 3 + 2 + 24 + 1); the 2 skipped are apart
+    await expect(page.locator('#kanban-completion-text')).toHaveText('67% · 24 of 36 done · 2 skipped');
+    await expect(completion.locator('svg.ring')).toHaveAttribute('aria-label', 'Tasks shown 67% done');
+    await expect(completion).toHaveAttribute('title', 'Tasks shown: 24 of 36 done, 2 skipped');
+    await openFilters(page);
+    await filterButton(page, 'phase', '2').click();
+    await expect(page.locator('#kanban-completion-text')).toHaveText(/^0% · 0 of 6 done/);
+    await expect(completion.locator('svg.ring')).toHaveAttribute('aria-label', 'Tasks shown 0% done');
+    await filterButton(page, 'phase', '1').click();
+    await expect(completion.locator('.kanban-completion-pct')).not.toHaveText('0%');
+  });
 });
 
 test.describe('Kanban: group by phase', () => {

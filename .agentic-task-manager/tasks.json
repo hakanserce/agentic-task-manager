@@ -6717,10 +6717,25 @@
         "dashboard/index.html"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:55:07Z",
+      "updated_at": "2026-10-26T06:28:37Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "started_at": "2026-10-26T05:55:07Z",
+      "commit": "29e8a606ec56f6b4368edda14656ee994d894a53",
+      "notes": [
+        {
+          "at": "2026-10-26T06:19:29Z",
+          "kind": "answer",
+          "text": "Which logo should ATM use: A (the board: a frame with three columns, the last ticked), B (the loop: a circular arrow around a check) or C (the task list: two ticked rows and an open box)? Open docs/logo-proposals.html to see them at 16/24/48 px in light and dark; sources in dashboard/src/assets/logo-proposals/. Any changes (stroke weight, colour: text vs accent in the title bar)? → A1, the board (logo-proposals/a-board.svg).",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T06:28:35Z",
+          "kind": "handoff",
+          "text": "Re-claiming: another worktree's release dropped the shared claim (one identity for all agents, see T-202).",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "started_at": "2026-10-26T06:28:37Z",
       "started_by": "claude:e5ea9db0"
     },
     {
@@ -6792,7 +6807,7 @@
       "description": "In the **Kanban** view, show a **completion ring** for the tasks currently on the board, i.e. the ones the search and filters leave.\n\n## Do\n- A `Ring.svelte` in the Kanban board's header area: `done / shown` with the percentage inside; a `title` with the counts.\n- Count skipped tasks the same way as the rest of the dashboard (T-162: left out of the percentage, shown separately).\n- Updates as filters change.\n\n## Verify\n- Unit test for the count from a filtered list; e2e: filter by a phase and check the ring's value.\n- Screenshot baselines.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-162"
       ],
@@ -6803,9 +6818,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:56:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:56:38Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-199",

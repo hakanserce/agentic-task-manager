@@ -10,6 +10,7 @@
     label = '',
     skipped = 0,
     total = 0,
+    bare = false,
   }: {
     ratio: number;
     color: string;
@@ -19,6 +20,8 @@
     /** How many tasks were skipped, and how many count (done or not), for the outer arc */
     skipped?: number;
     total?: number;
+    /** Without the percentage inside, for a ring too small to hold it (the number then sits beside it) */
+    bare?: boolean;
   } = $props();
   const r = $derived((size - stroke) / 2);
   const circumference = $derived(2 * Math.PI * r);
@@ -65,7 +68,9 @@
       transform="rotate({-90 - skippedShare * 360} {size / 2} {size / 2})"
     />
   {/if}
-  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" class="ring-value" font-size={size * 0.24}
-    >{pct}%</text
-  >
+  {#if !bare}
+    <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" class="ring-value" font-size={size * 0.24}
+      >{pct}%</text
+    >
+  {/if}
 </svg>

@@ -19,31 +19,48 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#progress-basis')).toContainText(
       'Pace: ~9 m per task (last 8 tasks, one agent at a time)',
     );
-    await expect(page.locator('#progress-basis span')).toHaveAttribute('title', /8 m – 11 m/);
+    await expect(page.locator('#progress-basis span[title]')).toHaveAttribute('title', /8 m – 11 m/);
   });
 
-  test('one row per phase with progress, state and estimate', async ({ page, tasksServer }) => {
+  test('one row per phase with progress and when it finishes, the calendar time first (T-241)', async ({
+    page,
+    tasksServer,
+  }) => {
     await openProgress(page, tasksServer, 'progress');
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+    await expect(page.locator('#phase-table th')).toHaveText(['Phase', 'Done', 'Progress', 'Remaining', 'Finished by']);
 
-    await expect(cells(page, 0)).toHaveText(['Phase 0', '4/4', '', '0', 'Done', 'Done Apr 1, 09:30 AM']);
+    await expect(cells(page, 0)).toHaveText(['✓ Phase 0', '4/4', '', '0', 'Done Apr 1, 09:30 AM']);
     await expect(row(page, 0)).toHaveAttribute('data-state', 'done');
 
     await expect(cells(page, 1).nth(1)).toHaveText('4/6');
     // 1 task left to work on (T-009), plus a warning for the blocked T-010, which the estimate doesn't cover
     await expect(cells(page, 1).nth(3)).toHaveText(/^1/);
     await expect(cells(page, 1).nth(3).locator('.phase-blocked')).toHaveText('1 blocked');
-    await expect(cells(page, 1).nth(4)).toHaveText('In progress');
-    await expect(cells(page, 1).nth(5)).toContainText('≈ 9 m of agent work (8 m – 11 m)');
-    await expect(cells(page, 1).nth(5)).toContainText('If the loop keeps running: 12:08 PM');
+    await expect(cells(page, 1).nth(4).locator('.estimate-main')).toHaveText('≈ 12:08 PM');
+    await expect(cells(page, 1).nth(4).locator('.estimate-calendar')).toHaveText('9 m of agent work');
+    await expect(cells(page, 1).nth(4)).toHaveAttribute('title', /9 m of agent work \(8 m – 11 m\)/);
 
-    await expect(cells(page, 2).nth(4)).toHaveText('Not started');
-    await expect(cells(page, 2).nth(5)).toContainText('≈ 51 m of agent work (45 m – 1 h 3 m)');
-    await expect(cells(page, 2).nth(5)).toContainText('If the loop keeps running: 12:51 PM');
+    // Not started: muted; its estimate includes phase 1's work, and says so
+    await expect(row(page, 2)).toHaveClass(/not-started/);
+    await expect(cells(page, 2).nth(4).locator('.estimate-main')).toHaveText('≈ 12:51 PM');
+    await expect(cells(page, 2).nth(4).locator('.estimate-calendar')).toHaveText(
+      '51 m of agent work, including earlier phases',
+    );
   });
 
-  // The progress fixture plus phase 3, finished on Mar 1, before phase 0 (Apr 1): two finished phases, of which
-  // "Active phases only" keeps only the one that finished last. No start time, so the pace doesn't change.
+  test('phase names show next to the badge; the ⓘ explains the estimates (T-241)', async ({ page, tasksServer }) => {
+    const data = loadFixture('progress');
+    data.meta = { ...data.meta, phases: [{ id: 1, name: 'Core features' }] };
+    await openProgress(page, tasksServer, data);
+    await expect(row(page, 1).locator('.phase-name')).toHaveText('Core features');
+    await expect(row(page, 2).locator('.phase-name')).toHaveCount(0);
+    await page.locator('#phase-table-info').click();
+    await expect(page.locator('.infotip-popover')).toContainText('includes the work left in the phases before it');
+  });
+
+  // The progress fixture plus phase 3, finished on Mar 1, before phase 0 (Apr 1): two finished phases. No start
+  // time, so the pace doesn't change.
   function twoFinishedPhases(): TasksData {
     const data = loadFixture('progress');
     data.tasks.push({
@@ -58,37 +75,31 @@ test.describe('Progress tab: phase table', () => {
     return data;
   }
 
-  test('"Active phases only" (on by default) keeps the unfinished phases and the one that finished last; remembered', async ({
-    page,
-    tasksServer,
-  }) => {
+  test('finished phases fold into one row that opens to show them (T-241)', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, twoFinishedPhases());
-    await expect(page.locator('#active-phases-only')).toBeChecked();
-    // Phase 0 finished last (Apr 1) and stays; phase 3 finished earlier (Mar 1) and goes
+    await expect(page.locator('#active-phases-only')).toHaveCount(0);
+    // The folded row, then phases 1 and 2
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
-    await expect(row(page, 0)).toHaveCount(1);
+    await expect(page.locator('#phase-finished')).toContainText('✓ Phases 0, 3 · 5 tasks · last finished Apr 1');
+    await expect(row(page, 0)).toHaveCount(0);
     await expect(row(page, 3)).toHaveCount(0);
-    await expect(page.locator('#phases-hidden')).toHaveText('1 older phase hidden');
     // The burndown still covers every phase
     await expect(page.locator('#burndown-focus')).toHaveText('All phases');
 
-    // Turned off: every phase, and the choice is remembered for the project
-    await page.locator('#active-phases-only').uncheck();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
-    await expect(page.locator('#phases-hidden')).toHaveCount(0);
-    await page.reload();
-    await page.locator('#tab-progress').click();
-    await expect(page.locator('#active-phases-only')).not.toBeChecked();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
+    await page.locator('#phase-finished-toggle').click();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(5);
+    await expect(row(page, 0)).toHaveCount(1);
+    await expect(row(page, 3)).toHaveCount(1);
+    // A finished phase's row still focuses the burndown
+    await row(page, 3).click();
+    await expect(page.locator('#burndown-focus')).toHaveText('Phase 3');
   });
 
-  test('the Progress panel shares "Active phases only": By phase follows it, Overall and By type stay whole', async ({
+  test('the Progress panel keeps "Active phases only" for its own rings: By phase follows it, Overall and By type stay whole', async ({
     page,
     tasksServer,
   }) => {
     await openProgress(page, tasksServer, twoFinishedPhases());
-    await page.locator('#active-phases-only').check();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
 
     await page.locator('#progress-card').click();
     const panel = page.locator('#progress-panel');
@@ -98,14 +109,10 @@ test.describe('Progress tab: phase table', () => {
     await expect(panel.locator('#panel-phases-hidden')).toHaveText('1 older phase hidden');
     const typesBefore = await section('By type').locator('.ring-label').count();
 
-    // Turned off in the panel: off in the tab too
     await panel.locator('#panel-active-phases-only').uncheck();
     await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2', 'Phase 3']);
     await expect(panel.locator('#panel-phases-hidden')).toHaveCount(0);
     await expect(section('By type').locator('.ring-label')).toHaveCount(typesBefore);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#active-phases-only')).not.toBeChecked();
-    await expect(page.locator('#phase-table tbody tr')).toHaveCount(4);
   });
 
   test('progress bars show each phase', async ({ page, tasksServer }) => {
@@ -141,7 +148,7 @@ test.describe('Progress tab: phase table', () => {
   test('says when there is not enough history', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'minimal');
     await expect(page.locator('#progress-basis')).toContainText('Not enough history to estimate yet');
-    await expect(cells(page, 0).nth(5)).toHaveText('Not enough history to estimate');
+    await expect(cells(page, 0).nth(4)).toHaveText('Not enough history to estimate');
   });
 
   test('idle gaps are capped when tasks have no start times', async ({ page, tasksServer }) => {
@@ -160,7 +167,7 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(1);
     await expect(page.locator('#progress-basis')).toContainText('last 8 tasks');
     // Not phase 2's 5 tasks alone (43 m): the loop finishes phase 1 first, so the whole project's 51 m
-    await expect(cells(page, 2).nth(5)).toContainText('≈ 51 m of agent work');
+    await expect(cells(page, 2).nth(4)).toContainText('51 m of agent work');
     await expect(page.locator('#progress-filter-banner')).toContainText('Showing 6 of 16 tasks: phase 2');
     await expect(page.locator('#burndown-focus')).toHaveText('All phases · matching tasks');
     await page.locator('#progress-clear-filters').click();

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { BURNDOWN_RANGES, burndown, rangeStart } from '../lib/burndown';
   import { FILTER_GROUPS } from '../lib/filters';
-  import { activePhases, forecastPhases, withWholePhaseEstimates } from '../lib/forecast';
+  import { forecastPhases, withWholePhaseEstimates } from '../lib/forecast';
   import { dashboard } from '../lib/state.svelte';
   import BurndownChart from './BurndownChart.svelte';
   import InfoTip from './InfoTip.svelte';
@@ -52,12 +52,6 @@
   const chart = $derived(burndown(tasks, forecast, now, focus, dashboard.vocab, from));
 
   const toggle = (phase: number) => (dashboard.progressPhase = focus === phase ? null : phase);
-
-  // With many phases the table gets long: "Active phases only" keeps the unfinished phases and the one that finished
-  // last (saved with the project's view). The burndown still covers every task.
-  const active = $derived(dashboard.progressActive);
-  const shownPhases = $derived(active.only ? { ...forecast, phases: activePhases(forecast.phases) } : forecast);
-  const hidden = $derived(forecast.phases.length - shownPhases.phases.length);
 </script>
 
 <div class="progress-view" id="progress">
@@ -128,21 +122,7 @@
     {:else}
       <BurndownChart data={chart} {now} />
     {/if}
-    <div class="phase-filter" id="phase-filter">
-      <label title="Unfinished phases, and the one that finished last">
-        <input
-          type="checkbox"
-          id="active-phases-only"
-          checked={active.only}
-          onchange={(e) => (dashboard.progressActive = { only: e.currentTarget.checked })}
-        />
-        Active phases only
-      </label>
-      {#if active.only && hidden > 0}
-        <span class="phase-filter-hidden" id="phases-hidden">{hidden} older phase{hidden === 1 ? '' : 's'} hidden</span>
-      {/if}
-    </div>
-    <PhaseTable forecast={shownPhases} {now} selected={focus} onselect={toggle} />
+    <PhaseTable {forecast} {now} selected={focus} onselect={toggle} />
     <UtilizationPanel {now} />
   {/if}
 </div>

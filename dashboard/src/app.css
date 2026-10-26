@@ -2673,6 +2673,41 @@ svg.graph-minimap.hidden {
 .phase-table tr.selected td:first-child {
   box-shadow: inset 3px 0 0 var(--accent);
 }
+/* T-241: phase names next to the badge, not-started phases muted, finished phases folded into one row */
+.phase-table .phase-name {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+.phase-table tr.not-started td {
+  color: var(--text-muted);
+}
+.phase-table tr.not-started .phase-badge,
+.phase-table tr.not-started .phase-name {
+  opacity: 0.7;
+}
+.phase-finished-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+.phase-finished-action {
+  margin-left: auto;
+  color: var(--accent);
+}
+.phase-table-hint {
+  margin-left: 6px;
+  color: var(--text-muted);
+}
 .phase-table tr:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;

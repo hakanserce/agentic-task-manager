@@ -4,6 +4,7 @@ import {
   forecastPhases,
   pace,
   percentile,
+  phaseRanges,
   taskDurations,
   withWholePhaseEstimates,
   type PhaseForecast,
@@ -148,6 +149,14 @@ describe('forecastPhases', () => {
     expect(merged.phases[2].estimate).toEqual(whole.phases[2].estimate);
     expect(slice.phases[2].estimate).not.toEqual(whole.phases[2].estimate);
     expect(merged.phases[0].estimate).toBeUndefined(); // finished
+  });
+});
+
+describe('phaseRanges (T-241)', () => {
+  it('joins consecutive phases into ranges', () => {
+    expect(phaseRanges([4, 0, 1, 2, 6, 7])).toBe('0–2, 4, 6–7');
+    expect(phaseRanges([3])).toBe('3');
+    expect(phaseRanges([])).toBe('');
   });
 });
 

@@ -8883,7 +8883,7 @@
       "description": "`docs/progress-tab-review.md` §1.1, §1.2 and §1.4 (approved).\n\n- New `InfoTip` component: an ⓘ button next to a section title opening a small popover (*What it shows*, *How it's counted*, *When to be careful*); Escape or a click outside closes it.\n- The scope row becomes the burndown's title: *Burndown · all phases* / *Burndown · phase 19*, with the ⓘ and *Show all phases*.\n- A time range: *Since the first unfinished phase started* (default), *Last 14 days*, *All time*; a focused phase defaults to *since it started*. Part of the saved view.\n- When the forecast ends above zero, label its end *N waiting on review or a decision*.\n- Empty state without timestamps: *No timeline yet: tasks get times when agents start and finish them.*\n- Pace: leave out tasks labelled `interactive`; the basis becomes one line (*Pace: ~12 m per task, last 10 tasks*), and the ⓘ says it assumes one agent, one task at a time (*parallel agents finish sooner*).\n\n## Verify\n\nUnit tests for the range and the pace; e2e for the range control, the ⓘ and the empty state; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-239"
       ],
@@ -8895,11 +8895,22 @@
         "dashboard/src/lib/forecast.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:13:03Z",
+      "updated_at": "2026-10-26T23:18:48Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:13:03Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "8ff1d4084344d7c1d9e743aae0a3452fb1c594b7",
+      "completed_at": "2026-10-26T23:18:48Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T23:18:48Z",
+          "kind": "outcome",
+          "text": "Burndown: *Burndown · all phases* title with an ⓘ (`InfoTip`, new) explaining scope, remaining, the forecast and its one-agent assumption; a time range (since the first unfinished or focused phase started by default, 14 days, all time; saved); the forecasts end says what waits on people; an empty state without times. The pace leaves out `interactive` tasks; its basis is one line. Unit and e2e tests; Progress screenshots updated.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-241",
@@ -8914,7 +8925,7 @@
       "description": "`docs/progress-tab-review.md` §1.3 and §1.5 (approved).\n\n- Finished phases collapse into one row, *✓ Phases 0–17 · 180 tasks · last finished 24 Oct*, that expands to their rows; the *Active phases only* checkbox goes away (drop its saved-view key quietly).\n- Drop the **State** column: a not-started phase is a muted row.\n- Rename Estimate to **Finished by**: the calendar time first (*≈ tomorrow 14:00*), then *3 h of agent work, including earlier phases*.\n- Phase names next to the badge (`meta.phases`).\n- An ⓘ (`InfoTip`) on the table: cumulative estimates, phase order, why blocked and in-review tasks aren't in them; a hint *Click a phase to see its burndown*.\n\n## Verify\n\ne2e for the collapsed row and its expansion, row click focus, the new columns; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-240"
       ],
@@ -8923,9 +8934,11 @@
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T23:18:49Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:18:49Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-242",

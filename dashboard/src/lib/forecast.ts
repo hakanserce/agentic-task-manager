@@ -178,6 +178,19 @@ export function forecastPhases(
   };
 }
 
+/** Phase numbers as ranges: [0, 1, 2, 4, 6, 7] → "0–2, 4, 6–7" (the folded row of finished phases, T-241) */
+export function phaseRanges(phases: number[]): string {
+  const sorted = [...new Set(phases)].sort((a, b) => a - b);
+  const ranges: string[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
+    ranges.push(j > i ? `${sorted[i]}–${sorted[j]}` : `${sorted[i]}`);
+    i = j;
+  }
+  return ranges.join(', ');
+}
+
 /**
  * A filtered slice's phases with the whole project's estimates (T-239): the loop works through whole phases, so when
  * a phase finishes doesn't depend on the filter. The slice keeps its own counts and state; a phase the slice has

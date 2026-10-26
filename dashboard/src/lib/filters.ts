@@ -27,6 +27,26 @@ export interface FilterOption {
   label: string;
 }
 
+/** Up to this many phases, the Phase filter lists them all, with no toggle for the finished ones */
+export const PHASES_ALWAYS_SHOWN = 6;
+
+/**
+ * The phase options the filter panel lists: all of them when there are few, or when `showFinished`; otherwise the
+ * `active` phases (forecast.ts activePhases: the unfinished ones and the one that finished last) and any selected
+ * phase, so a selection never hides. `hidden` counts the finished phases left out.
+ */
+export function shownPhaseOptions(
+  options: FilterOption[],
+  active: ReadonlySet<string>,
+  selected: ReadonlySet<string>,
+  showFinished: boolean,
+): { shown: FilterOption[]; finished: number; hidden: number } {
+  const finished = options.filter((o) => !active.has(o.value)).length;
+  if (options.length <= PHASES_ALWAYS_SHOWN || finished === 0) return { shown: options, finished: 0, hidden: 0 };
+  const shown = showFinished ? options : options.filter((o) => active.has(o.value) || selected.has(o.value));
+  return { shown, finished, hidden: options.length - shown.length };
+}
+
 export function emptyFilters(): Filters {
   return {
     phase: new Set(),

@@ -6,10 +6,38 @@ import {
   filterTasks,
   isActive,
   searchTasks,
+  shownPhaseOptions,
   sortTasks,
   toggleFilter,
   type Filters,
 } from '../../src/lib/filters';
+
+describe('shownPhaseOptions (T-250)', () => {
+  const phases = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: String(i) }));
+  const values = (r: { shown: { value: string }[] }) => r.shown.map((o) => o.value);
+
+  it('lists every phase when there are few', () => {
+    const r = shownPhaseOptions(phases(6), new Set(['5']), new Set(), false);
+    expect(values(r)).toEqual(['0', '1', '2', '3', '4', '5']);
+    expect(r).toMatchObject({ finished: 0, hidden: 0 });
+  });
+
+  it('with many, only the active ones and any selected one; the toggle shows the rest', () => {
+    const active = new Set(['7', '8', '9']);
+    const r = shownPhaseOptions(phases(10), active, new Set(['2']), false);
+    expect(values(r)).toEqual(['2', '7', '8', '9']);
+    expect(r).toMatchObject({ finished: 7, hidden: 6 });
+    const all = shownPhaseOptions(phases(10), active, new Set(['2']), true);
+    expect(values(all)).toHaveLength(10);
+    expect(all).toMatchObject({ finished: 7, hidden: 0 });
+  });
+
+  it('nothing to toggle when every phase is active', () => {
+    const r = shownPhaseOptions(phases(8), new Set(phases(8).map((p) => p.value)), new Set(), false);
+    expect(values(r)).toHaveLength(8);
+    expect(r).toMatchObject({ finished: 0, hidden: 0 });
+  });
+});
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
 import standardFile from '../fixtures/standard.json';

@@ -131,6 +131,8 @@ export class DashboardState {
   progressPhase = $state<number | null>(null);
   /** The Progress tab lists only active phases (the unfinished ones and the one that finished last) */
   progressActive = $state.raw<{ only: boolean }>({ only: true });
+  /** The filter panel's Phase group lists the finished phases too (part of the saved view) */
+  filterFinishedPhases = $state(false);
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */
@@ -444,6 +446,7 @@ export class DashboardState {
       listSort: this.listSort,
       progressPhase: this.progressPhase,
       progressActive: this.progressActive,
+      filterFinishedPhases: this.filterFinishedPhases,
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
       agents: this.agentsWindow,
@@ -479,6 +482,7 @@ export class DashboardState {
     this.listSort = view.listSort;
     this.progressPhase = view.progressPhase;
     this.progressActive = view.progressActive;
+    this.filterFinishedPhases = view.filterFinishedPhases;
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
     this.agentsWindow = view.agents;

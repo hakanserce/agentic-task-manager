@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 250,
+    "next_id": 251,
     "labels": [
       {
         "id": "dashboard",
@@ -7794,11 +7794,12 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:28:38Z",
+      "updated_at": "2026-10-26T21:29:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:38Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "ca440c0c9720e5afadee6fe8f23bd70fde74c07c"
     },
     {
       "id": "T-215",
@@ -8768,6 +8769,34 @@
       "updated_at": "2026-10-26T21:28:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-250",
+      "name": "Filters: show only active phases in the Phase filter, with a toggle for finished ones",
+      "phase": 19,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "filters"
+      ],
+      "description": "With many phases, the Phase group in the filter panel (`Filters.svelte`) is a long wall of buttons.\n\n## Do\n\n- By default the Phase group shows **All**, the **active phases** (as `activePhases()` in `forecast.ts` defines them, the same as the Progress tab: every unfinished phase, and the one that finished last), and **any finished phase that is currently selected** (a selection never hides).\n- A button at the end of the group, *+ 17 finished* / *Hide finished*, expands and collapses the finished phases, in phase order. Its state is part of the saved view.\n- With few phases (all of them fit, e.g. 6 or fewer), show them all and no toggle.\n- The filter counts and the *N of M tasks* line are unchanged; the hidden phases still filter correctly when chosen from a link or a saved view.\n\n## Verify\n\nUnit test for which phases show (active, selected finished, threshold); e2e: a fixture with 10 phases shows All + active + the toggle; expanding shows the rest; selecting a finished phase and collapsing keeps it visible; remembered across a reload. Update the filter screenshots (remove the matching `-linux.png`).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/Filters.svelte",
+        "dashboard/src/lib/filters.ts",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/tests/e2e/filters.spec.ts"
+      ],
+      "created_at": "2026-10-26T21:31:20Z",
+      "updated_at": "2026-10-26T21:31:26Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:31:26Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

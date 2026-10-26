@@ -372,6 +372,20 @@ h1 {
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* Shows or hides the finished phases in the Phase group (Filters.svelte): a link-like button after the options */
+.filter-more {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--accent);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.filter-more:hover {
+  border-color: var(--accent);
+}
 .filter-btn.active {
   background: var(--accent);
   color: var(--on-accent);

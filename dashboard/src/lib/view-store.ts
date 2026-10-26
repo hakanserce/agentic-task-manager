@@ -26,6 +26,8 @@ export interface SavedView {
   progressPhase: number | null;
   /** The Progress tab lists only active phases: the unfinished ones and the one that finished last */
   progressActive: { only: boolean };
+  /** The filter panel's Phase group lists the finished phases too, not just the active ones */
+  filterFinishedPhases: boolean;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
   /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
@@ -61,6 +63,7 @@ export function defaultView(): SavedView {
     progressPhase: null,
     // On by default: the unfinished phases and the last finished one are what most projects want to see
     progressActive: { only: true },
+    filterFinishedPhases: false,
     graphFiltered: 'hide',
     graph: null,
     agents: null,
@@ -124,6 +127,7 @@ export function readView(key: string): SavedView {
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
     // Views saved before 0.17.0 also have `days` (the old "finished within N days" rule): ignored
     progressActive: { only: bool(active.only, view.progressActive.only) },
+    filterFinishedPhases: stored.filterFinishedPhases === true,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
     agents: agentsWindow(stored.agents),

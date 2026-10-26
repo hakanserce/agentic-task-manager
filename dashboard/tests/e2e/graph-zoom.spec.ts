@@ -228,6 +228,7 @@ test.describe('view persistence', () => {
     const mm = (await minimap(page).boundingBox())!;
     await page.mouse.click(mm.x + mm.width * 0.97, mm.y + mm.height / 2);
     await openFilters(page);
+    await page.locator('#filter-finished-phases').click(); // phase 0 is finished: listed once shown (T-250)
     await filterButton(page, 'phase', '0').click();
     await expect(page.locator('#dep-graph g')).toHaveCount(14);
     await expect(zoomLabel(page)).toHaveText(zoom!);

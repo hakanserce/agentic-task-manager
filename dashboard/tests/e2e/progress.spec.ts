@@ -76,6 +76,25 @@ test.describe('Progress tab: phase table', () => {
     expect([await width(0), await width(1), await width(2)]).toEqual(['100%', '67%', '0%']);
   });
 
+  test('skipped tasks count as neither done nor left: done and skipped is 100%, the skipped shown apart', async ({
+    page,
+    tasksServer,
+  }) => {
+    const task = (id: string, status: string) => ({ id, name: id, phase: 1, type: 'feature', description: '', status });
+    await openProgress(page, tasksServer, {
+      meta: { project: 'Skips' },
+      tasks: [task('T-1', 'done'), task('T-2', 'done'), task('T-3', 'skipped')],
+    });
+    await expect(cells(page, 1).nth(1)).toHaveText('2/2 · 1 skipped');
+    await expect(row(page, 1)).toHaveAttribute('data-state', 'done');
+    await expect(row(page, 1).locator('.progress-fill')).toHaveAttribute('style', /width: 100%/);
+
+    await page.locator('#progress-card').click();
+    await expect(page.locator('#progress-card')).toHaveAccessibleName('Progress 100%, 2 of 2 tasks done');
+    await expect(page.locator('#overall-skipped')).toHaveText('· 1 skipped');
+    await expect(page.locator('#progress-panel .ring-skipped')).toHaveText(['1 skipped', '1 skipped']);
+  });
+
   test('says when there is not enough history', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'minimal');
     await expect(page.locator('#progress-basis')).toContainText('Not enough history to estimate yet');

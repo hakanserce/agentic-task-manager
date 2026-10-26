@@ -58,7 +58,12 @@
       <div class="insights-hero">
         <Ring ratio={p.overall.ratio} color="var(--green)" size={132} stroke={12} label="All tasks" />
         <div class="insights-hero-text">
-          <div class="insights-title">{p.overall.done} of {p.overall.total} tasks done</div>
+          <div class="insights-title">
+            {p.overall.done} of {p.overall.total} tasks done{#if p.overall.skipped}<span
+                class="skipped-note"
+                id="overall-skipped">&nbsp;· {p.overall.skipped} skipped</span
+              >{/if}
+          </div>
           <!-- Status split: a stacked bar (part of a whole), labelled in the legend -->
           <div class="status-bar" aria-hidden="true">
             {#each p.byStatus as s (s.status)}
@@ -90,10 +95,14 @@
     <div class="menu-label">{title}</div>
     <div class="ring-grid">
       {#each shares as s (s.key)}
-        <div class="ring-cell" title="{capitalize(s.label)}: {s.done} of {s.total} done">
+        <div
+          class="ring-cell"
+          title="{capitalize(s.label)}: {s.done} of {s.total} done{s.skipped ? `, ${s.skipped} skipped` : ''}"
+        >
           <Ring ratio={s.ratio} color={color(s.key)} label={s.label} />
           <div class="ring-label">{capitalize(s.label)}</div>
           <div class="ring-count">{s.done}/{s.total}</div>
+          {#if s.skipped}<div class="ring-skipped skipped-note">{s.skipped} skipped</div>{/if}
         </div>
       {/each}
     </div>

@@ -9,8 +9,11 @@ export interface Share {
   key: string;
   label: string;
   done: number;
+  /** Tasks that count: all but the skipped ones, which are neither done nor still to do */
   total: number;
-  /** done / total, 0–1 (0 when there are no tasks) */
+  /** Skipped tasks, shown apart */
+  skipped: number;
+  /** done / total, 0–1; 1 when every task was skipped, 0 when there are no tasks */
   ratio: number;
 }
 
@@ -29,9 +32,13 @@ export interface ProgressBreakdown {
 /** The status split's order: by kind, finished first; statuses without a kind last */
 const KIND_ORDER: StatusKind[] = ['done', 'active', 'review', 'todo', 'blocked', 'skipped'];
 
-function share(key: string, label: string, tasks: Task[], vocab: Vocabulary): Share {
+/** Completion of a group of tasks, as atm counts it: done / (total − skipped). A group of only skipped tasks is
+ * finished (nothing is left to do). */
+export function share(key: string, label: string, tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): Share {
   const done = tasks.filter((t) => kindOf(vocab, t.status) === 'done').length;
-  return { key, label, done, total: tasks.length, ratio: tasks.length ? done / tasks.length : 0 };
+  const skipped = tasks.filter((t) => kindOf(vocab, t.status) === 'skipped').length;
+  const total = tasks.length - skipped;
+  return { key, label, done, total, skipped, ratio: total ? done / total : skipped ? 1 : 0 };
 }
 
 function groupBy<K>(tasks: Task[], key: (t: Task) => K): Map<K, Task[]> {

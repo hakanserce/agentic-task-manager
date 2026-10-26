@@ -563,6 +563,16 @@ h1 {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
+/* Skipped tasks, shown apart from the completion they don't count in (T-162) */
+.skipped-note {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.ring-skipped {
+  font-size: 10px;
+}
 .ring-value {
   fill: var(--text);
   font-weight: 700;

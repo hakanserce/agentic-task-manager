@@ -18,7 +18,9 @@
   }
 
   const STATE_LABELS = { done: 'Done', in_progress: 'In progress', not_started: 'Not started' } as const;
-  const pct = (done: number, total: number) => (total ? Math.round((done / total) * 100) : 0);
+  // Skipped tasks count as neither done nor left to do: a phase of done and skipped tasks is 100%
+  const pct = (row: { done: number; total: number; skipped: number }) =>
+    row.total ? Math.round((row.done / row.total) * 100) : row.skipped ? 100 : 0;
 </script>
 
 <p class="progress-basis" id="progress-basis">
@@ -60,10 +62,15 @@
             >Phase {row.phase}</span
           ></td
         >
-        <td class="num">{row.done}/{row.total}</td>
+        <td class="num"
+          >{row.done}/{row.total}{#if row.skipped}<span
+              class="skipped-note"
+              title="Skipped: not counted as done or to do">&nbsp;· {row.skipped} skipped</span
+            >{/if}</td
+        >
         <td class="phase-table-progress">
           <div class="progress-bar">
-            <div class="progress-fill" style:width="{pct(row.done, row.total)}%" style:background={color}></div>
+            <div class="progress-fill" style:width="{pct(row)}%" style:background={color}></div>
           </div>
         </td>
         <td class="num">

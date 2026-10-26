@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 185,
+    "next_id": 199,
     "labels": [
       {
         "id": "dashboard",
@@ -35,6 +35,10 @@
       {
         "id": 16,
         "name": "Dashboard polish and worktrees"
+      },
+      {
+        "id": 17,
+        "name": "Overview polish and project identity"
       }
     ],
     "repository": "https://github.com/hakanserce/agentic-task-manager"
@@ -5215,7 +5219,7 @@
       "description": "Build the links in the dashboard from `meta.repository` (T-158), **never stored per task**:\n\n```\ncommit -> <repository>/commit/<sha>\nPR     -> <repository>/pull/<number>\n```\n\n### Where\n- The details panel (`DetailPanel.svelte` `#detail-commit`, now plain text).\n- The *In PR* and *Merged* stage chips (`StageChip.svelte`; *Merged* isn't a link today).\n\n### How\n- **GitHub only for now**: a lib function (e.g. `repoLinks(meta)` in a new `lib/repo.ts`) that returns `null` for other hosts, which then show plain text.\n- Open in a new tab (`rel=noopener`).\n- **When `meta.repository` isn't set**, the commit and PR still look clickable, and clicking shows a hint instead of navigating: how to set it (`atm repository set <url>`, or ask your agent).\n\n### Tests\n- Unit tests: GitHub URLs, trailing slash, other host → `null`.\n- e2e for both links and the hint.\n- Detail panel screenshots in both modes (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-158"
       ],
@@ -5226,11 +5230,22 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:21:58Z",
-      "updated_at": "2026-10-26T00:38:38Z",
+      "updated_at": "2026-10-26T00:41:50Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:38:38Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "238104b8db67a48ea1ccb7b8c73a329a16bfa5e4",
+      "completed_at": "2026-10-26T00:41:50Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:41:50Z",
+          "kind": "outcome",
+          "text": "Commit and PR (In PR and Merged chips) link to GitHub from meta.repository (a PR's recorded URL wins); other hosts plain text; without an address they look clickable and explain atm repository set",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-161",
@@ -5271,7 +5286,7 @@
       "description": "Skipped tasks count in the total today, so completion **never reaches 100%** (`completionRatio` in `src/lib/insights.ts` divides done by `tasks.length`).\n\n### The rule\nSkipped tasks count as **neither done nor remaining**:\n\n```\npercentage = done / (total - skipped)\n```\n\n*Example:* a phase of 10 tasks, 7 done and 3 skipped, shows **100%**, not 70%.\n\n### Where\nEverywhere a completion percentage or done/total shows:\n- the top bar's progress bar;\n- the Progress panel's *Overall*, *By Phase* and *By Type* rings;\n- the Progress tab's phase table (its done/total column and bar).\n\nThe burndown already leaves skipped tasks out (`burndown.ts`), and `forecast.ts` already treats a phase of done + skipped as finished. A group with **only** skipped tasks must not show 0% or divide by zero: show it as finished, or as a neutral *all skipped* state, and say which in the review.\n\n### Show the skipped count separately\nSo the 100% doesn't hide them. Try several indicators and compare them in screenshots before picking one:\n1. a small muted line under the ring (*\"3 skipped\"*);\n2. a small badge next to the ring with the skipped icon (U+23ED) and the count, with a tooltip;\n3. a thin muted outer arc on the ring for the skipped share;\n4. `7/7 · 3 skipped` in the phase table's count column.\n\nUse theme tokens (the skipped status colour is `var(--text-muted)`), keep labels readable (3:1) in every theme and both modes, and don't rely on colour alone. Show nothing when a group has no skipped tasks.\n\n### Review, then build\n1. `atm review` with screenshots of the options in light and dark, so the user picks one.\n2. Implement the chosen one.\n\n### Tests\n- Unit tests for the ratio: skipped left out, all skipped, none skipped.\n- e2e: a fixture phase with done and skipped tasks shows 100% and the skipped count.\n- Update the affected screenshots (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n\n> Depends on T-156, which changes the Progress panel's markup.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-156"
       ],
@@ -5284,9 +5299,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T00:41:52Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:41:52Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-163",
@@ -6203,6 +6220,377 @@
       ],
       "created_at": "2026-10-26T00:24:09Z",
       "updated_at": "2026-10-26T00:24:09Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-185",
+      "name": "Update notice: clipped by the title bar",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "The **\"A new version of the dashboard is ready\"** notice doesn't fit: its bottom part is hidden under the title bar.\n\n`UpdateNotice.svelte` renders before the sticky `.topbar` (`App.svelte`), and the title bar covers it.\n\n## Do\n- Place the notice so it's fully visible on both pages (project view and All projects): either as a banner the title bar pushes down, or as a toast above it (`z-index`).\n- It must not shift or cover the filters row.\n\n## Verify\n- An e2e check that `#update-notice` is fully inside the viewport and not covered by `.topbar` (`elementFromPoint` at its corners).\n- Screenshots in light and dark.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/UpdateNotice.svelte",
+        "dashboard/src/App.svelte",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-186",
+      "name": "Update notice: shown when the page is already the new build",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "cli"
+      ],
+      "description": "The notice showed although the open page already **was** the new version.\n\nThe notice appears when `newBuildReady(dashboardBuild(), serverBuild())` (`lib/load.ts`) is true, i.e. the page's `<meta name=\"atm-dashboard-build\">` differs from the server's whoami `build`.\n\n## Find out\n- How atm serve computes `build` (atm-cli) and how the build writes the meta tag: are they the same value for the same file? (e.g. hash of the file vs. a stamp, or the meta being part of what's hashed)\n- Whether an old server still answering, or `atm serve --refresh`, can report a stale build.\n\n## Do\n- Fix the root cause so a page loaded from the current server never shows the notice.\n- Add a test (atm-cli scenario and/or e2e) that the served page's meta build equals whoami's `build`.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/load.ts",
+        "dashboard/src/lib/release-notes.ts",
+        "atm-cli/atm/",
+        "tests/scripts/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-187",
+      "name": "Update notice: shows only once per new build",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "The notice showed **several times**.\n\nDismissing it sets `#newVersionDismissed` in `state.svelte.ts`, which is forgotten on a reload and isn't shared between tabs, so it comes back.\n\n## Do\n- Remember the server build the user dismissed (localStorage, wrapped in `try/catch`), and show the notice again only for a **different** build.\n- Make sure only one notice is ever on the page.\n\n## Verify\n- Unit test for the dismissal logic.\n- e2e: dismiss, reload → no notice; server reports another build → notice again.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-186"
+      ],
+      "files": [
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/components/UpdateNotice.svelte",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-188",
+      "name": "One title bar for every page",
+      "phase": 17,
+      "type": "refactor",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "On **All projects**, the Refresh and theme pills are not pinned to the right as in the project view. It should look **exactly the same**.\n\n`LandingPage.svelte` has its own copy of `<header class=\"topbar\">` (title, project selector, subtitle, `topbar-controls`), separate from `Header.svelte`.\n\n## Do\n- Make one title bar component used by both pages: title row, project selector, version chip, subtitle, controls at the right. The project page adds its charts and the filters row through slots/snippets.\n- Remove the copy from `LandingPage.svelte`.\n\n## Verify\n- e2e: `.topbar-controls` has the same right edge and top on the project page and on `#overview`.\n- Update screenshot baselines for the overview.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/LandingPage.svelte",
+        "dashboard/src/styles/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-189",
+      "name": "Status bar pinned to the bottom on All projects",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "On **All projects** the status bar (`Footer.svelte`) isn't pinned to the bottom of the window; on the project page it is.\n\nThe page layout should be defined **once**, in `App.svelte`, not per page.\n\n## Do\n- Find why the footer stays at the bottom on the project page (a rule tied to `ViewPanel`/`main`?) and not on `.landing`.\n- Give the app one layout: title bar, a main area that grows, the status bar at the bottom, for every route (`project`, `overview`, `none`, `unknown`).\n\n## Verify\n- e2e: with only one project card, the footer's bottom equals the viewport's bottom on `#overview`, on the empty page and on the project page.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-188"
+      ],
+      "files": [
+        "dashboard/src/App.svelte",
+        "dashboard/src/components/LandingPage.svelte",
+        "dashboard/src/components/Footer.svelte",
+        "dashboard/src/styles/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-190",
+      "name": "Project card: a long phase name stays on one line",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "In `ProjectCard.svelte`, a long phase name in `.project-card-phase` wraps and pushes the **\"1 agent working\"** line down, so the cards in a row no longer line up.\n\n## Do\n- Keep the phase line on one line: cut the name off with an ellipsis (`text-overflow: ellipsis`), keeping `done / total` visible.\n- Show the full phase name in a `title`.\n\n## Verify\n- e2e with a fixture project whose phase name is very long: `.project-card-foot` is at the same height in every card of the row.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/styles/",
+        "dashboard/tests/fixtures/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-191",
+      "name": "Brainstorm: what project cards should show",
+      "phase": 17,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "The project cards show **too little** about each project. Brainstorm what would help someone glancing at all their projects, and write it up.\n\n## Do\n- Write `docs/project-cards-proposal.md` with options, each with a sketch and what the server summary must add. Ideas to weigh:\n  - recent phases as rings (see the phase-rings tasks)\n  - what agents are doing now (task names, not just a count)\n  - tasks needing you, with their names\n  - the next ready tasks\n  - open PR / branch / CI state (`meta.repository`, task PRs)\n  - last finished task and when\n  - project logo and description\n- Recommend a layout that fits a card, and list follow-up tasks.\n- Review it with the user before follow-up tasks are added (`/atm:create-tasks`).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/project-cards-proposal.md"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-192",
+      "name": "Server summary: the most recently active phases",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli",
+        "overview",
+        "progress"
+      ],
+      "description": "The overall progress bar on project cards isn't useful when working incrementally: it sits at 80–90% all the time, since many tasks are long done and more phases will come.\n\nAdd to each project's summary in atm serve's `api/projects` a list of the **last 4 active phases**, for the card to show as rings.\n\n## Do\n- `recent_phases`: up to 4 phases, in phase order, chosen as: phases with open work (`todo`/`active`/`review`/`blocked` kinds), and then the most recently finished phases (by their last `completed_at`) to fill up to 4.\n- Each entry: `id`, `name`, `done`, `total` (skipped tasks left out of `total`, as for `percent`), `percent`.\n- Document the field in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli scenarios: no tasks, all done, one active phase, more than 4 open phases, skipped tasks.\n- `npm run test:scripts` on Python 3.9.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/",
+        "docs/multi-project-api.md",
+        "dashboard/src/lib/load.ts"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-193",
+      "name": "Project card: rings for the recent phases, on one line",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview",
+        "progress"
+      ],
+      "description": "Replace the overall progress bar on `ProjectCard.svelte` with a **ring per recent phase** (`summary.recent_phases`), using `Ring.svelte`.\n\n## Do\n- One row of up to 4 rings, each with its percentage inside and the phase number under it; the full name and `done / total` in a `title`.\n- The row must **always fit on one line** in the card's narrowest width (shrink the rings, drop to fewer if needed).\n- Keep the overall `done / total` as a small muted line, or drop it — decide with the screenshots.\n- Accessible: each ring has an `aria-label` like `Phase 16 · Dashboard polish: 4 of 13 done`.\n\n## Verify\n- Component test for 0, 1 and 4 phases; e2e that the rings sit on one row at the narrowest card width.\n- Screenshot baselines.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-192"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/components/Ring.svelte",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-194",
+      "name": "Check the phase rings live on real projects",
+      "phase": 17,
+      "type": "test",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview",
+        "progress"
+      ],
+      "description": "The user wants the phase rings **tested live** before they're settled.\n\n## Do\n- Run `atm serve` with several real projects (this repo and others the user has registered) and open `#overview`.\n- Check with the user: are the right phases picked? Do the rings fit on one line at different window widths? Are they readable in light and dark?\n- Fix what comes up, or record follow-up tasks.\n\nThis is a review with the user: move the task to review and **ask** rather than finishing it on your own.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-193"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectCard.svelte"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-195",
+      "name": "ATM logo",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "branding"
+      ],
+      "description": "ATM needs a **logo**.\n\n## Do\n- Propose 2–3 simple SVG logo designs to the user (e.g. as a quick artifact), and use the one they pick.\n- The logo must work at 16 px (browser tab) and in both light and dark themes (`currentColor` or theme tokens).\n- Use it: in the title bar next to the title, as the page's favicon (inline `data:` SVG, since the dashboard is a single file), and in the About dialog.\n- Keep the source SVG in the repo (e.g. `dashboard/src/assets/atm-logo.svg`).\n\n## Verify\n- Screenshot baselines for the title bar; the favicon link is in the built file.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/assets/atm-logo.svg",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/AboutDialog.svelte",
+        "dashboard/index.html"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-196",
+      "name": "Project logos: atm-cli and server",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "cli",
+        "branding"
+      ],
+      "description": "Each project can have a **logo** that the dashboard shows.\n\n## Do\n- `meta.logo`: a path relative to the project root to an image (SVG, PNG, ICO, WebP). Set with an atm command (e.g. `atm init --meta-file` or a dedicated `atm logo set <path>`).\n- Without `meta.logo`, find a likely one: `logo.svg`/`logo.png`, `.github/logo.*`, `public/favicon.*`, `assets/logo.*` — first match wins.\n- atm serve serves it at `p/<id>/logo` with the right content type and caching; 404 when there is none. Only files inside the project folder; refuse anything outside it or larger than ~512 KB.\n- `api/projects` gets `has_logo` (or a `logo` URL) per project.\n- Document it in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli tests: set, auto-detect, missing, path outside the project, too large.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/",
+        "plugin/scripts/atm.py",
+        "tests/scripts/",
+        "docs/multi-project-api.md"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-197",
+      "name": "Project logos in the project selector and cards",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "branding",
+        "overview"
+      ],
+      "description": "Show each project's logo (`p/<id>/logo`) in the **project selector**, on the **project cards** and next to the project name in the title bar.\n\n## Do\n- A small `ProjectLogo` component: the image when the project has one, otherwise a monogram (the project's initials on a colour derived from its id).\n- Fixed size per place (e.g. 16 px in the selector, 24 px on cards), `object-fit: contain`, rounded.\n- No layout shift while the image loads; fall back to the monogram if it fails.\n\n## Verify\n- Component tests for image / monogram / failed image.\n- e2e with the `tasksServer` fixture serving a logo for one project and none for another; screenshot baselines.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-196"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectLogo.svelte",
+        "dashboard/src/components/ProjectSelector.svelte",
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/tests/e2e/helpers.ts"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-198",
+      "name": "Kanban: completion ring for the tasks shown",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "In the **Kanban** view, show a **completion ring** for the tasks currently on the board, i.e. the ones the search and filters leave.\n\n## Do\n- A `Ring.svelte` in the Kanban board's header area: `done / shown` with the percentage inside; a `title` with the counts.\n- Count skipped tasks the same way as the rest of the dashboard (T-162: left out of the percentage, shown separately).\n- Updates as filters change.\n\n## Verify\n- Unit test for the count from a filtered list; e2e: filter by a phase and check the ring's value.\n- Screenshot baselines.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-162"
+      ],
+      "files": [
+        "dashboard/src/components/KanbanBoard.svelte",
+        "dashboard/src/components/Ring.svelte",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

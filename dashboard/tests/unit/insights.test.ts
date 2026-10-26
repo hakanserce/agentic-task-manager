@@ -56,7 +56,7 @@ describe('progressBreakdown', () => {
       task('d', { status: 'in_progress', phase: 0 }),
     ];
     const p = progressBreakdown(tasks);
-    expect(p.overall).toEqual({ key: 'all', label: 'All tasks', done: 2, total: 4, ratio: 0.5 });
+    expect(p.overall).toEqual({ key: 'all', label: 'All tasks', done: 2, total: 4, skipped: 0, ratio: 0.5 });
     expect(p.byPhase.map((s) => [s.label, s.done, s.total])).toEqual([
       ['Phase 0', 1, 2],
       ['Phase 1', 1, 2],
@@ -84,6 +84,24 @@ describe('progressBreakdown', () => {
     expect(progressBreakdown([]).overall.ratio).toBe(0);
   });
 
+  it('skipped tasks count as neither done nor left: 7 done and 3 skipped is 100%, the 3 shown apart', () => {
+    const tasks = [
+      ...Array.from({ length: 7 }, (_, i) => task(`d${i}`, { status: 'done' })),
+      ...Array.from({ length: 3 }, (_, i) => task(`s${i}`, { status: 'skipped' })),
+    ];
+    expect(progressBreakdown(tasks).overall).toMatchObject({ done: 7, total: 7, skipped: 3, ratio: 1 });
+    const someLeft = progressBreakdown([...tasks, task('t', { status: 'todo' })]).overall;
+    expect(someLeft).toMatchObject({ done: 7, total: 8, skipped: 3, ratio: 7 / 8 });
+  });
+
+  it('a group of only skipped tasks is finished, not 0%', () => {
+    const p = progressBreakdown([task('a', { status: 'skipped', phase: 2 }), task('b', { status: 'todo', phase: 1 })]);
+    expect(p.byPhase.map((s) => [s.label, s.total, s.skipped, s.ratio])).toEqual([
+      ['Phase 1', 1, 0, 0],
+      ['Phase 2', 0, 1, 1],
+    ]);
+  });
+
   it("follows a project's statuses by kind: done-kind is done, the split is in kind order", () => {
     const vocab = resolveVocabulary({
       statuses: [
@@ -103,7 +121,7 @@ describe('progressBreakdown', () => {
 
   it('works on the standard fixture', () => {
     const p = progressBreakdown(standard.tasks as Task[]);
-    expect(p.overall.total).toBe(12);
+    expect([p.overall.total, p.overall.skipped]).toEqual([11, 1]); // one of its 12 tasks is skipped
     expect(p.byStatus.reduce((n, s) => n + s.count, 0)).toBe(12);
   });
 });

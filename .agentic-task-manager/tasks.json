@@ -5328,7 +5328,7 @@
       "description": "The Appearance menu lists all 11 themes as a radio list (T-152), which makes the menu tall (it now scrolls at 60vh). Replace the list with a **combo box**: one closed control showing the current theme, which opens the list of themes.\n\n### How\n- **Prefer a native `<select>`** styled with the theme tokens (accessible and keyboard-friendly for free).\n- If a native select can't be styled acceptably in every theme, use a **custom listbox** following the WAI-ARIA *select-only combobox* pattern: `Enter` / `Space` / `Alt+Down` opens, arrows move, `Enter` picks, `Escape` closes, typing a letter jumps.\n- Choosing a theme applies it at once (`dashboard.setTheme`) and is remembered as today.\n- The light/dark/system mode control stays as it is.\n\n### Clean up\nRemove the now unused `.theme-list` styles and the radiogroup keyboard code in `AppearanceMenu.svelte`.\n\n### Tests and docs\n- Update `tests/e2e/theme.spec.ts` (pick a theme, keyboard).\n- The appearance-menu screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n- `docs/help.md`: *\"one of 11 themes (the arrow keys move through them)\"*.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/AppearanceMenu.svelte",
@@ -5338,11 +5338,22 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-26T00:55:13Z",
+      "updated_at": "2026-10-26T01:00:10Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:55:13Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "7dd46f4aa6d66a13a38ddcbdad704dc7b1bd4db5",
+      "completed_at": "2026-10-26T01:00:10Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:00:10Z",
+          "kind": "outcome",
+          "text": "Native select styled with theme tokens, current theme's swatch beside it; menu 456px -> 136px tall; radiogroup code and .theme-list styles removed",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-164",
@@ -5357,7 +5368,7 @@
       "description": "The Status filter only offers statuses some task **currently has**: `filterOptions` in `dashboard/src/lib/filters.ts` builds them from\n\n```ts\nnew Set(tasks.map((t) => t.status))\n```\n\nso when every task is *Done*, the list has no *To Do*, *In Progress* and so on.\n\n### The fix\n- Build the options from the **project's statuses**: every status in `vocab.statuses` (the defaults when `meta.statuses` isn't set), in the vocabulary's order and with its labels.\n- **Plus** any status used by a task that isn't in the vocabulary, sorted after them (as today: by `statusRank`, then name).\n- Options with no tasks show a count of 0 and can still be selected (the empty-filter message then shows).\n- Leave the other groups (phase, type, priority, label, agent, stage) built from the data, as today.\n- A saved filter for a status no task has must keep working.\n\n### Tests\n- Unit tests in `tests/unit/filters.test.ts`: all vocabulary statuses listed when tasks use only one; custom `meta.statuses`; an unknown status used by a task is added at the end.\n- e2e: with a fixture where all tasks are done, the Status filter still offers *To Do*.\n- Update any screenshots that show the filter bar (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/filters.ts",
@@ -5365,9 +5376,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T19:36:02Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T01:00:13Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:00:13Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-165",

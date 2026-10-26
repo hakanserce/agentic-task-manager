@@ -88,8 +88,8 @@ with the task that adds it.
 
 | # | Invariant | Enforced by |
 |---|---|---|
-| I18 | **CI tokens are read-only by default; checkouts don't keep credentials** | the workflow (**to build**, T-230) |
-| I19 | **Actions and images are pinned by digest**, updated by Dependabot | the workflow (**to build**, T-230) |
+| I18 | **CI tokens are read-only by default; checkouts don't keep credentials** | `dashboard/tests/unit/ci-workflow.test.ts` |
+| I19 | **Actions are pinned by commit SHA and images by digest**; Dependabot proposes action and npm updates | `ci-workflow.test.ts`; `.github/dependabot.yml` |
 | I20 | **What users run is what was reviewed**: the committed build artifacts match their sources | CI's freshness checks |
 | I21 | **`main` takes only reviewed changes with green checks** | branch protection (**to set up**, T-231) |
 

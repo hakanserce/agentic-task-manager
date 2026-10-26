@@ -1,0 +1,14 @@
+# Updates for what CI and the dashboard build depend on (docs/security-architecture.md I19). The actions in
+# .github/workflows/ci.yml are pinned by commit SHA; Dependabot keeps the SHA and its version comment current. The
+# container images there are pinned by digest and updated by hand (the Playwright image follows @playwright/test).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /dashboard
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

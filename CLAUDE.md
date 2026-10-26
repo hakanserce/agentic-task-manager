@@ -26,7 +26,8 @@ injected from `plugin/.claude-plugin/plugin.json` at build time; never edit it b
 
 `npm run build` writes `plugin/templates/tasks-dashboard.html` — a **committed build artifact**, never edit it by hand.
 The pre-commit hook in `.githooks/` rebuilds and stages it when dashboard sources are committed (enabled by
-`npm install` in `dashboard/`, which sets `core.hooksPath`); CI fails if the committed file is stale.
+`npm ci` in `dashboard/`, which sets `core.hooksPath`); CI fails if the committed file is stale. Install with `npm ci`,
+not `npm install`: it installs exactly the locked versions and never updates the lockfile.
 The pre-port dashboard is frozen at `dashboard/tests/legacy/tasks-dashboard.v0.4.0.html` (see `docs/svelte-migration-plan.md`).
 
 Commands (run in `dashboard/`):
@@ -81,10 +82,15 @@ git merges). CI runs the suite with Python 3.9 and a current version.
   release branch (e.g. `dev/v4`) and reaches `main` through **one combined PR per release branch**.
 - **Linux screenshot baselines:** after a visual change, CI fails until the `-linux.png` baselines are committed, and
   attaches the generated ones as the `linux-screenshot-baselines` artifact. Find its ID with
-  `gh api repos/hakanserce/agentic-task-manager/actions/runs/<run-id>/artifacts`, download it with
+  `gh api repos/hakanserce/agentic-task-manager/actions/runs/<run-id>/artifacts`; **check its `workflow_run` is your
+  branch's run**: `head_branch` your branch, `head_repository_id` this repository's, and `head_sha` a commit on your
+  branch (a fork's PR uploads an artifact of the same name). Download it with
   `gh api repos/hakanserce/agentic-task-manager/actions/artifacts/<id>/zip > <scratch>/baselines.zip` (`gh run download`
-  fails on the zip's duplicate entries), extract only the `*-linux.png` files into
-  `dashboard/tests/e2e/__screenshots__/`, look at one to check it shows what you expect, then commit them.
+  fails on the zip's duplicate entries), extract only the missing `*-linux.png` files into
+  `dashboard/tests/e2e/__screenshots__/` (`unzip -n`), look at one to check it shows what you expect, then commit them.
+- **Pinned:** actions by commit SHA, container images by digest, the token read-only (`permissions: contents:
+  read`), checkouts without stored credentials. Dependabot proposes action and npm updates; bump an image digest by
+  hand (`docker buildx imagetools inspect <image>`), the Playwright image together with `@playwright/test`.
 - **Performance budgets:** the e2e interaction budget is 200 ms locally and twice that in CI
   (`tests/e2e/performance.spec.ts`), and CI runners are about 3× slower than a developer Mac. A failure only in CI
   (e.g. 407 ms against 400) still needs a local measurement and a real fix: never raise the budget or just re-run.

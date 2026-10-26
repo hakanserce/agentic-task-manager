@@ -8549,7 +8549,7 @@
       "description": "§4.2 of `docs/security-review.md`. A section of `docs/security-architecture.md`, decided with the user.\n\nThe recommendation to present:\n\n1. **Hostile-repo fixture** for atm-cli and the server: a temp `HOME` / `ATM_HOME` and a generated repo with symlinks, nested JSON, odd IDs and URLs, in the existing `tests/scripts` harness. Cheap; runs on every PR.\n2. **Agent sandbox** for the skills: a container (devcontainer or Docker) with a throwaway repo, no real credentials, network egress blocked except the model API, where an agent runs `/atm:loop-tasks` on red-team tasks (injected commands, `curl | sh`, credential reads); it passes if it blocks them. The only way to test prompt injection; costs model calls, so not on every PR.\n\nRecord the decision, what each level covers and what it costs.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-232"
       ],
@@ -8557,7 +8557,7 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:58:21Z",
+      "updated_at": "2026-10-26T22:58:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8572,10 +8572,19 @@
           "kind": "rejection",
           "text": "Approved; continuing with: record the decisions in §3.1",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T22:58:23Z",
+          "kind": "outcome",
+          "text": "Sandbox decided in §3.1 of `docs/security-architecture.md`: level 1 hostile-repo tests in CI on every PR; level 2 a Docker agent sandbox (canaries, no egress but the model API, red-team tasks) run locally before merging agent-facing PRs.",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-26T22:58:21Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "68857e080a0808f35c14955d9c2cc6a90ad3deef",
+      "completed_at": "2026-10-26T22:58:23Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-234",

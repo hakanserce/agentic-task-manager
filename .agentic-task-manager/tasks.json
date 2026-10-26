@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 184,
+    "next_id": 185,
     "labels": [
       {
         "id": "dashboard",
@@ -5319,7 +5319,7 @@
         "docs/multi-project-dashboard-proposal.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:51:38Z",
@@ -5338,7 +5338,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-166",
@@ -5366,7 +5367,7 @@
         "tests/scripts/registry.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:55:32Z",
@@ -5385,7 +5386,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-167",
@@ -5413,7 +5415,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:13:38Z",
@@ -5432,7 +5434,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-168",
@@ -5459,7 +5462,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:01:58Z",
@@ -5478,7 +5481,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-169",
@@ -5503,7 +5507,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:17:25Z",
@@ -5522,7 +5526,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-170",
@@ -5550,7 +5555,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:19:25Z",
@@ -5569,7 +5574,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-171",
@@ -5596,7 +5602,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -5620,7 +5626,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-172",
@@ -5648,7 +5655,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:08:12Z",
@@ -5667,7 +5674,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-173",
@@ -5693,7 +5701,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:30:37Z",
@@ -5712,7 +5720,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-174",
@@ -5737,7 +5746,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:35:50Z",
@@ -5756,7 +5765,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-175",
@@ -5782,7 +5792,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:39:51Z",
@@ -5801,7 +5811,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-176",
@@ -5826,7 +5837,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:00:28Z",
@@ -5845,7 +5856,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-177",
@@ -5878,7 +5890,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:44:58Z",
@@ -5897,7 +5909,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-178",
@@ -5924,7 +5937,7 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:03:06Z",
@@ -5943,7 +5956,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-179",
@@ -6001,7 +6015,7 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-25T21:18:54Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:48:09Z",
@@ -6020,7 +6034,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-181",
@@ -6049,7 +6064,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T21:35:18Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:52:48Z",
@@ -6068,7 +6083,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-182",
@@ -6116,6 +6132,35 @@
       ],
       "created_at": "2026-10-25T21:49:53Z",
       "updated_at": "2026-10-25T21:49:53Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-184",
+      "name": "Explain an expired lease when its agent finishes the task",
+      "phase": 16,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "cli"
+      ],
+      "description": "Seen on T-171: the agent's lease ran out during a long test run (no tool calls, so no heartbeat), after which:\n\n1. `atm done T-171` refused with *\"it is todo, not in_progress or in_review\"*, though `atm show` still said `in_progress`: the command expired the claim in memory, then refused **before writing**, so the file kept the old status;\n2. `atm release` refused the same way, and this time the expiry was written (a `failure` note: *lease expired*);\n3. the expiry had dropped the task's `commit` (`back_to_todo` clears it), so `atm done` needed `--commit` again.\n\n### Fix\n- When a status command (`done`, `release`, `fail`, `review`, `block`, `heartbeat`) finds that **this agent's own** claim on the task just expired, say so: *\"T-171: your lease expired at 23:00 (no heartbeat for 30 min), so it went back to todo. Your commit is kept. Run `atm start T-171`, then `atm done T-171` again.\"* Exit code 4, like a claim conflict.\n- Write the expiry **before** refusing, so `atm show` agrees with the error.\n- An expiry keeps the task's `commit` (the work is in git): `back_to_todo` drops it only when called by `reopen`, `reject` and `fail`.\n- Another agent's expired claim keeps today's message.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` with `ATM_NOW` past the lease: `done` by the claim's own agent (the message, exit 4, status `todo` on disk, `commit` kept); `start` then `done` works without `--commit`; another agent's expired claim unchanged. Update `docs/v4/atm-cli.md` (4.2) and the skills' error handling line on expired leases (do-task, loop-tasks).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/model.py",
+        "atm-cli/atm/tasks.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/",
+        "docs/v4/atm-cli.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-26T00:24:09Z",
+      "updated_at": "2026-10-26T00:24:09Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

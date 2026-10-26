@@ -220,7 +220,7 @@ export class TasksServer {
   }
 }
 
-type Fixtures = { tasksServer: TasksServer; externalRequestGuard: void };
+type Fixtures = { tasksServer: TasksServer; externalRequestGuard: void; cspGuard: void };
 
 export const test = base.extend<Fixtures>({
   tasksServer: async ({ page }, use) => {
@@ -239,6 +239,20 @@ export const test = base.extend<Fixtures>({
       });
       await use();
       expect(external, 'external requests').toEqual([]);
+    },
+    { auto: true },
+  ],
+
+  // The page runs under the Content-Security-Policy atm serve sends (serve.mjs sends the same, T-226): anything it
+  // blocks (an inline script, a style, an image, a request) fails the test, so the policy and the dashboard agree.
+  cspGuard: [
+    async ({ page }, use) => {
+      const violations: string[] = [];
+      page.on('console', (msg) => {
+        if (/Content Security Policy/i.test(msg.text())) violations.push(msg.text());
+      });
+      await use();
+      expect(violations, 'Content-Security-Policy violations').toEqual([]);
     },
     { auto: true },
   ],

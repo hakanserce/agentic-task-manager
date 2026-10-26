@@ -4,6 +4,7 @@ The server holds the plugin's dashboard in memory and serves each registered pro
 Its routes and record are described in docs/multi-project-api.md.
 """
 
+import base64
 import hashlib
 import os
 import re
@@ -60,6 +61,32 @@ LOGO_HEADERS = {
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     "X-Content-Type-Options": "nosniff",
 }
+# On every response: no content sniffing, and no other site may embed it (docs/security-review.md F11)
+SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "Cross-Origin-Resource-Policy": "same-origin"}
+INLINE_SCRIPT = re.compile(rb"<script\b([^>]*)>(.*?)</script>", re.S | re.I)
+
+
+def page_csp(page):
+    """The dashboard's Content-Security-Policy: only its own inline scripts run (by hash), it talks only to this
+    server, and no page may frame it. Any script injected into it, or a `javascript:` link, is refused by the browser.
+    tests/e2e/serve.mjs builds the same policy, so the e2e suite runs under it."""
+    hashes = [
+        "'sha256-" + base64.b64encode(hashlib.sha256(body).digest()).decode("ascii") + "'"
+        for attrs, body in INLINE_SCRIPT.findall(page)
+        if b"src=" not in attrs
+    ]
+    return "; ".join(
+        [
+            "default-src 'none'",
+            "script-src " + (" ".join(hashes) or "'none'"),
+            "style-src 'unsafe-inline'",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "base-uri 'none'",
+            "form-action 'none'",
+            "frame-ancestors 'none'",
+        ]
+    )
 
 
 def server_url(port, project=None):
@@ -439,6 +466,7 @@ def cmd_serve_child(args):
     # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
     # report another build than the page has, and the page would offer a reload forever
     version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
+    page_headers = {"Content-Security-Policy": page_csp(page)}
     registry = Registry(home)
     summaries = Summaries()
 
@@ -452,7 +480,7 @@ def cmd_serve_child(args):
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+            for name, value in {"Cache-Control": "no-store", **SECURITY_HEADERS, **(headers or {})}.items():
                 self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
@@ -476,7 +504,7 @@ def cmd_serve_child(args):
                 return
             path = urlsplit(self.path).path
             if path == "/":
-                self.send(200, page, "text/html; charset=utf-8")
+                self.send(200, page, "text/html; charset=utf-8", headers=page_headers)
             elif path == WHOAMI:
                 info = {"atm": True, "pid": os.getpid(), "port": port_now, "version": version, "build": build}
                 self.send(200, to_json(info).encode("utf-8"))

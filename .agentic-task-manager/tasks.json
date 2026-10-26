@@ -8252,7 +8252,7 @@
       "description": "Finding **F9** in `docs/security-review.md`.\n\n`atm pr --url` stores any string, and `ProjectCard.svelte` and `stages.ts` → `KanbanColumns.svelte` use `pr.url` as an `href` unchecked, so a `javascript:` URL could run script.\n\n## Do\n\n- One `safeUrl()` in `src/lib` (http(s) only; reuse `markdown.ts`'s `safeHref` rules where they fit) used for every link built from task data: PR links on cards and in Kanban sections, repository links.\n- `atm pr --url` and the overview summary (`query.py`) accept only http(s).\n- Optionally, check by hand whether a `javascript:` link with `target=_blank` runs in the dashboard's origin, and note it in `docs/security-review.md`.\n\n## Verify\n\nUnit and e2e: a fixture with `pr.url = \"javascript:alert(1)\"` renders no `<a href>`; `atm pr --url javascript:x` fails.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/stages.ts",
@@ -8262,11 +8262,22 @@
         "atm-cli/atm/query.py"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:23:57Z",
+      "updated_at": "2026-10-26T22:28:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:23:57Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "3ce8ad2be699590d8f24abed2d2a0a790d40d124",
+      "completed_at": "2026-10-26T22:28:23Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:28:23Z",
+          "kind": "outcome",
+          "text": "One `safeUrl()` (`src/lib/url.ts`, http(s) only) for every link from task data: PR links in Kanban sections, on project cards, recorded PRs and the repository address. `atm pr --url` refuses anything but http(s); the summary drops such URLs. Unit, component and scenario tests. The manual check of whether `javascript:` runs in a new tab is moot now.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-226",
@@ -8281,7 +8292,7 @@
       "description": "Finding **F11** in `docs/security-review.md`.\n\n## Do\n\n- On `/`, send a CSP: `default-src 'none'; script-src 'sha256-<hash of the inline bundle>'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`. Compute the script hash at build time (or when the server starts) from the built dashboard.\n- Send `X-Content-Type-Options: nosniff` and `Cross-Origin-Resource-Policy: same-origin` on every response.\n- The Vite dev server sends the same headers, so problems show up in development.\n\n## Verify\n\nAn e2e test checks the headers, and the whole e2e suite passes with the CSP on (no console CSP violations).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/server.py",
@@ -8290,9 +8301,11 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:28:23Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:28:23Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-227",

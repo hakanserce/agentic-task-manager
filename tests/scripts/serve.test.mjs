@@ -19,6 +19,7 @@ import {
   runAtm,
   tempDir,
 } from './helpers.mjs';
+import { pageCsp } from '../../dashboard/tests/e2e/csp.mjs';
 
 const TASKS = { meta: { id: 'abcd1234', project: 'Serve' }, tasks: [] };
 // A different range per run: ports of the previous run can still be in TIME_WAIT, and the server deliberately doesn't
@@ -526,6 +527,23 @@ describe('serve', () => {
     assert.deepEqual(await get('/tasks-dashboard.html'), [404, 'not found']);
     assert.deepEqual(await get('/p/'), [404, 'not found']);
     assert.deepEqual(await get('/api/projects', { method: 'POST' }), [405, 'only GET and HEAD']);
+    atm(['serve', 'stop'], root);
+  });
+
+  test('security headers: the page has the CSP the e2e suite runs under; every response is nosniff, same-origin (T-226)', async () => {
+    const atm = atmIn(home());
+    const root = project(TASKS);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const page = await fetch(`http://localhost:${port}/`);
+    const body = Buffer.from(await page.arrayBuffer());
+    assert.equal(page.headers.get('content-security-policy'), pageCsp(body));
+    assert.match(page.headers.get('content-security-policy'), /script-src 'sha256-[^']+' 'sha256-[^']+';/);
+    for (const p of ['/', '/api/projects', '/p/abcd1234/tasks.json', '/nope']) {
+      const r = await fetch(`http://localhost:${port}${p}`);
+      assert.equal(r.headers.get('x-content-type-options'), 'nosniff', p);
+      assert.equal(r.headers.get('cross-origin-resource-policy'), 'same-origin', p);
+    }
     atm(['serve', 'stop'], root);
   });
 

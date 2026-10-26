@@ -155,6 +155,35 @@ container with no credentials and no egress already bounds what it can reach.
 3. Level 2 runs locally for now. A manual `workflow_dispatch` job (the API key as a repository secret) can come later,
    once local runs are reliable (a note in T-235).
 
+### 3.2 Distribution (T-231, proposal)
+
+Users run what is on `main`: the marketplace installs `./plugin` from the default branch, and the hooks run it on every
+tool call. Today `main` has **no branch protection**. Proposal:
+
+**Branch protection on `main`** (a repository setting only the owner can change; a ruleset):
+- changes only through a pull request; no direct pushes, no force-pushes, no deletion;
+- required status checks: the four CI jobs (*Lint, unit tests, build freshness*; *atm helper (Python 3.9)* and
+  *(3.13)*; *Playwright regression suite*), with the branch up to date;
+- **no required approval**: with one maintainer, GitHub doesn't let you approve your own PR, so it would block every
+  merge. The PR and its checks are the review; revisit when there are other committers;
+- the owner can bypass in an emergency.
+
+Applied with (run by the owner; I'll write the exact JSON once you agree):
+`gh api -X POST repos/hakanserce/agentic-task-manager/rulesets --input <ruleset.json>`
+
+**Private vulnerability reporting**: turn it on (Settings → Code security), as `SECURITY.md` points to it.
+
+**Pinning releases to tags**: Claude Code marketplaces can point a plugin at a git ref instead of the default branch.
+That would make a release an explicit step (push a tag, update the marketplace entry). Recommendation: **not now**.
+Branch protection already makes `main` the reviewed state, every PR is a release (§3), and a tag step would add a
+manual move to each release without changing who can publish. Revisit if outside contributors start merging.
+
+**Questions for you:**
+
+1. Branch protection as above (PR only, the four checks, no required approval, owner bypass)?
+2. Turn on private vulnerability reporting?
+3. Keep installing from `main` (no release tags) for now?
+
 ## 4. Keeping it current
 
 This document changes **in the same PR** as a change that:

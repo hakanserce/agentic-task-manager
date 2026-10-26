@@ -8488,15 +8488,17 @@
       "description": "Finding **F17** in `docs/security-review.md`.\n\nAnything merged to `main` runs on every user's machine after an update (the hooks run `atm` on every tool call and at session start).\n\n## Do\n\n- Write `SECURITY.md`: how to report a vulnerability, what the plugin runs automatically (the hooks), what atm never does.\n- Prepare the branch protection settings for `main` (required checks, review) and **ask the user** to apply them: they are repository settings only the owner changes.\n- Propose, and decide with the user, whether the marketplace should point at a release tag instead of the default branch.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "SECURITY.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T23:00:53Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:00:53Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-232",
@@ -8611,7 +8613,7 @@
       "description": "Level 1 of the sandbox decision in `docs/security-architecture.md`.\n\n## Do\n\n- In `tests/scripts/`, a helper that builds a hostile repo in a temp folder with its own `HOME` / `ATM_HOME`: symlinked task files and folders, deeply nested JSON, odd task IDs, `javascript:` URLs, a legacy `.server.json`.\n- Collect the security tests from the fix tasks there, and add any invariant from `docs/security-architecture.md` that has no test yet.\n- A static check (in the suite or `npm run check`) that `atm-cli/` has no `shell=True`, `os.system`, `eval` or `exec`.\n\nRuns in CI with the rest of `npm run test:scripts`.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-233"
       ],
@@ -8619,11 +8621,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:59:56Z",
+      "updated_at": "2026-10-26T23:00:52Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:59:56Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "cd113c7e74dddcc47bc47e84c7398d0207b39fd3",
+      "completed_at": "2026-10-26T23:00:52Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T23:00:52Z",
+          "kind": "outcome",
+          "text": "Level 1 is the existing `tests/scripts` suites (symlinks, hostile, security scenarios, git, serve), each project built in a temp folder with its own `ATM_HOME`. Added `security-invariants.test.ts`: static checks for I5 (no shell/eval in atm-cli) and I15 (`{@html}` only in Icon and Logo), and that every test the invariants table names exists. No separate helper: the suites already isolate each case.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-235",

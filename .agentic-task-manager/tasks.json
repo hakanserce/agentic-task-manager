@@ -7826,18 +7826,28 @@
       "description": "**Interactive with the user.** Explore an All Projects Kanban in the overview: one board with cards from every project, each card with a project chip (like the branch chip).\n\n## Options to weigh\n1. **Cross-project phases and filters.** Phases differ per project, so how would that work?\n2. **No phase filter:** every task in *Review*, *Blocked* and *In Progress*, plus the N most recently updated in *To Do* and *Done*.\n3. **Per-project swimlanes.**\n\n## Also consider\n- **Load:** `api/projects` already sends summaries; would the board need every project's `tasks.json`, and how often?\n- Sorting, the Needs-you menu, and how it fits next to the project cards.\n\n## Proposal\nWrite `docs/all-projects-kanban-proposal.md` with mock-ups and a recommendation, review it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "docs/all-projects-kanban-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:42:30Z",
+      "updated_at": "2026-10-26T21:57:13Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:41:59Z",
       "started_by": "claude:e5ea9db0",
-      "commit": "e6fc654e84cb728ca00b4215446a5cfc601ea7ac"
+      "commit": "9131d8a70fde2378214ffc7912fef94af5d4b4ba",
+      "completed_at": "2026-10-26T21:57:13Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:57:13Z",
+          "kind": "outcome",
+          "text": "docs/all-projects-kanban-proposal.md approved in Crit: a Board tab on All projects (ready to start; all in progress, review, blocked; done in the last 24 h; 30 per column), group by project, a server-backed search. Implementation T-257..T-261 in phase 21.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-216",

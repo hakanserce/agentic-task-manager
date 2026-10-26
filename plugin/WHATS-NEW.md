@@ -2,6 +2,15 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.19.0] - 2026-10-26
+
+- Notes, questions and answers show formatting: code, lists, bold text and links.
+- The Kanban uses your whole screen height, so you see more cards before scrolling.
+- Long or many labels on a Kanban card stay on one line; click "+N" to see them all.
+- With many phases, the Phase filter shows only the active ones, with a button for the finished ones.
+- The About dialog names the project you're looking at, with its logo.
+- The Idle number in Activity fits on one line, and its colour now matches the charts.
+
 ## [0.18.0] - 2026-10-26
 
 - Project cards show what agents are working on right now, by task name, or what comes next.

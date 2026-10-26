@@ -14,6 +14,12 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 - `.agentic-task-manager/tasks.json` — this repo's own task list; we dogfood atm here (`/atm:serve` shows it)
 - `docs/` — requirements, designs and plans the tasks were created from
 
+## Security
+`docs/security-architecture.md` holds the threat model and the invariants every change keeps, each with its check.
+A change that adds an entry point (an HTTP route, a CLI command reading a path or URL, a task-folder file), a field
+agents or the dashboard act on, a skill instruction that runs commands or reads outside text, or a CI permission
+updates that document in the same PR.
+
 ## Dashboard (`dashboard/`)
 Builds to a **single self-contained HTML file** (vite-plugin-singlefile). The `atm-dashboard-version` meta tag is
 injected from `plugin/.claude-plugin/plugin.json` at build time; never edit it by hand.

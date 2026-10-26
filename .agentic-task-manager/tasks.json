@@ -8292,7 +8292,7 @@
       "description": "Finding **F11** in `docs/security-review.md`.\n\n## Do\n\n- On `/`, send a CSP: `default-src 'none'; script-src 'sha256-<hash of the inline bundle>'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`. Compute the script hash at build time (or when the server starts) from the built dashboard.\n- Send `X-Content-Type-Options: nosniff` and `Cross-Origin-Resource-Policy: same-origin` on every response.\n- The Vite dev server sends the same headers, so problems show up in development.\n\n## Verify\n\nAn e2e test checks the headers, and the whole e2e suite passes with the CSP on (no console CSP violations).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/server.py",
@@ -8301,11 +8301,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:28:23Z",
+      "updated_at": "2026-10-26T22:38:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:28:23Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "ddd414c7a115515128bd6876df6d3e11053c40e2",
+      "completed_at": "2026-10-26T22:38:44Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T22:38:44Z",
+          "kind": "outcome",
+          "text": "atm serve sends a hash-based CSP with the page (`page_csp`: own inline scripts only, `connect-src self`, `frame-ancestors none`) and `nosniff` + CORP on every response. The e2e server sends the same (`tests/e2e/csp.mjs`), and a `cspGuard` fixture fails any test with a CSP violation: the whole suite passes under it. The dev server sends a matching policy.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-227",
@@ -8448,16 +8459,18 @@
       "description": "§4.2 of `docs/security-review.md`.\n\n## Do\n\nWrite `docs/security-architecture.md`:\n\n- **Threat model**: the assets, actors, boundaries and threats from §2 of the review, as the maintained version.\n- **Invariants** every change must keep, e.g.: task text is data for agents; atm never runs a shell or follows a symlink out of the repo; nothing changes state over HTTP; the server answers only loopback with a matching Host; every link the dashboard renders is http(s)/mailto/#; no `{@html}` on data; skills pre-approve no command runner; CI tokens are read-only by default.\n- For **each invariant**, the test or check that enforces it (existing or to build).\n- **Keeping it current**: which changes must update the threat model (a new entry point, file format, HTTP route or skill instruction), and a line about it in `CLAUDE.md`.\n\nReview the draft with the user before committing it as done.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/security-architecture.md",
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:38:45Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:38:45Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-233",

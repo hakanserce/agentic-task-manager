@@ -7748,7 +7748,7 @@
       "description": "**Interactive with the user.** The same pass as the Progress tab review (T-212), for the Activity per hour/day/week popup.\n\n## Review\nGo through `ActivityWidget.svelte`, `ActivityDeepDive.svelte`, `UtilizationPanel.svelte` and `insights.ts`. For each chart, box and number (throughput, cumulative done, cycle time, WIP, idle time, utilization), write:\n- what it shows and how it's computed;\n- when it misleads;\n- what question it answers.\n\n## Proposal\n`docs/activity-popup-review.md`, with *keep*, *change* or *drop* and the help text for each.\n\n## With the user\nReview it with the user (the preview server and/or crit; `atm block --on user` for open decisions). Then implement what's approved, or add follow-up tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-210"
       ],
@@ -7757,12 +7757,22 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:10:19Z",
+      "updated_at": "2026-10-26T21:28:37Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:09:27Z",
       "started_by": "claude:e5ea9db0",
-      "commit": "db47491035742e41ad71944c01f2ab3c11c1e12e"
+      "commit": "4c7defab9a52594c1255ade339faf454d829eb39",
+      "completed_at": "2026-10-26T21:28:37Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:28:37Z",
+          "kind": "outcome",
+          "text": "Review in docs/activity-popup-review.md, approved in Crit (all-time sparkline kept; time per task alone and with you; waiting on you split from idle; three KPI cards with a where-the-time-went bar). Implementation as T-244..T-249 in phase 21.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-214",
@@ -7778,15 +7788,17 @@
       "description": "**Interactive with the user**, done together with T-216 (project information): same proposal, same review.\n\n## Where\nPropose where to show the overall project stats: the Progress tab, a new Stats section, the project card, or an About-like dialog.\n\n## Which stats, and how\n- **Project start**\n- **Project duration:** earliest task start to latest task completion.\n- **Total agent time used:** the sum of in-progress spans.\n- **Task duration** avg/min/max: propose the best visualization (e.g. a box plot or histogram by type, with the slowest tasks listed).\n- **Max parallelization:** the most agents working at once.\n- **Overall parallelization:** define it, e.g. *agent time ÷ wall-clock time while any agent works*.\n- Number of **commits**, **pull requests**, **phases** and **tasks**.\n\nFor each stat, say how it's computed from `tasks.json` (and the archive), and where data is missing (tasks without `started_at`, reopened tasks, skipped tasks).\n\n## Proposal\nWrite `docs/project-stats-proposal.md` with mock-ups, review it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T19:19:39Z",
+      "updated_at": "2026-10-26T21:28:38Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:28:38Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-215",
@@ -7827,15 +7839,17 @@
       "description": "**Interactive with the user**, done together with T-214: the same proposal (`docs/project-stats-proposal.md`) and the same review.\n\n## Where\nPropose where to show the project's information: e.g. a Project info dialog or tab, the About dialog, the project card's tooltip, or a section next to the stats.\n\n## What\n- **Name** and **description**.\n- **Developers:** who created and worked on tasks, users and agents, with task counts; how to group agent sessions.\n- **Git repository** (a link).\n- **Development workflow:** *direct* or *pull-request*, base branch, verify, commit template.\n- **Project vocabulary:** phases with names and task counts, labels, task types, statuses with their kinds, priorities and the default.\n\nFor each item, say where its data comes from (`tasks.json` `meta`, the tasks, the server) and what's missing.\n\n## With the user\nReview it with the user (crit), and once approved add implementation tasks with `/atm:create-tasks`.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T19:13:32Z",
-      "updated_at": "2026-10-26T19:19:40Z",
+      "updated_at": "2026-10-26T21:28:43Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T21:28:43Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-217",

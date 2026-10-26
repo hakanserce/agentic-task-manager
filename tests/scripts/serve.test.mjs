@@ -202,6 +202,7 @@ describe('serve', () => {
         { id: 'T-5', name: 'T-5', reason: 'review' },
         { id: 'T-6', name: 'T-6', reason: 'blocked' },
       ],
+      git: { branch: 'main', pr: null },
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     });
@@ -259,6 +260,33 @@ describe('serve', () => {
     assert.equal(summary.next[0].name.length, 80);
     assert.ok(summary.next[0].name.endsWith('…'));
     assert.deepEqual(summary.last_done, { id: 'T-6', name: 'T-6', completed_at: '2026-03-02T10:00:00Z' });
+    atm(['serve', 'stop'], root);
+  });
+
+  test('git: the branch and the latest PR recorded on the tasks; a branch switch changes the ETag', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status: 'done', ...extra });
+    const url = (n) => `https://github.com/acme/demo/pull/${n}`;
+    const root = project({
+      meta: { id: 'dddd4444', project: 'Git' },
+      tasks: [
+        task('T-1', { pr: { number: 3, url: url(3) }, merged_at: '2026-03-01T10:00:00Z' }),
+        task('T-2', { pr: { number: 5 } }),
+        task('T-3', { pr: { number: 5, url: url(5) } }),
+        task('T-4'),
+      ],
+    });
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = `http://localhost:${port}/api/projects`;
+    const first = await fetch(api);
+    const gitOf = (body) => body.projects.find((p) => p.id === 'dddd4444').summary.git;
+    assert.deepEqual(gitOf(await first.json()), { branch: 'main', pr: { number: 5, url: url(5), state: 'open' } });
+    git(['checkout', '-q', '-b', 'feature'], root);
+    const switched = await fetch(api, { headers: { 'If-None-Match': first.headers.get('etag') } });
+    assert.equal(switched.status, 200);
+    assert.equal(gitOf(await switched.json()).branch, 'feature');
     atm(['serve', 'stop'], root);
   });
 

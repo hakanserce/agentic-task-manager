@@ -29,6 +29,8 @@ export interface ProjectSummary {
   next?: { id: string; name: string }[];
   /** The task completed last (absent before 0.18) */
   last_done?: { id: string; name: string; completed_at: string } | null;
+  /** The main worktree's branch and the latest PR recorded on the tasks (absent before 0.18) */
+  git?: { branch: string | null; pr: { number: number; url: string | null; state: 'open' | 'merged' } | null };
   needs_you: { review: number; blocked_on_user: number };
   /** The tasks behind needs_you (absent from servers before 0.17) */
   needs_you_tasks?: NeedsYouItem[];

@@ -2002,6 +2002,24 @@ def recent_phases(tasks, kinds, open_phases, names):
     return result
 
 
+def git_summary(paths, tasks):
+    """The project's git line for its card (T-206): the main worktree's branch (read from .git/HEAD, no git process),
+    and the latest PR recorded on its tasks (`atm pr`; the highest number), `merged` once its tasks have merged_at.
+    No forge call and no CI state."""
+    git_dir = os.path.join(paths["root"], ".git")
+    branch = head_branch(git_dir) if os.path.isdir(git_dir) else None
+    prs = {}
+    for t in tasks:
+        pr = t.get("pr")
+        if isinstance(pr, dict) and isinstance(pr.get("number"), int):
+            entry = prs.setdefault(pr["number"], {"number": pr["number"], "url": None, "state": "open"})
+            if isinstance(pr.get("url"), str) and pr["url"]:
+                entry["url"] = pr["url"]
+            if t.get("merged_at"):
+                entry["state"] = "merged"
+    return {"branch": branch, "pr": prs[max(prs)] if prs else None}
+
+
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
     status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
@@ -2095,6 +2113,7 @@ def project_summary(paths):
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
         },
         "needs_you_tasks": needs_you_tasks,
+        "git": git_summary(paths, tasks),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }
@@ -3921,11 +3940,13 @@ class Summaries:
         return self.paths[entry["path"]][1]
 
     def stamp(self, entry):
-        """What the summary depends on, or None when the project is missing."""
+        """What the summary depends on, or None when the project is missing: tasks.json, the claims store, the day,
+        and .git/HEAD (the branch on the card)."""
         tasks = file_stamp(task_file(entry, TASKS_FILE))
         if tasks is None:
             return None
-        return (tasks, file_stamp(self.store(entry)), now().date().isoformat())
+        head = file_stamp(os.path.join(entry["path"], ".git", "HEAD"))
+        return (tasks, file_stamp(self.store(entry)), now().date().isoformat(), head)
 
     def summary(self, entry, stamp):
         cached = self.cache.get(entry["path"])

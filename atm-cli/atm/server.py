@@ -301,11 +301,13 @@ class Summaries:
         return self.paths[entry["path"]][1]
 
     def stamp(self, entry):
-        """What the summary depends on, or None when the project is missing."""
+        """What the summary depends on, or None when the project is missing: tasks.json, the claims store, the day,
+        and .git/HEAD (the branch on the card)."""
         tasks = file_stamp(task_file(entry, TASKS_FILE))
         if tasks is None:
             return None
-        return (tasks, file_stamp(self.store(entry)), now().date().isoformat())
+        head = file_stamp(os.path.join(entry["path"], ".git", "HEAD"))
+        return (tasks, file_stamp(self.store(entry)), now().date().isoformat(), head)
 
     def summary(self, entry, stamp):
         cached = self.cache.get(entry["path"])

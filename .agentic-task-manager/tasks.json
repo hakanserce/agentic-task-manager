@@ -7379,7 +7379,7 @@
       "description": "Part of the project-card layout approved in review (`docs/project-cards-proposal.md` §4, with the summary JSON there).\n\nAdd to each project's summary in `api/projects`:\n- `working`: `[{task, name, agent, branch}]`, from the claims store's live claims (every worktree).\n- `next`: up to 2 ready tasks `[{id, name}]`, by the loop's rule (`atm next`'s order, same code).\n- `last_done`: `{id, name, completed_at}` of the most recently completed task, or null.\n\nCap names at 80 characters, so the response stays small with many projects. The ETag rules don't change: everything comes from tasks.json and the claims store, which the summary already depends on.\n\nTests in `tests/scripts/serve.test.mjs` (the summary is only reachable through the server). Document the fields in `docs/multi-project-api.md` §3.2. Add them to `summary()` in `dashboard/tests/e2e/helpers.ts` and to `ProjectSummary` in `dashboard/src/lib/load.ts`.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/query.py",
@@ -7390,11 +7390,22 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:32:47Z",
+      "updated_at": "2026-10-26T08:37:42Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:32:47Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "3834fdbd7c5525f8d52dfb382a23185b3177b029",
+      "completed_at": "2026-10-26T08:37:42Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T08:37:42Z",
+          "kind": "outcome",
+          "text": "Summary has working (live claims with task names), next (up to 2 by the loop's order, via a shared ready_in_order) and last_done; task names capped at 80 chars. Server tests, API doc, ProjectSummary type.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-206",
@@ -7409,7 +7420,7 @@
       "description": "Part of the project-card layout approved in review (`docs/project-cards-proposal.md` §4).\n\nAdd `git: {branch, pr}` to each project's summary in `api/projects`:\n- `branch`: the main worktree's checked-out branch (`registry.head_branch`, no git process), or null outside git.\n- `pr`: the latest PR recorded on the project's tasks (`atm pr`): `{number, url, state}`, with `state` `merged` when its tasks have `merged_at`, else `open`. Null without one.\n\nNo `gh` call and no CI state: dropped in review.\n\nThe ETag must change when the branch changes: add the HEAD file's stamp. Tests in `tests/scripts/serve.test.mjs`; docs in `docs/multi-project-api.md` §3.2; `ProjectSummary` in `dashboard/src/lib/load.ts` and `summary()` in the e2e helpers.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/query.py",
@@ -7421,9 +7432,11 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T06:44:16Z",
+      "updated_at": "2026-10-26T08:37:43Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T08:37:43Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-207",

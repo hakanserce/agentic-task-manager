@@ -7223,7 +7223,7 @@
       "description": "### Today\nThe shared claims store (`.git/atm/claims.json`) records `completed` tasks, so `atm next` won't hand out in one worktree a task finished in another before the branches merge. It records nothing for tasks **blocked** or **sent for review** in another worktree. Seen on 2026-10-26, with three parallel loop agents:\n- Agent aa1f blocked T-195 (logo proposals) on the user. Its claim was released, but agent a74a's worktree still had T-195 as To Do, so `atm next --claim` handed it out again and a second agent redid the proposals.\n- `atm unblock` changes only the worktree it runs in, so the user's answer had to be given twice.\n- The dashboard's worktree merge kept showing the other copy as Blocked.\n\n### Change\n- Record **waiting** tasks in the shared store next to `completed`: blocked- or review-kind, with worktree, branch, `waiting_on`, questions and time. Written by `atm block` and `atm review`.\n- `atm next` skips them in every worktree, and its reason says so (\"blocked in another worktree: T-195\").\n- `atm unblock`, `atm done`/`atm reject` (for a review) and `atm skip`, run in **any** worktree, answer or close the task for all of them, and clear the record. Another worktree whose tasks.json still has it as blocked picks up the answer the next time atm runs there, with the answer note added. Alternatively, `next` treats it as answered; choose and document.\n- `atm status` and `atm list --blocked` show tasks blocked in another worktree, marked as such.\n- Server: `claims.json` (or `worktrees.json`) exposes the waiting records, so the dashboard's merged board shows one current state, not a stale Blocked copy.\n\n### Tests\nA `*.test.mjs` with two real worktrees (`git worktree add`), or scenarios if they can express it:\n- block in one, and `next` in the other skips it;\n- `unblock` in the other clears it everywhere;\n- review, then `done`, in another worktree;\n- the server exposes the record.\n\n### Docs\n`docs/v4/atm-cli.md` (the store's format and the rules), the README's parallel-agents section, and `docs/multi-project-api.md` if a route changes.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/claims.py",
@@ -7237,11 +7237,22 @@
         "README.md"
       ],
       "created_at": "2026-10-26T06:27:17Z",
-      "updated_at": "2026-10-26T07:40:51Z",
+      "updated_at": "2026-10-26T07:47:51Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T07:40:51Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "cca9cb008dc083030e8fffc705445024aadf1c6d",
+      "completed_at": "2026-10-26T07:47:51Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T07:47:51Z",
+          "kind": "outcome",
+          "text": "Shared store records waiting (blocked/review) and resolved tasks: next skips waiting ones everywhere; unblock/skip/done/reject work from any worktree and are applied where the task waits on its next atm command; status lists them; server drops stale copies.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-205",

@@ -238,6 +238,21 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The "new version is ready" toast in the bottom right corner, over the cards and clear of the title bar (T-185)
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: update notice (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await tasksServer.serverBuild('newer-build');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
+    await expect(page.locator('#update-notice')).toBeVisible();
+    await expect(page).toHaveScreenshot(`update-notice-${mode}.png`, {
+      mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+      stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
+  });
+}
+
 // The project selector, open, with progress, a "needs you" dot and a project that is gone
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: project selector (${mode})`, async ({ page, tasksServer }) => {

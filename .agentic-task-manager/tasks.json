@@ -6420,7 +6420,7 @@
       "description": "The **\"A new version of the dashboard is ready\"** notice doesn't fit: its bottom part is hidden under the title bar.\n\n`UpdateNotice.svelte` renders before the sticky `.topbar` (`App.svelte`), and the title bar covers it.\n\n## Do\n- Place the notice so it's fully visible on both pages (project view and All projects): either as a banner the title bar pushes down, or as a toast above it (`z-index`).\n- It must not shift or cover the filters row.\n\n## Verify\n- An e2e check that `#update-notice` is fully inside the viewport and not covered by `.topbar` (`elementFromPoint` at its corners).\n- Screenshots in light and dark.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/UpdateNotice.svelte",
@@ -6428,9 +6428,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:05:28Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:05:28Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-186",

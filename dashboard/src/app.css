@@ -2946,16 +2946,24 @@ svg.graph-minimap.hidden {
   box-shadow: inset 3px 0 0 var(--yellow);
 }
 
-/* A newer dashboard is ready after a plugin update (UpdateNotice.svelte) */
+/* A newer dashboard is ready after a plugin update (UpdateNotice.svelte). A toast in the bottom right corner, above
+   the footer: in the page flow the sticky title bar covered it, and as a banner it would push the filters down.
+   Over the title and footer bars (40), under menus (50) and dialogs (100). */
 .update-notice {
+  position: fixed;
+  right: 24px;
+  bottom: 64px;
+  z-index: 45;
+  max-width: calc(100vw - 48px);
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 8px 0;
   padding: 8px 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
   border-radius: 8px;
+  /* Opaque: the toast floats over cards */
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 45%, transparent);
   color: var(--text);
   font-size: 13px;
 }

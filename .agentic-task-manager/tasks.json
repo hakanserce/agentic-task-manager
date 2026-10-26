@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 251,
+    "next_id": 256,
     "labels": [
       {
         "id": "dashboard",
@@ -8783,7 +8783,7 @@
       "description": "With many phases, the Phase group in the filter panel (`Filters.svelte`) is a long wall of buttons.\n\n## Do\n\n- By default the Phase group shows **All**, the **active phases** (as `activePhases()` in `forecast.ts` defines them, the same as the Progress tab: every unfinished phase, and the one that finished last), and **any finished phase that is currently selected** (a selection never hides).\n- A button at the end of the group, *+ 17 finished* / *Hide finished*, expands and collapses the finished phases, in phase order. Its state is part of the saved view.\n- With few phases (all of them fit, e.g. 6 or fewer), show them all and no toggle.\n- The filter counts and the *N of M tasks* line are unchanged; the hidden phases still filter correctly when chosen from a link or a saved view.\n\n## Verify\n\nUnit test for which phases show (active, selected finished, threshold); e2e: a fixture with 10 phases shows All + active + the toggle; expanding shows the rest; selecting a finished phase and collapsing keeps it visible; remembered across a reload. Update the filter screenshots (remove the matching `-linux.png`).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Filters.svelte",
@@ -8792,11 +8792,155 @@
         "dashboard/tests/e2e/filters.spec.ts"
       ],
       "created_at": "2026-10-26T21:31:20Z",
-      "updated_at": "2026-10-26T21:31:26Z",
+      "updated_at": "2026-10-26T21:34:35Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:31:26Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "d1f30db6d7636710b30170a8515a173ed02aace1",
+      "completed_at": "2026-10-26T21:34:35Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:34:35Z",
+          "kind": "outcome",
+          "text": "Phase filter lists All, the active phases (activePhases) and any selected one when there are more than 6; '+ N finished' / 'Hide finished' toggles the rest, saved with the view. Unit and e2e tests; no screenshot changes.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-251",
+      "name": "Tab order: Kanban, List, Graph, then Progress, Agents; Kanban the default",
+      "phase": 21,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "stats"
+      ],
+      "description": "`docs/project-stats-proposal.md` §1.1 (approved).\n\n- Order the tabs *Kanban Board · Task List · Dependency Graph* | *Progress · Agents* (and *Project* once it exists), with a thin divider between the two groups.\n- **Kanban** is the default tab for a project without a saved view (`defaultView()` in `view-store.ts`); saved views and `#view=` links keep working.\n\n## Verify\n\ne2e: tab order; a fresh project opens on the Kanban; a saved `graph` tab and `#view=graph` still open the graph. Many e2e specs may assume the graph is the default: give them `{ tab: 'graph' }` explicitly. Screenshots updated (remove the matching `-linux.png`).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/App.svelte",
+        "dashboard/src/lib/view-store.ts",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-26T21:41:48Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-252",
+      "name": "Project tab: the Information section",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "stats"
+      ],
+      "description": "`docs/project-stats-proposal.md` §1–§3 (approved).\n\n- A new **Project** tab (`#view=project`), last, after the divider: name, logo and description at the top; *Information* left and *Stats* right (stacked on narrow screens; Stats is filled by the next tasks). Uses the history (archive included) and ignores filters; its ⓘ says so.\n- **Information**: repository link (or how to set it); workflow (type, base, verify, commit template, required trailers, or how to set one); **people** with tasks created, started, completed; **agents** in one line (sessions, tasks started and completed, agent time); the **vocabulary**: phases (names, counts, state; finished ones collapsed), labels (text and counts, also labels not in `meta.labels`), types, statuses with kinds, priorities with the default, each with counts.\n\n## Verify\n\nUnit tests for the people/agents and vocabulary counts (`src/lib/projectinfo.ts`); e2e for the tab and each block, with and without repository and workflow; screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-251"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectTab.svelte",
+        "dashboard/src/lib/projectinfo.ts",
+        "dashboard/src/App.svelte"
+      ],
+      "created_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-26T21:41:48Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-253",
+      "name": "Project tab: the Stats numbers",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "stats"
+      ],
+      "description": "`docs/project-stats-proposal.md` §4 (approved).\n\n`src/lib/projectstats.ts` on the history, reusing `timeuse.ts` (T-245) and `work.ts`, and the Stats block with an ⓘ:\n- **Started** (earliest `created_at` or `meta.created`), **duration** (earliest start → latest completion, *ongoing* while tasks are open), **tasks** (done / open / skipped in the tooltip, `meta.archived` counted), **phases** (*N finished*);\n- **Task commits** (tasks with a `commit`; tooltip: one per task, the commit atm made when finishing it), **pull requests** (distinct `pr.number`; *–* for direct-workflow projects);\n- **Agent time** (parallel agents add up; tooltip splits alone / with you), **most at once**, **average parallelism** (agent time ÷ time with at least one agent working).\n\n## Verify\n\nUnit tests per stat, including missing timestamps and archived tasks; e2e for the block.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-252",
+        "T-245"
+      ],
+      "files": [
+        "dashboard/src/lib/projectstats.ts",
+        "dashboard/src/components/ProjectTab.svelte",
+        "dashboard/tests/unit/projectstats.test.ts"
+      ],
+      "created_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-26T21:41:48Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-254",
+      "name": "Project tab: time per task histogram and the slowest tasks",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "stats"
+      ],
+      "description": "`docs/project-stats-proposal.md` §4.1 (approved).\n\n- A histogram of all timed tasks, bins 0–5 m, 5–10 m, 10–20 m, 20–30 m, 30–45 m, 45 m–1 h, 1–1.5 h, 1.5–2 h, 2–3 h, 3–4 h, 4 h+; each bar stacked *agents alone* (solid) and *with you* (hatched, `interactive`), the same colours as the Activity popup (T-246).\n- A median marker per kind on the axis; min, max and average in the ⓘ and tooltip; a bar's tooltip lists its range, counts and first five tasks.\n- Under it, the 5 slowest tasks, each opening the task.\n- Caveats in the ⓘ: tasks without a start, restarts after an expired lease, reopened tasks.\n\n## Verify\n\nUnit tests for the binning and medians; e2e for the bars, tooltip and links; screenshots. Follow the `dataviz` guidance for marks and colours.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-253"
+      ],
+      "files": [
+        "dashboard/src/components/TaskTimeHistogram.svelte",
+        "dashboard/src/lib/projectstats.ts"
+      ],
+      "created_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-26T21:41:48Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-255",
+      "name": "About dialog and All projects cards: link to the Project tab, one line of stats",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "dashboard",
+        "stats"
+      ],
+      "description": "`docs/project-stats-proposal.md` §1 (approved).\n\n- **About dialog**: the project section keeps a short vocabulary (phases, types, statuses, one line each) and gets a *Project details* link that opens the Project tab.\n- **All projects cards**: one line, *started 12 Aug · 236 tasks · 74 h agent time*; agent time added to the project summary in `atm-cli/atm/query.py` (and the dev server's).\n\n## Verify\n\nUnit test for the About section; atm-cli scenario for the summary field; e2e for the link and the card line; screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-253"
+      ],
+      "files": [
+        "dashboard/src/components/AboutDialog.svelte",
+        "dashboard/src/components/ProjectCard.svelte",
+        "atm-cli/atm/query.py"
+      ],
+      "created_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-26T21:41:48Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

@@ -2,6 +2,14 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.17.0] - 2026-10-26
+
+- Your projects can have logos: on their cards, in the project selector and next to the title.
+- Project cards show rings for the phases you're working on, and line up neatly.
+- "Needs you" takes you straight to the task waiting for you, or lists them.
+- "Active phases only" now shows what's in progress plus the phase you just finished, and is on by default.
+- Agents working in parallel no longer take each other's tasks, and a question answered once counts everywhere.
+
 ## [0.16.0] - 2026-10-26
 
 - Agents working in separate git worktrees all show on one board, each task with the branch it's on.

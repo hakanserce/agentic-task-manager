@@ -13,7 +13,15 @@ async function sectionScreenshot(page: Page, name: string) {
   await expect
     .poll(() => page.evaluate(() => document.querySelector('.topbar')!.classList.contains('scrolled') === scrollY > 8))
     .toBe(true);
-  await expect(section).toHaveScreenshot(name, { stylePath: path.join(import.meta.dirname, 'section-screenshot.css') });
+  await expect(section).toHaveScreenshot(name, {
+    // A long view reaches under the sticky title bar (and the status bar): its versions are masked, like on the
+    // full-page shots, so a release doesn't change these baselines
+    mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+    stylePath: [
+      path.join(import.meta.dirname, 'screenshot.css'),
+      path.join(import.meta.dirname, 'section-screenshot.css'),
+    ],
+  });
 }
 
 // The version chip and the footer's version are masked: they show the version (and a "new" marker) and would

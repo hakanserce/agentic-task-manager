@@ -11,7 +11,7 @@ test.describe('filters', () => {
       page.locator(`.filter-btn[data-filter="${group}"] .filter-label`).allTextContents();
     expect(await labels('phase')).toEqual(['All', '0', '1', '2']);
     expect(await labels('type')).toEqual(['All', 'Feature', 'Bugfix', 'Test', 'Infra', 'Docs', 'Refactor', 'Polish']);
-    expect(await labels('status')).toEqual(['All', 'To Do', 'In Progress', 'Blocked', 'Done', 'Skipped']);
+    expect(await labels('status')).toEqual(['All', 'To Do', 'In Progress', 'In Review', 'Blocked', 'Done', 'Skipped']);
     expect(await labels('priority')).toEqual(['All', 'P2 Medium']);
     await expect(page.locator('.filter-btn.active')).toHaveCount(4);
   });
@@ -82,7 +82,20 @@ test('unknown statuses sort after the known ones', async ({ page, tasksServer })
   await openDashboard(page, tasksServer, 'edge-cases');
   await openFilters(page);
   const labels = await page.locator('.filter-btn[data-filter="status"] .filter-label').allTextContents();
-  expect(labels).toEqual(['All', 'To Do', 'Done', 'Review']);
+  expect(labels).toEqual(['All', 'To Do', 'In Progress', 'In Review', 'Blocked', 'Done', 'Skipped', 'Review']);
+});
+
+test('the Status filter offers every status of the project, also when all tasks are done', async ({
+  page,
+  tasksServer,
+}) => {
+  const task = (id: string) => ({ id, name: id, phase: 0, type: 'feature', description: '', status: 'done' });
+  await openDashboard(page, tasksServer, { meta: { project: 'Finished' }, tasks: [task('T-1'), task('T-2')] });
+  await openFilters(page);
+  const labels = await page.locator('.filter-btn[data-filter="status"] .filter-label').allTextContents();
+  expect(labels).toEqual(['All', 'To Do', 'In Progress', 'In Review', 'Blocked', 'Done', 'Skipped']);
+  await filterButton(page, 'status', 'todo').click();
+  await expect(matchCount(page)).toHaveText('0 of 2 tasks');
 });
 
 test.describe('filter counts', () => {

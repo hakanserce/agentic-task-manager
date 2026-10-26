@@ -140,8 +140,12 @@ logic (`query.py`):
 ```
 
 `version` and `build` are the `atm-dashboard-version` and `atm-dashboard-build` meta tags of the dashboard the server
-holds. atm compares them with its own plugin's dashboard to decide whether to restart the server (`serve --refresh`),
-and the open dashboard compares `build` with its own to offer a reload.
+holds, read from the very bytes it serves at `/`, so a page loaded from it always has the same `build`. atm compares
+them with its own plugin's dashboard to decide whether to restart the server (`serve --refresh`): it restarts a server
+with an older version, or with the same version but another build of the **same** plugin folder (`plugin_root` in the
+record; the dashboard was rebuilt). Another install of the same version (the plugin cache, a development checkout, a
+worktree) is left alone, or two installs would restart the server in turn and every open page would offer a reload.
+The open dashboard compares `build` with its own to offer a reload.
 
 The old per-project servers (0.10.0–0.14.0) answer `{atm, folder, pid}`. The `folder` key identifies one, which is how
 `atm migrate` recognises and stops it.

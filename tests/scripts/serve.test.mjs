@@ -408,28 +408,85 @@ describe('serve', () => {
     run(['serve', 'stop']);
   });
 
-  /** A copy of the plugin whose dashboard claims to be `version`, as an older or newer install would be. */
-  function pluginAt(version) {
-    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
-    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
-    cleanups.push(() => removeDir(path.dirname(plugin)));
+  /** Stamps `version` and `build` into the dashboard of the plugin copy at `plugin`, as a rebuild would. */
+  function stamp(plugin, version, build) {
     const page = path.join(plugin, 'templates/tasks-dashboard.html');
     fs.writeFileSync(
       page,
       fs
         .readFileSync(page, 'utf8')
         .replace(/(name="atm-dashboard-version" content=")[^"]*/, `$1${version}`)
-        .replace(/(name="atm-dashboard-build" content=")[^"]*/, '$1old-build'),
+        .replace(/(name="atm-dashboard-build" content=")[^"]*/, `$1${build}`),
     );
-    return (args, cwd, atmHome) =>
+  }
+
+  /** A copy of the plugin whose dashboard claims to be `version` (and `build`), as another install would be. */
+  function pluginAt(version, build = 'old-build') {
+    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
+    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
+    cleanups.push(() => removeDir(path.dirname(plugin)));
+    stamp(plugin, version, build);
+    const run = (args, cwd, atmHome) =>
       spawnSync(path.join(plugin, 'scripts/atm'), args, {
         cwd,
         encoding: 'utf8',
         env: { ...baseEnv(), ATM_HOME: atmHome },
       });
+    run.plugin = plugin;
+    return run;
   }
 
   const whoami = async (port) => (await fetch(`http://localhost:${port}/__atm/whoami`)).json();
+  /** The build in the <meta> of the page the server serves. */
+  const pageBuild = async (port) =>
+    /name="atm-dashboard-build" content="([^"]*)"/.exec(await (await fetch(`http://localhost:${port}/`)).text())?.[1];
+
+  test("the page's build is the build whoami reports, so a current page never offers a reload", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    assert.equal(await pageBuild(port), PLUGIN_BUILD);
+    assert.equal((await whoami(port)).build, await pageBuild(port));
+    atm(['serve', 'stop'], root);
+  });
+
+  test("another install of the same version doesn't take the server over, so they don't restart it in turn", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    const other = pluginAt(PLUGIN_VERSION, 'other-build');
+    assert.equal(other(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const pid = record(atmHome).pid;
+    assert.equal(atm(['serve', '--refresh'], root).stdout, '');
+    assert.equal(atm(['status'], root).code, 0);
+    assert.equal(record(atmHome).pid, pid, 'left alone');
+    assert.equal(other(['serve', '--refresh'], root, atmHome).stdout, '');
+    assert.equal(record(atmHome).pid, pid);
+    assert.equal((await whoami(port)).build, await pageBuild(port));
+    atm(['serve', 'stop'], root);
+  });
+
+  test('serve --refresh restarts a server whose own dashboard was rebuilt under the same version', async () => {
+    const atmHome = home();
+    const root = project();
+    const port = ports();
+    const install = pluginAt(PLUGIN_VERSION, 'first-build');
+    assert.equal(install(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const old = await whoami(port);
+    assert.equal(old.build, 'first-build');
+    stamp(install.plugin, PLUGIN_VERSION, 'second-build');
+    const refreshed = install(['serve', '--refresh'], root, atmHome);
+    assert.equal(refreshed.status, 0, refreshed.stderr);
+    assert.match(refreshed.stdout, /restarted/);
+    const now = await whoami(port);
+    assert.notEqual(now.pid, old.pid);
+    assert.equal(now.build, 'second-build');
+    assert.equal(await pageBuild(port), 'second-build');
+    install(['serve', 'stop'], root, atmHome);
+  });
 
   test('serve --refresh restarts a server with an older dashboard, on the same port', async () => {
     const atmHome = home();

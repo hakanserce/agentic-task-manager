@@ -59,6 +59,18 @@ body {
 .title-row h1 {
   margin-bottom: 0;
 }
+/* The ATM logo (Logo.svelte): in the accent colour, next to the title and in About */
+.atm-logo {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.atm-logo svg {
+  display: block;
+}
+#title-logo {
+  margin-right: -4px;
+}
 
 .version-chip {
   font-size: 12px;
@@ -132,6 +144,9 @@ body {
 
 /* About dialog */
 .about .about-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 16px;
   font-weight: 600;
 }

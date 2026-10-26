@@ -6807,7 +6807,7 @@
       "description": "In the **Kanban** view, show a **completion ring** for the tasks currently on the board, i.e. the ones the search and filters leave.\n\n## Do\n- A `Ring.svelte` in the Kanban board's header area: `done / shown` with the percentage inside; a `title` with the counts.\n- Count skipped tasks the same way as the rest of the dashboard (T-162: left out of the percentage, shown separately).\n- Updates as filters change.\n\n## Verify\n- Unit test for the count from a filtered list; e2e: filter by a phase and check the ring's value.\n- Screenshot baselines.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-162"
       ],
@@ -6818,11 +6818,22 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:56:38Z",
+      "updated_at": "2026-10-26T06:30:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:56:38Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "2ac48a76e4e1066edf550d9bae650c44fbf5ef61",
+      "completed_at": "2026-10-26T06:30:11Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T06:30:11Z",
+          "kind": "outcome",
+          "text": "Kanban toolbar shows a 20px completion ring of the tasks the search/filters leave, with 'N% · done of total done · K skipped' beside it (skipped apart, as T-162); a 34px ring with the number inside made the toolbar tall enough to make the Kanban screenshots unstable, so the number sits beside a bare Ring (new bare prop).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-199",

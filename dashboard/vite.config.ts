@@ -5,6 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { stampBuildId } from './build/build-id.ts';
 import { changelogModule } from './build/changelog.ts';
 import { devData } from './build/dev-data.ts';
+import { favicon } from './build/favicon.ts';
 import { helpModule } from './build/help.ts';
 import { injectVersion } from './build/inject-version.ts';
 import { pluginInfoModule } from './build/plugin-info.ts';
@@ -16,6 +17,7 @@ const changelog = fileURLToPath(new URL('../plugin/CHANGELOG.md', import.meta.ur
 const whatsNew = fileURLToPath(new URL('../plugin/WHATS-NEW.md', import.meta.url));
 const help = fileURLToPath(new URL('../docs/help.md', import.meta.url));
 const ownTasks = fileURLToPath(new URL('../.agentic-task-manager', import.meta.url));
+const logo = fileURLToPath(new URL('./src/assets/atm-logo.svg', import.meta.url));
 
 export default defineConfig({
   plugins: [
@@ -28,6 +30,7 @@ export default defineConfig({
     devData(ownTasks),
     viteSingleFile(),
     injectVersion(pluginJson),
+    favicon(logo),
     // After the page is complete, before it is renamed: plugins run their writeBundle hooks in this order
     stampBuildId(),
     renameHtmlOutput('tasks-dashboard.html'),

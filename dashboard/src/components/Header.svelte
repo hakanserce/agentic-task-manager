@@ -3,6 +3,7 @@
   import { dashboard } from '../lib/state.svelte';
   import AppearanceMenu from './AppearanceMenu.svelte';
   import Filters from './Filters.svelte';
+  import Logo from './Logo.svelte';
   import NeedsYouMenu from './NeedsYouMenu.svelte';
   import RefreshMenu from './RefreshMenu.svelte';
   import ActivityWidget from './ActivityWidget.svelte';
@@ -28,6 +29,7 @@
 <header class="topbar" class:scrolled>
   <div class="title-block">
     <div class="title-row">
+      <Logo size={24} id="title-logo" />
       <h1 id="dashboard-title">{title}</h1>
       <ProjectSelector />
       {#if version}

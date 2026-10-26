@@ -29,6 +29,8 @@ export interface ProjectSummary {
   next?: { id: string; name: string }[];
   /** The task completed last (absent before 0.18) */
   last_done?: { id: string; name: string; completed_at: string } | null;
+  /** meta.description, capped at 200 characters; null without one (absent before 0.18) */
+  description?: string | null;
   /** The main worktree's branch and the latest PR recorded on the tasks (absent before 0.18) */
   git?: { branch: string | null; pr: { number: number; url: string | null; state: 'open' | 'merged' } | null };
   needs_you: { review: number; blocked_on_user: number };

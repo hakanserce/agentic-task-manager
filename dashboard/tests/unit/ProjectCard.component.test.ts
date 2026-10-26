@@ -35,15 +35,20 @@ const card = (recent_phases: RecentPhase[] | undefined): ProjectEntry => ({
 const rings = (container: HTMLElement) => [...container.querySelectorAll('.project-card-ring')];
 
 describe('ProjectCard: rings for the recent phases', () => {
-  it('no phases: no ring row; the overall counts stay', () => {
+  it('no phases: the row keeps its place, saying so; the whole count is in its tooltip, not a line', () => {
     const { container } = render(ProjectCard, { project: card([]) });
     expect(container.querySelector('.project-card-rings')).toBeNull();
-    expect(container.querySelector('.project-card-counts')).toHaveTextContent('9 / 18 done · 2 skipped 50%');
+    expect(container.querySelector('.project-card-progress')).toHaveTextContent('No tasks yet');
+    expect(container.querySelector('.project-card-progress')).toHaveAttribute('title', '9 / 18 done · 2 skipped (50%)');
+    expect(container.querySelector('.project-card-counts')).toBeNull();
+    expect(container.querySelector('.project-card-phase')).toBeNull();
   });
 
-  it('a summary without recent_phases (an older server) shows no rings', () => {
+  it('a summary without recent_phases (an older server): no rings, the count and current phase lines of before', () => {
     const { container } = render(ProjectCard, { project: card(undefined) });
     expect(container.querySelector('.project-card-rings')).toBeNull();
+    expect(container.querySelector('.project-card-counts')).toHaveTextContent('9 / 18 done · 2 skipped 50%');
+    expect(container.querySelector('.project-card-phase')).toHaveTextContent('Every phase is finished');
   });
 
   it('one phase: its percentage inside, its number under it, the name and counts in the title and label', () => {
@@ -143,14 +148,18 @@ describe('ProjectCard: the git line and the task finished last (T-208)', () => {
     expect(container.querySelector('.project-card-pr-state')).toHaveClass('open');
   });
 
-  it('a merged PR without a recorded address: plain text; neither branch nor PR: no git line', () => {
+  it('a merged PR without a recorded address: plain text; neither branch nor PR: an empty row in its place', () => {
     const merged = render(ProjectCard, {
       project: withFields({ git: { branch: null, pr: { number: 3, url: null, state: 'merged' } } }),
     });
     expect(text(merged.container.querySelector('.project-card-git'))).toBe('PR #3 merged');
     expect(merged.container.querySelector('a.project-card-pr')).toBeNull();
     const none = render(ProjectCard, { project: withFields({ git: { branch: null, pr: null } }) });
-    expect(none.container.querySelector('.project-card-git')).toBeNull();
+    expect(text(none.container.querySelector('.project-card-git'))).toBe('');
+    expect(none.container.querySelector('.project-card-git .icon')).toBeNull();
+    // An older server (no git field): no row at all
+    const older = render(ProjectCard, { project: card([]) });
+    expect(older.container.querySelector('.project-card-git')).toBeNull();
   });
 
   it('the task finished last replaces the bare time of the last activity', () => {

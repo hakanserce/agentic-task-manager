@@ -3216,8 +3216,18 @@ svg.graph-minimap.hidden {
 }
 /* Up to 4 rings for the recent phases, on one line at any card width: each cell shrinks, and its ring (an SVG with a
    viewBox) scales down with it */
+/* The rings' row: the same height on every card, with or without phases (T-209) */
+.project-card-progress {
+  display: flex;
+  align-items: center;
+  min-height: 70px;
+}
+.project-card-progress > .project-card-note {
+  color: var(--text-muted);
+}
 .project-card-rings {
   display: flex;
+  flex: 1;
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -3327,6 +3337,7 @@ svg.graph-minimap.hidden {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  min-height: 20px;
   margin: 0;
   font-size: 12px;
   white-space: nowrap;

@@ -253,6 +253,19 @@ def recent_phases(tasks, kinds, open_phases, names):
     return result
 
 
+DESCRIPTION_CAP = 200
+
+
+def description(meta):
+    """meta.description (an optional line about the project, set with atm init --meta-file), capped at 200 characters
+    for the overview, where it is the project name's tooltip (T-209); None without one."""
+    text = meta.get("description") if isinstance(meta, dict) else None
+    if not isinstance(text, str) or not text.strip():
+        return None
+    text = text.strip()
+    return text if len(text) <= DESCRIPTION_CAP else text[: DESCRIPTION_CAP - 1] + "…"
+
+
 def git_summary(paths, tasks):
     """The project's git line for its card (T-206): the main worktree's branch (read from .git/HEAD, no git process),
     and the latest PR recorded on its tasks (`atm pr`; the highest number), `merged` once its tasks have merged_at.
@@ -365,6 +378,7 @@ def project_summary(paths):
         },
         "needs_you_tasks": needs_you_tasks,
         "git": git_summary(paths, tasks),
+        "description": description(data.get("meta")),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }

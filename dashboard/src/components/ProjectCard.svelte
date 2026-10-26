@@ -17,8 +17,15 @@
   const needItems = $derived(project.missing ? [] : (s?.needs_you_tasks ?? []));
   const counted = $derived(s ? s.total - s.skipped : 0);
   const phase = $derived(s?.current_phase);
-  // An older server sends no recent_phases: no rings then
+  // An older server sends no recent_phases: no rings then, but the count and current phase lines of before
+  const hasRings = $derived(s?.recent_phases !== undefined);
   const phases = $derived(s?.recent_phases ?? []);
+  // The whole project's count, in the rings' tooltip
+  const overall = $derived(
+    s ? `${s.done} / ${counted} done${s.skipped ? ` · ${s.skipped} skipped` : ''} (${s.percent}%)` : '',
+  );
+  // meta.description, only on hover over the name (T-209)
+  const nameTitle = $derived([project.name, s?.description, project.path].filter(Boolean).join('\n'));
   // What's going on, by task name (T-207): the agents' tasks, or else what the loop takes next. Two lines at most, so
   // the cards of a row line up; more work than that ends the second line with "+N more". A server before 0.18 sends
   // neither: the foot then counts the agents instead.
@@ -31,8 +38,9 @@
   const git = $derived(s?.git);
   const lastDone = $derived(s?.last_done);
 
-  // Completions per day over the last 14 days: thin bars, like the Activity widget
-  const W = 112;
+  // Completions per day over the last 14 days: thin bars, like the Activity widget (narrow, so the last finished
+  // task's name has room beside it)
+  const W = 84;
   const H = 20;
   const days = $derived(s?.completions_14d ?? []);
   const max = $derived(Math.max(1, ...days));
@@ -43,13 +51,11 @@
   <div class="project-card-head">
     <ProjectLogo {project} size={24} />
     {#if project.missing}
-      <h3 class="project-card-name" title="{project.name}&#10;{project.path}">{project.name}</h3>
+      <h3 class="project-card-name" title={nameTitle}>{project.name}</h3>
     {:else}
       <h3 class="project-card-name">
-        <button
-          class="project-card-open"
-          title="{project.name}&#10;{project.path}"
-          onclick={() => dashboard.openProject(project.id)}>{project.name}</button
+        <button class="project-card-open" title={nameTitle} onclick={() => dashboard.openProject(project.id)}
+          >{project.name}</button
         >
       </h3>
     {/if}
@@ -79,46 +85,54 @@
   {:else if !s}
     <p class="project-card-note">No numbers yet</p>
   {:else}
-    <div class="project-card-progress">
-      {#if phases.length}
-        <!-- One ring per recent phase, always on one line: the rings shrink to fit the card -->
-        <ul class="project-card-rings" aria-label="Recent phases">
-          {#each phases as p (p.id)}
-            {@const name = `Phase ${p.id}${p.name ? ` · ${p.name}` : ''}`}
-            <li class="project-card-ring" title="{name}: {p.done} / {p.total} done">
-              <Ring
-                ratio={p.total ? p.done / p.total : 0}
-                color={phaseColor(p.id)}
-                size={48}
-                stroke={5}
-                ariaLabel="{name}: {p.done} of {p.total} done"
-              />
-              <span class="project-card-ring-label">Phase {p.id}</span>
-            </li>
-          {/each}
-        </ul>
-      {/if}
+    {#if hasRings}
+      <!-- The approved layout (T-209): one ring per recent phase, always on one line (the rings shrink to fit the
+           card), in a row of the same height on every card; the whole project's count is in its tooltip -->
+      <div class="project-card-progress" title={overall}>
+        {#if phases.length}
+          <ul class="project-card-rings" aria-label="Recent phases; {overall}">
+            {#each phases as p (p.id)}
+              {@const name = `Phase ${p.id}${p.name ? ` · ${p.name}` : ''}`}
+              <li class="project-card-ring" title="{name}: {p.done} / {p.total} done">
+                <Ring
+                  ratio={p.total ? p.done / p.total : 0}
+                  color={phaseColor(p.id)}
+                  size={48}
+                  stroke={5}
+                  ariaLabel="{name}: {p.done} of {p.total} done"
+                />
+                <span class="project-card-ring-label">Phase {p.id}</span>
+              </li>
+            {/each}
+          </ul>
+        {:else}
+          <p class="project-card-note">No tasks yet</p>
+        {/if}
+      </div>
+    {:else}
+      <!-- A server before 0.17 (no recent_phases): the whole project's count and the current phase, as before -->
       <div class="project-card-counts">
         <span class="project-card-done"
           >{s.done} / {counted} done{#if s.skipped}&nbsp;· {s.skipped} skipped{/if}</span
         >
         <span class="project-card-percent">{s.percent}%</span>
       </div>
-    </div>
-
-    <!-- One line: a long phase name is cut off (the full one in the title), its counts stay visible -->
-    <p
-      class="project-card-phase"
-      title={phase ? `Phase ${phase.id}${phase.name ? ` · ${phase.name}` : ''} — ${phase.done} / ${phase.total}` : null}
-    >
-      {#if phase}
-        <span class="project-card-phase-name"
-          >Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if}</span
-        ><span class="project-card-phase-count">&nbsp;— {phase.done} / {phase.total}</span>
-      {:else}
-        Every phase is finished
-      {/if}
-    </p>
+      <!-- One line: a long phase name is cut off (the full one in the title), its counts stay visible -->
+      <p
+        class="project-card-phase"
+        title={phase
+          ? `Phase ${phase.id}${phase.name ? ` · ${phase.name}` : ''} — ${phase.done} / ${phase.total}`
+          : null}
+      >
+        {#if phase}
+          <span class="project-card-phase-name"
+            >Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if}</span
+          ><span class="project-card-phase-count">&nbsp;— {phase.done} / {phase.total}</span>
+        {:else}
+          Every phase is finished
+        {/if}
+      </p>
+    {/if}
 
     {#if byName}
       <ul
@@ -143,10 +157,11 @@
       </ul>
     {/if}
 
-    {#if git?.branch || git?.pr}
-      <!-- The branch and the latest PR recorded on the tasks (T-208); no CI state -->
+    {#if git}
+      <!-- The branch and the latest PR recorded on the tasks (T-208); no CI state. The row keeps its place when there's
+           neither, so the cards of a row line up (T-209) -->
       <p class="project-card-git">
-        <Icon name="git-branch" size={13} />
+        {#if git.branch || git.pr}<Icon name="git-branch" size={13} />{/if}
         {#if git.branch}<span class="project-card-branch" title="Branch {git.branch}">{git.branch}</span>{/if}
         {#if git.pr}
           {#if git.branch}<span class="muted">·</span>{/if}

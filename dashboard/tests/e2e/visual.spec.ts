@@ -363,6 +363,11 @@ for (const mode of ['dark', 'light'] as const) {
       mask: [page.locator('#version-chip'), page.locator('#footer-version')],
       stylePath: path.join(import.meta.dirname, 'screenshot.css'),
     });
+    // The narrowest cards (two columns of about 280 px): every section still fits and the cards line up (T-209)
+    await page.setViewportSize({ width: 640, height: 900 });
+    await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-narrow-${mode}.png`, {
+      mask: [page.locator('#version-chip')],
+    });
   });
 }
 

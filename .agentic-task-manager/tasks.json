@@ -7503,7 +7503,7 @@
       "description": "Part of the project-card layout approved in review (`docs/project-cards-proposal.md` §4).\n\nAdd two lines to the overview's project cards:\n- **git:** a branch icon, the branch and the latest PR (\"dev/phase-17 · PR #12 open\" or \"merged\"), from the summary's `git`. The PR links to its URL. The line is left out when there's neither.\n- **last finished:** a check, the ID and name, and \"· 12 m ago\" (`last_done`), next to the existing 14-day sparkline. It replaces today's bare \"12 m ago\".\n\nOne line each, with an ellipsis and the full text in `title`. Component and e2e tests; overview screenshots (darwin; git rm the matching -linux.png).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-205",
         "T-206"
@@ -7515,11 +7515,22 @@
         "dashboard/tests/e2e/projects.spec.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T08:47:13Z",
+      "updated_at": "2026-10-26T08:51:20Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T08:47:13Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "02f6dbaaeeba2f29b45706d8d973eb7baedc39db",
+      "completed_at": "2026-10-26T08:51:20Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T08:51:20Z",
+          "kind": "outcome",
+          "text": "Cards show the branch and latest PR (linked, open/merged; left out when neither) and the task finished last with its time, replacing the bare time; older servers keep the last activity.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-209",
@@ -7534,7 +7545,7 @@
       "description": "Finish the project-card layout approved in review (`docs/project-cards-proposal.md` §4; questions 1, 4 and 5 follow its recommendations).\n\n- **Order:** head (logo, name, \"needs you\" chip), recent-phase rings, working/next, git, last finished with the sparkline.\n- **Fixed section heights,** so cards in a row line up even when a section is empty.\n- **The project-wide count** (\"9 / 18 done · 2 skipped\", 50%) moves into the rings' tooltip; the small line under the rings goes.\n- **`meta.description`:** a new, optional meta key, set with `atm init --meta-file`. Document it in `plugin/CLAUDE.md`'s meta list, and `atm check` accepts it. It is shown only as the project name's tooltip, from a `description` field in the summary (capped at 200 characters).\n- **Tests:** screenshots at 280 px and wide, in light and dark (darwin; git rm the matching -linux.png); an e2e test that cards in a row have equal section offsets.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-207",
         "T-208",
@@ -7552,9 +7563,11 @@
         "dashboard/tests/e2e/projects.spec.ts"
       ],
       "created_at": "2026-10-26T06:44:16Z",
-      "updated_at": "2026-10-26T06:44:16Z",
+      "updated_at": "2026-10-26T08:51:21Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T08:51:21Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

@@ -164,6 +164,7 @@ logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_
 | `working` | those claims, oldest first: `{ task, name, agent, branch }` (the task's name from this `tasks.json`; `branch` as the claim recorded it, `null` outside git) |
 | `next` | up to 2 tasks `atm next` would hand out, in its order (to do, dependencies done, not claimed, not done or waiting in another worktree; lowest phase, most urgent priority, lowest ID): `{ id, name }` |
 | `last_done` | the done-kind task with the latest `completed_at`: `{ id, name, completed_at }`, or `null` |
+| `description` | `meta.description` (an optional line about the project), trimmed and capped at 200 characters; `null` without one. The card shows it only as the name's tooltip |
 | `git.branch` | the main worktree's checked-out branch (from `.git/HEAD`; a detached HEAD's short SHA), or `null` outside git |
 | `git.pr` | the latest PR recorded on the tasks (`atm pr`; the highest number): `{ number, url, state }`, `url` as recorded (or `null`), `state` `"merged"` once a task of it has `merged_at` (`atm merged`), else `"open"`; `null` without one. No forge is asked, and there is no CI state |
 | `needs_you.review` | review-kind tasks |

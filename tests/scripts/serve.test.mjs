@@ -203,6 +203,7 @@ describe('serve', () => {
         { id: 'T-6', name: 'T-6', reason: 'blocked' },
       ],
       git: { branch: 'main', pr: null },
+      description: null,
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     });
@@ -269,7 +270,7 @@ describe('serve', () => {
     const task = (id, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status: 'done', ...extra });
     const url = (n) => `https://github.com/acme/demo/pull/${n}`;
     const root = project({
-      meta: { id: 'dddd4444', project: 'Git' },
+      meta: { id: 'dddd4444', project: 'Git', description: '  A tool for agents. '.repeat(20) },
       tasks: [
         task('T-1', { pr: { number: 3, url: url(3) }, merged_at: '2026-03-01T10:00:00Z' }),
         task('T-2', { pr: { number: 5 } }),
@@ -282,7 +283,12 @@ describe('serve', () => {
     const api = `http://localhost:${port}/api/projects`;
     const first = await fetch(api);
     const gitOf = (body) => body.projects.find((p) => p.id === 'dddd4444').summary.git;
-    assert.deepEqual(gitOf(await first.json()), { branch: 'main', pr: { number: 5, url: url(5), state: 'open' } });
+    const body = await first.json();
+    assert.deepEqual(gitOf(body), { branch: 'main', pr: { number: 5, url: url(5), state: 'open' } });
+    // meta.description, trimmed and capped at 200 characters (T-209: the name's tooltip on the card)
+    const summaryDescription = body.projects.find((p) => p.id === 'dddd4444').summary.description;
+    assert.equal(summaryDescription.length, 200);
+    assert.ok(summaryDescription.startsWith('A tool for agents.') && summaryDescription.endsWith('…'));
     git(['checkout', '-q', '-b', 'feature'], root);
     const switched = await fetch(api, { headers: { 'If-None-Match': first.headers.get('etag') } });
     assert.equal(switched.status, 200);

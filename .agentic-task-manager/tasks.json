@@ -8700,7 +8700,7 @@
       "description": "§4.2 of `docs/security-review.md`. Write the schedule into `docs/security-architecture.md` and wire it up.\n\n- **Every PR (CI)**: the hostile-repo suite, the header and link checks, the skills-template check, build freshness, Dependabot alerts.\n- **Before each release**: run the agent sandbox; a checklist item in `CLAUDE.md` *Versions* that the threat model covers any new entry point.\n- **Periodically** (each quarter, or when Claude Code's permission model changes): a review like `docs/security-review.md` against the threat model, and a pass over pinned action and image versions. Decide with the user how to be reminded (e.g. a scheduled workflow that opens an issue).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_review",
+      "status": "in_progress",
       "dependencies": [
         "T-234",
         "T-235"
@@ -8711,21 +8711,25 @@
         ".github/workflows/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:05:19Z",
+      "updated_at": "2026-10-26T23:12:31Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "started_at": "2026-10-26T23:04:30Z",
-      "started_by": "claude:e5ea9db0",
-      "commit": "55d789e6884f4aae23371d8f3969eed1236e04e8",
-      "review_requested_at": "2026-10-26T23:05:19Z",
       "notes": [
         {
           "at": "2026-10-26T23:05:19Z",
           "kind": "review",
           "text": "Schedule in §3 of `docs/security-architecture.md`: CI on every PR, the agent sandbox and an architecture update before merging agent-facing PRs (checklist in `CLAUDE.md` Versions), and a quarterly issue from `.github/workflows/security-review-reminder.yml`. Question for Hakan: is the quarterly issue the right reminder?",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T23:12:30Z",
+          "kind": "rejection",
+          "text": "Approved; continuing with: record the reminder decision in §3",
+          "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "started_at": "2026-10-26T23:12:31Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-237",
@@ -8819,7 +8823,7 @@
       "description": "`docs/progress-tab-review.md` §0 (approved: option 2).\n\n- A banner at the top of the Progress tab whenever search or a filter is on: *Showing 12 of 236 tasks: label security · Clear filters*.\n- The **status** and **stage** filters are not applied on this tab; the banner says *Status filter not applied here* when one is set.\n- Titles and tooltips say *matching tasks* when filtered.\n- Phase estimates (*Finished by*) are always computed on all tasks, like the pace; their tooltip says so. The slice gets its own counts, bars and burndown lines.\n\n## Verify\n\ne2e: a label filter shows the banner and changes the counts but not a phase's *Finished by*; a status filter is named in the banner and doesn't change the burndown.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-238"
       ],
@@ -8829,11 +8833,22 @@
         "dashboard/src/lib/forecast.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:08:28Z",
+      "updated_at": "2026-10-26T23:12:15Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:08:28Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "23c258f5431c4636f426f8243f5781ed40c3f191",
+      "completed_at": "2026-10-26T23:12:15Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T23:12:15Z",
+          "kind": "outcome",
+          "text": "Progress tab: a banner whenever search or filters pick a slice (*Showing N of M tasks: …*, Clear filters); the status and stage filters dont apply here and the banner says so; the slice keeps its counts and lines but each phases *Finished by* is the whole phases (`withWholePhaseEstimates`), with a tooltip. Unit and e2e tests; two older tests updated to the approved behaviour.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-240",

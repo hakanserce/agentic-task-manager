@@ -106,8 +106,8 @@ The schedule (T-236):
   that change only the dashboard or atm-cli don't need the sandbox run: their invariants are covered by CI.
 - **Each quarter**: `.github/workflows/security-review-reminder.yml` opens an issue with the checklist: a review
   against this document (like `docs/security-review.md`), the agent sandbox, the pinned image digests, Dependabot,
-  and whether Claude Code's permission model changed. Also whenever that model changes. *(T-236 question: is a
-  quarterly GitHub issue the reminder you want, or would you rather have something else, e.g. a calendar event?)*
+  and whether Claude Code's permission model changed. Also whenever that model changes. (The quarterly issue as the
+  reminder was approved with T-236.)
 
 ### 3.1 The sandbox (T-233, approved)
 

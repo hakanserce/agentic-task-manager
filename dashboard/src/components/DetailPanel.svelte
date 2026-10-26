@@ -5,7 +5,7 @@
   import { actorsLine, earlierAttempts } from '../lib/actors';
   import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
-  import { parseMarkdown } from '../lib/markdown';
+  import { parseInline, parseMarkdown } from '../lib/markdown';
   import { taskTimes } from '../lib/work';
   import { commitRef } from '../lib/repo';
   import RepoRef from './RepoRef.svelte';
@@ -134,7 +134,9 @@
           <div class="value" style="font-size:13px">
             <div><strong>{reviewSummary(review)}</strong></div>
             <div style="color:var(--text-muted)">Since {new Date(review.since).toLocaleString()}</div>
-            {#if review.note}<div class="review-note">{review.note.text}</div>{/if}
+            {#if review.note}<div class="review-note">
+                <Markdown blocks={parseMarkdown(review.note.text)} idPrefix="review-{task.id}-" />
+              </div>{/if}
           </div>
         </div>
       {/if}
@@ -148,7 +150,7 @@
             {/if}
             {#if block.questions.length}
               <ol class="block-questions">
-                {#each block.questions as question, i (i)}<li>{question}</li>{/each}
+                {#each block.questions as question, i (i)}<li><Markdown inline={parseInline(question)} /></li>{/each}
               </ol>
               <div style="color:var(--text-muted)">
                 Answer with <code>atm unblock {task.id} --answer "…"</code>, one per question.
@@ -192,7 +194,9 @@
                     >{note.by ? `${note.by} · ` : ''}{note.at ? new Date(note.at).toLocaleString() : ''}</span
                   >
                 </div>
-                <div class="note-text">{note.text}</div>
+                <div class="note-text">
+                  <Markdown blocks={parseMarkdown(note.text)} idPrefix="note-{task.id}-{i}-" />
+                </div>
               </li>
             {/each}
           </ul>

@@ -4,6 +4,32 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.19.0] - 2026-10-26
+
+**Insights reviewed, a security review, and dashboard polish.** Phase 19 reviewed the Progress tab, the Activity
+popup, project stats and an All Projects Kanban with the user (`docs/progress-tab-review.md`,
+`docs/activity-popup-review.md`, `docs/project-stats-proposal.md`, `docs/all-projects-kanban-proposal.md`); their
+implementation is phase 21. The security review (`docs/security-review.md`: threat model, 19 findings) added phase 20.
+
+### Added
+- **Markdown in notes, questions and answers.** Notes, the review note and block questions in the detail panel render
+  the same Markdown subset as descriptions (headings, lists, code, emphasis, safe links; HTML stays text). Card
+  tooltips show the plain text.
+- **Skills write Markdown.** `/atm:create-tasks` writes task descriptions in Markdown when it helps; `/atm:do-task`
+  and `/atm:loop-tasks` mention `atm edit --description-file` and Markdown in notes.
+- **Phase filter with many phases.** With more than 6 phases, the filter panel's Phase group lists *All*, the active
+  phases (unfinished, and the one finished last) and any selected phase; *+ N finished* / *Hide finished* shows the
+  rest, saved with the view (`filterFinishedPhases`).
+- **Labels on Kanban cards** stay on one line: the first two, cut at about 14 characters, then a *+N* chip whose
+  popover lists every label (hover or focus; a click pins it without opening the task).
+
+### Fixed
+- **Activity popup:** the Idle number fits on one line, and its colour bar became a swatch of the charts' idle
+  hatching, with a tooltip.
+- **About dialog:** on All projects it no longer shows the last project's section; in a project it names the project,
+  with its logo.
+- **Kanban columns** reach down to the bottom of the window instead of stopping at 640 px; each scrolls on its own.
+
 ## [0.18.0] - 2026-10-26
 
 **Project cards that say what's going on.** The layout reviewed in `docs/project-cards-proposal.md`.

@@ -72,9 +72,10 @@
       >agents busy on average · {series.workingNow} now</span
     >
   </div>
-  <div class="kpi" class:kpi-warn={series.idleMs > 0}>
+  <!-- The swatch is the idle hatching of the charts below, so the number and the stretches read as one thing -->
+  <div class="kpi" id="kpi-idle" title="Time in this period when no agent was working on a task: hatched in the charts">
     <span class="kpi-value">{series.idleMs ? formatMinutes(series.idleMs / 60_000) : '–'}</span><span class="kpi-label"
-      >idle (no agent working)</span
+      >{#if series.idleMs}<span class="idle-swatch"></span>{/if}idle (no agent working)</span
     >
   </div>
 </div>

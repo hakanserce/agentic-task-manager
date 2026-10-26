@@ -36,6 +36,13 @@ export function plainText(inlines: Inline[]): string {
   return inlines.map((i) => (i.t === 'text' || i.t === 'code' ? i.text : plainText(i.children))).join('');
 }
 
+/** The text of a Markdown string without its markup, one line per block: for tooltips, which can't show markup. */
+export function markdownPlainText(src: string): string {
+  return parseMarkdown(src)
+    .map((b) => (b.t === 'code' ? b.text : b.t === 'list' ? b.items.map(plainText).join('\n') : plainText(b.children)))
+    .join('\n');
+}
+
 /** Inline markup of one line or paragraph. Unclosed markers are left as text. */
 export function parseInline(src: string): Inline[] {
   const out: Inline[] = [];

@@ -189,6 +189,49 @@ test.describe('Kanban board', () => {
     await expect(column(page, 'done').locator('.kanban-card')).toHaveCount(20);
   });
 
+  test('columns reach down to the bottom of the window, and scroll inside (T-237)', async ({ page, tasksServer }) => {
+    for (const height of [1600, 720]) {
+      await page.setViewportSize({ width: 1280, height });
+      await openKanban(page, tasksServer, 'kanban');
+      const done = column(page, 'done');
+      const box = (await done.boundingBox())!;
+      expect(height - (box.y + box.height)).toBeGreaterThanOrEqual(0);
+      expect(height - (box.y + box.height)).toBeLessThanOrEqual(height > 1000 ? 32 : 400);
+      const cards = done.locator('.kanban-cards');
+      expect(await cards.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    }
+  });
+
+  test('many long labels stay on one line; +N shows them all without opening the task (T-256)', async ({
+    page,
+    tasksServer,
+  }) => {
+    const data = loadFixture('kanban');
+    const labels = ['security', 'dashboard-performance-improvements', 'interactive', 'spike-2', 'ux'];
+    const id = 'T-028';
+    data.tasks.find((t) => t.id === id)!.labels = labels;
+    await openKanban(page, tasksServer, data);
+
+    // One line of chips, not three, and inside the card
+    const row = (await card(page, id).locator('.label-chips').boundingBox())!;
+    const box = (await card(page, id).boundingBox())!;
+    expect(row.height).toBeLessThan(24);
+    expect(row.x + row.width).toBeLessThanOrEqual(box.x + box.width);
+    const chips = card(page, id).locator('.label-chips > span.label-chip');
+    await expect(chips).toHaveCount(2);
+    const more = card(page, id).locator('.label-more');
+    await expect(more).toHaveText('+3');
+
+    await more.hover();
+    await expect(page.locator('.label-popover .label-chip')).toHaveCount(5);
+    await more.click();
+    await expect(page.locator('#detail-overlay.open')).toHaveCount(0);
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.label-popover')).toBeVisible(); // pinned
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.label-popover')).toHaveCount(0);
+  });
+
   test('filters apply; a status filter limits the columns', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await openFilters(page);

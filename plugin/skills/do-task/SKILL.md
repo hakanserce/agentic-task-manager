@@ -111,7 +111,8 @@ alive while it runs and exits with the command's exit code.
 
 While you work:
 - **A later task needs to change** (what you built changes its scope, its files or its dependencies): update it with
-  `atm edit <id>` (`--description`, `--add-dep`/`--remove-dep`, `--add-file`/`--remove-file`, `--add-label`, ...).
+  `atm edit <id>` (`--description`, or `--description-file <file>` for several lines, `--add-dep`/`--remove-dep`,
+  `--add-file`/`--remove-file`, `--add-label`, ...). Descriptions are Markdown, as `/atm:create-tasks` writes them.
   Its status changes only through the status commands.
 - **You can't go on without a decision** (two reasonable designs, a missing requirement, a credential): ask instead of
   guessing. `atm block $TASK_ID --on user --question "<one question>" [--question ...]` releases your claim and shows
@@ -122,6 +123,10 @@ While you work:
   `handoff` for whoever takes the task next.
 - **Something worth remembering** that isn't the outcome: `atm note $TASK_ID "<text>"` (notes are at most 500
   characters; put longer text in a file in the repository).
+
+Notes, questions, answers and reasons (`--note`, `--question`, `--answer`, `--reason`, `atm note`) show on the
+dashboard as Markdown: put paths, commands and identifiers in `` `code` `` and use `*italics*` or `**bold**` where
+they help; keep them short, without headings.
 
 **Answering a block** (when the user or an agent decides): `atm unblock <id> --answer "<answer>" [--answer ...]`, one
 answer per question, in order. The task goes back to to do with the questions and answers kept as an `answer` note,

@@ -1,5 +1,13 @@
 <script lang="ts">
-  import { FILTER_GROUPS, facetCounts, filterOptions, isActive, type FilterGroup } from '../lib/filters';
+  import {
+    FILTER_GROUPS,
+    facetCounts,
+    filterOptions,
+    isActive,
+    shownPhaseOptions,
+    type FilterGroup,
+  } from '../lib/filters';
+  import { activePhases, forecastPhases } from '../lib/forecast';
   import { hasStage } from '../lib/stages';
   import { dashboard } from '../lib/state.svelte';
   import Icon from './Icon.svelte';
@@ -35,6 +43,19 @@
         (g !== 'agent' || options.agent.length > 1),
     ),
   );
+  // With many phases, the Phase group lists the active ones (as on the Progress tab) and any selected one; a toggle
+  // shows the finished ones too
+  const activePhaseValues = $derived(
+    new Set(
+      activePhases(forecastPhases(dashboard.base, Date.now(), dashboard.base, dashboard.vocab).phases).map((p) =>
+        String(p.phase),
+      ),
+    ),
+  );
+  const phaseOptions = $derived(
+    shownPhaseOptions(options.phase, activePhaseValues, dashboard.filters.phase, dashboard.filterFinishedPhases),
+  );
+  const optionsOf = (group: FilterGroup) => (group === 'phase' ? phaseOptions.shown : options[group]);
   // How many tasks each button would show, given the search and the selections in the other groups
   const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab));
   let open = $state(false);
@@ -124,7 +145,7 @@
           <div class="filter-group" data-group={group}>
             <div class="filter-group-label">{LABELS[group]}</div>
             <div class="filter-group-buttons">
-              {#each [{ value: 'all', label: 'All' }, ...options[group]] as option (option.value)}
+              {#each [{ value: 'all', label: 'All' }, ...optionsOf(group)] as option (option.value)}
                 {@const n = countOf(group, option.value)}
                 {@const active = isActive(dashboard.filters, group, option.value)}
                 <button
@@ -141,6 +162,16 @@
                   ></button
                 >
               {/each}
+              {#if group === 'phase' && (dashboard.filterFinishedPhases ? phaseOptions.finished > 0 : phaseOptions.hidden > 0)}
+                <button
+                  class="filter-more"
+                  id="filter-finished-phases"
+                  aria-expanded={dashboard.filterFinishedPhases}
+                  title="Finished phases, except the one that finished last"
+                  onclick={() => (dashboard.filterFinishedPhases = !dashboard.filterFinishedPhases)}
+                  >{dashboard.filterFinishedPhases ? 'Hide finished' : `+ ${phaseOptions.hidden} finished`}</button
+                >
+              {/if}
             </div>
           </div>
         {/each}

@@ -105,6 +105,9 @@ errors (the message says what).
    A task is never done with its work uncommitted.
 5. Give up with `atm fail <id> --reason "..."`; stop early with `atm release <id> --note "<handoff>"`. A task marked
    done by mistake goes back with `atm reopen <id> --reason "..."`; never change a status by editing `tasks.json`.
+   Notes, questions, answers and reasons show on the dashboard as Markdown: paths, commands and identifiers in
+   `` `code` ``, short, without headings. A later task's description (`atm edit <id> --description-file <file>`) is
+   Markdown too, as `/atm:create-tasks` writes it.
 6. **Statuses have kinds.** A project may name its own statuses; each has one of six kinds (`todo`, `active`,
    `review`, `blocked`, `done`, `skipped`) and atm works by kind, so "to do", "in review" and "done" below mean any
    status of that kind. When a kind has several statuses (e.g. `awaiting_user` and `awaiting_agent`, both `review`),

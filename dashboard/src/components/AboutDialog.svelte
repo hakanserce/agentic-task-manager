@@ -4,7 +4,16 @@
   import { dashboard } from '../lib/state.svelte';
   import Dialog from './Dialog.svelte';
   import Logo from './Logo.svelte';
+  import ProjectLogo from './ProjectLogo.svelte';
 
+  // The open project: its name as the title bar shows it, and its logo from api/projects. Only on a project's page:
+  // elsewhere (the overview) dashboard.vocab and .meta still hold the last project that was open, stale here.
+  const project = $derived.by(() => {
+    const route = dashboard.route;
+    if (route.page !== 'project') return undefined;
+    const listed = dashboard.projects.find((p) => p.id === route.id);
+    return { id: route.id, name: dashboard.projectName, logo: listed?.logo };
+  });
   // The project's vocabularies, so a user can see what the agents will use (D-1.4)
   const vocab = $derived(dashboard.vocab);
   const phases = $derived([...vocab.phaseNames].sort(([a], [b]) => a - b));
@@ -24,23 +33,27 @@
     <dt>Source</dt>
     <dd><a href={pluginInfo.repository} target="_blank" rel="noopener noreferrer">{pluginInfo.repository}</a></dd>
   </dl>
-  <h3 class="about-section-title">This project</h3>
-  <dl class="about-facts" id="about-vocab">
-    <dt>Statuses</dt>
-    <dd>{vocab.statuses.map((s) => `${s.label} (${s.kind})`).join(' · ')}</dd>
-    <dt>Phases</dt>
-    <dd>{phases.length ? phases.map(([id, name]) => `${id} ${name}`).join(' · ') : 'Numbered, without names'}</dd>
-    <dt>Types</dt>
-    <dd>{vocab.types.map((t) => t.label).join(' · ')}</dd>
-    <dt>Priorities</dt>
-    <dd>
-      {vocab.priorities
-        .map((p) => `${p.id} ${p.label}${p.id === vocab.defaultPriority ? ' (default)' : ''}`)
-        .join(' · ')}
-    </dd>
-    {#if workflow}
-      <dt>Workflow</dt>
-      <dd>{workflow}</dd>
-    {/if}
-  </dl>
+  {#if project}
+    <h3 class="about-section-title" id="about-project">
+      <ProjectLogo {project} size={20} /><span>{project.name}</span>
+    </h3>
+    <dl class="about-facts" id="about-vocab">
+      <dt>Statuses</dt>
+      <dd>{vocab.statuses.map((s) => `${s.label} (${s.kind})`).join(' · ')}</dd>
+      <dt>Phases</dt>
+      <dd>{phases.length ? phases.map(([id, name]) => `${id} ${name}`).join(' · ') : 'Numbered, without names'}</dd>
+      <dt>Types</dt>
+      <dd>{vocab.types.map((t) => t.label).join(' · ')}</dd>
+      <dt>Priorities</dt>
+      <dd>
+        {vocab.priorities
+          .map((p) => `${p.id} ${p.label}${p.id === vocab.defaultPriority ? ' (default)' : ''}`)
+          .join(' · ')}
+      </dd>
+      {#if workflow}
+        <dt>Workflow</dt>
+        <dd>{workflow}</dd>
+      {/if}
+    </dl>
+  {/if}
 </Dialog>

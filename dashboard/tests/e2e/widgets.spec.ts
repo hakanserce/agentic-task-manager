@@ -149,6 +149,32 @@ test.describe('Activity widget', () => {
     await expect(page.locator('.kpi').first()).toHaveText('3tasks completed');
   });
 
+  test('the key numbers stay on one line, and the idle one is keyed to the hatching', async ({ page, tasksServer }) => {
+    // Nobody working now, three days on: the idle time runs to "75 h …", which used to put its "m" on a line of its own
+    const data = loadFixture('agents');
+    for (const t of data.tasks) if (t.status === 'in_progress') t.status = 'todo';
+    tasksServer.use(data);
+    await page.clock.setFixedTime(new Date('2026-04-04T11:09:00Z'));
+    for (const width of [1280, 560]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.reload();
+      await activityPill(page).click();
+      const idle = page.locator('#kpi-idle');
+      await expect(idle.locator('.kpi-value')).toHaveText(/^\d+ h \d+ m$/);
+      await expect(idle.locator('.idle-swatch')).toHaveCount(1);
+      for (const value of await page.locator('.kpi-value').all()) {
+        // One line high, and nothing spilling out of its box (it's a flex item, so a block)
+        const fits = await value.evaluate(
+          (el) =>
+            el.scrollWidth <= el.clientWidth &&
+            el.getBoundingClientRect().height < 2 * parseFloat(getComputedStyle(el).fontSize),
+        );
+        expect(fits, `${await value.textContent()} at ${width} px`).toBe(true);
+      }
+      await page.keyboard.press('Escape');
+    }
+  });
+
   test('is left out when nothing has been completed yet', async ({ page, tasksServer }) => {
     const data = loadFixture('agents');
     for (const t of data.tasks) t.status = 'todo';

@@ -187,7 +187,7 @@ atm add --json-file <that file> --json [--agent "<the user's name>"]
     "type": "infra",
     "priority": "P0",
     "labels": ["api"],
-    "description": "Create the tables users and sessions in db/schema.sql as described in docs/PRD.md §3: ...",
+    "description": "Create the tables `users` and `sessions` in `db/schema.sql` as described in `docs/PRD.md` §3.\n\n## Tables\n- `users`: ...\n- `sessions`: ...\n\n## Tests\nA migration test in `db/schema.test.ts`.",
     "requirements": ["FR-1.1"],
     "use_cases": ["UC-001"],
     "files": ["db/schema.sql"]
@@ -218,12 +218,18 @@ atm add --json-file <that file> --json [--agent "<the user's name>"]
 Rules for task generation:
 - Every task has a `priority` from the confirmed priorities, and the confirmed `labels` where they apply
 - Every task description should be specific enough that an agent can execute it without further clarification
+- Write descriptions in **Markdown** when it helps the reader; the dashboard renders it. Paths, commands and
+  identifiers in `` `code` ``; for a longer description, short `##` sections (e.g. *Change*, *Tests*), lists for steps
+  or options, and fenced code blocks for snippets; `**bold**` and `*italics*` sparingly. Keep a one-sentence task
+  plain. The dashboard renders `#`–`####` headings, paragraphs, `-`/`1.` lists, fenced code, `>` quotes, inline code,
+  bold, italics and `[links](https://…)`; anything else (tables, HTML) shows as text
 - `files` lists files that will be created or modified
 - `requirements` and `use_cases` can be left out if not applicable
 
-**Changing existing tasks** (when extending a project): `atm edit <id>` with `--description`, `--phase`,
-`--priority`, `--add-dep`/`--remove-dep`, `--add-label`/`--remove-label`, `--add-file`/`--remove-file`. Statuses
-change only through the status commands, never here.
+**Changing existing tasks** (when extending a project): `atm edit <id>` with `--description` (or
+`--description-file <file>` for a multi-line Markdown description), `--phase`, `--priority`, `--add-dep`/`--remove-dep`,
+`--add-label`/`--remove-label`, `--add-file`/`--remove-file`. Statuses change only through the status commands, never
+here.
 
 Then check the result:
 

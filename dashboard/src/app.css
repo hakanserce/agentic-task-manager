@@ -271,6 +271,14 @@ body {
   color: var(--text-muted);
   margin: 20px 0 8px;
 }
+/* The open project's section is headed by its name, with its logo or monogram */
+.about #about-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
 .about .about-facts {
   display: grid;
   grid-template-columns: max-content 1fr;
@@ -363,6 +371,20 @@ h1 {
 .filter-btn:hover {
   border-color: var(--accent);
   color: var(--text);
+}
+
+/* Shows or hides the finished phases in the Phase group (Filters.svelte): a link-like button after the options */
+.filter-more {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--accent);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.filter-more:hover {
+  border-color: var(--accent);
 }
 .filter-btn.active {
   background: var(--accent);
@@ -656,22 +678,25 @@ h1 {
   transition: stroke-dasharray 0.6s ease;
 }
 
+/* Five across in the wide panel; fewer per row when the panel is narrower, rather than squeezing the numbers */
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
   gap: 10px;
 }
 .kpi {
   background: var(--surface2);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
 }
+/* One line: "75 h 39 m" must not leave its "m" on a line of its own */
 .kpi-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .kpi-label {
   font-size: 11px;
@@ -1565,6 +1590,46 @@ button.repo-ref {
   white-space: nowrap;
 }
 
+/* Kanban cards (LabelChips compact, T-256): one line, long labels cut short, the rest behind +N */
+.label-chips.compact {
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+.label-chips.compact > .label-chip {
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 3ch;
+}
+.label-chips.compact > .label-more {
+  flex-shrink: 0;
+  max-width: none;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.label-more:hover,
+.label-more[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.label-popover {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 280px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 45%, transparent);
+}
+
 .req-badge {
   font-size: 11px;
   padding: 2px 6px;
@@ -1994,7 +2059,8 @@ svg.graph-minimap.hidden {
 .kanban-column {
   flex: 1 1 200px;
   min-width: 200px;
-  max-height: 640px;
+  /* Set by KanbanColumns.svelte from the space below the board */
+  max-height: var(--kanban-height, 640px);
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -2113,7 +2179,6 @@ svg.graph-minimap.hidden {
 }
 .review-note {
   margin-top: 4px;
-  white-space: pre-wrap;
 }
 /* Blocked on a decision (D-3.2): waiting on you stands out; waiting on an agent stays quiet */
 .block-wait {
@@ -2132,7 +2197,6 @@ svg.graph-minimap.hidden {
 }
 .block-questions li {
   margin-bottom: 4px;
-  white-space: pre-wrap;
 }
 /* Notes in the detail panel (D-4.1), newest first */
 .detail-notes {
@@ -2172,8 +2236,32 @@ svg.graph-minimap.hidden {
   font-size: 12px;
 }
 .note-text {
-  white-space: pre-wrap;
   margin-top: 2px;
+}
+/* Notes, review notes and questions are Markdown (T-219): at the size of the text around them, without the margins
+   of a description's paragraphs above the first block and below the last */
+.note-text .markdown,
+.review-note .markdown {
+  font-size: inherit;
+  line-height: 1.5;
+}
+.note-text .markdown > :first-child,
+.review-note .markdown > :first-child {
+  margin-top: 0;
+}
+.note-text .markdown > :last-child,
+.review-note .markdown > :last-child {
+  margin-bottom: 0;
+}
+.markdown-inline code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  background: var(--surface2);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.markdown-inline a {
+  color: var(--accent);
 }
 /* The header's "need you" count (D-3.3) */
 .attention-chip {
@@ -3055,9 +3143,16 @@ svg.graph-minimap.hidden {
   font-size: 10px;
   fill: var(--text-muted);
 }
-/* Text stays in text colours (yellow on light backgrounds is hard to read); a yellow edge marks it */
-.kpi-warn {
-  box-shadow: inset 3px 0 0 var(--yellow);
+/* The idle number's key: a small sample of the charts' idle hatching (.idle-band) */
+.idle-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--yellow) 45%, transparent);
 }
 
 /* A newer dashboard is ready after a plugin update (UpdateNotice.svelte). A toast in the bottom right corner, above

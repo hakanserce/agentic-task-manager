@@ -98,6 +98,43 @@ test('the Status filter offers every status of the project, also when all tasks 
   await expect(matchCount(page)).toHaveText('0 of 2 tasks');
 });
 
+test('with many phases, the Phase filter lists the active ones; a toggle shows the finished ones (T-250)', async ({
+  page,
+  tasksServer,
+}) => {
+  // Phases 0–7 finished, 8 in progress, 9 to do: active are 7 (finished last), 8 and 9
+  const status = (phase: number) => (phase < 8 ? 'done' : phase === 8 ? 'in_progress' : 'todo');
+  const tasks = Array.from({ length: 10 }, (_, phase) => ({
+    id: `T-${phase}`,
+    name: `Task ${phase}`,
+    phase,
+    type: 'feature',
+    description: '',
+    status: status(phase),
+  }));
+  await openDashboard(page, tasksServer, { meta: { project: 'Many phases' }, tasks });
+  await openFilters(page);
+  const phases = page.locator('.filter-btn[data-filter="phase"]');
+  const toggle = page.locator('#filter-finished-phases');
+  await expect(phases).toHaveCount(4); // All, 7, 8, 9
+  await expect(toggle).toHaveText('+ 7 finished');
+
+  await toggle.click();
+  await expect(phases).toHaveCount(11);
+  await expect(toggle).toHaveText('Hide finished');
+  await filterButton(page, 'phase', '2').click();
+  await expect(matchCount(page)).toHaveText('1 of 10 tasks');
+
+  // Collapsed again, the selected finished phase stays; the choice is remembered
+  await toggle.click();
+  await expect(phases).toHaveCount(5);
+  await expect(toggle).toHaveText('+ 6 finished');
+  await page.reload();
+  await openFilters(page);
+  await expect(phases).toHaveCount(5);
+  await expect(filterButton(page, 'phase', '2')).toHaveAttribute('aria-pressed', 'true');
+});
+
 test.describe('filter counts', () => {
   test.beforeEach(async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');

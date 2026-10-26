@@ -61,6 +61,26 @@ describe('AboutDialog', () => {
     expect(vocab()).toHaveTextContent('Workflow pull-request');
   });
 
+  it("heads the project's section with its name and logo, and leaves it out away from a project (T-217)", () => {
+    const projects = [{ id: 'p1', name: 'Shop', logo: 'p/p1/logo' }];
+    Object.assign(dashboard, { projects, route: { page: 'project', id: 'p1' } });
+    render(AboutDialog);
+    dashboard.openDialog('about');
+    flushSync();
+    const heading = () => document.querySelector('#about-project');
+    expect(heading()).toHaveTextContent(new RegExp(`^${dashboard.projectName}$`)); // as the title bar names it
+    expect(heading()!.querySelector('.project-logo img')).toHaveAttribute('src', 'p/p1/logo');
+    expect(document.querySelector('#about-vocab')).not.toBeNull();
+
+    // The overview: the project state still holds the last project, so the section would be stale
+    dashboard.route = { page: 'overview' };
+    flushSync();
+    expect(heading()).toBeNull();
+    expect(document.querySelector('#about-vocab')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'About' })).toHaveTextContent(`Version ${pluginInfo.version}`);
+    Object.assign(dashboard, { projects: [], route: { page: 'project', id: '' } });
+  });
+
   it('closes with the close button, Escape and the backdrop, and drops the hash flag', async () => {
     render(AboutDialog);
     for (const close of [

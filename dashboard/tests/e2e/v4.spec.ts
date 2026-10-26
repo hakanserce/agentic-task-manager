@@ -81,6 +81,38 @@ test.describe('v4 project', () => {
     await expect(page.locator('.detail-dep-item[data-archived="T-091"]')).toHaveText(/T-091\s*· archived, done/);
   });
 
+  test('notes and questions are Markdown: code and links; the card tooltip has the plain text (T-219)', async ({
+    page,
+    tasksServer,
+  }) => {
+    const data = loadFixture('v4');
+    const t3 = data.tasks.find((t) => t.id === 'T-003')!;
+    t3.notes = [
+      { at: '2026-04-09T08:00:00Z', by: 'Hakan', kind: 'done', text: 'Ran `npm test`; see [CI](https://ci.example/1)' },
+    ];
+    const t5 = data.tasks.find((t) => t.id === 'T-005')!;
+    t5.questions = ['Keep **SES** or use `postmark`?'];
+    await openDashboard(page, tasksServer, data, { tab: 'list' });
+
+    await expect(page.locator('.task-card[data-id="T-005"] .block-wait')).toHaveAttribute(
+      'title',
+      'Keep SES or use postmark?',
+    );
+    await page.locator('.task-card[data-id="T-005"] .task-name').click();
+    await expect(page.locator('#detail-blocked li code')).toHaveText('postmark');
+    await expect(page.locator('#detail-blocked li strong')).toHaveText('SES');
+    await page.keyboard.press('Escape');
+
+    await page.locator('.task-card[data-id="T-003"] .task-name').click();
+    const note = page.locator('#detail-notes .note-text');
+    await expect(note).toHaveText('Ran npm test; see CI');
+    await expect(note.locator('code')).toHaveText('npm test');
+    await expect(note.locator('a')).toHaveAttribute('href', 'https://ci.example/1');
+    // One line, no paragraph margins pushing the note away from its header
+    const [head, text] = [(await page.locator('#detail-notes .note-head').boundingBox())!, (await note.boundingBox())!];
+    expect(text.y - (head.y + head.height)).toBeLessThan(6);
+  });
+
   test('commit and PR link to GitHub with meta.repository; without it a click says how to set it', async ({
     page,
     tasksServer,

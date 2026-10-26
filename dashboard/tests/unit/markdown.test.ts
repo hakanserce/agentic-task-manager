@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseInline, parseMarkdown, plainText, safeHref, slug } from '../../src/lib/markdown';
+import { markdownPlainText, parseInline, parseMarkdown, plainText, safeHref, slug } from '../../src/lib/markdown';
 
 describe('parseInline', () => {
   it('reads code, strong, em and links; the rest is text', () => {
@@ -98,6 +98,14 @@ describe('parseMarkdown', () => {
   it('helpers: slugs and plain text', () => {
     expect(slug('Statuses and kinds!')).toBe('statuses-and-kinds');
     expect(plainText(parseInline('**a** `b` [c](#d)'))).toBe('a b c');
+  });
+
+  it('markdownPlainText: the text without markup, a line per block, for tooltips (T-219)', () => {
+    expect(markdownPlainText('Use `atm show` for **all** of it')).toBe('Use atm show for all of it');
+    expect(markdownPlainText('## Why\nIt *helps*.\n\n- one\n- two\n\n```\nx = 1\n```')).toBe(
+      'Why\nIt helps.\none\ntwo\nx = 1',
+    );
+    expect(markdownPlainText('')).toBe('');
   });
 });
 

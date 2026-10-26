@@ -3321,6 +3321,59 @@ svg.graph-minimap.hidden {
 .project-card-more {
   margin-left: auto;
 }
+/* The branch and the latest PR (T-208) */
+.project-card-git {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.project-card-git .icon,
+.project-card-pr,
+.project-card-pr-state {
+  flex-shrink: 0;
+}
+.project-card-branch {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text);
+}
+a.project-card-pr {
+  color: var(--accent);
+}
+.project-card-pr-state {
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.project-card-pr-state.merged {
+  color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+/* The task finished last, cut off before its time and the sparkline */
+.project-card-last:has(.project-card-last-name) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.project-card-last .icon {
+  flex-shrink: 0;
+  color: var(--green);
+}
+.project-card-last-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .project-card-foot {
   display: flex;
   align-items: center;

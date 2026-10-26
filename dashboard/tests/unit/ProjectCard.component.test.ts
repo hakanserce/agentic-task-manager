@@ -125,3 +125,46 @@ describe('ProjectCard: working now, or next up, by task name (T-207)', () => {
     expect(container.querySelector('.project-card-agents')).toHaveTextContent('2 agents working');
   });
 });
+
+describe('ProjectCard: the git line and the task finished last (T-208)', () => {
+  const withFields = (fields: Partial<ProjectSummary>): ProjectEntry => {
+    const project = card([]);
+    return { ...project, summary: { ...project.summary!, ...fields } };
+  };
+  const text = (el: Element | null) => el?.textContent?.replace(/\s+/g, ' ').trim();
+
+  it('the branch and the latest PR, linked, with its state', () => {
+    const url = 'https://github.com/acme/demo/pull/12';
+    const { container } = render(ProjectCard, {
+      project: withFields({ git: { branch: 'dev/phase-17', pr: { number: 12, url, state: 'open' } } }),
+    });
+    expect(text(container.querySelector('.project-card-git'))).toBe('dev/phase-17 · PR #12 open');
+    expect(container.querySelector('a.project-card-pr')).toHaveAttribute('href', url);
+    expect(container.querySelector('.project-card-pr-state')).toHaveClass('open');
+  });
+
+  it('a merged PR without a recorded address: plain text; neither branch nor PR: no git line', () => {
+    const merged = render(ProjectCard, {
+      project: withFields({ git: { branch: null, pr: { number: 3, url: null, state: 'merged' } } }),
+    });
+    expect(text(merged.container.querySelector('.project-card-git'))).toBe('PR #3 merged');
+    expect(merged.container.querySelector('a.project-card-pr')).toBeNull();
+    const none = render(ProjectCard, { project: withFields({ git: { branch: null, pr: null } }) });
+    expect(none.container.querySelector('.project-card-git')).toBeNull();
+  });
+
+  it('the task finished last replaces the bare time of the last activity', () => {
+    const { container } = render(ProjectCard, {
+      project: withFields({
+        last_activity: '2020-01-01T00:00:00Z',
+        last_done: { id: 'T-189', name: 'Status bar', completed_at: '2020-01-01T00:00:00Z' },
+      }),
+    });
+    expect(text(container.querySelector('.project-card-last'))).toMatch(/^T-189 Status bar · .+ ago$/);
+  });
+
+  it('nothing finished yet (or an older server): the last activity, as before', () => {
+    const { container } = render(ProjectCard, { project: withFields({ last_done: null }) });
+    expect(text(container.querySelector('.project-card-last'))).toBe('No activity yet');
+  });
+});

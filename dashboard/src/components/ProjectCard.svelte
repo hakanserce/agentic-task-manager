@@ -27,6 +27,9 @@
   const byName = $derived(s?.working !== undefined);
   const workLines = $derived(working.length ? working.slice(0, 2) : nextUp.slice(0, 2));
   const moreWork = $derived(Math.max(0, working.length - 2));
+  // The git line and the task finished last (T-208; absent from servers before 0.18)
+  const git = $derived(s?.git);
+  const lastDone = $derived(s?.last_done);
 
   // Completions per day over the last 14 days: thin bars, like the Activity widget
   const W = 112;
@@ -140,15 +143,51 @@
       </ul>
     {/if}
 
+    {#if git?.branch || git?.pr}
+      <!-- The branch and the latest PR recorded on the tasks (T-208); no CI state -->
+      <p class="project-card-git">
+        <Icon name="git-branch" size={13} />
+        {#if git.branch}<span class="project-card-branch" title="Branch {git.branch}">{git.branch}</span>{/if}
+        {#if git.pr}
+          {#if git.branch}<span class="muted">·</span>{/if}
+          {#if git.pr.url}
+            <a
+              class="project-card-pr"
+              href={git.pr.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Pull request #{git.pr.number}, {git.pr.state}">PR #{git.pr.number}</a
+            >
+          {:else}
+            <span class="project-card-pr">PR #{git.pr.number}</span>
+          {/if}
+          <span class="project-card-pr-state {git.pr.state}">{git.pr.state}</span>
+        {/if}
+      </p>
+    {/if}
+
     <div class="project-card-foot">
       {#if s.agents_working && !byName}
         <span class="project-card-agents"
           ><Icon name="bot" size={13} /> {s.agents_working} agent{s.agents_working === 1 ? '' : 's'} working</span
         >
       {/if}
-      <span class="project-card-last muted">
-        {s.last_activity ? formatAgo(s.last_activity, dashboard.loadedAt) : 'No activity yet'}
-      </span>
+      {#if lastDone}
+        <!-- The task finished last, and when (T-208): replaces the bare "12 m ago" -->
+        <span
+          class="project-card-last"
+          title="Last finished: {lastDone.id} {lastDone.name}, {new Date(lastDone.completed_at).toLocaleString()}"
+        >
+          <Icon name="check" size={13} />
+          <span class="project-card-work-id">{lastDone.id}</span>
+          <span class="project-card-last-name">{lastDone.name}</span>
+          <span class="muted">· {formatAgo(lastDone.completed_at, dashboard.loadedAt)}</span>
+        </span>
+      {:else}
+        <span class="project-card-last muted">
+          {s.last_activity ? formatAgo(s.last_activity, dashboard.loadedAt) : 'No activity yet'}
+        </span>
+      {/if}
       <svg
         class="sparkline project-card-spark"
         width={W}

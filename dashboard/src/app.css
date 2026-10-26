@@ -3132,13 +3132,29 @@ svg.graph-minimap.hidden {
 .project-card-note {
   color: var(--text-muted);
 }
+/* One line, so the cards of a row keep their feet level: the name gives way (ellipsis), the counts don't */
+.project-card-phase {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+.project-card-phase-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-card-phase-count {
+  flex-shrink: 0;
+}
 .project-card-note code {
   color: var(--text);
 }
+/* At the bottom of the card: the cards of a row are as tall as the tallest, so their feet line up */
 .project-card-foot {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: auto;
   font-size: 12px;
 }
 .project-card-agents {

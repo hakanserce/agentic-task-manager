@@ -169,6 +169,36 @@ test.describe('projects', () => {
     });
   }
 
+  // T-190: a long phase name is cut off on one line instead of wrapping and pushing the foot down
+  test('overview cards: a long phase name stays on one line; the feet of a row line up', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const name = 'A very long phase name that would never fit on one line of a project card, not even close';
+    tasksServer
+      .addProject('long', 'minimal', 'Long', summary({ current_phase: { id: 7, name, done: 2, total: 9 } }))
+      .addProject('short', 'minimal', 'Short', summary({ agents_working: 1 }));
+    await openDashboard(page, tasksServer, 'standard');
+    const line = page.locator('.project-card[data-id="long"] .project-card-phase');
+    await expect(line).toHaveAttribute('title', `Phase 7 · ${name} — 2 / 9`);
+    await expect(line.locator('.project-card-phase-count')).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const phase = document.querySelector('.project-card[data-id="long"] .project-card-phase')!;
+      const count = phase.querySelector('.project-card-phase-count')!.getBoundingClientRect();
+      const feet = [...document.querySelectorAll('.project-card')]
+        .map((c) => c.querySelector('.project-card-foot')?.getBoundingClientRect())
+        .filter((b) => b !== undefined);
+      return {
+        oneLine: phase.getBoundingClientRect().height < 24,
+        countInside: count.right <= phase.getBoundingClientRect().right + 0.5,
+        feetLevel: new Set(feet.map((b) => Math.round(b.top))).size === 1,
+        cards: feet.length,
+      };
+    });
+    expect(geometry).toEqual({ oneLine: true, countInside: true, feetLevel: true, cards: 2 });
+  });
+
   test('“needs you” opens the project’s Kanban, filtered to review and blocked', async ({ page, tasksServer }) => {
     tasksServer.addProject('asks', 'v4', 'Asks', summary({ needs_you: { review: 1, blocked_on_user: 1 } }));
     await openDashboard(page, tasksServer, 'standard');

@@ -80,9 +80,15 @@
       </div>
     </div>
 
-    <p class="project-card-phase">
+    <!-- One line: a long phase name is cut off (the full one in the title), its counts stay visible -->
+    <p
+      class="project-card-phase"
+      title={phase ? `Phase ${phase.id}${phase.name ? ` · ${phase.name}` : ''} — ${phase.done} / ${phase.total}` : null}
+    >
       {#if phase}
-        Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if} — {phase.done} / {phase.total}
+        <span class="project-card-phase-name"
+          >Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if}</span
+        ><span class="project-card-phase-count">&nbsp;— {phase.done} / {phase.total}</span>
       {:else}
         Every phase is finished
       {/if}

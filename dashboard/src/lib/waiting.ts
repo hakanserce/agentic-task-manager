@@ -74,3 +74,19 @@ export function needingUser(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULAR
     return kind === 'review' || (kind === 'blocked' && t.waiting_on === 'user');
   });
 }
+
+/** A task that needs the user, and why: what the "need you" chips list (also atm serve's `needs_you_tasks`) */
+export interface NeedsYouItem {
+  id: string;
+  name: string;
+  reason: 'review' | 'blocked';
+}
+
+/** needingUser as the chips list it */
+export function needsYouItems(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): NeedsYouItem[] {
+  return needingUser(tasks, vocab).map((t) => ({
+    id: t.id,
+    name: t.name,
+    reason: kindOf(vocab, t.status) === 'review' ? 'review' : 'blocked',
+  }));
+}

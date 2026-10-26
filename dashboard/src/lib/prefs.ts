@@ -8,6 +8,8 @@ export interface Prefs {
   autoRefreshSeconds: number;
   /** Last dashboard version whose release notes were opened */
   lastSeenVersion: string;
+  /** The server build whose update notice the user dismissed ("Not now"); only another build shows it again */
+  dismissedBuild: string;
   kanbanGroupByPhase: boolean;
   /** 'system', 'light' or 'dark' (see appearance.ts) */
   mode: string;

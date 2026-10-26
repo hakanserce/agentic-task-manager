@@ -35,7 +35,7 @@ from .core import (
 )
 from .claims import claims_store_path
 from .logo import find_logo
-from .migrate import TEMPLATE, dashboard_head, describe_migration, migrate
+from .migrate import HEAD_BYTES, TEMPLATE, dashboard_head, describe_migration, migrate, page_tags
 from .paths import find_paths
 from .query import project_summary
 from .registry import (
@@ -169,11 +169,17 @@ def serve_stop(home):
 
 def outdated(record):
     """True when the server runs an older dashboard than this plugin's: an older version, or the same version but
-    another build. A newer server is left alone, so a session still on an older plugin never downgrades it."""
+    another build of this plugin's own dashboard file (it was rebuilt since the server started). A newer server is
+    left alone, so a session still on an older plugin never downgrades it. Another install of the same version (a
+    development checkout, a worktree, the plugin cache) is left alone too: neither build is newer, and replacing it
+    would make each install restart the server in turn, every open page offering a reload each time."""
     mine, mine_build = dashboard_head(TEMPLATE) or ("", "")
     theirs, theirs_build = str(record.get("version") or ""), str(record.get("build") or "")
     if parse_version(mine) != parse_version(theirs):
         return parse_version(mine) > parse_version(theirs)
+    theirs_root = record.get("plugin_root")
+    if theirs_root and os.path.realpath(str(theirs_root)) != os.path.realpath(PLUGIN_ROOT):
+        return False
     return bool(mine_build) and mine_build != theirs_build
 
 
@@ -409,7 +415,9 @@ def cmd_serve_child(args):
     record_path = os.path.join(home, SERVER_RECORD)
     with open(TEMPLATE, "rb") as f:
         page = f.read()
-    version, build = dashboard_head(TEMPLATE)
+    # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
+    # report another build than the page has, and the page would offer a reload forever
+    version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
     registry = Registry(home)
     summaries = Summaries()
 

@@ -1,6 +1,7 @@
 // Loading from atm serve's API (docs/multi-project-api.md): the registered projects from api/projects, and each
 // project's files from p/<id>/. URLs are relative to the page, which the server serves at /.
 import type { Task, TasksFile } from './types';
+import type { NeedsYouItem } from './waiting';
 
 export const DEFAULT_PROJECT_NAME = 'Task Dashboard';
 export const PROJECTS_URL = 'api/projects';
@@ -23,6 +24,8 @@ export interface ProjectSummary {
   recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
   agents_working: number;
   needs_you: { review: number; blocked_on_user: number };
+  /** The tasks behind needs_you (absent from servers before 0.17) */
+  needs_you_tasks?: NeedsYouItem[];
   last_activity: string | null;
   completions_14d: number[];
 }
@@ -158,9 +161,12 @@ export async function serverBuild(fetchFn: typeof fetch = fetch): Promise<string
   }
 }
 
-/** A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. */
-export function newBuildReady(pageBuild: string | undefined, server: string | null): boolean {
-  return !!pageBuild && !!server && pageBuild !== server;
+/**
+ * A reload brings a new dashboard when the server holds another build than this page; unknown builds never do. The
+ * build the user said "Not now" to (`dismissed`) isn't offered again; another one is.
+ */
+export function newBuildReady(pageBuild: string | undefined, server: string | null, dismissed?: string): boolean {
+  return !!pageBuild && !!server && pageBuild !== server && server !== dismissed;
 }
 
 export type LoadResult = { unchanged: true } | { unchanged: false; loaded: LoadedTasks; validators: Validators };

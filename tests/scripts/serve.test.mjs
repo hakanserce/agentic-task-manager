@@ -169,6 +169,8 @@ describe('serve', () => {
         task('T-5', 2, 'in_review', { review_requested_at: '2026-03-15T09:00:00Z' }),
         task('T-6', 2, 'blocked', { waiting_on: 'user', questions: ['?'], blocked_at: '2026-03-15T11:00:00Z' }),
         task('T-7', 3, 'todo'),
+        // Blocked on an agent: open, but it doesn't need the user
+        task('T-8', 3, 'blocked', { waiting_on: 'agent', questions: ['?'] }),
       ],
     });
     const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
@@ -181,18 +183,22 @@ describe('serve', () => {
     const first = await fetch(url);
     const byId = Object.fromEntries((await first.json()).projects.map((p) => [p.id, p]));
     assert.deepEqual(byId.abcd1234.summary, {
-      total: 7,
+      total: 8,
       done: 3,
       skipped: 1,
-      percent: 50,
+      percent: 43,
       current_phase: { id: 2, name: 'Two', done: 1, total: 3 },
       recent_phases: [
         { id: 1, name: null, done: 2, total: 2, percent: 100 },
         { id: 2, name: 'Two', done: 1, total: 3, percent: 33 },
-        { id: 3, name: null, done: 0, total: 1, percent: 0 },
+        { id: 3, name: null, done: 0, total: 2, percent: 0 },
       ],
       agents_working: 0,
       needs_you: { review: 1, blocked_on_user: 1 },
+      needs_you_tasks: [
+        { id: 'T-5', name: 'T-5', reason: 'review' },
+        { id: 'T-6', name: 'T-6', reason: 'blocked' },
+      ],
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     });
@@ -538,28 +544,85 @@ describe('serve', () => {
     run(['serve', 'stop']);
   });
 
-  /** A copy of the plugin whose dashboard claims to be `version`, as an older or newer install would be. */
-  function pluginAt(version) {
-    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
-    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
-    cleanups.push(() => removeDir(path.dirname(plugin)));
+  /** Stamps `version` and `build` into the dashboard of the plugin copy at `plugin`, as a rebuild would. */
+  function stamp(plugin, version, build) {
     const page = path.join(plugin, 'templates/tasks-dashboard.html');
     fs.writeFileSync(
       page,
       fs
         .readFileSync(page, 'utf8')
         .replace(/(name="atm-dashboard-version" content=")[^"]*/, `$1${version}`)
-        .replace(/(name="atm-dashboard-build" content=")[^"]*/, '$1old-build'),
+        .replace(/(name="atm-dashboard-build" content=")[^"]*/, `$1${build}`),
     );
-    return (args, cwd, atmHome) =>
+  }
+
+  /** A copy of the plugin whose dashboard claims to be `version` (and `build`), as another install would be. */
+  function pluginAt(version, build = 'old-build') {
+    const plugin = path.join(tempDir('atm-plugin-'), 'plugin');
+    fs.cpSync(path.join(REPO, 'plugin'), plugin, { recursive: true });
+    cleanups.push(() => removeDir(path.dirname(plugin)));
+    stamp(plugin, version, build);
+    const run = (args, cwd, atmHome) =>
       spawnSync(path.join(plugin, 'scripts/atm'), args, {
         cwd,
         encoding: 'utf8',
         env: { ...baseEnv(), ATM_HOME: atmHome },
       });
+    run.plugin = plugin;
+    return run;
   }
 
   const whoami = async (port) => (await fetch(`http://localhost:${port}/__atm/whoami`)).json();
+  /** The build in the <meta> of the page the server serves. */
+  const pageBuild = async (port) =>
+    /name="atm-dashboard-build" content="([^"]*)"/.exec(await (await fetch(`http://localhost:${port}/`)).text())?.[1];
+
+  test("the page's build is the build whoami reports, so a current page never offers a reload", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    assert.equal(await pageBuild(port), PLUGIN_BUILD);
+    assert.equal((await whoami(port)).build, await pageBuild(port));
+    atm(['serve', 'stop'], root);
+  });
+
+  test("another install of the same version doesn't take the server over, so they don't restart it in turn", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project();
+    const port = ports();
+    const other = pluginAt(PLUGIN_VERSION, 'other-build');
+    assert.equal(other(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const pid = record(atmHome).pid;
+    assert.equal(atm(['serve', '--refresh'], root).stdout, '');
+    assert.equal(atm(['status'], root).code, 0);
+    assert.equal(record(atmHome).pid, pid, 'left alone');
+    assert.equal(other(['serve', '--refresh'], root, atmHome).stdout, '');
+    assert.equal(record(atmHome).pid, pid);
+    assert.equal((await whoami(port)).build, await pageBuild(port));
+    atm(['serve', 'stop'], root);
+  });
+
+  test('serve --refresh restarts a server whose own dashboard was rebuilt under the same version', async () => {
+    const atmHome = home();
+    const root = project();
+    const port = ports();
+    const install = pluginAt(PLUGIN_VERSION, 'first-build');
+    assert.equal(install(['serve', '--port', String(port)], root, atmHome).status, 0);
+    const old = await whoami(port);
+    assert.equal(old.build, 'first-build');
+    stamp(install.plugin, PLUGIN_VERSION, 'second-build');
+    const refreshed = install(['serve', '--refresh'], root, atmHome);
+    assert.equal(refreshed.status, 0, refreshed.stderr);
+    assert.match(refreshed.stdout, /restarted/);
+    const now = await whoami(port);
+    assert.notEqual(now.pid, old.pid);
+    assert.equal(now.build, 'second-build');
+    assert.equal(await pageBuild(port), 'second-build');
+    install(['serve', 'stop'], root, atmHome);
+  });
 
   test('serve --refresh restarts a server with an older dashboard, on the same port', async () => {
     const atmHome = home();

@@ -269,6 +269,16 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
+// The "need you" chip, open on the list of the tasks that need you (fixtures/v4.json: one in review, one blocked)
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: needs-you list (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await openDashboard(page, tasksServer, 'v4', { tab: 'list' });
+    await page.locator('#attention-count').click();
+    await expect(page.locator('#needs-you-menu')).toHaveScreenshot(`needs-you-menu-${mode}.png`);
+  });
+}
+
 // The overview of all projects: cards with progress, phase, agents, activity, a "needs you" and a gone project
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: projects overview (${mode})`, async ({ page, tasksServer }) => {

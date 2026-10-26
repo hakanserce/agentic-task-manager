@@ -168,7 +168,10 @@ export class DashboardState {
   #validators: Validators | undefined;
   #projectsValidators: Validators | undefined;
   #pendingNeedsYou = false;
-  #newVersionDismissed = false;
+  #pendingTask: string | null = null;
+  // The build the server last said it holds, and the one dismissed in this page (for when storage is unavailable)
+  #serverBuild: string | null = null;
+  #dismissedBuild = '';
   #archiveValidators: Validators | undefined;
   #archiveWanted = false;
   // The main worktree's tasks as loaded, and the project's worktrees: `tasks` is the two merged
@@ -270,13 +273,14 @@ export class DashboardState {
   }
 
   /** Show project `id`, or the overview for null (a new history entry, so Back returns). With `needsYou`, the project
-   * opens on the Kanban board filtered to the tasks in review and blocked. */
-  openProject(id: string | null, { needsYou = false } = {}) {
+   * opens on the Kanban board filtered to the tasks in review and blocked; with `task`, with that task's details open. */
+  openProject(id: string | null, { needsYou = false, task }: { needsYou?: boolean; task?: string } = {}) {
     let hash = withProjectHash(location.hash, id);
     if (id !== null && needsYou) {
       hash = withViewHash(hash, 'kanban');
       this.#pendingNeedsYou = true;
     }
+    if (id !== null && task) this.#pendingTask = task;
     location.hash = hash;
   }
 
@@ -287,14 +291,22 @@ export class DashboardState {
     if (JSON.stringify(route) !== JSON.stringify(this.route)) void this.reload();
   }
 
-  /** Whether the server now holds a newer dashboard than this page (the plugin was updated): offer a reload */
+  /** Whether the server now holds a newer dashboard than this page (the plugin was updated): offer a reload, unless
+   * the user dismissed this build already (in this tab, another, or before a reload). A failed check changes nothing. */
   private async checkServerBuild() {
-    if (!this.#newVersionDismissed && newBuildReady(dashboardBuild(), await serverBuild())) this.newVersionReady = true;
+    const server = await serverBuild();
+    if (server === null) return;
+    this.#serverBuild = server;
+    const dismissed = getPref('dismissedBuild', '') || this.#dismissedBuild;
+    this.newVersionReady = newBuildReady(dashboardBuild(), server, dismissed);
   }
 
-  /** "Not now": the bar stays away until the page is reloaded */
+  /** "Not now": the bar stays away for this build, also after a reload; only another build brings it back */
   dismissNewVersion() {
-    this.#newVersionDismissed = true;
+    if (this.#serverBuild) {
+      this.#dismissedBuild = this.#serverBuild;
+      setPref('dismissedBuild', this.#serverBuild);
+    }
     this.newVersionReady = false;
   }
 
@@ -338,6 +350,11 @@ export class DashboardState {
       this.filters = filtersFrom({ phase: [], type: [], status, priority: [], stage: [], label: [], agent: [] });
     }
     this.loaded = true;
+    if (this.#pendingTask) {
+      // Opened from an overview card's "needs you" list: that task's details
+      this.showDetail(this.#pendingTask);
+      this.#pendingTask = null;
+    }
   }
 
   setOverviewActiveOnly(on: boolean) {

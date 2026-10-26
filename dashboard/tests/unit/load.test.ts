@@ -57,6 +57,9 @@ describe('a new dashboard build on the server', () => {
     expect(newBuildReady('b1', 'b1')).toBe(false);
     expect(newBuildReady(undefined, 'b2')).toBe(false);
     expect(newBuildReady('b1', null)).toBe(false);
+    // The build the user dismissed isn't offered again; another one is
+    expect(newBuildReady('b1', 'b2', 'b2')).toBe(false);
+    expect(newBuildReady('b1', 'b3', 'b2')).toBe(true);
   });
 });
 

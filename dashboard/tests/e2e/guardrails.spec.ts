@@ -13,7 +13,11 @@ test.describe('shipped dashboard file', () => {
   test('is a single self-contained file', () => {
     const h = html();
     expect(h).not.toMatch(/<script[^>]+\bsrc=/i);
-    expect(h).not.toMatch(/<link[^>]+rel=["']?(stylesheet|modulepreload|icon)/i);
+    expect(h).not.toMatch(/<link[^>]+rel=["']?(stylesheet|modulepreload)/i);
+    // The favicon is inline (the logo as a data: URL), never a file next to the page
+    const icons = [...h.matchAll(/<link[^>]+rel=["']?[^"'>]*icon[^>]*>/gi)].map(([tag]) => tag);
+    expect(icons).toHaveLength(1);
+    expect(icons[0]).toMatch(/\shref="data:image\/svg\+xml,/);
     expect(h).not.toMatch(/url\(\s*["']?https?:/i);
     expect(h).not.toMatch(/@import/i);
   });

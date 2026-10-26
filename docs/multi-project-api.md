@@ -113,7 +113,8 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
           { "id": 15, "name": "One dashboard for all projects", "done": 0, "total": 17, "percent": 0 }
         ],
         "agents_working": 1,
-        "needs_you": { "review": 0, "blocked_on_user": 0 },
+        "needs_you": { "review": 1, "blocked_on_user": 0 },
+        "needs_you_tasks": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "reason": "review" }],
         "last_activity": "2026-10-25T21:51:38Z",
         "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28]
       },
@@ -155,6 +156,7 @@ logic (`query.py`):
 | `agents_working` | live claims (lease not expired) in the claims store |
 | `needs_you.review` | review-kind tasks |
 | `needs_you.blocked_on_user` | blocked-kind tasks with `waiting_on: "user"` |
+| `needs_you_tasks` | those same tasks, in file order: `{ id, name, reason }`, `reason` being `"review"` or `"blocked"` (on a question for the user). The card's "needs you" chip opens them |
 | `last_activity` | the newest of all tasks' `updated_at`, `started_at`, `completed_at`, `review_requested_at`, `blocked_at` and `skipped_at`, and of note times; `null` without any |
 | `completions_14d` | 14 integers, oldest first, ending with today: done-kind tasks by the UTC day of `completed_at` (tasks without `completed_at` aren't counted) |
 
@@ -165,8 +167,12 @@ logic (`query.py`):
 ```
 
 `version` and `build` are the `atm-dashboard-version` and `atm-dashboard-build` meta tags of the dashboard the server
-holds. atm compares them with its own plugin's dashboard to decide whether to restart the server (`serve --refresh`),
-and the open dashboard compares `build` with its own to offer a reload.
+holds, read from the very bytes it serves at `/`, so a page loaded from it always has the same `build`. atm compares
+them with its own plugin's dashboard to decide whether to restart the server (`serve --refresh`): it restarts a server
+with an older version, or with the same version but another build of the **same** plugin folder (`plugin_root` in the
+record; the dashboard was rebuilt). Another install of the same version (the plugin cache, a development checkout, a
+worktree) is left alone, or two installs would restart the server in turn and every open page would offer a reload.
+The open dashboard compares `build` with its own to offer a reload.
 
 The old per-project servers (0.10.0–0.14.0) answer `{atm, folder, pid}`. The `folder` key identifies one, which is how
 `atm migrate` recognises and stops it.

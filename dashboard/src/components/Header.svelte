@@ -2,8 +2,9 @@
   // The title bar of the current page: a project's (counts, charts, filters), or a page without a project (the
   // overview of all projects, how to add a project, an unknown project; lib/routes.ts)
   import { dashboard } from '../lib/state.svelte';
-  import { needingUser } from '../lib/waiting';
+  import { needsYouItems } from '../lib/waiting';
   import Filters from './Filters.svelte';
+  import NeedsYouMenu from './NeedsYouMenu.svelte';
   import ActivityWidget from './ActivityWidget.svelte';
   import ProgressWidget from './ProgressWidget.svelte';
   import TitleBar from './TitleBar.svelte';
@@ -21,7 +22,7 @@
   const phaseCount = $derived(new Set(dashboard.tasks.map((t) => t.phase)).size);
   const counts = $derived(`${dashboard.tasks.length} tasks across ${phaseCount} phase${phaseCount !== 1 ? 's' : ''}`);
   // Tasks that need the user: in review, or blocked on a question for the user (D-3.3)
-  const needYou = $derived(needingUser(dashboard.tasks, dashboard.vocab));
+  const needYou = $derived(needsYouItems(dashboard.tasks, dashboard.vocab));
   const present = $derived(dashboard.projects.filter((p) => !p.missing));
 </script>
 
@@ -35,15 +36,12 @@
         {:else}
           {counts} — loaded from tasks.json
         {/if}
-        {#if needYou.length}
-          <button
-            class="attention-chip"
-            id="attention-count"
-            title={needYou.map((t) => `${t.id} ${t.name}`).join('\n')}
-            onclick={() => dashboard.selectTab('kanban')}
-            >{needYou.length} need{needYou.length === 1 ? 's' : ''} you</button
-          >
-        {/if}
+        <NeedsYouMenu
+          items={needYou}
+          onopen={(id) => dashboard.showDetail(id)}
+          chipId="attention-count"
+          menuId="needs-you-menu"
+        />
       {:else}
         Loading tasks.json…
       {/if}

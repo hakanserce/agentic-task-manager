@@ -1905,6 +1905,13 @@ def project_summary(paths):
             if 0 <= age < SUMMARY_DAYS:
                 completions[SUMMARY_DAYS - 1 - age] += 1
 
+    # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
+    needs_you_tasks = [
+        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        for t, k in zip(tasks, kinds)
+        if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
+    ]
+
     return {
         "total": len(tasks),
         "done": done,
@@ -1917,6 +1924,7 @@ def project_summary(paths):
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
         },
+        "needs_you_tasks": needs_you_tasks,
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }
@@ -3227,6 +3235,12 @@ BUILD_META = re.compile(r'<meta name="atm-dashboard-build" content="([^"]*)"')
 HEAD_BYTES = 16384
 
 
+def page_tags(head):
+    """(version, build ID) from the start of a dashboard page (text), "" for a missing tag."""
+    version, build = VERSION_META.search(head), BUILD_META.search(head)
+    return (version.group(1) if version else "", build.group(1) if build else "")
+
+
 def dashboard_head(p):
     """(version, build ID) of a dashboard file, "" for a missing tag; None if there is no file."""
     try:
@@ -3234,8 +3248,7 @@ def dashboard_head(p):
             head = f.read(HEAD_BYTES)
     except OSError:
         return None
-    version, build = VERSION_META.search(head), BUILD_META.search(head)
-    return (version.group(1) if version else "", build.group(1) if build else "")
+    return page_tags(head)
 
 
 def clean_up_old_dashboard(task_dir):
@@ -3550,11 +3563,17 @@ def serve_stop(home):
 
 def outdated(record):
     """True when the server runs an older dashboard than this plugin's: an older version, or the same version but
-    another build. A newer server is left alone, so a session still on an older plugin never downgrades it."""
+    another build of this plugin's own dashboard file (it was rebuilt since the server started). A newer server is
+    left alone, so a session still on an older plugin never downgrades it. Another install of the same version (a
+    development checkout, a worktree, the plugin cache) is left alone too: neither build is newer, and replacing it
+    would make each install restart the server in turn, every open page offering a reload each time."""
     mine, mine_build = dashboard_head(TEMPLATE) or ("", "")
     theirs, theirs_build = str(record.get("version") or ""), str(record.get("build") or "")
     if parse_version(mine) != parse_version(theirs):
         return parse_version(mine) > parse_version(theirs)
+    theirs_root = record.get("plugin_root")
+    if theirs_root and os.path.realpath(str(theirs_root)) != os.path.realpath(PLUGIN_ROOT):
+        return False
     return bool(mine_build) and mine_build != theirs_build
 
 
@@ -3790,7 +3809,9 @@ def cmd_serve_child(args):
     record_path = os.path.join(home, SERVER_RECORD)
     with open(TEMPLATE, "rb") as f:
         page = f.read()
-    version, build = dashboard_head(TEMPLATE)
+    # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
+    # report another build than the page has, and the page would offer a reload forever
+    version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
     registry = Registry(home)
     summaries = Summaries()
 

@@ -173,13 +173,15 @@ export function forecastPhases(
   };
 }
 
-export const DEFAULT_ACTIVE_DAYS = 7;
-
 /**
- * The phases worth showing with "Active phases only": every unfinished phase, and a finished one whose last
- * completion is within the last `days` days. A finished phase without completion times is left out.
+ * The phases worth showing with "Active phases only": every unfinished phase, and the one that finished last (a
+ * phase of only skipped tasks counts as finished). That is the phase with the latest completion, the higher one on a
+ * tie; when no finished phase has completion times, the highest finished phase.
  */
-export function activePhases(phases: PhaseForecast[], now: number, days = DEFAULT_ACTIVE_DAYS): PhaseForecast[] {
-  const since = now - days * 86_400_000;
-  return phases.filter((p) => p.state !== 'done' || (p.completedAt !== undefined && p.completedAt >= since));
+export function activePhases(phases: PhaseForecast[]): PhaseForecast[] {
+  const finished = phases.filter((p) => p.state === 'done');
+  const later = (a: PhaseForecast, b: PhaseForecast) =>
+    (a.completedAt ?? -Infinity) - (b.completedAt ?? -Infinity) || a.phase - b.phase;
+  const last = finished.length ? finished.reduce((best, p) => (later(p, best) > 0 ? p : best)) : undefined;
+  return phases.filter((p) => p.state !== 'done' || p === last);
 }

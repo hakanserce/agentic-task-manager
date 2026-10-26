@@ -2449,15 +2449,6 @@ svg.graph-minimap.hidden {
   align-items: center;
   gap: 6px;
 }
-.phase-filter-days {
-  color: var(--text-muted);
-}
-.phase-filter-days.disabled {
-  opacity: 0.6;
-}
-.phase-filter-days input {
-  width: 3.5em;
-}
 .phase-filter-hidden {
   color: var(--text-muted);
 }

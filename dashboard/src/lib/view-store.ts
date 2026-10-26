@@ -3,7 +3,6 @@
 // share localStorage, so each project's view lives under its own key. Theme, mode, auto-refresh and the last-seen
 // version stay per browser (prefs.ts).
 import type { FilterGroup, ListSort } from './filters';
-import { DEFAULT_ACTIVE_DAYS } from './forecast';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
 import { VIEWS, type ViewId } from './tabs';
@@ -25,8 +24,8 @@ export interface SavedView {
   listSort: ListSort;
   /** The phase the Progress tab focuses on, or null for all phases */
   progressPhase: number | null;
-  /** The Progress tab lists only active phases: unfinished, or finished within the last `days` days */
-  progressActive: { only: boolean; days: number };
+  /** The Progress tab lists only active phases: the unfinished ones and the one that finished last */
+  progressActive: { only: boolean };
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
   /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
@@ -60,7 +59,7 @@ export function defaultView(): SavedView {
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
     progressPhase: null,
-    progressActive: { only: false, days: DEFAULT_ACTIVE_DAYS },
+    progressActive: { only: false },
     graphFiltered: 'hide',
     graph: null,
     agents: null,
@@ -122,10 +121,8 @@ export function readView(key: string): SavedView {
     },
     listSort: stored.listSort === 'priority' ? 'priority' : 'file',
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
-    progressActive: {
-      only: bool(active.only, view.progressActive.only),
-      days: finite(active.days) && active.days >= 1 ? Math.round(active.days) : view.progressActive.days,
-    },
+    // Views saved before 0.17.0 also have `days` (the old "finished within N days" rule): ignored
+    progressActive: { only: bool(active.only, view.progressActive.only) },
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
     agents: agentsWindow(stored.agents),

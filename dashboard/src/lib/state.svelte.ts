@@ -1,5 +1,4 @@
 import { loadClaims, type ClaimMap } from './claims';
-import { DEFAULT_ACTIVE_DAYS } from './forecast';
 import {
   DEFAULT_PROJECT_NAME,
   loadArchive,
@@ -130,8 +129,8 @@ export class DashboardState {
   listSort = $state<ListSort>('file');
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
-  /** The Progress tab lists only active phases (unfinished, or finished within the last `days` days) */
-  progressActive = $state.raw<{ only: boolean; days: number }>({ only: false, days: DEFAULT_ACTIVE_DAYS });
+  /** The Progress tab lists only active phases (the unfinished ones and the one that finished last) */
+  progressActive = $state.raw<{ only: boolean }>({ only: false });
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */

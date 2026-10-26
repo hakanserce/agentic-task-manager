@@ -7098,7 +7098,7 @@
       "description": "### Today\n\"Active phases only\" (Progress tab, and the Progress panel's By phase card, which share the saved setting) keeps every unfinished phase plus the finished phases whose last completion is within the last N days (`DEFAULT_ACTIVE_DAYS` = 7, the days field on the Progress tab). On a fast-paced project many phases finish within a week, so the filter hides almost nothing.\n\n### Change\nActive phases = **every unfinished phase, plus the most recently finished phase** (the finished one with the latest last completion). A phase is finished when none of its tasks is left to do; a phase of only skipped tasks counts as finished. Ties on completion time: the higher phase. A finished phase without completion times can still be the last finished one if no other finished phase has times (then the highest such phase).\n\n- `dashboard/src/lib/forecast.ts`: rewrite `activePhases(phases)` (no `now`/`days`), drop `DEFAULT_ACTIVE_DAYS` if nothing else uses it.\n- `ProgressTab.svelte`: remove the days field (`#active-phases-days`) and its label; keep the checkbox. Update the tooltip/label text if it mentions days.\n- `ProgressWidget.svelte`: call the new `activePhases`; the \"N older phase(s) hidden\" note stays.\n- `view-store.ts`: `progressActive` becomes `{ only: boolean }`; a saved view with `days` still loads (the value is ignored).\n- Tests: `tests/unit/forecast.test.ts` (several phases finished the same week: only the latest finished one stays; skipped-only phase; no completion times), the view-store sanitize test, `tests/e2e/progress.spec.ts` (the days field is gone; the filter keeps the last finished phase). Update the progress screenshot baselines if the Progress tab header changes (darwin; delete the matching -linux.png).\n- `docs/help.md`: describe the new rule where Active phases only is mentioned.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/forecast.ts",
@@ -7110,9 +7110,11 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-26T05:00:29Z",
-      "updated_at": "2026-10-26T05:00:29Z",
+      "updated_at": "2026-10-26T07:15:25Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T07:15:25Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-202",

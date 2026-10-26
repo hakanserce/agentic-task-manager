@@ -8,7 +8,17 @@ import re
 from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
-from .model import find_task, kind_of, load_archive, load_tasks, phase_of, status_for, touch, vocabulary
+from .model import (
+    find_task,
+    kind_of,
+    load_archive,
+    load_tasks,
+    phase_of,
+    status_for,
+    touch,
+    valid_task_id,
+    vocabulary,
+)
 from .paths import find_paths
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -300,6 +310,8 @@ def check_data(data, root, files=False, archived=()):
             errors.append(f"task #{i + 1}: needs an \"id\" (a non-empty string)")
             continue
         task_id = task["id"]
+        if not valid_task_id(task_id):
+            errors.append(f"{task_id!r}: an ID is letters, digits, '.', '_' and '-', at most 64, not starting with '-'")
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")

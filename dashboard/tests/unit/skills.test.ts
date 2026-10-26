@@ -30,6 +30,16 @@ describe('skills pre-approve no command runner (T-220, docs/security-review.md F
   }
 });
 
+describe('agent-written text is single-quoted in the templates (T-222, docs/security-review.md F3)', () => {
+  // In double quotes the shell runs backticks and $(…): a note mentioning `npm test` would run it
+  const DOUBLE_QUOTED = /(--(note|question|answer|reason|title|agent)|atm note \S+) "/;
+  for (const { name, text } of skills)
+    it(`${name}: no double-quoted --note, --question, --answer, --reason, --title or atm note`, () => {
+      const lines = text.split('\n').filter((line) => DOUBLE_QUOTED.test(line));
+      expect(lines).toEqual([]);
+    });
+});
+
 describe('task text and logs are data, not commands (T-221, docs/security-review.md F2, F4)', () => {
   const text = (name: string) => skills.find((s) => s.name === name)!.text;
   const pluginContext = readFileSync(new URL('../CLAUDE.md', SKILLS), 'utf8');

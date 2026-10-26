@@ -724,6 +724,19 @@ def _terms(meta, key, defaults, need_kind=False):
 
 WORKFLOW_DEFAULTS = {"verify": True, "max_rounds": 3, "commit_template": "feat({id}): {name}"}
 
+# Strings from tasks.json that agents put into shell commands (a base branch, task IDs) are kept to characters a
+# shell doesn't treat specially (docs/security-review.md F5): no `;`, `$`, quotes, spaces, or a leading `-`
+BRANCH_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}")
+TASK_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def valid_branch(value):
+    return isinstance(value, str) and bool(BRANCH_NAME.fullmatch(value)) and ".." not in value
+
+
+def valid_task_id(value):
+    return isinstance(value, str) and bool(TASK_ID.fullmatch(value))
+
 
 def check_workflow(workflow):
     """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
@@ -732,7 +745,7 @@ def check_workflow(workflow):
     if not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES:
         raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
     checks = (
-        ("base", lambda v: isinstance(v, str) and v, "a branch name"),
+        ("base", valid_branch, "a branch name (letters, digits, `.`, `_`, `/`, `-`; not starting with `-`)"),
         ("verify", lambda v: isinstance(v, bool), "true or false"),
         ("max_rounds", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0, "a positive whole number"),
         ("commit_template", lambda v: isinstance(v, str) and v, "a message template like \"feat({id}): {name}\""),
@@ -939,6 +952,13 @@ def load_tasks(paths):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
+    # Agents put task IDs into shell commands: an ID with shell characters stops every command (atm check lists them)
+    for task in data["tasks"]:
+        if isinstance(task, dict) and isinstance(task.get("id"), str) and not valid_task_id(task["id"]):
+            raise AtmError(
+                f"{paths['tasks']}: the task ID {task['id']!r} has characters atm doesn't allow (letters, digits, '.', "
+                "'_' and '-' only): fix it in the file, then run atm check"
+            )
     _archive["paths"], _archive["data"] = paths, None
     return data
 
@@ -2676,6 +2696,8 @@ def check_data(data, root, files=False, archived=()):
             errors.append(f"task #{i + 1}: needs an \"id\" (a non-empty string)")
             continue
         task_id = task["id"]
+        if not valid_task_id(task_id):
+            errors.append(f"{task_id!r}: an ID is letters, digits, '.', '_' and '-', at most 64, not starting with '-'")
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")

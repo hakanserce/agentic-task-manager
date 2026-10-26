@@ -186,7 +186,7 @@ Then save the confirmed workflow (unless one was already set): `atm workflow set
 Write the new tasks as a JSON list to another scratch file and add them all at once:
 
 ```bash
-atm add --json-file <that file> --json [--agent "<the user's name>"]
+atm add --json-file <that file> --json [--agent '<the user’s name>']
 ```
 
 ```json
@@ -220,7 +220,7 @@ atm add --json-file <that file> --json [--agent "<the user's name>"]
 - `id` is a **placeholder** (`new-1`, `new-2`, ...): other new tasks use it in `dependencies`, and atm replaces it
   with the next real ID in the project's pattern (`T-001`, ... or after the existing tasks). A dependency on an
   existing task uses its real ID. atm sets the status, the timestamps and `created_by`.
-- `--agent "<name>"`: when the user asked for these tasks, pass the user (their git user name) so the tasks show who
+- `--agent '<name>'`: when the user asked for these tasks, pass the user (their git user name) so the tasks show who
   created them; leave it out when you create tasks on your own initiative (they show your session).
 - atm refuses the whole file, writing nothing, if a type or priority isn't in the vocabulary, a label isn't valid, a
   dependency doesn't exist or the dependencies make a cycle. Fix what it names and run it again.

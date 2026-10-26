@@ -68,7 +68,8 @@ and no PR was opened.
 
 `gh pr view --json number,url,state` says whether the branch has one.
 
-- **None:** open one with `gh pr create --base <base> --title "<title>" --body-file <file>` (`--draft` if asked).
+- **None:** open one with `gh pr create --base <base> --title '<title>' --body-file <file>` (the title in single quotes, so backticks
+  or `$(…)` from a task name stay text) (`--draft` if asked).
   Write the body to a scratch file outside the repository: a summary line, then the task commits since the base
   (`git log --oneline <base>..HEAD`) grouped by phase (`atm show <id>` gives a task's phase and name), and the
   project's PR footer if its instructions give one.

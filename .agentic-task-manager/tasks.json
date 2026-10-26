@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 257,
+    "next_id": 262,
     "labels": [
       {
         "id": "dashboard",
@@ -8978,7 +8978,7 @@
       "description": "Many or long labels wrap onto several lines on a Kanban card and make it much taller.\n\n## Do\n\n- `LabelChips.svelte` gets a compact mode, used by `KanbanCard.svelte`: the labels stay on **one line**; the **first 2** show, each cut at about 14 characters with an ellipsis (the full text in its tooltip); the rest become a **+N** chip.\n- Hovering or focusing **+N** shows a small popover listing every label in full; a click (or Enter) pins it open and doesn't open the task's details; Escape or a click outside closes it.\n- The List tab and the detail panel keep showing every label in full.\n\n## Verify\n\nComponent test for the compact mode (2 shown, +N, ellipsis); e2e: a card with 5 long labels stays one label line high, +3 opens the popover with all 5, clicking it doesn't open the details. Update the Kanban screenshots if they change (remove the matching `-linux.png`).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/LabelChips.svelte",
@@ -8986,11 +8986,159 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:48:16Z",
-      "updated_at": "2026-10-26T21:48:20Z",
+      "updated_at": "2026-10-26T21:51:20Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:48:20Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "8966eb7b5b7681e4d49ef13d2eccf06b4fcd82bf",
+      "completed_at": "2026-10-26T21:51:20Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:51:20Z",
+          "kind": "outcome",
+          "text": "Kanban cards show the first 2 labels (cut at 14ch, full text on hover) and a +N chip; its popover lists every label on hover or focus, a click pins it without opening the task. List and details unchanged. Component and e2e tests; no screenshot changes.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-257",
+      "name": "Project summaries: a board object for the All projects Kanban",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "atm-cli",
+        "overview",
+        "kanban"
+      ],
+      "description": "`docs/all-projects-kanban-proposal.md` §3.1 and §5 (approved).\n\nAdd `board` to each project's summary in `atm-cli/atm/query.py` (and the Vite dev server's `build/dev-data.ts`):\n- `todo`: the tasks **ready to start** (to do, dependencies done, not claimed) in the first unfinished phase, in the loop's order, at most 10;\n- `active`, `review`, `blocked`: **all**, at most 30 each;\n- `done`: finished in the **last 24 hours**, at most 30, newest first;\n- with the full counts, so the dashboard can say *+ N more*.\n\nEach card has exactly what a project's Kanban card shows: `id`, `name` (capped like today's summaries), `type`, `phase`, `priority`, `labels`; `by` for active; `since` for review and blocked; `waiting_on` and the question count for blocked; `completed_at` for done.\n\n## Verify\n\nScenarios / server tests for each list's rule and cap; `docs/multi-project-api.md` updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/query.py",
+        "dashboard/build/dev-data.ts",
+        "docs/multi-project-api.md",
+        "tests/scripts/"
+      ],
+      "created_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-26T21:57:05Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-258",
+      "name": "Server: a read-only search route across projects",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "atm-cli",
+        "server",
+        "overview"
+      ],
+      "description": "`docs/all-projects-kanban-proposal.md` §3 (approved).\n\n`GET api/search?q=<text>` searches every registered project's `tasks.json` (archive not included) for tasks whose ID, name, description, type, labels or notes contain the text (case-insensitive, like the dashboard's search), and returns `{\"<project id>\": [\"T-001\", ...]}`. Also matches the project's name (all its tasks). Read-only; the same loopback and Host checks as every route; the query capped at 200 characters; results capped per project.\n\nThe Vite dev server serves the same route. Add the route to `docs/multi-project-api.md` and to the threat model's entry points (`docs/security-review.md` §2.3, or `docs/security-architecture.md` once it exists).\n\n## Verify\n\nServer tests: matches by each field, case-insensitivity, the caps, an unknown query parameter, a bad Host is refused.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/server.py",
+        "dashboard/build/dev-data.ts",
+        "docs/multi-project-api.md",
+        "tests/scripts/"
+      ],
+      "created_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-26T21:57:05Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-259",
+      "name": "All projects: Projects and Board tabs, and the cross-project board",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview",
+        "kanban"
+      ],
+      "description": "`docs/all-projects-kanban-proposal.md` §3, §3.1 and §4 (approved).\n\n- Two tabs on the All projects page, styled like a project's tabs: **Projects** (today's cards, default) and **Board**; remembered; `#view=board` links to it.\n- The board: To Do · In progress · In review · Blocked · Done from each project's `board` summary; each card like a project's Kanban card plus a **project chip** (logo or monogram, short name); a card click opens the task in its project, the chip opens the project.\n- Sorting per §4; *+ N more* links; empty columns say why (*Nothing ready to start*, *Nothing finished in the last 24 hours*).\n- *Active only* is shared with the Projects tab.\n\n## Verify\n\ne2e with two or three projects (`addProject`): columns, chips, sorting, links, empty states, the tab remembered; screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-257"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectsOverview.svelte",
+        "dashboard/src/components/AllProjectsBoard.svelte",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-26T21:57:05Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-260",
+      "name": "All projects board: group by project",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "dashboard",
+        "overview",
+        "kanban"
+      ],
+      "description": "`docs/all-projects-kanban-proposal.md` §2 (approved).\n\nA *Group by project* toggle (remembered) shows one swimlane per project with the five columns, like *Group by phase* on a project's Kanban; a project with no card on the board gets **no lane**. Lanes ordered by the most recently active project.\n\n## Verify\n\ne2e: lanes, no lane for an empty project, the toggle remembered; screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-259"
+      ],
+      "files": [
+        "dashboard/src/components/AllProjectsBoard.svelte"
+      ],
+      "created_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-26T21:57:05Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-261",
+      "name": "All projects board: search box",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "dashboard",
+        "overview",
+        "kanban"
+      ],
+      "description": "`docs/all-projects-kanban-proposal.md` §3 (approved).\n\nA search box on the board, like a project's search: debounced, it calls `api/search?q=…` and shows only the board's cards among the results (ID, name, description, type, labels, notes, project name); the columns say *N of M* while searching; clearing it shows everything. Remembered with the board's view.\n\n## Verify\n\ne2e with the tasks server playing the route: a match by description narrows the board, clearing restores it; the request is made once per pause in typing.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-258",
+        "T-259"
+      ],
+      "files": [
+        "dashboard/src/components/AllProjectsBoard.svelte",
+        "dashboard/src/lib/load.ts",
+        "dashboard/tests/e2e/helpers.ts"
+      ],
+      "created_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-26T21:57:05Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

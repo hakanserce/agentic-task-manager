@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- C: the task list. Three tasks, two ticked off, the third one's box still open -->
+  <path d="M4 7.5l2.5 2.5 4-4.5M4 16.5l2.5 2.5 4-4.5" />
+  <rect x="4.5" y="23" width="5.5" height="5.5" rx="1.5" />
+  <path d="M15 8h13M15 17h13M15 26h9" />
+</svg>

@@ -6483,7 +6483,7 @@
       "description": "The notice showed **several times**.\n\nDismissing it sets `#newVersionDismissed` in `state.svelte.ts`, which is forgotten on a reload and isn't shared between tabs, so it comes back.\n\n## Do\n- Remember the server build the user dismissed (localStorage, wrapped in `try/catch`), and show the notice again only for a **different** build.\n- Make sure only one notice is ever on the page.\n\n## Verify\n- Unit test for the dismissal logic.\n- e2e: dismiss, reload → no notice; server reports another build → notice again.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-186"
       ],
@@ -6494,11 +6494,22 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:41:40Z",
+      "updated_at": "2026-10-26T05:55:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:41:40Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "dbb0f9890685e389bbffa72b7fa3256cd7738a79",
+      "completed_at": "2026-10-26T05:55:01Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:55:01Z",
+          "kind": "outcome",
+          "text": "The dismissed server build is remembered in localStorage (pref dismissedBuild, with an in-page fallback); the notice returns only for another build, hides in other tabs on their next check, and a failed whoami changes nothing. Only one UpdateNotice is mounted (App.svelte).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-188",
@@ -6697,7 +6708,7 @@
       "description": "ATM needs a **logo**.\n\n## Do\n- Propose 2–3 simple SVG logo designs to the user (e.g. as a quick artifact), and use the one they pick.\n- The logo must work at 16 px (browser tab) and in both light and dark themes (`currentColor` or theme tokens).\n- Use it: in the title bar next to the title, as the page's favicon (inline `data:` SVG, since the dashboard is a single file), and in the About dialog.\n- Keep the source SVG in the repo (e.g. `dashboard/src/assets/atm-logo.svg`).\n\n## Verify\n- Screenshot baselines for the title bar; the favicon link is in the built file.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/assets/atm-logo.svg",
@@ -6706,9 +6717,11 @@
         "dashboard/index.html"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:55:07Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:55:07Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-196",

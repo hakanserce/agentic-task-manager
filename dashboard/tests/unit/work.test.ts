@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
-import { isDone, startedBy, workSpan } from '../../src/lib/work';
+import { isDone, startedBy, taskTimes, workSpan } from '../../src/lib/work';
 
 const H = 3_600_000;
 const T0 = Date.parse('2026-04-01T08:00:00Z');
@@ -69,5 +69,50 @@ describe('workSpan', () => {
     expect(workSpan(task('shipped', { completed_at: iso(T0 + H) }), NOW, vocab)?.end).toBe(T0 + H);
     expect(isDone(task('shipped'), vocab)).toBe(true);
     expect(isDone(task('shipped'))).toBe(false);
+  });
+});
+
+describe('taskTimes', () => {
+  const rows = (t: Task) => taskTimes(t, NOW).map((r) => [r.label, r.at ?? r.text]);
+  const created = iso(T0 - H);
+
+  it('a to-do task: only when it was created and last updated', () => {
+    const t = task('todo', { started_at: undefined, created_at: created, updated_at: iso(T0) });
+    expect(rows(t)).toEqual([
+      ['Created', created],
+      ['Updated', iso(T0)],
+    ]);
+  });
+
+  it('in progress: started, and the work so far', () => {
+    expect(rows(task('in_progress', { created_at: created }))).toEqual([
+      ['Created', created],
+      ['Started', iso(T0)],
+      ['Duration', '10 h so far'],
+    ]);
+  });
+
+  it('in review: the work ends when the review was asked for', () => {
+    const t = task('in_review', { review_requested_at: iso(T0 + H / 2), updated_at: iso(T0 + H) });
+    expect(rows(t)).toEqual([
+      ['Started', iso(T0)],
+      ['Sent for review', iso(T0 + H / 2)],
+      ['Duration', '30 m'],
+      ['Updated', iso(T0 + H)],
+    ]);
+  });
+
+  it('done: finished, and how long the work took', () => {
+    const t = task('done', { completed_at: iso(T0 + 2 * H + 5 * 60_000) });
+    expect(rows(t)).toEqual([
+      ['Started', iso(T0)],
+      ['Finished', iso(T0 + 2 * H + 5 * 60_000)],
+      ['Duration', '2 h 5 m'],
+    ]);
+  });
+
+  it('skipped: when it was skipped, no duration', () => {
+    const t = task('skipped', { started_at: undefined, skipped_at: iso(T0) });
+    expect(rows(t)).toEqual([['Skipped', iso(T0)]]);
   });
 });

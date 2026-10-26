@@ -5134,7 +5134,7 @@
       "description": "`tasks.json` gets **`meta.repository`**: the repository's web address (e.g. `https://github.com/o/r`), which the dashboard uses to build commit and PR links.\n\n### atm\n- A command to print or set it (e.g. `atm repository [set URL]`, with `--json`).\n- Validate an `http(s)` URL and normalise a git remote (examples below).\n- `atm init` fills it from `git remote get-url origin` when `meta` has none.\n\n```\ngit@github.com:o/r.git      -> https://github.com/o/r\nhttps://github.com/o/r.git  -> https://github.com/o/r\n```\n\n### Skills\n- `/atm:create-tasks` detects it from `origin`, and asks the user when there's no remote or it can't be turned into a web address (they can also skip).\n- `/atm:update-dashboard` mentions how to set it when it's missing.\n\n### Tests and docs\n- Scenarios in `tests/scripts/scenarios/`: set, normalise, refuse a non-URL, init from origin, no remote.\n- `plugin/CLAUDE.md` and `README` document it.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "tests/scripts/scenarios/",
@@ -5147,11 +5147,22 @@
         "README.md"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-26T00:32:47Z",
+      "updated_at": "2026-10-26T00:36:48Z",
       "created_by": "claude:e5ea9db0",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:32:47Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6070e9a7d9a625500a3fedf22e43afc7a1044162",
+      "completed_at": "2026-10-26T00:36:48Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:36:48Z",
+          "kind": "outcome",
+          "text": "atm repository [set URL] (git remotes normalised to https web addresses, credentials and .git dropped); atm init fills it from origin; create-tasks asks when missing, /atm:serve mentions it; this repo's address set",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-159",
@@ -5166,7 +5177,7 @@
       "description": "The details panel's *Timestamps* shows only **Created** and **Updated**, but atm already records `started_at`, `completed_at`, `review_requested_at` and `blocked_at`.\n\n### Show them\n- **Started** (with who, if not already in *Who*)\n- **Sent for review**\n- **Finished**\n- **Duration**: the work time `workSpan()` in `lib/work.ts` already computes (start to review request or completion; for a task in progress, *so far*, marked as running), formatted like the rest of the dashboard (`format.ts`, e.g. `42 m`, `2 h 5 m`).\n\nLeave out what a task doesn't have: a todo task shows only *Created* / *Updated*.\n\n### Tests\n- Unit tests for the formatting of each state.\n- e2e on the v4 fixture.\n- Detail panel screenshots in both modes (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -5174,9 +5185,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T00:36:50Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:36:50Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-160",

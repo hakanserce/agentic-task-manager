@@ -69,6 +69,13 @@ test.describe('v4 project', () => {
     await expect(page.locator('#detail-commit code')).toHaveText('0f1e2d3');
     await page.keyboard.press('Escape');
 
+    // A task that went through a review: started, sent for review, finished, and the work time up to the review
+    await page.locator('.task-card[data-id="T-002"] .task-name').click();
+    const times = page.locator('#detail-times .value');
+    for (const label of ['Created:', 'Started:', 'Sent for review:', 'Finished:', 'Duration: 2 h', 'Updated:'])
+      await expect(times).toContainText(label);
+    await page.keyboard.press('Escape');
+
     await page.locator('.task-card[data-id="T-009"] .task-name').click();
     await expect(page.locator('#detail-notes .note-kind')).toHaveText(['Rejected', 'Failure']);
     await expect(page.locator('.detail-dep-item[data-archived="T-091"]')).toHaveText(/T-091\s*· archived, done/);

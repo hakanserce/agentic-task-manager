@@ -35,6 +35,32 @@ test.describe('projects', () => {
     expect(onOverview.y).toBeCloseTo(onProject.y, 0);
   });
 
+  test('the status bar sits at the bottom of the window on every page, however short', async ({
+    page,
+    tasksServer,
+  }) => {
+    const footerAtBottom = async () => {
+      const box = (await page.locator('#site-footer').boundingBox())!;
+      const height = page.viewportSize()!.height;
+      expect(box.y + box.height).toBeCloseTo(height, 0);
+    };
+    // The project page
+    await openDashboard(page, tasksServer, 'minimal');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await footerAtBottom();
+    // The overview, with one project card
+    await page.goto('tasks-dashboard.html#overview');
+    await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
+    await expect(page.locator('#projects-grid .project-card')).toHaveCount(1);
+    await footerAtBottom();
+    // No projects yet
+    tasksServer.noProjects();
+    await page.goto('tasks-dashboard.html#');
+    await page.reload();
+    await expect(page.locator('#no-projects')).toBeVisible();
+    await footerAtBottom();
+  });
+
   test('with one project, the dashboard opens it right away', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');

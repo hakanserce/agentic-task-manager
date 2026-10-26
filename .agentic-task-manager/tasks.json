@@ -6498,7 +6498,7 @@
       "description": "On **All projects**, the Refresh and theme pills are not pinned to the right as in the project view. It should look **exactly the same**.\n\n`LandingPage.svelte` has its own copy of `<header class=\"topbar\">` (title, project selector, subtitle, `topbar-controls`), separate from `Header.svelte`.\n\n## Do\n- Make one title bar component used by both pages: title row, project selector, version chip, subtitle, controls at the right. The project page adds its charts and the filters row through slots/snippets.\n- Remove the copy from `LandingPage.svelte`.\n\n## Verify\n- e2e: `.topbar-controls` has the same right edge and top on the project page and on `#overview`.\n- Update screenshot baselines for the overview.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Header.svelte",
@@ -6506,11 +6506,22 @@
         "dashboard/src/styles/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:05:29Z",
+      "updated_at": "2026-10-26T05:43:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:05:29Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "63e45387d846a07d55b601d6a4b593564c3cf2fc",
+      "completed_at": "2026-10-26T05:43:11Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:43:11Z",
+          "kind": "outcome",
+          "text": "New TitleBar.svelte shared by Header and LandingPage; controls pinned right (margin-left: auto); overview now shows the version chip; e2e checks controls' position on both pages; overview screenshot now covers the whole page",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-189",
@@ -6525,7 +6536,7 @@
       "description": "On **All projects** the status bar (`Footer.svelte`) isn't pinned to the bottom of the window; on the project page it is.\n\nThe page layout should be defined **once**, in `App.svelte`, not per page.\n\n## Do\n- Find why the footer stays at the bottom on the project page (a rule tied to `ViewPanel`/`main`?) and not on `.landing`.\n- Give the app one layout: title bar, a main area that grows, the status bar at the bottom, for every route (`project`, `overview`, `none`, `unknown`).\n\n## Verify\n- e2e: with only one project card, the footer's bottom equals the viewport's bottom on `#overview`, on the empty page and on the project page.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-188"
       ],
@@ -6536,9 +6547,11 @@
         "dashboard/src/styles/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:43:14Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:43:14Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-190",

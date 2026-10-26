@@ -49,6 +49,15 @@ body {
   flex-direction: column;
 }
 
+/* Every page's main area (App.svelte), between the title bar and the status bar: it takes the rest of the
+   window, so the status bar sits at the bottom even when the page is short */
+.app-main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 /* Title and version chip share a row; the row carries the title's bottom margin */
 .title-row {
   display: flex;

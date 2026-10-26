@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 217,
+    "next_id": 218,
     "labels": [
       {
         "id": "dashboard",
@@ -7778,6 +7778,30 @@
       ],
       "created_at": "2026-10-26T19:13:32Z",
       "updated_at": "2026-10-26T19:13:32Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-217",
+      "name": "About dialog: no stale project section in All projects; name the project with its logo",
+      "phase": 19,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "AboutDialog.svelte shows a 'This project' section (statuses, phases, types, priorities, workflow) from dashboard.vocab and dashboard.meta. In the All projects view these still hold the last project that was open, so the section is stale. Fix: in the All projects view, leave the project section out (the dialog shows only the plugin's facts). In a project's view, head the section with the project's name, with its logo (ProjectLogo.svelte) when it has one, instead of the bare 'This project'. Tests: a component test for both views, and an e2e check that opening About from All projects after visiting a project shows no project section. Update the About screenshots. T-216 may later move the project information elsewhere; keep this fix small.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/AboutDialog.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/unit/AboutDialog.component.test.ts"
+      ],
+      "created_at": "2026-10-26T19:14:58Z",
+      "updated_at": "2026-10-26T19:14:58Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

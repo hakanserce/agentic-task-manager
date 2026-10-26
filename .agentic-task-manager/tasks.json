@@ -6445,7 +6445,7 @@
       "description": "The notice showed although the open page already **was** the new version.\n\nThe notice appears when `newBuildReady(dashboardBuild(), serverBuild())` (`lib/load.ts`) is true, i.e. the page's `<meta name=\"atm-dashboard-build\">` differs from the server's whoami `build`.\n\n## Find out\n- How atm serve computes `build` (atm-cli) and how the build writes the meta tag: are they the same value for the same file? (e.g. hash of the file vs. a stamp, or the meta being part of what's hashed)\n- Whether an old server still answering, or `atm serve --refresh`, can report a stale build.\n\n## Do\n- Fix the root cause so a page loaded from the current server never shows the notice.\n- Add a test (atm-cli scenario and/or e2e) that the served page's meta build equals whoami's `build`.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/load.ts",
@@ -6454,11 +6454,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:05:28Z",
+      "updated_at": "2026-10-26T05:30:08Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:05:28Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "bb3d85a48935a34d60ecdd3aa38f2415eab7d15d",
+      "completed_at": "2026-10-26T05:30:08Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:30:08Z",
+          "kind": "outcome",
+          "text": "Root cause: two installs of the same version with different builds (plugin cache vs dev checkout/worktree) each restarted the server on every atm call/hook, flipping its build; refresh now restarts same-version servers only for the same plugin_root, and whoami's build comes from the served bytes. Tests in serve.test.mjs.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-187",
@@ -6793,7 +6804,7 @@
       "description": "Clicking the **\"N need(s) you\"** chip in the title bar (`#attention-count` in `Header.svelte`) only switches to the Kanban tab today. It should take you **to the task**.\n\n## Do\n- **One task** needs you: clicking the chip opens its details (`dashboard.showDetail(id)`).\n- **Several**: clicking opens a small popup list under the chip, one row per task: ID, name and why it needs you (*in review* / *blocked on a question*). Clicking a row opens that task's details and closes the popup.\n- The popup closes on `Escape`, a click outside, or choosing a task. Keyboard: arrows move between rows, `Enter` opens; focus returns to the chip on close.\n- Style it like the other title bar menus (`RefreshMenu`, `AppearanceMenu`), with theme tokens.\n- The tasks come from `needingUser(dashboard.tasks, dashboard.vocab)`, as the chip's count does.\n\n## Verify\n- Component test: one task → details open; several → list shows them all and a row opens the right task.\n- e2e with a fixture where 1 and then 3 tasks need you (`#detail-overlay.open` shows the right `data-id`); keyboard and `Escape`.\n- Screenshot of the open popup in light and dark.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Header.svelte",
@@ -6803,9 +6814,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:59:38Z",
-      "updated_at": "2026-10-26T00:59:38Z",
+      "updated_at": "2026-10-26T05:30:13Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:30:13Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-200",

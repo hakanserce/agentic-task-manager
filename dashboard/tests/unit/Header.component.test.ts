@@ -20,7 +20,7 @@ describe('Header', () => {
     expect(dashboard.archiveLoaded).toBe(false);
   });
 
-  it('counts tasks in review and tasks blocked on the user, and opens the Kanban', async () => {
+  it('counts tasks in review and tasks blocked on the user, and lists them', async () => {
     const tasks = standard.tasks.map((t) =>
       t.id === 'T-005'
         ? { ...t, status: 'in_review' }
@@ -32,8 +32,11 @@ describe('Header', () => {
     const { container } = render(Header);
     const chip = container.querySelector('#attention-count')!;
     expect(chip).toHaveTextContent('2 need you');
-    expect(chip.getAttribute('title')).toMatch(/^T-005 .+\nT-008 /);
     await fireEvent.click(chip);
-    expect(dashboard.tab).toBe('kanban');
+    expect([...container.querySelectorAll('.needs-you-row')].map((r) => r.getAttribute('data-id'))).toEqual([
+      'T-005',
+      'T-008',
+    ]);
+    expect(dashboard.detailOpen).toBe(false);
   });
 });

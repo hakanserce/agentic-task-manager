@@ -3084,18 +3084,45 @@ svg.graph-minimap.hidden {
   flex-shrink: 0;
   margin-left: 0;
 }
-.project-card-progress .progress-bar {
-  margin-top: 0;
+/* Up to 4 rings for the recent phases, on one line at any card width: each cell shrinks, and its ring (an SVG with a
+   viewBox) scales down with it */
+.project-card-rings {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
+.project-card-ring {
+  flex: 0 1 56px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.project-card-ring .ring {
+  width: 100%;
+  max-width: 48px;
+  height: auto;
+}
+.project-card-ring-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* The whole project, quietly under the rings */
 .project-card-counts {
   display: flex;
   justify-content: space-between;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
-}
-.project-card-percent {
-  font-weight: 600;
 }
 .project-card-phase,
 .project-card-note {

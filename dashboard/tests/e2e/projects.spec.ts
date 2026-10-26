@@ -123,12 +123,51 @@ test.describe('projects', () => {
     const cards = page.locator('.project-card');
     await expect(cards.locator('.project-card-name')).toHaveText(['Asks', 'Busy', 'Standard Project']);
     const busy = page.locator('.project-card[data-id="busy"]');
-    await expect(busy.locator('.project-card-counts')).toHaveText(/9 \/ 18\s*· 2 skipped\s*50%/);
+    await expect(busy.locator('.project-card-counts')).toHaveText(/9 \/ 18 done\s*· 2 skipped\s*50%/);
     await expect(busy.locator('.project-card-phase')).toHaveText('Phase 3 · Polish — 1 / 4');
     await expect(busy.locator('.project-card-agents')).toHaveText('2 agents working');
     await expect(busy.locator('.project-card-last')).toHaveText('12 m ago');
     await expect(page.locator('.project-card[data-id="asks"] .project-card-need')).toHaveText('2 need you');
   });
+
+  // T-193: up to 4 rings, one per recent phase, never wrapping, at the narrowest card (the grid's 280px minimum, two
+  // columns) and on a phone (one column, narrower still)
+  for (const width of [620, 340]) {
+    test(`overview cards: the recent phases' rings sit on one row (${width}px window)`, async ({
+      page,
+      tasksServer,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      const recent_phases = [14, 15, 16, 17].map((id) => ({
+        id,
+        name: `Phase name ${id}`,
+        done: 3,
+        total: 4,
+        percent: 75,
+      }));
+      tasksServer.addProject('busy', 'minimal', 'Busy', summary({ recent_phases }));
+      await openDashboard(page, tasksServer, 'standard');
+      const card = page.locator('.project-card[data-id="busy"]');
+      await expect(card.locator('.project-card-ring')).toHaveCount(4);
+      await expect(card.locator('.project-card-ring svg').first()).toHaveAttribute(
+        'aria-label',
+        'Phase 14 · Phase name 14: 3 of 4 done',
+      );
+      const layout = await card.evaluate((el) => {
+        const row = el.querySelector('.project-card-rings')!;
+        const boxes = [...row.querySelectorAll('.project-card-ring')].map((r) => r.getBoundingClientRect());
+        const inner = el.getBoundingClientRect();
+        return {
+          cardWidth: Math.round(inner.width),
+          oneRow: new Set(boxes.map((b) => Math.round(b.top))).size === 1,
+          inside: boxes.every((b) => b.left >= inner.left && b.right <= inner.right),
+          ringsVisible: boxes.every((b) => b.width >= 32),
+        };
+      });
+      expect(layout.cardWidth).toBeLessThanOrEqual(width === 620 ? 280 : 292);
+      expect(layout).toMatchObject({ oneRow: true, inside: true, ringsVisible: true });
+    });
+  }
 
   test('“needs you” opens the project’s Kanban, filtered to review and blocked', async ({ page, tasksServer }) => {
     tasksServer.addProject('asks', 'v4', 'Asks', summary({ needs_you: { review: 1, blocked_on_user: 1 } }));

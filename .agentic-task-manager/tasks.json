@@ -6613,7 +6613,7 @@
       "description": "The overall progress bar on project cards isn't useful when working incrementally: it sits at 80–90% all the time, since many tasks are long done and more phases will come.\n\nAdd to each project's summary in atm serve's `api/projects` a list of the **last 4 active phases**, for the card to show as rings.\n\n## Do\n- `recent_phases`: up to 4 phases, in phase order, chosen as: phases with open work (`todo`/`active`/`review`/`blocked` kinds), and then the most recently finished phases (by their last `completed_at`) to fill up to 4.\n- Each entry: `id`, `name`, `done`, `total` (skipped tasks left out of `total`, as for `percent`), `percent`.\n- Document the field in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli scenarios: no tasks, all done, one active phase, more than 4 open phases, skipped tasks.\n- `npm run test:scripts` on Python 3.9.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/",
@@ -6623,11 +6623,22 @@
         "dashboard/src/lib/load.ts"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:27:16Z",
+      "updated_at": "2026-10-26T05:36:41Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:27:16Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6ebe52734590b2f795b681c4222c81be4c83aee4",
+      "completed_at": "2026-10-26T05:36:41Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:36:41Z",
+          "kind": "outcome",
+          "text": "api/projects summary.recent_phases: lowest 4 open phases, filled with most recently finished; tested in serve.test.mjs (server needed, not scenarios)",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-193",
@@ -6643,7 +6654,7 @@
       "description": "Replace the overall progress bar on `ProjectCard.svelte` with a **ring per recent phase** (`summary.recent_phases`), using `Ring.svelte`.\n\n## Do\n- One row of up to 4 rings, each with its percentage inside and the phase number under it; the full name and `done / total` in a `title`.\n- The row must **always fit on one line** in the card's narrowest width (shrink the rings, drop to fewer if needed).\n- Keep the overall `done / total` as a small muted line, or drop it — decide with the screenshots.\n- Accessible: each ring has an `aria-label` like `Phase 16 · Dashboard polish: 4 of 13 done`.\n\n## Verify\n- Component test for 0, 1 and 4 phases; e2e that the rings sit on one row at the narrowest card width.\n- Screenshot baselines.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-192"
       ],
@@ -6654,9 +6665,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:36:45Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:36:45Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-194",

@@ -285,11 +285,25 @@ for (const mode of ['dark', 'light'] as const) {
           skipped: 2,
           percent: 50,
           current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
+          recent_phases: [
+            { id: 1, name: 'Setup', done: 5, total: 5, percent: 100 },
+            { id: 2, name: 'Core', done: 3, total: 7, percent: 43 },
+            { id: 3, name: 'Polish', done: 1, total: 4, percent: 25 },
+            { id: 4, name: null, done: 0, total: 2, percent: 0 },
+          ],
           agents_working: 2,
           last_activity: '2026-01-01T11:48:00Z',
         }),
       )
-      .addProject('asks', 'minimal', 'Waiting Project', summary({ needs_you: { review: 1, blocked_on_user: 1 } }))
+      .addProject(
+        'asks',
+        'minimal',
+        'Waiting Project',
+        summary({
+          needs_you: { review: 1, blocked_on_user: 1 },
+          recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
+        }),
+      )
       .goneProject('old1234', 'Old Project');
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('.project-card')).toHaveCount(4);

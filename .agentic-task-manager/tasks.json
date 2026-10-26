@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 238,
+    "next_id": 244,
     "labels": [
       {
         "id": "dashboard",
@@ -51,6 +51,10 @@
       {
         "id": 20,
         "name": "Security fixes"
+      },
+      {
+        "id": 21,
+        "name": "Progress and insights"
       }
     ],
     "repository": "https://github.com/hakanserce/agentic-task-manager"
@@ -8392,18 +8396,188 @@
       "description": "On a large monitor the Kanban's status columns start scrolling at about half the page height: `.kanban-column` has a fixed `max-height: 640px` (`dashboard/src/app.css`).\n\n## Do\n\n- Let the columns grow to the bottom of the viewport: a height based on the space below the board's top (e.g. `max-height: calc(100vh - <offset>)` or `100dvh` with the board as a flex child that fills the rest of the page), with a sensible minimum on short windows.\n- Each column keeps scrolling on its own when its cards don't fit; the page itself shouldn't get a second scrollbar for the board.\n- Check grouped-by-phase mode, the Done column's sections, and the All projects view if it shows a board.\n\n## Verify\n\nAn e2e test at 1280×1600 with a fixture that has many cards in one column: the column's bottom is within ~24 px of the viewport bottom and it scrolls internally; at 1280×720 it still fits. Update the Kanban screenshots (remove the matching `-linux.png`).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/app.css",
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-26T20:46:34Z",
-      "updated_at": "2026-10-26T21:05:29Z",
+      "updated_at": "2026-10-26T21:08:36Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:05:29Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "24e9164af638b39aa9e21d09cfa548bbaa969deb",
+      "completed_at": "2026-10-26T21:08:36Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T21:08:36Z",
+          "kind": "outcome",
+          "text": "Kanban columns size to the space below the board (KanbanColumns measures it; min 360 px; lower lanes get a window's height); e2e at 1600 and 720 px high; Kanban and theme screenshots updated, Linux ones removed for CI.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-238",
+      "name": "Progress: header widget and utilisation count archived tasks",
+      "phase": 21,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "`docs/progress-tab-review.md` §1.6 and §2.1 (approved).\n\n- The header Progress widget (`ProgressWidget.svelte`, `progressBreakdown(dashboard.tasks)`) counts only `tasks.json`'s tasks, so archiving done tasks *lowers* the percentage. Count archived tasks: the overall number from `meta.archived` (all archived tasks are done), without loading the archive; phase and type breakdowns from the history once the archive is loaded. Tooltip: *62 of 120 tasks done (180 archived, done)*.\n- `UtilizationPanel.svelte` uses `dashboard.filtered` and a period from `dashboard.tasks`, while the burndown uses the history: use `dashboard.historyFiltered` and the history for the period.\n\n## Verify\n\nUnit tests for `insights.ts` with `meta.archived`; e2e with the `archive` fixture: the widget's % includes archived tasks; the utilisation's work includes them.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProgressWidget.svelte",
+        "dashboard/src/lib/insights.ts",
+        "dashboard/src/components/UtilizationPanel.svelte"
+      ],
+      "created_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-239",
+      "name": "Progress tab: a filter banner; status and stage filters don't apply; estimates stay whole-phase",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "`docs/progress-tab-review.md` §0 (approved: option 2).\n\n- A banner at the top of the Progress tab whenever search or a filter is on: *Showing 12 of 236 tasks: label security · Clear filters*.\n- The **status** and **stage** filters are not applied on this tab; the banner says *Status filter not applied here* when one is set.\n- Titles and tooltips say *matching tasks* when filtered.\n- Phase estimates (*Finished by*) are always computed on all tasks, like the pace; their tooltip says so. The slice gets its own counts, bars and burndown lines.\n\n## Verify\n\ne2e: a label filter shows the banner and changes the counts but not a phase's *Finished by*; a status filter is named in the banner and doesn't change the burndown.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-238"
+      ],
+      "files": [
+        "dashboard/src/components/ProgressTab.svelte",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/lib/forecast.ts"
+      ],
+      "created_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-240",
+      "name": "Burndown: title with an info popover, a time range, and what's waiting on people",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "`docs/progress-tab-review.md` §1.1, §1.2 and §1.4 (approved).\n\n- New `InfoTip` component: an ⓘ button next to a section title opening a small popover (*What it shows*, *How it's counted*, *When to be careful*); Escape or a click outside closes it.\n- The scope row becomes the burndown's title: *Burndown · all phases* / *Burndown · phase 19*, with the ⓘ and *Show all phases*.\n- A time range: *Since the first unfinished phase started* (default), *Last 14 days*, *All time*; a focused phase defaults to *since it started*. Part of the saved view.\n- When the forecast ends above zero, label its end *N waiting on review or a decision*.\n- Empty state without timestamps: *No timeline yet: tasks get times when agents start and finish them.*\n- Pace: leave out tasks labelled `interactive`; the basis becomes one line (*Pace: ~12 m per task, last 10 tasks*), and the ⓘ says it assumes one agent, one task at a time (*parallel agents finish sooner*).\n\n## Verify\n\nUnit tests for the range and the pace; e2e for the range control, the ⓘ and the empty state; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-239"
+      ],
+      "files": [
+        "dashboard/src/components/InfoTip.svelte",
+        "dashboard/src/components/BurndownChart.svelte",
+        "dashboard/src/components/ProgressTab.svelte",
+        "dashboard/src/lib/burndown.ts",
+        "dashboard/src/lib/forecast.ts"
+      ],
+      "created_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-241",
+      "name": "Phase table: finished phases in one row, Finished by first, phase names",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "`docs/progress-tab-review.md` §1.3 and §1.5 (approved).\n\n- Finished phases collapse into one row, *✓ Phases 0–17 · 180 tasks · last finished 24 Oct*, that expands to their rows; the *Active phases only* checkbox goes away (drop its saved-view key quietly).\n- Drop the **State** column: a not-started phase is a muted row.\n- Rename Estimate to **Finished by**: the calendar time first (*≈ tomorrow 14:00*), then *3 h of agent work, including earlier phases*.\n- Phase names next to the badge (`meta.phases`).\n- An ⓘ (`InfoTip`) on the table: cumulative estimates, phase order, why blocked and in-review tasks aren't in them; a hint *Click a phase to see its burndown*.\n\n## Verify\n\ne2e for the collapsed row and its expansion, row click focus, the new columns; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-240"
+      ],
+      "files": [
+        "dashboard/src/components/PhaseTable.svelte",
+        "dashboard/src/components/ProgressTab.svelte"
+      ],
+      "created_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-242",
+      "name": "Progress tab: agent time, waiting on you and idle replace utilisation",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "`docs/progress-tab-review.md` §1.6 (approved), coordinated with the Activity popup and project stats decisions (T-213, T-214).\n\nReplace the *Agent utilisation* section with three numbers for the burndown's selected range:\n- **Agent time**: time agents spent working on tasks (parallel agents add up);\n- **Waiting on you**: time tasks spent in review or blocked on the user;\n- **Idle**: time with no agent working.\n\nEach with a tooltip and an ⓘ. Drop the working-day basis and the per-session table (the Agents tab has them). Reuse the computations the Activity popup uses where they exist.\n\n## Verify\n\nUnit tests for the three numbers (including overlaps); e2e; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-240"
+      ],
+      "files": [
+        "dashboard/src/components/UtilizationPanel.svelte",
+        "dashboard/src/lib/utilization.ts"
+      ],
+      "created_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-243",
+      "name": "Header Progress popover: finished phases as chips, types as a stacked bar, a Go to section",
+      "phase": 21,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "`docs/progress-tab-review.md` §2.2 (approved).\n\n- **By phase**: rings only for unfinished phases; finished phases as one line of small chips with ranges merged (`✓ 0–12` `✓ 14–17`), each with a tooltip (phases, when finished); a chip click opens the Progress tab focused on that phase. Remove *Active phases only* from the popover.\n- **By type**: one stacked bar (done / remaining per type, in the type colours) with a legend, instead of rings.\n- A **Go to** section at the bottom: *Progress tab*, *In review (n)*, *Blocked (n)*, *In progress (n)* (the Kanban with that status filter); the status legend's items link there too.\n\n## Verify\n\ne2e for the chips (ranges, click), the stacked bar and the links; screenshots updated.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-238"
+      ],
+      "files": [
+        "dashboard/src/components/ProgressWidget.svelte",
+        "dashboard/src/lib/insights.ts"
+      ],
+      "created_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T21:09:17Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

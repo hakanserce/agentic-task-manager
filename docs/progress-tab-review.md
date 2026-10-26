@@ -11,6 +11,48 @@ what it shows, how it's computed, when it misleads, the question it answers, a r
 - **Empty state**: a sentence in place of the chart when there's nothing meaningful to draw, saying why and what
   makes it appear.
 
+## 0. Filters: whole project, or the filtered tasks?
+
+Today every part of the Progress tab uses the page's filters and search (`historyFiltered`), except the **pace**
+(always measured on all tasks). The header widget ignores them. So with a filter on, "Phase 19: 3/5 done" means
+*3 of the 5 matching tasks in phase 19*, and nothing on the tab says so. Every explanation below ("how much is left
+in this phase", "finished by") silently changes meaning.
+
+The filters are: search, phase, type, status, label, priority, stage and agent (*started by*).
+
+### Option 1: the Progress tab ignores filters
+
+- **Gains:** every number means the whole project or the whole phase; estimates match what `/atm:loop-tasks` will
+  actually do (it works through whole phases); the tab and the header widget agree; simpler explanations.
+- **Loses:**
+  - a burndown or phase progress **for a slice**: a label (`security` across phases), a type (bugfixes), a
+    priority (how are the P0s going?), one agent's tasks;
+  - the phase filter as a way to focus (row click on the phase table still does that);
+  - consistency with the other tabs: switching to Progress would "drop" the filter the user just set, which needs
+    a visible note (*Filters don't apply here*) to not look like a bug.
+
+### Option 2: keep filters, and say so everywhere
+
+- **Gains:** slices keep working; the same filter means the same tasks on every tab.
+- **Loses / costs:**
+  - **Estimates for a slice are wrong in kind**: "phase 19 finished by" for matching tasks only, while the loop
+    works the whole phase in order; the cumulative estimate ignores unmatched tasks before them.
+  - **Some filters make the tab meaningless**: a *status* filter (only done tasks → remaining is always 0; only
+    to-do tasks → nothing is ever done) and a *stage* filter.
+  - Every label needs a "matching" qualifier (*Phase 19 · 3 of 5 matching tasks*), and a banner on the tab: *Showing
+    12 of 236 tasks: label security · Clear filters*.
+
+### Recommendation: option 2, with two limits
+
+- A **banner** at the top of the tab whenever a filter or search is on, naming them, with *Clear filters*; titles and
+  tooltips say *matching tasks*.
+- The **status and stage filters don't apply** on this tab (progress *is* the status split); the banner says
+  *Status filter not applied here*.
+- **Estimates stay whole-phase**: the *Finished by* column is computed on all tasks, like the pace, and its tooltip
+  says so; the slice gets only its own counts, bar and burndown lines.
+
+This keeps "how are the security tasks going?" while every forecast keeps meaning what the loop will do.
+
 ## 1. The tab, top to bottom
 
 ### 1.1 Scope row: "All phases" / "Phase N" and *Show all phases*
@@ -48,8 +90,11 @@ what it shows, how it's computed, when it misleads, the question it answers, a r
 ### 1.3 "Active phases only"
 
 - **Shows:** hides finished phases except the most recent one, in the table and the header widget.
-- **Misleads:** fine; the *N older phases hidden* note already explains it.
-- **Recommend: keep.** Default it **on** for projects with more than 5 phases (today it's off until chosen).
+- **Misleads:** with it off, a long project shows a long list of finished phases (or, in the header popover, tens of
+  100% rings) that say nothing new.
+- **Recommend: replace it.** Show **finished phases compactly instead of hiding them** (see 2.2): in the table, one
+  collapsed row *✓ Phases 0–17 · 180 tasks · last finished 24 Oct* that expands to the per-phase rows; in the
+  popover, one line of small check chips. Then the checkbox isn't needed and goes away.
 
 ### 1.4 Estimate basis line
 
@@ -69,8 +114,8 @@ what it shows, how it's computed, when it misleads, the question it answers, a r
 - **Answers:** "how trustworthy are the estimates?"
 - **Recommend: change.**
   - Leave out tasks labelled `interactive` (and time spent blocked) from the pace, and say so.
-  - If the last completions overlap in time (parallel agents), divide by the measured parallelism, and say
-    *with 2 agents in parallel*.
+  - Keep assuming one agent working in series, and say so: *Assumes one agent, one task at a time; parallel
+    agents finish sooner.*
   - Move the paragraph into the burndown's ⓘ and keep one short line: *Pace: ~12 m per task (last 10 tasks)*.
 
 ### 1.5 Phase table
@@ -130,9 +175,17 @@ weekdays), and a table per agent.
   - Same archive bug for every ring.
   - **By type** rings answer a question nobody asks ("are bugfixes 80% done?"); with 7 types it's mostly noise.
   - Many phases make many rings; *Active phases only* helps.
-- **Recommend: change.** Keep the overall ring and the status bar (with each legend item a link to that status
-  on the Kanban). Keep **By phase** (active only by default). **Drop By type**, or fold it into one stacked bar.
-  Add a footer link *Open the Progress tab*.
+- **Recommend: change.**
+  - Keep the overall ring and the status bar.
+  - **By phase:** rings only for **unfinished** phases. **Finished phases** go on one line of small chips, ranges
+    merged: `✓ 0–12` `✓ 14–17` (a phase with only skipped tasks counts as finished), each chip's tooltip naming
+    the phases and when they finished; a click on a chip opens that phase on the Progress tab. Tens of 100% rings
+    become one line, and *Active phases only* isn't needed.
+  - **By type:** one **stacked bar** (done / remaining per type, in the type colours) with a legend, instead of
+    rings.
+  - A **Go to** section at the bottom, with the links: *Progress tab* (opens the tab), *In review (2)*,
+    *Blocked (1)* and *In progress (3)* (each opens the Kanban with that status filter). The status legend's items
+    link there too.
 
 ## 3. Summary
 
@@ -140,18 +193,34 @@ weekdays), and a table per agent.
 |---|---|---|---|
 | 1.1 | Scope row | change: becomes the burndown's title, with a "click a phase" hint | ⓘ |
 | 1.2 | Burndown | change: time range, label for what's waiting on people | ⓘ, empty state |
-| 1.3 | Active phases only | keep; default on above 5 phases | tooltip (exists) |
+| 0 | Filters | keep, with a banner; status and stage filters off here; estimates whole-phase | banner |
+| 1.3 | Active phases only | replace: finished phases collapse into one row | tooltip |
 | 1.4 | Estimate basis | change: no interactive tasks in the pace, parallel agents, one short line | in the burndown's ⓘ |
 | 1.5 | Phase table | change: no State column, *Finished by* first, phase names | ⓘ, tooltips |
 | 1.6 | Agent utilisation | change and move: fix the archive bug; agent / waiting on you / idle | ⓘ |
 | 2.1 | Header widget | change: count archived tasks | tooltip |
-| 2.2 | Widget popover | change: drop By type; link to the tab | — |
+| 2.2 | Widget popover | change: finished phases as chips, By type as a stacked bar, a Go to section | — |
 
-## 4. Questions for you
+## 4. Decisions
 
-1. **Burndown range:** default to *since the first unfinished phase started*, with *All time* one click away?
-2. **Parallel agents in the estimate:** adjust automatically from measured overlap, or keep one agent and say so?
-3. **Utilisation:** replace it with *agent time / waiting on you / idle* here, or move all of that into T-213 / T-214
-   and drop the section from this tab?
-4. **By type** rings in the popover: drop them?
-5. Should this be implemented in this task, or turned into follow-up tasks (it's about 4–5 tasks of work)?
+1. **Burndown range:** default *since the first unfinished phase started*, *All time* one click away. *(agreed)*
+2. **Parallel agents:** the estimate keeps assuming one agent, and says so in the ⓘ and the basis line. *(agreed)*
+3. **Utilisation:** replaced on this tab by *agent time / waiting on you / idle*. *(agreed)*
+4. **By type:** a stacked bar instead of rings. *(agreed)*
+5. **Filters:** option 2 with the two limits in §0. *(approved)*
+6. **Implementation:** follow-up tasks in phase 21 *Progress and insights*, next to the follow-ups of T-213 to
+   T-216. *(approved with the review)*
+
+## 5. Follow-up tasks
+
+1. **Data fixes**: header widget and utilisation count archived tasks; utilisation uses the history.
+2. **Filters on the Progress tab** (§0): banner, status and stage filters not applied, whole-phase estimates.
+3. **Burndown**: title row with ⓘ, time range (default since the first unfinished phase), label for work waiting on
+   people, empty state; pace leaves out `interactive` tasks and says it assumes one agent.
+4. **Phase table**: finished phases in one collapsed row, no State column, *Finished by* first, phase names, ⓘ,
+   *Active phases only* removed.
+5. **Agent time / waiting on you / idle** replace the utilisation section.
+6. **Header popover**: rings for unfinished phases, finished ones as chips, By type as a stacked bar, a *Go to*
+   section.
+
+An `InfoTip` component (the ⓘ popover) comes with the first task that needs it.

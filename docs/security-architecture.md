@@ -105,7 +105,7 @@ review proposed:
   that change only the dashboard or atm-cli don't need the sandbox run: their invariants are covered by CI.
 - **Each quarter**: a review against this document, like `docs/security-review.md`.
 
-### 3.1 The sandbox (T-233, proposal)
+### 3.1 The sandbox (T-233, approved)
 
 Two levels, because they test different things at very different cost.
 
@@ -147,11 +147,13 @@ over hostile tasks and see what it does. It must run where a mistake costs nothi
 **Not needed:** a VM. Level 1 runs atm, which needs no isolation from the test runner; level 2 runs an agent, and a
 container with no credentials and no egress already bounds what it can reach.
 
-**Questions for you:**
+**Decisions** (approved 2026-10-26):
 
-1. Two levels as above, with level 2 on demand and before merging agent-facing PRs?
-2. Docker as the container tool (you'd need it running for level 2), or a devcontainer / something else?
-3. Should level 2 also run in CI (a manual `workflow_dispatch` job with the API key as a secret), or only locally?
+1. Two levels as above: level 1 in CI on every PR; level 2 on demand and before merging a PR that changes what agents
+   read.
+2. Docker is the container tool for level 2.
+3. Level 2 runs locally for now. A manual `workflow_dispatch` job (the API key as a repository secret) can come later,
+   once local runs are reliable (a note in T-235).
 
 ## 4. Keeping it current
 

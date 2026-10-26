@@ -125,6 +125,16 @@ describe('forecastPhases', () => {
     expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
   });
 
+  it('leaves tasks labelled interactive out of the pace: they include waiting on the user (T-240)', () => {
+    const base = forecastPhases(tasks, NOW).pace!;
+    // The slowest timed task, done with the user: without it, the pace may only get faster
+    const slowest = taskDurations(tasks).reduce((a, b) => (b.minutes > a.minutes ? b : a));
+    const labelled = tasks.map((x) => (x.id === slowest.id ? { ...x, labels: ['interactive'] } : x));
+    const withInteractive = forecastPhases(labelled, NOW).pace!;
+    expect(withInteractive.basedOn).toBe(base.basedOn - 1);
+    expect(withInteractive.likely).toBeLessThanOrEqual(base.likely);
+  });
+
   it("a slice keeps its own counts, but each phase's finish is the whole phase's (T-239)", () => {
     const whole = forecastPhases(tasks, NOW);
     // One task of phase 2: alone it would be estimated as 1 task after phase 1's, not phase 2's five

@@ -2355,6 +2355,56 @@ svg.graph-minimap.hidden {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 12px;
 }
+/* An ⓘ that explains a section (InfoTip.svelte, T-240) */
+.infotip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+.infotip-button {
+  display: inline-flex;
+  padding: 2px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.infotip-button:hover,
+.infotip-button[aria-expanded='true'] {
+  color: var(--accent);
+}
+.infotip-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: -8px;
+  z-index: 70;
+  display: block;
+  width: 340px;
+  max-width: calc(100vw - 48px);
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 45%, transparent);
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.45;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}
+.infotip-popover p {
+  margin: 0 0 8px;
+}
+.infotip-popover p:last-child {
+  margin-bottom: 0;
+}
+.infotip-popover strong {
+  color: var(--text);
+}
+
 /* Which tasks the Progress tab shows when the search or filters pick a slice (ProgressTab.svelte, T-239) */
 .progress-filter-banner {
   display: flex;
@@ -2533,7 +2583,8 @@ svg.graph-minimap.hidden {
   font-size: 12px;
   font-weight: 600;
 }
-.burndown-forecast-label {
+.burndown-forecast-label,
+.burndown-waiting-label {
   fill: var(--text-muted);
   font-weight: 400;
 }
@@ -2588,6 +2639,18 @@ svg.graph-minimap.hidden {
 .burndown-focus {
   font-size: 13px;
   font-weight: 600;
+}
+/* "Burndown · all phases" with its ⓘ, and the time range at the row's end (T-240) */
+.burndown-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.burndown-range {
+  margin-left: auto;
 }
 .burndown-all {
   background: none;

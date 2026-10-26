@@ -10,6 +10,8 @@ export const GAP_CAP_MINUTES = 30;
 export const HISTORY = 10;
 /** Below this many timed completions there is no estimate. */
 export const MIN_HISTORY = 3;
+/** The label of tasks done together with the user: not part of the agents' pace */
+export const INTERACTIVE_LABEL = 'interactive';
 
 const MINUTE = 60_000;
 
@@ -123,7 +125,10 @@ export function forecastPhases(
   history: Task[] = tasks,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
 ): Forecast {
-  const p = pace(taskDurations(history, vocab));
+  // Tasks done together with the user (labelled interactive) include the time spent waiting on them: they would slow
+  // the pace agents keep when they work alone (docs/progress-tab-review.md §1.4, T-240)
+  const interactive = new Set(history.filter((t) => t.labels?.includes(INTERACTIVE_LABEL)).map((t) => t.id));
+  const p = pace(taskDurations(history, vocab).filter((d) => !interactive.has(d.id)));
   const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
   const kind = (t: Task) => kindOf(vocab, t.status);
   let cumulative = 0;

@@ -25,9 +25,11 @@
 
 <p class="progress-basis" id="progress-basis">
   {#if forecast.pace}
-    Estimates are based on the last {forecast.pace.basedOn} completed tasks: about {formatMinutes(forecast.pace.likely)} each
-    ({formatMinutesRange(forecast.pace.low, forecast.pace.high)}). Phases are worked in order, like
-    <code>/atm:loop-tasks</code>.
+    <!-- One short line; the burndown's ⓘ explains what the pace is and what it assumes (T-240) -->
+    <span title="{formatMinutesRange(forecast.pace.low, forecast.pace.high)} for the middle half of those tasks"
+      >Pace: ~{formatMinutes(forecast.pace.likely)} per task (last {forecast.pace.basedOn} tasks, one agent at a time).</span
+    >
+    Phases are worked in order, like <code>/atm:loop-tasks</code>.
   {:else}
     Not enough history to estimate yet: estimates need at least 3 completed tasks with timestamps.
   {/if}

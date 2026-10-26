@@ -8488,13 +8488,13 @@
       "description": "Finding **F17** in `docs/security-review.md`.\n\nAnything merged to `main` runs on every user's machine after an update (the hooks run `atm` on every tool call and at session start).\n\n## Do\n\n- Write `SECURITY.md`: how to report a vulnerability, what the plugin runs automatically (the hooks), what atm never does.\n- Prepare the branch protection settings for `main` (required checks, review) and **ask the user** to apply them: they are repository settings only the owner changes.\n- Propose, and decide with the user, whether the marketplace should point at a release tag instead of the default branch.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "blocked",
       "dependencies": [],
       "files": [
         "SECURITY.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:12:34Z",
+      "updated_at": "2026-10-26T23:12:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8512,7 +8512,14 @@
         }
       ],
       "started_at": "2026-10-26T23:12:34Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "35f3c8cab4b106dd6aaece2fb40f20318e70ccf4",
+      "waiting_on": "user",
+      "questions": [
+        "Apply the ruleset to `main`? Run `gh api -X POST repos/hakanserce/agentic-task-manager/rulesets --input .github/rulesets/main.json`, or tell me to run it.",
+        "Turn on private vulnerability reporting (Settings → Code security), or tell me to run `gh api -X PUT repos/hakanserce/agentic-task-manager/private-vulnerability-reporting`."
+      ],
+      "blocked_at": "2026-10-26T23:12:54Z"
     },
     {
       "id": "T-232",
@@ -8876,7 +8883,7 @@
       "description": "`docs/progress-tab-review.md` §1.1, §1.2 and §1.4 (approved).\n\n- New `InfoTip` component: an ⓘ button next to a section title opening a small popover (*What it shows*, *How it's counted*, *When to be careful*); Escape or a click outside closes it.\n- The scope row becomes the burndown's title: *Burndown · all phases* / *Burndown · phase 19*, with the ⓘ and *Show all phases*.\n- A time range: *Since the first unfinished phase started* (default), *Last 14 days*, *All time*; a focused phase defaults to *since it started*. Part of the saved view.\n- When the forecast ends above zero, label its end *N waiting on review or a decision*.\n- Empty state without timestamps: *No timeline yet: tasks get times when agents start and finish them.*\n- Pace: leave out tasks labelled `interactive`; the basis becomes one line (*Pace: ~12 m per task, last 10 tasks*), and the ⓘ says it assumes one agent, one task at a time (*parallel agents finish sooner*).\n\n## Verify\n\nUnit tests for the range and the pace; e2e for the range control, the ⓘ and the empty state; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-239"
       ],
@@ -8888,9 +8895,11 @@
         "dashboard/src/lib/forecast.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T21:09:17Z",
+      "updated_at": "2026-10-26T23:13:03Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:13:03Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-241",

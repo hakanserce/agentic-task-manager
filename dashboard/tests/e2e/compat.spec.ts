@@ -29,5 +29,5 @@ test('without start/complete times, estimates fall back to gaps between updated_
 }) => {
   await openDashboard(page, tasksServer, 'standard');
   await page.locator('#tab-progress').click();
-  await expect(page.locator('#progress-basis')).toContainText('based on the last 4 completed tasks');
+  await expect(page.locator('#progress-basis')).toContainText('last 4 tasks');
 });

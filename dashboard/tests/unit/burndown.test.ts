@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { burndown } from '../../src/lib/burndown';
+import { burndown, rangeStart } from '../../src/lib/burndown';
 import { forecastPhases } from '../../src/lib/forecast';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
@@ -110,5 +110,43 @@ describe('burndown', () => {
     const b = burndown(all, forecastPhases(all, NOW, all, vocab), NOW, undefined, vocab);
     expect(b.points.at(-1)).toMatchObject({ scope: 5, remaining: 2 });
     expect(b.forecast!.to.remaining).toBe(1);
+  });
+});
+
+describe('burndown range (T-240)', () => {
+  const forecast = forecastPhases(tasks, NOW);
+
+  it('"phase" starts when the first unfinished phase started; a focused phase, when it did', () => {
+    const firstOpen = forecast.phases.find((p) => p.state !== 'done')!.phase;
+    const starts = (phase: number) =>
+      Math.min(...tasks.filter((t) => t.phase === phase && t.started_at).map((t) => at(t.started_at!)));
+    expect(rangeStart('phase', tasks, forecast, NOW)).toBe(starts(firstOpen));
+    expect(rangeStart('phase', tasks, forecast, NOW, 0)).toBe(starts(0));
+    expect(rangeStart('14d', tasks, forecast, NOW)).toBe(NOW - 14 * 24 * 3600_000);
+    expect(rangeStart('all', tasks, forecast, NOW)).toBeUndefined();
+  });
+
+  it('a range starts the chart at its start, with the state then; nothing before it', () => {
+    const from = rangeStart('phase', tasks, forecast, NOW)!;
+    const whole = burndown(tasks, forecast, NOW);
+    const ranged = burndown(tasks, forecast, NOW, undefined, undefined, from);
+    expect(ranged.points[0].t).toBe(from);
+    expect(ranged.points.every((p) => p.t >= from)).toBe(true);
+    const before = [...whole.points].reverse().find((p) => p.t <= from)!;
+    expect(ranged.points[0]).toMatchObject({ scope: before.scope, remaining: before.remaining });
+    expect(ranged.points.at(-1)).toEqual(whole.points.at(-1));
+  });
+
+  it('without any time on any task, there is no timeline', () => {
+    const untimed = tasks.map(({ id, name, phase, type, status, description }) => ({
+      id,
+      name,
+      phase,
+      type,
+      status,
+      description,
+    }));
+    expect(burndown(untimed, forecastPhases(untimed, NOW), NOW).untimed).toBe(true);
+    expect(burndown(tasks, forecast, NOW).untimed).toBeUndefined();
   });
 });

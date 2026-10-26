@@ -17,8 +17,9 @@ test.describe('Progress tab: phase table', () => {
   test('says what the estimates are based on', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
     await expect(page.locator('#progress-basis')).toContainText(
-      'based on the last 8 completed tasks: about 9 m each (8 m – 11 m)',
+      'Pace: ~9 m per task (last 8 tasks, one agent at a time)',
     );
+    await expect(page.locator('#progress-basis span')).toHaveAttribute('title', /8 m – 11 m/);
   });
 
   test('one row per phase with progress, state and estimate', async ({ page, tasksServer }) => {
@@ -146,7 +147,7 @@ test.describe('Progress tab: phase table', () => {
   test('idle gaps are capped when tasks have no start times', async ({ page, tasksServer }) => {
     // standard.json only has updated_at, with hours between completions: every measured duration is the 30 min cap
     await openProgress(page, tasksServer, 'standard');
-    await expect(page.locator('#progress-basis')).toContainText('last 4 completed tasks: about 30 m each (30 m)');
+    await expect(page.locator('#progress-basis')).toContainText('Pace: ~30 m per task (last 4 tasks');
   });
 
   test('filters choose the rows; the pace and each phase’s finish stay the whole project’s (T-239)', async ({
@@ -157,7 +158,7 @@ test.describe('Progress tab: phase table', () => {
     await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(1);
-    await expect(page.locator('#progress-basis')).toContainText('last 8 completed tasks');
+    await expect(page.locator('#progress-basis')).toContainText('last 8 tasks');
     // Not phase 2's 5 tasks alone (43 m): the loop finishes phase 1 first, so the whole project's 51 m
     await expect(cells(page, 2).nth(5)).toContainText('≈ 51 m of agent work');
     await expect(page.locator('#progress-filter-banner')).toContainText('Showing 6 of 16 tasks: phase 2');
@@ -230,10 +231,58 @@ test.describe('Progress tab: burndown chart', () => {
   });
 
   test('no forecast without enough history', async ({ page, tasksServer }) => {
-    await openProgress(page, tasksServer, 'minimal');
+    const data = loadFixture('minimal');
+    for (const task of data.tasks) task.created_at = '2026-04-01T09:00:00Z';
+    await openProgress(page, tasksServer, data);
     await expect(page.locator('#burndown .burndown-remaining')).toHaveCount(1);
     await expect(page.locator('#burndown .burndown-forecast')).toHaveCount(0);
     await expect(page.locator('.burndown-legend')).not.toContainText('Forecast');
+  });
+
+  test('without any times on the tasks, it says there is no timeline yet (T-240)', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'minimal');
+    await expect(page.locator('#burndown-empty')).toHaveText(
+      'No timeline yet: tasks get times when agents start and finish them.',
+    );
+    await expect(page.locator('#burndown')).toHaveCount(0);
+  });
+
+  test('the forecast ends at what waits on people, and says so (T-240)', async ({ page, tasksServer }) => {
+    // progress.json: T-010 is blocked, so the forecast ends at 1, not 0
+    await openProgress(page, tasksServer, 'progress');
+    await expect(page.locator('#burndown-waiting')).toHaveText('1 waiting on review or a decision');
+  });
+});
+
+test.describe('Progress tab: burndown title, info and range (T-240)', () => {
+  test('the title names the scope; the ⓘ explains the chart and closes on Escape', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await expect(page.locator('.burndown-title')).toContainText('Burndown · All phases');
+    await page.locator('#burndown-info').click();
+    const popover = page.locator('.infotip-popover');
+    await expect(popover).toContainText('one agent, one task at a time');
+    await expect(popover).toContainText('interactive');
+    await page.keyboard.press('Escape');
+    await expect(popover).toHaveCount(0);
+  });
+
+  test('the range: since the first unfinished phase started by default, 14 days or all time; remembered', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openProgress(page, tasksServer, 'progress');
+    const range = page.locator('#burndown-range button');
+    await expect(range).toHaveText(['Since phase 1 started', 'Last 14 days', 'All time']);
+    await expect(page.locator('#burndown-range [aria-pressed="true"]')).toHaveText('Since phase 1 started');
+    const sinceLabels = await page.locator('#burndown text.burndown-axis').allTextContents();
+    await page.locator('#burndown-range [data-range="all"]').click();
+    await expect(page.locator('#burndown-range [aria-pressed="true"]')).toHaveText('All time');
+    await expect
+      .poll(async () => (await page.locator('#burndown text.burndown-axis').allTextContents()).join())
+      .not.toBe(sinceLabels.join());
+    await page.reload();
+    await page.locator('#tab-progress').click();
+    await expect(page.locator('#burndown-range [aria-pressed="true"]')).toHaveText('All time');
   });
 });
 

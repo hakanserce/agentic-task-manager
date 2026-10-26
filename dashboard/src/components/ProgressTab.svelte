@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { burndown } from '../lib/burndown';
+  import { BURNDOWN_RANGES, burndown, rangeStart } from '../lib/burndown';
   import { FILTER_GROUPS } from '../lib/filters';
   import { activePhases, forecastPhases, withWholePhaseEstimates } from '../lib/forecast';
   import { dashboard } from '../lib/state.svelte';
   import BurndownChart from './BurndownChart.svelte';
+  import InfoTip from './InfoTip.svelte';
   import PhaseTable from './PhaseTable.svelte';
   import UtilizationPanel from './UtilizationPanel.svelte';
 
@@ -39,7 +40,16 @@
   // The focused phase is part of the project's saved view (dashboard state)
   const selected = $derived(dashboard.progressPhase);
   const focus = $derived(selected !== null && forecast.phases.some((p) => p.phase === selected) ? selected : undefined);
-  const chart = $derived(burndown(tasks, forecast, now, focus, dashboard.vocab));
+  // The time range (saved with the view): since the focused or first unfinished phase started, by default (T-240)
+  const range = $derived(dashboard.progressRange);
+  const from = $derived(rangeStart(range, dashboard.history, whole, now, focus));
+  const rangePhase = $derived(focus ?? whole.phases.find((p) => p.state !== 'done')?.phase);
+  const RANGE_LABELS = $derived({
+    phase: rangePhase === undefined ? 'This phase' : `Since phase ${rangePhase} started`,
+    '14d': 'Last 14 days',
+    all: 'All time',
+  });
+  const chart = $derived(burndown(tasks, forecast, now, focus, dashboard.vocab, from));
 
   const toggle = (phase: number) => (dashboard.progressPhase = focus === phase ? null : phase);
 
@@ -74,14 +84,50 @@
     <div class="progress-empty">No tasks match current filters</div>
   {:else}
     <div class="burndown-scope-row">
-      <span class="burndown-focus" id="burndown-focus"
-        >{focus === undefined ? 'All phases' : `Phase ${focus}`}{filtered ? ' · matching tasks' : ''}</span
-      >
+      <h3 class="burndown-title">
+        Burndown ·
+        <span class="burndown-focus" id="burndown-focus"
+          >{focus === undefined ? 'All phases' : `Phase ${focus}`}{filtered ? ' · matching tasks' : ''}</span
+        >
+        <InfoTip label="the burndown" id="burndown-info">
+          <p>
+            <strong>Scope</strong> is how many tasks existed at each moment (skipped ones left out);
+            <strong>Remaining</strong> is how many of them weren't done yet. Scope steps up when tasks are added, a phase
+            at a time; Remaining steps down as tasks are finished.
+          </p>
+          <p>
+            The dashed line is the <strong>forecast</strong>: the agents' pace (the middle of their last 10 tasks, the
+            shaded fan its usual spread) times the work left, phase by phase. Tasks in review or blocked wait on people,
+            not agents, so the forecast ends at their number, not at zero.
+          </p>
+          <p>
+            It assumes <strong>one agent, one task at a time</strong>: parallel agents finish sooner. Tasks labelled
+            <code>interactive</code> are left out of the pace, as they include time spent waiting on you. Filters choose the
+            lines, not the pace.
+          </p>
+        </InfoTip>
+      </h3>
       {#if focus !== undefined}
         <button class="burndown-all" onclick={() => (dashboard.progressPhase = null)}>Show all phases</button>
       {/if}
+      <span class="activity-range burndown-range" id="burndown-range" role="group" aria-label="Time range">
+        {#each BURNDOWN_RANGES as option (option)}
+          <button
+            class:active={range === option}
+            aria-pressed={range === option}
+            data-range={option}
+            onclick={() => (dashboard.progressRange = option)}>{RANGE_LABELS[option]}</button
+          >
+        {/each}
+      </span>
     </div>
-    <BurndownChart data={chart} {now} />
+    {#if chart.untimed}
+      <p class="progress-empty" id="burndown-empty">
+        No timeline yet: tasks get times when agents start and finish them.
+      </p>
+    {:else}
+      <BurndownChart data={chart} {now} />
+    {/if}
     <div class="phase-filter" id="phase-filter">
       <label title="Unfinished phases, and the one that finished last">
         <input

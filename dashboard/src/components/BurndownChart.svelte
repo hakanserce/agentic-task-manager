@@ -109,6 +109,16 @@
         <text class="burndown-label burndown-forecast-label" x={x(forecast.to.t) + 8} y={yv(forecast.to.remaining) + 4}
           >done ≈ {formatWhen(forecast.to.t, now)}</text
         >
+        {#if forecast.to.remaining > 0}
+          <!-- The forecast covers agent work only: what's left at its end waits on people (T-240) -->
+          <text
+            class="burndown-label burndown-waiting-label"
+            id="burndown-waiting"
+            x={x(forecast.to.t) - 6}
+            y={yv(forecast.to.remaining) - 10}
+            text-anchor="end">{forecast.to.remaining} waiting on review or a decision</text
+          >
+        {/if}
       {/if}
 
       <path class="burndown-scope" d={stepPath('scope')} />

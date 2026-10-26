@@ -27,6 +27,7 @@ import {
 import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
 import { routeFor, withProjectHash, type Route } from './routes';
+import type { BurndownRange } from './burndown';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
@@ -142,6 +143,8 @@ export class DashboardState {
   progressActive = $state.raw<{ only: boolean }>({ only: true });
   /** The filter panel's Phase group lists the finished phases too (part of the saved view) */
   filterFinishedPhases = $state(false);
+  /** The Progress tab's burndown range (part of the saved view) */
+  progressRange = $state<BurndownRange>('phase');
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */
@@ -462,6 +465,7 @@ export class DashboardState {
       progressPhase: this.progressPhase,
       progressActive: this.progressActive,
       filterFinishedPhases: this.filterFinishedPhases,
+      progressRange: this.progressRange,
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
       agents: this.agentsWindow,
@@ -498,6 +502,7 @@ export class DashboardState {
     this.progressPhase = view.progressPhase;
     this.progressActive = view.progressActive;
     this.filterFinishedPhases = view.filterFinishedPhases;
+    this.progressRange = view.progressRange;
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
     this.agentsWindow = view.agents;

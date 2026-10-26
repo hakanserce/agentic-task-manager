@@ -2,6 +2,7 @@
 // Per project, not per browser: dashboards of different projects served from the same origin (localhost:8000)
 // share localStorage, so each project's view lives under its own key. Theme, mode, auto-refresh and the last-seen
 // version stay per browser (prefs.ts).
+import { BURNDOWN_RANGES, type BurndownRange } from './burndown';
 import type { FilterGroup, ListSort } from './filters';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
@@ -28,6 +29,8 @@ export interface SavedView {
   progressActive: { only: boolean };
   /** The filter panel's Phase group lists the finished phases too, not just the active ones */
   filterFinishedPhases: boolean;
+  /** The Progress tab's burndown range: since the (focused or first unfinished) phase started, 14 days, or all time */
+  progressRange: BurndownRange;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
   /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
@@ -64,6 +67,7 @@ export function defaultView(): SavedView {
     // On by default: the unfinished phases and the last finished one are what most projects want to see
     progressActive: { only: true },
     filterFinishedPhases: false,
+    progressRange: 'phase',
     graphFiltered: 'hide',
     graph: null,
     agents: null,
@@ -128,6 +132,9 @@ export function readView(key: string): SavedView {
     // Views saved before 0.17.0 also have `days` (the old "finished within N days" rule): ignored
     progressActive: { only: bool(active.only, view.progressActive.only) },
     filterFinishedPhases: stored.filterFinishedPhases === true,
+    progressRange: (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
+      ? (stored.progressRange as BurndownRange)
+      : view.progressRange,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
     agents: agentsWindow(stored.agents),

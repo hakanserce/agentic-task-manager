@@ -48,11 +48,13 @@
         {/each}
       </div>
       <label class="menu-label" for="theme-select">Theme</label>
-      <!-- A native select: compact, and the keyboard (arrows, letters) works as everywhere else -->
+      <!-- A native select: compact, and the keyboard (arrows, letters) works as everywhere else. Its arrow is our
+           chevron: the browser's own differs between renders and platforms -->
       <div class="theme-picker">
         <span class="theme-swatch" aria-hidden="true">
           {#each current.swatch as c (c)}<span style="background:{c}"></span>{/each}
         </span>
+        <span class="select-chevron"><Icon name="chevron-down" size={14} /></span>
         <select
           id="theme-select"
           value={current.id}

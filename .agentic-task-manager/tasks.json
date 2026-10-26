@@ -5286,7 +5286,7 @@
       "description": "Skipped tasks count in the total today, so completion **never reaches 100%** (`completionRatio` in `src/lib/insights.ts` divides done by `tasks.length`).\n\n### The rule\nSkipped tasks count as **neither done nor remaining**:\n\n```\npercentage = done / (total - skipped)\n```\n\n*Example:* a phase of 10 tasks, 7 done and 3 skipped, shows **100%**, not 70%.\n\n### Where\nEverywhere a completion percentage or done/total shows:\n- the top bar's progress bar;\n- the Progress panel's *Overall*, *By Phase* and *By Type* rings;\n- the Progress tab's phase table (its done/total column and bar).\n\nThe burndown already leaves skipped tasks out (`burndown.ts`), and `forecast.ts` already treats a phase of done + skipped as finished. A group with **only** skipped tasks must not show 0% or divide by zero: show it as finished, or as a neutral *all skipped* state, and say which in the review.\n\n### Show the skipped count separately\nSo the 100% doesn't hide them. Try several indicators and compare them in screenshots before picking one:\n1. a small muted line under the ring (*\"3 skipped\"*);\n2. a small badge next to the ring with the skipped icon (U+23ED) and the count, with a tooltip;\n3. a thin muted outer arc on the ring for the skipped share;\n4. `7/7 · 3 skipped` in the phase table's count column.\n\nUse theme tokens (the skipped status colour is `var(--text-muted)`), keep labels readable (3:1) in every theme and both modes, and don't rely on colour alone. Show nothing when a group has no skipped tasks.\n\n### Review, then build\n1. `atm review` with screenshots of the options in light and dark, so the user picks one.\n2. Implement the chosen one.\n\n### Tests\n- Unit tests for the ratio: skipped left out, all skipped, none skipped.\n- e2e: a fixture phase with done and skipped tasks shows 100% and the skipped count.\n- Update the affected screenshots (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n\n> Depends on T-156, which changes the Progress panel's markup.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-156"
       ],
@@ -5299,7 +5299,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-26T01:09:37Z",
+      "updated_at": "2026-10-26T01:17:36Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -5314,10 +5314,19 @@
           "kind": "rejection",
           "text": "User chose option (c): a thin muted outer arc on the rings instead of the 'N skipped' text",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T01:17:36Z",
+          "kind": "outcome",
+          "text": "Option (c) chosen by the user: thin outer arc (--text-muted) for the skipped share, count in the ring's label and cell title; a group of only skipped tasks shows 100%; table shows 'N skipped'",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-26T01:09:37Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "d5e6740019668e9043e824d1ff8e440b4f610b07",
+      "completed_at": "2026-10-26T01:17:36Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-163",

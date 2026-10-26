@@ -944,6 +944,7 @@ button.menu-trigger:hover,
   font-weight: 600;
 }
 .theme-picker {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -951,14 +952,22 @@ button.menu-trigger:hover,
 .theme-picker select {
   flex: 1;
   min-width: 0;
+  appearance: none;
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
   font: inherit;
   font-size: 13px;
-  padding: 5px 8px;
+  padding: 5px 28px 5px 8px;
   cursor: pointer;
+}
+.theme-picker .select-chevron {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 .theme-picker select:hover {
   border-color: var(--text-muted);

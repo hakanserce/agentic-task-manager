@@ -529,6 +529,23 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
+  test('a task file that is a symlink is never served, wherever it points (T-224, F8)', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project(TASKS);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    // Linked after the server started (atm itself refuses such a folder): an archive pointing at a private file
+    const secret = path.join(atmHome, 'id_rsa.json');
+    fs.writeFileSync(secret, '{"tasks": [], "secret": "PRIVATE KEY"}');
+    fs.symlinkSync(secret, path.join(root, '.agentic-task-manager/tasks-archive.json'));
+    const r = await fetch(`http://localhost:${port}/p/abcd1234/tasks-archive.json`);
+    assert.equal(r.status, 404);
+    assert.doesNotMatch(await r.text(), /PRIVATE KEY/);
+    assert.equal((await fetch(`http://localhost:${port}/p/abcd1234/tasks.json`)).status, 200);
+    atm(['serve', 'stop'], root);
+  });
+
   test('a request for another Host is refused (DNS rebinding)', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);

@@ -285,6 +285,18 @@ def task_file(entry, name):
     return os.path.join(entry["path"], TASK_DIR, name)
 
 
+def served_file(entry, name):
+    """The project's task file `name` if it may be served: a regular file, not a symlink, in a task folder that isn't
+    one either (docs/security-review.md F8: a repository could otherwise link tasks-archive.json to ~/.ssh/id_rsa).
+    None otherwise."""
+    folder = os.path.join(entry["path"], TASK_DIR)
+    p = os.path.join(folder, name)
+    if os.path.islink(folder) or os.path.islink(p) or not os.path.isfile(p):
+        return None
+    real_folder = os.path.realpath(folder)
+    return p if os.path.dirname(os.path.realpath(p)) == real_folder else None
+
+
 class Summaries:
     """Each project's summary (query.project_summary), computed again only when its tasks.json or claims store
     changed, or the day did (the completions count by day)."""
@@ -486,7 +498,7 @@ def cmd_serve_child(args):
                 self.send_error_json(404, "unknown project")
                 return
             name = match.group(2)
-            if not os.path.isfile(task_file(entry, TASKS_FILE)):
+            if served_file(entry, TASKS_FILE) is None:
                 self.send_error_json(404, "not found")
                 return
             if name == "logo":
@@ -500,8 +512,8 @@ def cmd_serve_child(args):
             if computed:
                 self.send_conditional(*computed)
                 return
-            p = task_file(entry, name)
-            stamp = file_stamp(p)
+            p = served_file(entry, name)
+            stamp = file_stamp(p) if p else None
             if stamp is None:
                 self.send_error_json(404, "not found")
                 return

@@ -2,9 +2,27 @@
 
 import os
 
-from .core import DASHBOARD_FILE, TASK_DIR, TASKS_FILE, git, out, to_json
+from .core import DASHBOARD_FILE, TASK_DIR, TASKS_FILE, AtmError, git, out, to_json
 
 LEGACY_DIRS = ["docs", "."]
+# The files atm reads and writes in the task folder; a repository can commit any of them as a symlink
+FOLDER_FILES = (TASKS_FILE, "tasks-archive.json", ".gitignore", ".gitattributes")
+
+
+def check_task_folder(root, task_dir):
+    """Refuse a task folder atm would read or write outside the project through (docs/security-review.md F7): a
+    cloned repository can commit `.agentic-task-manager` or its files as symlinks to anything the user can write,
+    such as ~/.zshrc."""
+    if os.path.islink(task_dir):
+        raise AtmError(f"{task_dir} is a symlink; atm works only on a real folder inside the project")
+    if not os.path.isdir(task_dir):
+        return
+    real_root = os.path.realpath(root)
+    if os.path.commonpath([os.path.realpath(task_dir), real_root]) != real_root:
+        raise AtmError(f"{task_dir} leads outside the project ({os.path.realpath(task_dir)})")
+    for name in FOLDER_FILES:
+        if os.path.islink(os.path.join(task_dir, name)):
+            raise AtmError(f"{os.path.join(task_dir, name)} is a symlink; atm reads and writes only regular files there")
 
 
 def project_root(cwd):
@@ -25,6 +43,7 @@ def project_root(cwd):
 def find_paths(cwd):
     root = project_root(cwd)
     task_dir = os.path.join(root, TASK_DIR)
+    check_task_folder(root, task_dir)
     legacy = None
     for d in LEGACY_DIRS:
         candidate = os.path.normpath(os.path.join(root, d, TASKS_FILE))

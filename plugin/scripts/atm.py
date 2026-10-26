@@ -195,6 +195,24 @@ def whoami(port):
 # Where a project's task files are: the project root, the task folder, legacy locations.
 
 LEGACY_DIRS = ["docs", "."]
+# The files atm reads and writes in the task folder; a repository can commit any of them as a symlink
+FOLDER_FILES = (TASKS_FILE, "tasks-archive.json", ".gitignore", ".gitattributes")
+
+
+def check_task_folder(root, task_dir):
+    """Refuse a task folder atm would read or write outside the project through (docs/security-review.md F7): a
+    cloned repository can commit `.agentic-task-manager` or its files as symlinks to anything the user can write,
+    such as ~/.zshrc."""
+    if os.path.islink(task_dir):
+        raise AtmError(f"{task_dir} is a symlink; atm works only on a real folder inside the project")
+    if not os.path.isdir(task_dir):
+        return
+    real_root = os.path.realpath(root)
+    if os.path.commonpath([os.path.realpath(task_dir), real_root]) != real_root:
+        raise AtmError(f"{task_dir} leads outside the project ({os.path.realpath(task_dir)})")
+    for name in FOLDER_FILES:
+        if os.path.islink(os.path.join(task_dir, name)):
+            raise AtmError(f"{os.path.join(task_dir, name)} is a symlink; atm reads and writes only regular files there")
 
 
 def project_root(cwd):
@@ -215,6 +233,7 @@ def project_root(cwd):
 def find_paths(cwd):
     root = project_root(cwd)
     task_dir = os.path.join(root, TASK_DIR)
+    check_task_folder(root, task_dir)
     legacy = None
     for d in LEGACY_DIRS:
         candidate = os.path.normpath(os.path.join(root, d, TASKS_FILE))
@@ -3969,6 +3988,18 @@ def task_file(entry, name):
     return os.path.join(entry["path"], TASK_DIR, name)
 
 
+def served_file(entry, name):
+    """The project's task file `name` if it may be served: a regular file, not a symlink, in a task folder that isn't
+    one either (docs/security-review.md F8: a repository could otherwise link tasks-archive.json to ~/.ssh/id_rsa).
+    None otherwise."""
+    folder = os.path.join(entry["path"], TASK_DIR)
+    p = os.path.join(folder, name)
+    if os.path.islink(folder) or os.path.islink(p) or not os.path.isfile(p):
+        return None
+    real_folder = os.path.realpath(folder)
+    return p if os.path.dirname(os.path.realpath(p)) == real_folder else None
+
+
 class Summaries:
     """Each project's summary (query.project_summary), computed again only when its tasks.json or claims store
     changed, or the day did (the completions count by day)."""
@@ -4170,7 +4201,7 @@ def cmd_serve_child(args):
                 self.send_error_json(404, "unknown project")
                 return
             name = match.group(2)
-            if not os.path.isfile(task_file(entry, TASKS_FILE)):
+            if served_file(entry, TASKS_FILE) is None:
                 self.send_error_json(404, "not found")
                 return
             if name == "logo":
@@ -4184,8 +4215,8 @@ def cmd_serve_child(args):
             if computed:
                 self.send_conditional(*computed)
                 return
-            p = task_file(entry, name)
-            stamp = file_stamp(p)
+            p = served_file(entry, name)
+            stamp = file_stamp(p) if p else None
             if stamp is None:
                 self.send_error_json(404, "not found")
                 return

@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 216,
+    "next_id": 217,
     "labels": [
       {
         "id": "dashboard",
@@ -7719,7 +7719,7 @@
         "stats",
         "interactive"
       ],
-      "description": "Interactive with the user. Propose where (Progress tab, a new Stats section, the project card, About-like dialog) and how to show overall project stats: project start; project duration (earliest task start to latest task completion); total agent time used (sum of in-progress spans); task duration avg/min/max (propose the best visualization, e.g. a box plot or histogram by type, with the slowest tasks listed); max parallelization (most agents working at once); overall parallelization (define it, e.g. agent time / wall-clock time while any agent works); number of commits, pull requests, phases and tasks. For each stat, say how it's computed from tasks.json (and the archive), and where data is missing (tasks without started_at, reopened tasks, skipped tasks). Write docs/project-stats-proposal.md with mock-ups, review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "description": "Interactive with the user, done together with T-216 (project information: same proposal and review). Propose where (Progress tab, a new Stats section, the project card, About-like dialog) and how to show overall project stats: project start; project duration (earliest task start to latest task completion); total agent time used (sum of in-progress spans); task duration avg/min/max (propose the best visualization, e.g. a box plot or histogram by type, with the slowest tasks listed); max parallelization (most agents working at once); overall parallelization (define it, e.g. agent time / wall-clock time while any agent works); number of commits, pull requests, phases and tasks. For each stat, say how it's computed from tasks.json (and the archive), and where data is missing (tasks without started_at, reopened tasks, skipped tasks). Write docs/project-stats-proposal.md with mock-ups, review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
       "requirements": [],
       "use_cases": [],
       "status": "todo",
@@ -7728,9 +7728,9 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T16:07:30Z",
+      "updated_at": "2026-10-26T19:13:37Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0"
     },
     {
       "id": "T-215",
@@ -7754,6 +7754,30 @@
       ],
       "created_at": "2026-10-26T16:07:30Z",
       "updated_at": "2026-10-26T16:07:30Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-216",
+      "name": "Project information: decide with the user what to show, where and how",
+      "phase": 19,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "stats",
+        "interactive"
+      ],
+      "description": "Interactive with the user, done together with T-214 (same proposal, docs/project-stats-proposal.md, and the same review). Propose where (e.g. a Project info dialog or tab, the About dialog, the project card's tooltip, a section next to the stats) and how to show the project's information: name and description; developers (who created and worked on tasks: users and agents, with task counts; how to group agent sessions); git repository (link); development workflow (direct or pull-request, base branch, verify, commit template); and the project vocabulary (phases with names and task counts, labels, task types, statuses with their kinds, priorities and the default). Say for each item where its data comes from (tasks.json meta, the tasks, the server) and what's missing. Review it with the user (crit), and once approved add implementation tasks with /atm:create-tasks.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/project-stats-proposal.md"
+      ],
+      "created_at": "2026-10-26T19:13:32Z",
+      "updated_at": "2026-10-26T19:13:32Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

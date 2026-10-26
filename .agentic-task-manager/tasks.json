@@ -8331,7 +8331,7 @@
       "description": "Findings **F10** and **F18** in `docs/security-review.md`.\n\n## Do\n\n- First confirm F10: does a listener on `[::1]:<port>` win over our 127.0.0.1 server for `http://localhost:<port>` (browser and urllib)? If yes, use `127.0.0.1` in printed URLs and in `whoami`. Note that this changes the dashboard's origin, which resets views saved in localStorage; say so in the changelog.\n- Catch `RecursionError` in `read_json`; compute each project's entry in `/api/projects` on its own, so a failing project shows as missing; a top-level try in `do_GET` that returns 500.\n- A handler timeout (30 s) and a size cap on served files.\n- Unique project ids at registration (a suffix on collision); ids limited to `[A-Za-z0-9._-]{1,64}`.\n- Create `ATM_HOME` with mode 0700.\n\n## Verify\n\nTests: a project whose `tasks.json` is 100k `[`; `/api/projects` still answers 200 with it missing. Two projects with the same `meta.id` both stay reachable. `ATM_HOME` mode after a fresh `atm serve`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/server.py",
@@ -8340,9 +8340,11 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T22:39:41Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T22:39:41Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-228",
@@ -8466,11 +8468,12 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:38:45Z",
+      "updated_at": "2026-10-26T22:39:29Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:38:45Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "2e1118630087a934621937285a0d01277566040f"
     },
     {
       "id": "T-233",

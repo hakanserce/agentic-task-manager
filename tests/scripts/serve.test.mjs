@@ -547,6 +547,88 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
+  test('[::1] on the port is the server too, so nobody else can answer for localhost; a taken [::1] moves it on (T-227, F10)', async () => {
+    const atm = atmIn(home());
+    const root = project(TASKS);
+    const port = ports();
+    // Another process already listens on [::1]:port (skipped where IPv6 is missing)
+    const squatter = net.createServer();
+    const v6 = await new Promise((resolve) => {
+      squatter.once('error', () => resolve(false));
+      squatter.listen(port, '::1', () => resolve(true));
+    });
+    try {
+      assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+      const status = JSON.parse(atm(['serve', 'status', '--json'], root).stdout);
+      if (v6) assert.notEqual(status.port, port, 'moved past the taken [::1] port');
+      if (v6) {
+        // [::1] on the server's own port answers as atm, and can't be taken by anyone else
+        const res = await new Promise((resolve, reject) => {
+          const req = http.request(
+            { host: '::1', port: status.port, path: '/__atm/whoami', headers: { Host: `localhost:${status.port}` } },
+            (r2) => {
+              let body = '';
+              r2.on('data', (c) => (body += c));
+              r2.on('end', () => resolve({ status: r2.statusCode, body }));
+            },
+          );
+          req.on('error', reject);
+          req.end();
+        });
+        assert.equal(res.status, 200);
+        assert.equal(JSON.parse(res.body).atm, true);
+        const second = net.createServer();
+        const taken = await new Promise((resolve) => {
+          second.once('error', (e) => resolve(e.code));
+          second.listen(status.port, '::1', () => resolve('listening'));
+        });
+        second.close();
+        assert.equal(taken, 'EADDRINUSE');
+      }
+      atm(['serve', 'stop'], root);
+    } finally {
+      squatter.close();
+    }
+  });
+
+  test('one project with unreadable (deeply nested) JSON is listed as missing; the others are fine (T-227, F18)', async () => {
+    const atm = atmIn(home());
+    const good = project(TASKS);
+    const bad = project({ meta: { id: 'bad00000', project: 'Bad' }, tasks: [] });
+    const port = ports();
+    assert.equal(atm(['projects', 'add'], bad).code, 0);
+    fs.writeFileSync(path.join(bad, '.agentic-task-manager/tasks.json'), '['.repeat(100000) + ']'.repeat(100000));
+    assert.equal(atm(['serve', '--port', String(port)], good).code, 0);
+    const r = await fetch(`http://localhost:${port}/api/projects`);
+    assert.equal(r.status, 200);
+    const projects = Object.fromEntries((await r.json()).projects.map((p) => [p.id, p]));
+    assert.equal(projects.abcd1234.missing, false);
+    assert.equal(projects.bad00000.missing, true);
+    atm(['serve', 'stop'], good);
+  });
+
+  test('two projects with the same meta.id both stay reachable; ATM_HOME is private (T-227, F18)', async () => {
+    const atmHome = path.join(tempDir('atm-parent-'), 'home');
+    const atm = atmIn(atmHome);
+    const first = project(TASKS);
+    const second = project({
+      meta: { id: 'abcd1234', project: 'Copy' },
+      tasks: [{ id: 'T-1', name: 'x', phase: 0, type: 'feature', status: 'todo' }],
+    });
+    assert.equal(atm(['projects', 'add'], first).code, 0);
+    assert.equal(atm(['projects', 'add'], second).code, 0);
+    assert.equal(fs.statSync(atmHome).mode & 0o777, 0o700);
+    const listed = JSON.parse(atm(['projects', '--json'], first).stdout);
+    const ids = listed.projects.map((p) => p.id);
+    assert.equal(new Set(ids).size, 2, ids.join(', '));
+    assert.ok(ids.includes('abcd1234'));
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], first).code, 0);
+    for (const id of ids) assert.equal((await fetch(`http://localhost:${port}/p/${id}/tasks.json`)).status, 200, id);
+    atm(['serve', 'stop'], first);
+    removeDir(path.dirname(atmHome));
+  });
+
   test('a task file that is a symlink is never served, wherever it points (T-224, F8)', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);

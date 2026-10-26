@@ -9,6 +9,7 @@ with nothing to install.
 import argparse
 import base64
 import contextlib
+import errno
 import hashlib
 import json
 import os
@@ -18,6 +19,7 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
@@ -148,10 +150,12 @@ def write_json_atomic(p, value):
 
 
 def read_json(p):
+    """The file's JSON, or None when it can't be read or parsed. Deeply nested JSON (a hostile file) raises
+    RecursionError in the parser; that is unreadable too, not a crash (docs/security-review.md F12, F18)."""
     try:
         with open(p, encoding="utf-8") as f:
             return json.load(f)
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError):
         return None
 
 
@@ -385,6 +389,27 @@ def atm_home():
     return os.path.abspath(os.path.expanduser(os.environ.get("ATM_HOME") or "~/.agentic-task-manager"))
 
 
+def ensure_home(home):
+    """Create the atm folder readable by its owner only: it lists the user's projects and the server's pid and port
+    (docs/security-review.md F18). A folder that exists already keeps its permissions."""
+    os.makedirs(home, mode=0o700, exist_ok=True)
+
+
+# A project id is a key in URLs (#project=<id>, p/<id>/...): letters, digits, '.', '_' and '-'
+PROJECT_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
+def unique_id(registry, path, wanted):
+    """The id for the project at `path`: `wanted` unless another project already has it or it isn't a valid id; then
+    one made from the path, so two projects never shadow each other (F18)."""
+    taken = {e.get("id") for e in registry["projects"] if e.get("path") != path}
+    if PROJECT_ID.fullmatch(wanted) and wanted not in taken:
+        return wanted
+    suffix = hashlib.sha1(path.encode("utf-8")).hexdigest()[:7]
+    base = wanted if PROJECT_ID.fullmatch(wanted) and len(wanted) <= 56 else "p"
+    return f"{base}-{suffix}"
+
+
 def main_worktree(root):
     """The main worktree's folder for a project root (itself unless it is a linked git worktree)."""
     common = git(["rev-parse", "--git-common-dir"], root)
@@ -488,9 +513,9 @@ def find_entry(registry, path):
     return next((e for e in registry["projects"] if e["path"] == path), None)
 
 
-def entry_for(path, meta, stamp):
+def entry_for(registry, path, meta, stamp):
     return {
-        "id": project_id(meta, path),
+        "id": unique_id(registry, path, project_id(meta, path)),
         "name": project_name(meta, path),
         "path": path,
         "added_at": stamp,
@@ -517,9 +542,9 @@ def update_entry(registry, path, meta):
         return "unlisted"
     stamp = now_iso()
     if entry is None:
-        registry["projects"].append(entry_for(path, meta, stamp))
+        registry["projects"].append(entry_for(registry, path, meta, stamp))
         return "added"
-    fresh = {"id": project_id(meta, path), "name": project_name(meta, path)}
+    fresh = {"id": unique_id(registry, path, project_id(meta, path)), "name": project_name(meta, path)}
     changed = any(entry.get(k) != v for k, v in fresh.items())
     if not (changed or seen_long_ago(entry)):
         return "unchanged"
@@ -539,6 +564,7 @@ def register(paths, wait=True):
     if meta is None:
         return None
     home = atm_home()
+    ensure_home(home)
     try:
         with locked(home, timeout=None if wait else 0):
             registry, _ = read_registry(home)
@@ -586,6 +612,7 @@ def damaged_notice(damaged):
 
 
 def projects_list(home, as_json):
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         if damaged:
@@ -606,6 +633,7 @@ def projects_add(home, target, as_json):
     path, meta = resolve_project(target)
     if not listed(meta):
         raise AtmError(f"{path} opts out of the dashboard (meta.dashboard.listed is false)")
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         result = update_entry(registry, path, meta)
@@ -625,6 +653,7 @@ def projects_remove(home, target, as_json):
     candidates = {target, os.path.abspath(os.path.expanduser(target))}
     if os.path.isdir(target):
         candidates.add(main_worktree(find_paths(os.path.abspath(target))["root"]))
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         entry = next((e for e in registry["projects"] if e.get("id") in candidates or e["path"] in candidates), None)
@@ -641,6 +670,7 @@ def projects_remove(home, target, as_json):
 
 
 def projects_prune(home, as_json):
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         gone = [e for e in registry["projects"] if is_missing(e)]
@@ -3763,6 +3793,8 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
+# A task file the server will read into memory and send (a big project's archive is a few MB)
+MAX_SERVED_BYTES = 100_000_000
 PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
 # A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
 LOGO_HEADERS = {
@@ -3827,7 +3859,7 @@ def ensure_server(home, port):
     record = live_server(home)
     if record:
         return record, False
-    os.makedirs(home, exist_ok=True)
+    ensure_home(home)
     with open(os.path.join(home, SERVER_LOG), "ab") as log:
         child = subprocess.Popen(
             [sys.executable, os.path.abspath(__file__), "_serve-child", home, str(port)],
@@ -3853,7 +3885,10 @@ def project_for(paths):
     register(paths)
     path = main_worktree(paths["root"])
     meta = project_meta(path) or project_meta(paths["root"]) or {}
-    return project_id(meta, path), listed(meta)
+    # The id the registry gave it: meta.id, or another when that one is taken (registry.unique_id)
+    registry = read_json(os.path.join(atm_home(), REGISTRY_FILE)) or {}
+    entry = next((e for e in registry.get("projects", []) if isinstance(e, dict) and e.get("path") == path), None)
+    return (entry or {}).get("id") or project_id(meta, path), listed(meta)
 
 
 def serve_start(paths, port, overview):
@@ -3974,10 +4009,16 @@ def cmd_serve(args):
 
 
 def port_in_use(port):
-    """Something accepts connections on 127.0.0.1:port."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", port)) == 0
+    """Something accepts connections on 127.0.0.1:port or [::1]:port (`localhost` may resolve to either)."""
+    for family, host in ((socket.AF_INET, "127.0.0.1"), (socket.AF_INET6, "::1")):
+        try:
+            with socket.socket(family, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                if s.connect_ex((host, port)) == 0:
+                    return True
+        except OSError:  # no IPv6 on this machine
+            pass
+    return False
 
 
 def file_stamp(p):
@@ -4074,13 +4115,21 @@ def project_logo(entry):
     return (logo[1], logo[2]) if logo else None
 
 
+def quietly(fn, default):
+    """fn(), or `default` if it fails: one project's broken files never break the list of all projects (F18)."""
+    try:
+        return fn()
+    except Exception:  # noqa: BLE001 - any failure in one project's files
+        return default
+
+
 def api_projects(registry, summaries):
     """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
-    logo and the day."""
+    logo and the day. A project whose files can't be read is listed as missing; the others are unaffected."""
     entries = registry.entries()
-    stamps = [summaries.stamp(e) for e in entries]
-    trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    stamps = [quietly(lambda e=e: summaries.stamp(e), None) for e in entries]
+    trees = [quietly(lambda e=e: worktrees(e["path"]), []) if stamp else [] for e, stamp in zip(entries, stamps)]
+    logos = [quietly(lambda e=e: project_logo(e), None) if stamp else None for e, stamp in zip(entries, stamps)]
     logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
     etag = (
         '"'
@@ -4091,7 +4140,7 @@ def api_projects(registry, summaries):
     def body():
         projects = []
         for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
-            summary = summaries.summary(entry, stamp) if stamp else None
+            summary = quietly(lambda: summaries.summary(entry, stamp), None) if stamp else None
             projects.append(
                 {
                     "id": entry.get("id"),
@@ -4180,6 +4229,8 @@ def cmd_serve_child(args):
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
+        # A connection that sends nothing (or trickles) is dropped instead of holding a thread forever (F18)
+        timeout = 30
 
         def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
@@ -4205,6 +4256,16 @@ def cmd_serve_child(args):
             self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
+            # One bad request, or one project's broken files, gets a 500, never a dead handler thread with no answer
+            try:
+                self.handle_get()
+            except Exception:  # noqa: BLE001
+                try:
+                    self.send_error_json(500, "internal error")
+                except OSError:
+                    pass
+
+        def handle_get(self):
             port_now = self.server.server_address[1]
             if self.headers.get("Host") not in (f"localhost:{port_now}", f"127.0.0.1:{port_now}"):
                 # A page on another site that points its own domain at 127.0.0.1 (DNS rebinding) is refused
@@ -4253,6 +4314,10 @@ def cmd_serve_child(args):
             if stamp is None:
                 self.send_error_json(404, "not found")
                 return
+            if stamp[0] > MAX_SERVED_BYTES:
+                # Each poll reads the whole file into memory: a runaway file is refused, not served
+                self.send_error_json(413, f"larger than {MAX_SERVED_BYTES // 1_000_000} MB")
+                return
 
             def read():
                 with open(p, "rb") as f:
@@ -4286,18 +4351,33 @@ def cmd_serve_child(args):
         # same option would also let it share a port another server listens on, hence port_in_use() first.
         allow_reuse_address = True
 
-    server = None
+    class Server6(Server):
+        address_family = socket.AF_INET6
+
+    # Browsers, curl and urllib try [::1] before 127.0.0.1 for `localhost`: the server listens on both, so no other
+    # local user can take [::1] on our port and answer for us (docs/security-review.md F10). Without IPv6, 127.0.0.1
+    # alone is enough: nobody can listen on [::1] then.
+    server = server6 = None
     for candidate in range(port, port + PORT_TRIES):
         if port_in_use(candidate):
             continue
         try:
             server = Server(("127.0.0.1", candidate), Handler)
-            break
         except OSError:
             continue
+        try:
+            server6 = Server6(("::1", candidate), Handler)
+        except OSError as e:
+            if e.errno == errno.EADDRINUSE:
+                server.server_close()
+                server = None
+                continue
+        break
     if server is None:
         sys.stderr.write(f"atm: no free port in {port}-{port + PORT_TRIES - 1}\n")
         return
+    if server6 is not None:
+        threading.Thread(target=server6.serve_forever, daemon=True).start()
     record = {
         "pid": os.getpid(),
         "port": server.server_address[1],

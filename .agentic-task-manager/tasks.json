@@ -5110,7 +5110,7 @@
       "description": "The top bar's Progress panel lists **every** phase under *By Phase* (this repo has 15), while the Progress tab has an **Active phases only** checkbox (T-145).\n\n### What to build\n- Add the same option to the panel's *By Phase* group, **sharing the Progress tab's setting**: one saved choice per project (view-store `progressActive`, and its *N* days), so turning it on in either place applies to both.\n- Reuse `activePhases()` from `forecast.ts`.\n- When phases are hidden, say how many: *\"2 older phases hidden\"*.\n- *Overall* and *By Type* stay unfiltered.\n\n### Tests\n- e2e: the toggle in the panel, and that it follows the Progress tab's setting.\n- Screenshots of the panel in both modes.\n\n> Depends on the By Phase card task (T-156), which changes the same markup.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-156"
       ],
@@ -5120,9 +5120,11 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:01:20Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T01:37:44Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:37:44Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-158",
@@ -6288,7 +6290,7 @@
       "description": "Seen on T-171: the agent's lease ran out during a long test run (no tool calls, so no heartbeat), after which:\n\n1. `atm done T-171` refused with *\"it is todo, not in_progress or in_review\"*, though `atm show` still said `in_progress`: the command expired the claim in memory, then refused **before writing**, so the file kept the old status;\n2. `atm release` refused the same way, and this time the expiry was written (a `failure` note: *lease expired*);\n3. the expiry had dropped the task's `commit` (`back_to_todo` clears it), so `atm done` needed `--commit` again.\n\n### Fix\n- When a status command (`done`, `release`, `fail`, `review`, `block`, `heartbeat`) finds that **this agent's own** claim on the task just expired, say so: *\"T-171: your lease expired at 23:00 (no heartbeat for 30 min), so it went back to todo. Your commit is kept. Run `atm start T-171`, then `atm done T-171` again.\"* Exit code 4, like a claim conflict.\n- Write the expiry **before** refusing, so `atm show` agrees with the error.\n- An expiry keeps the task's `commit` (the work is in git): `back_to_todo` drops it only when called by `reopen`, `reject` and `fail`.\n- Another agent's expired claim keeps today's message.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` with `ATM_NOW` past the lease: `done` by the claim's own agent (the message, exit 4, status `todo` on disk, `commit` kept); `start` then `done` works without `--commit`; another agent's expired claim unchanged. Update `docs/v4/atm-cli.md` (4.2) and the skills' error handling line on expired leases (do-task, loop-tasks).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/claims.py",
@@ -6301,11 +6303,22 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-26T00:24:09Z",
-      "updated_at": "2026-10-26T01:31:49Z",
+      "updated_at": "2026-10-26T01:37:41Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T01:31:49Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "bffbab0847a7d7aab294167b54ea8daca5824a82",
+      "completed_at": "2026-10-26T01:37:41Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:37:41Z",
+          "kind": "outcome",
+          "text": "Own expired lease: expiry written first, exit 4 with what happened and what to run; expiry and release keep the commit (fail/reject/reopen drop it); 6 scenarios",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-185",

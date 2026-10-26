@@ -67,6 +67,34 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
   });
 
+  test('the Progress panel shares "Active phases only": By phase follows it, Overall and By type stay whole', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await page.locator('#active-phases-only').check();
+    await page.locator('#active-phases-days').fill('3');
+    await page.locator('#active-phases-days').press('Tab');
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
+
+    await page.locator('#progress-card').click();
+    const panel = page.locator('#progress-panel');
+    const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
+    await expect(panel.locator('#panel-active-phases-only')).toBeChecked();
+    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 1', 'Phase 2']);
+    await expect(panel.locator('#panel-phases-hidden')).toHaveText('1 older phase hidden');
+    const typesBefore = await section('By type').locator('.ring-label').count();
+
+    // Turned off in the panel: off in the tab too
+    await panel.locator('#panel-active-phases-only').uncheck();
+    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2']);
+    await expect(panel.locator('#panel-phases-hidden')).toHaveCount(0);
+    await expect(section('By type').locator('.ring-label')).toHaveCount(typesBefore);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#active-phases-only')).not.toBeChecked();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+  });
+
   test('progress bars show each phase', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
     const width = (phase: number) =>

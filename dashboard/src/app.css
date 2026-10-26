@@ -568,6 +568,24 @@ h1 {
   border-radius: 8px;
   padding: 10px 12px 8px;
 }
+/* The group's title, and By phase's "Active phases only" (shared with the Progress tab) on the same line */
+.ring-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+.ring-group-head .menu-label {
+  margin-right: auto;
+}
+.ring-group-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
 .ring-cell {
   display: flex;
   flex-direction: column;

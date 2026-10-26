@@ -278,7 +278,11 @@ for (const mode of ['dark', 'light'] as const) {
       .goneProject('old1234', 'Old Project');
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('.project-card')).toHaveCount(4);
-    await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-${mode}.png`);
+    // The whole page: the title bar has to look exactly like the project page's (controls at the right)
+    await expect(page).toHaveScreenshot(`projects-overview-${mode}.png`, {
+      mask: [page.locator('#version-chip'), page.locator('#footer-version')],
+      stylePath: path.join(import.meta.dirname, 'screenshot.css'),
+    });
   });
 }
 

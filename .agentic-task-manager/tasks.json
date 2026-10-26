@@ -6511,7 +6511,7 @@
       "description": "On **All projects**, the Refresh and theme pills are not pinned to the right as in the project view. It should look **exactly the same**.\n\n`LandingPage.svelte` has its own copy of `<header class=\"topbar\">` (title, project selector, subtitle, `topbar-controls`), separate from `Header.svelte`.\n\n## Do\n- Make one title bar component used by both pages: title row, project selector, version chip, subtitle, controls at the right. The project page adds its charts and the filters row through slots/snippets.\n- Remove the copy from `LandingPage.svelte`.\n\n## Verify\n- e2e: `.topbar-controls` has the same right edge and top on the project page and on `#overview`.\n- Update screenshot baselines for the overview.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Header.svelte",
@@ -6519,9 +6519,22 @@
         "dashboard/src/styles/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:43:11Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:05:29Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "63e45387d846a07d55b601d6a4b593564c3cf2fc",
+      "completed_at": "2026-10-26T05:43:11Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:43:11Z",
+          "kind": "outcome",
+          "text": "New TitleBar.svelte shared by Header and LandingPage; controls pinned right (margin-left: auto); overview now shows the version chip; e2e checks controls' position on both pages; overview screenshot now covers the whole page",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-189",
@@ -6536,7 +6549,7 @@
       "description": "On **All projects** the status bar (`Footer.svelte`) isn't pinned to the bottom of the window; on the project page it is.\n\nThe page layout should be defined **once**, in `App.svelte`, not per page.\n\n## Do\n- Find why the footer stays at the bottom on the project page (a rule tied to `ViewPanel`/`main`?) and not on `.landing`.\n- Give the app one layout: title bar, a main area that grows, the status bar at the bottom, for every route (`project`, `overview`, `none`, `unknown`).\n\n## Verify\n- e2e: with only one project card, the footer's bottom equals the viewport's bottom on `#overview`, on the empty page and on the project page.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-188"
       ],
@@ -6547,9 +6560,22 @@
         "dashboard/src/styles/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:53:52Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:43:14Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "dbcd230a69e0f561df89c0cae84b31f1ca3c14a5",
+      "completed_at": "2026-10-26T05:53:52Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:53:52Z",
+          "kind": "outcome",
+          "text": "App.svelte now has one layout for every route: Header (title bar per route), main.app-main (flex: 1 0 auto), Footer; LandingPage is only the page body; e2e checks the footer bottom on project, overview and no-projects pages",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-190",
@@ -6589,15 +6615,23 @@
       "description": "The project cards show **too little** about each project. Brainstorm what would help someone glancing at all their projects, and write it up.\n\n## Do\n- Write `docs/project-cards-proposal.md` with options, each with a sketch and what the server summary must add. Ideas to weigh:\n  - recent phases as rings (see the phase-rings tasks)\n  - what agents are doing now (task names, not just a count)\n  - tasks needing you, with their names\n  - the next ready tasks\n  - open PR / branch / CI state (`meta.repository`, task PRs)\n  - last finished task and when\n  - project logo and description\n- Recommend a layout that fits a card, and list follow-up tasks.\n- Review it with the user before follow-up tasks are added (`/atm:create-tasks`).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "blocked",
       "dependencies": [],
       "files": [
         "docs/project-cards-proposal.md"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T06:32:49Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:53:57Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "5a2fa28462786cb70f3e9ff7660fcdea5a514f03",
+      "waiting_on": "user",
+      "questions": [
+        "Review docs/project-cards-proposal.md: is the recommended card layout right (needs-you line, recent-phase rings, agents working now / next ready, git branch + PR, last finished task)? Answer its §5 questions (first needing-you task inline or chip popup only; CI state via an opt-in cached gh call or not; keep overall done/total; add meta.description), then I add the §6 follow-up tasks with /atm:create-tasks."
+      ],
+      "blocked_at": "2026-10-26T06:32:49Z"
     },
     {
       "id": "T-192",

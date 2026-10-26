@@ -29,12 +29,15 @@
 </script>
 
 <UpdateNotice />
-{#if dashboard.route.page === 'project'}
-  <Header />
-  <ViewPanel />
-{:else}
-  <LandingPage />
-{/if}
+<!-- One layout for every page: the title bar, a main area that takes the rest of the window, the status bar -->
+<Header />
+<main class="app-main" id="app-main">
+  {#if dashboard.route.page === 'project'}
+    <ViewPanel />
+  {:else}
+    <LandingPage />
+  {/if}
+</main>
 <Footer />
 <LoadError />
 <DetailPanel />

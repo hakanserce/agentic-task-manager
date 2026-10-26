@@ -19,6 +19,48 @@ test.describe('projects', () => {
     await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
   });
 
+  test('the title bar is the same on the overview and on a project: controls at the same place', async ({
+    page,
+    tasksServer,
+  }) => {
+    tasksServer.addProject('second', 'minimal', 'Second Project');
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
+    await expect(page.locator('#version-chip')).toBeVisible();
+    const onOverview = (await page.locator('.topbar-controls').boundingBox())!;
+    await page.locator('.project-card[data-id="second"] .project-card-open').click();
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    const onProject = (await page.locator('.topbar-controls').boundingBox())!;
+    expect(onOverview.x + onOverview.width).toBeCloseTo(onProject.x + onProject.width, 0);
+    expect(onOverview.y).toBeCloseTo(onProject.y, 0);
+  });
+
+  test('the status bar sits at the bottom of the window on every page, however short', async ({
+    page,
+    tasksServer,
+  }) => {
+    const footerAtBottom = async () => {
+      const box = (await page.locator('#site-footer').boundingBox())!;
+      const height = page.viewportSize()!.height;
+      expect(box.y + box.height).toBeCloseTo(height, 0);
+    };
+    // The project page
+    await openDashboard(page, tasksServer, 'minimal');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await footerAtBottom();
+    // The overview, with one project card
+    await page.goto('tasks-dashboard.html#overview');
+    await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
+    await expect(page.locator('#projects-grid .project-card')).toHaveCount(1);
+    await footerAtBottom();
+    // No projects yet
+    tasksServer.noProjects();
+    await page.goto('tasks-dashboard.html#');
+    await page.reload();
+    await expect(page.locator('#no-projects')).toBeVisible();
+    await footerAtBottom();
+  });
+
   test('with one project, the dashboard opens it right away', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');

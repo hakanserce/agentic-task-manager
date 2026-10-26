@@ -1,41 +1,13 @@
 <script lang="ts">
   // The pages without a project: the overview of all projects, how to add a project when none is registered, and a
-  // project the URL names but the server doesn't list (lib/routes.ts)
+  // project the URL names but the server doesn't list (lib/routes.ts). Their title bar is Header's.
   import { dashboard } from '../lib/state.svelte';
-  import AppearanceMenu from './AppearanceMenu.svelte';
-  import ProjectSelector from './ProjectSelector.svelte';
   import ProjectsOverview from './ProjectsOverview.svelte';
-  import RefreshMenu from './RefreshMenu.svelte';
 
   const present = $derived(dashboard.projects.filter((p) => !p.missing));
-  const title = $derived(dashboard.route.page === 'overview' ? 'All projects — Task Dashboard' : 'Task Dashboard');
-
-  $effect(() => {
-    document.title = title;
-  });
 </script>
 
-<header class="topbar">
-  <div class="title-block">
-    <div class="title-row">
-      <h1 id="dashboard-title">{title}</h1>
-      {#if dashboard.projects.length}<ProjectSelector />{/if}
-    </div>
-    <p class="subtitle" id="subtitle">
-      {#if !dashboard.projectsLoaded}
-        Loading projects…
-      {:else}
-        {present.length} project{present.length === 1 ? '' : 's'}
-      {/if}
-    </p>
-  </div>
-  <div class="topbar-controls">
-    <RefreshMenu />
-    <AppearanceMenu />
-  </div>
-</header>
-
-<main class="landing" id="landing" data-page={dashboard.route.page}>
+<div class="landing" id="landing" data-page={dashboard.route.page}>
   {#if dashboard.route.page === 'unknown'}
     <section class="landing-note" id="unknown-project" role="alert">
       <h2>No project “{dashboard.route.id}”</h2>
@@ -55,4 +27,4 @@
   {:else}
     <ProjectsOverview />
   {/if}
-</main>
+</div>

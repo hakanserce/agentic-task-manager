@@ -140,12 +140,34 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
-/* A task's description in the detail panel: Markdown that starts flush with its label */
+/* A task's description in the detail panel: Markdown in a box of its own, so its headings don't read as the panel's
+   sections. The page background sets it apart from the panel and keeps code blocks (surface2) visible inside it */
+.detail-description {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  min-width: 0;
+}
 .detail-description .markdown > :first-child {
   margin-top: 0;
 }
 .detail-description .markdown > :last-child {
   margin-bottom: 0;
+}
+/* Headings stay below the panel's section labels: smaller, and the lower levels muted */
+.detail-description .markdown h3 {
+  font-size: 14px;
+  margin-top: 14px;
+}
+.detail-description .markdown h4 {
+  font-size: 13px;
+  margin-top: 12px;
+}
+.detail-description .markdown h5,
+.detail-description .markdown h6 {
+  font-size: 12px;
+  margin-top: 10px;
 }
 /* Rendered Markdown (Markdown.svelte): Help and task descriptions */
 .markdown {

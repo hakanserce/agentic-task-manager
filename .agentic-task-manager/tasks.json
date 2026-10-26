@@ -6750,7 +6750,7 @@
         "dashboard/index.html"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T06:21:13Z",
+      "updated_at": "2026-10-26T06:27:06Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "commit": "adedba8380c0e395b51d916bbb05a70b42bca45b",
@@ -6759,6 +6759,12 @@
           "at": "2026-10-26T06:21:13Z",
           "kind": "answer",
           "text": "Which ATM logo? Open docs/logo/preview.html (16/32/64 px, light, dark, accent): A graph (two tasks leading to a done one), B ring (a 3/4 progress ring around a check), C board (Kanban columns of cards). Or describe changes. The pick then goes in the title bar, favicon and About. → A1, the board (logo-proposals/a-board.svg).",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T06:27:06Z",
+          "kind": "handoff",
+          "text": "Not done here: the answer picks a-board.svg from agent aa1f04's proposals (branch worktree-agent-aa1f04b8137988c35, commit 29e8a60, dashboard/src/assets/logo-proposals/), not in this branch. Implement after merging that branch; drop docs/logo/ (this branch's duplicate proposals, commit adedba8).",
           "by": "claude:e5ea9db0"
         }
       ]
@@ -6816,7 +6822,7 @@
       "description": "Show each project's logo (`p/<id>/logo`) in the **project selector**, on the **project cards** and next to the project name in the title bar.\n\n## Do\n- A small `ProjectLogo` component: the image when the project has one, otherwise a monogram (the project's initials on a colour derived from its id).\n- Fixed size per place (e.g. 16 px in the selector, 24 px on cards), `object-fit: contain`, rounded.\n- No layout shift while the image loads; fall back to the monogram if it fails.\n\n## Verify\n- Component tests for image / monogram / failed image.\n- e2e with the `tasksServer` fixture serving a logo for one project and none for another; screenshot baselines.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-196"
       ],
@@ -6828,11 +6834,22 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T06:08:57Z",
+      "updated_at": "2026-10-26T06:26:32Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T06:08:57Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "270c6c9f02b37c69e10d2cc0cdc8e1d23e6ecdb5",
+      "completed_at": "2026-10-26T06:26:32Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T06:26:32Z",
+          "kind": "outcome",
+          "text": "ProjectLogo (image or CSS-drawn monogram, fixed box, falls back on error) in cards (24px), selector (16px) and title bar (26px); load.ts accepts only p/<id>/logo",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-198",

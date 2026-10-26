@@ -1,0 +1,89 @@
+[
+  {
+    "name": "repository without an address says how to set it",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["repository"],
+    "expect": {
+      "stdout": "No repository address yet. Set it with `atm repository set <url>` (a git remote works too).\n"
+    }
+  },
+  {
+    "name": "repository set takes an https URL, without .git or a trailing slash",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "meta": { "project": "P" }, "tasks": [] } } },
+    "args": ["repository", "set", "https://github.com/acme/demo.git/"],
+    "expect": {
+      "stdout": "Repository address set: https://github.com/acme/demo\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "project": "P", "repository": "https://github.com/acme/demo" },
+          "tasks": []
+        }
+      }
+    }
+  },
+  {
+    "name": "repository set turns an scp-style git remote into the web address",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["repository", "set", "git@github.com:acme/demo.git", "--json"],
+    "expect": { "json": { "repository": "https://github.com/acme/demo" } }
+  },
+  {
+    "name": "repository set turns an ssh:// remote (with a port and user) into the web address",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["repository", "set", "ssh://git@gitlab.example.com:2222/team/app.git", "--json"],
+    "expect": { "json": { "repository": "https://gitlab.example.com/team/app" } }
+  },
+  {
+    "name": "repository set drops credentials from an https remote",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["repository", "set", "https://token@github.com/acme/demo.git", "--json"],
+    "expect": { "json": { "repository": "https://github.com/acme/demo" } }
+  },
+  {
+    "name": "repository set refuses something that isn't an address, and nothing changes",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["repository", "set", "not a url"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["is not a repository address"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } }
+    }
+  },
+  {
+    "name": "repository prints the address; --json too",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "repository": "https://github.com/acme/demo" }, "tasks": [] }
+      }
+    },
+    "args": ["repository", "--json"],
+    "expect": { "json": { "repository": "https://github.com/acme/demo" } }
+  },
+  {
+    "name": "init fills the address in from origin",
+    "setup": {
+      "git": true,
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234" }, "tasks": [] } },
+      "commands": [["git", "remote", "add", "origin", "git@github.com:acme/demo.git"]]
+    },
+    "args": ["init"],
+    "expect": {
+      "stdoutIncludes": ["Recorded the repository address (https://github.com/acme/demo)"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "id": "abcd1234", "repository": "https://github.com/acme/demo" },
+          "tasks": []
+        }
+      }
+    }
+  },
+  {
+    "name": "init keeps an address that is already set, and without a remote sets none",
+    "setup": {
+      "git": true,
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "id": "abcd1234" }, "tasks": [] } }
+    },
+    "args": ["init", "--json"],
+    "expect": { "stdoutIncludes": ["\"repository\": null"] }
+  }
+]

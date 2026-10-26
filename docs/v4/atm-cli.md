@@ -105,6 +105,14 @@ Existing commands are marked *(exists)*.
 | `atm note <id> T` | — | adds a `note` |
 | `atm heartbeat <id>` *(exists)* | — | extends the claim |
 
+**An expired lease** (T-184): every command first expires claims whose lease ran out; their tasks go back to todo with
+a `failure` note, and keep their `commit` (the work is in git). Going back to todo drops the commit only for `fail`,
+`reject` and `reopen`, which undo the work. When `done`, `release`, `fail`, `review`, `block` or `heartbeat` finds
+that the expired claim was the agent's **own**, it writes the expiry, then stops with exit code 4 and says what
+happened and what to do: *"T-171: your lease expired at 23:00 UTC (no heartbeat for 30 min), so it went back to todo.
+Your commit is kept. Run `atm start T-171`, then `atm done T-171` again."* Another agent's expired claim gives the
+usual refusal.
+
 ### 4.3 Editing tasks
 
 | Command | Does |

@@ -38,8 +38,11 @@ export type PhaseState = 'done' | 'in_progress' | 'not_started';
 
 export interface PhaseForecast {
   phase: number;
+  /** Tasks that count: all but the skipped ones */
   total: number;
   done: number;
+  /** Skipped tasks: neither done nor left to do, shown apart */
+  skipped: number;
   /** Tasks in this phase that still need agent work (todo, active, unknown statuses); not blocked, in review or skipped */
   remaining: number;
   blocked: number;
@@ -140,10 +143,12 @@ export function forecastPhases(
       const started = inPhase.some((t) => !['todo', 'skipped', 'blocked'].includes(kind(t) ?? 'unknown'));
       const state: PhaseState = finished ? 'done' : started ? 'in_progress' : 'not_started';
 
+      const skipped = inPhase.filter((t) => kind(t) === 'skipped').length;
       const result: PhaseForecast = {
         phase,
-        total: inPhase.length,
+        total: inPhase.length - skipped,
         done: done.length,
+        skipped,
         remaining,
         blocked,
         inReview,

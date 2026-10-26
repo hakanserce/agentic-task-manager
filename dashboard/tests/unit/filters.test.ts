@@ -36,9 +36,22 @@ describe('filterOptions', () => {
     expect(o.status).toEqual([
       { value: 'todo', label: 'To Do' },
       { value: 'in_progress', label: 'In Progress' },
+      { value: 'in_review', label: 'In Review' }, // no task is in review: still offered
       { value: 'blocked', label: 'Blocked' },
       { value: 'done', label: 'Done' },
       { value: 'skipped', label: 'Skipped' },
+    ]);
+  });
+
+  it('offers every status of the vocabulary, also when all tasks have the same one', () => {
+    const allDone = standard.map((t) => ({ ...t, status: 'done' }));
+    expect(filterOptions(allDone).status.map((x) => x.value)).toEqual([
+      'todo',
+      'in_progress',
+      'in_review',
+      'blocked',
+      'done',
+      'skipped',
     ]);
   });
 
@@ -53,7 +66,8 @@ describe('filterOptions', () => {
       phases: [{ id: 1, name: 'Core' }],
     });
     const o = filterOptions(standard, vocab);
-    expect(o.status.map((x) => x.label)).toEqual(['Backlog', 'Shipped', 'Blocked', 'In Progress', 'Skipped']);
+    // Doing has no task but is the project's: listed. Statuses it doesn't list but tasks use come last
+    expect(o.status.map((x) => x.label)).toEqual(['Doing', 'Backlog', 'Shipped', 'Blocked', 'In Progress', 'Skipped']);
     expect(o.type.slice(0, 3).map((x) => x.label)).toEqual(['Tests', 'Bugfix', 'Docs']);
     expect(o.phase.map((x) => x.label)).toEqual(['0', '1 · Core', '2']);
   });
@@ -65,11 +79,19 @@ describe('filterOptions', () => {
   });
 
   it('puts unknown statuses last', () => {
-    expect(filterOptions(edgeFile.tasks as Task[]).status.map((x) => x.value)).toEqual(['todo', 'done', 'review']);
+    expect(filterOptions(edgeFile.tasks as Task[]).status.map((x) => x.value)).toEqual([
+      'todo',
+      'in_progress',
+      'in_review',
+      'blocked',
+      'done',
+      'skipped',
+      'review',
+    ]);
   });
 
-  it('is empty for no tasks', () => {
-    expect(filterOptions([])).toEqual({
+  it('is empty for no tasks, except the statuses, which come from the vocabulary', () => {
+    expect({ ...filterOptions([]), status: [] }).toEqual({
       phase: [],
       type: [],
       status: [],

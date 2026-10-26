@@ -15,6 +15,7 @@ from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .phases import cmd_phases
 from .registry import cmd_projects
+from .repository import cmd_repository
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
@@ -91,6 +92,9 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  repository [set URL]
+                 print or set the repository's web address (meta.repository), for commit and PR links; a git
+                 remote is turned into one; atm init fills it from origin
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -338,6 +342,9 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
+    repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
+    repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
     phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
     phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
     phases.add_argument("number", nargs="?", help="the phase number")

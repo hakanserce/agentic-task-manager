@@ -47,7 +47,10 @@ describe('Filters', () => {
         (b) => (b as HTMLElement).dataset.value,
       );
     expect(values('phase')).toEqual(['all', '0', '1', '2']);
-    expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'blocked', 'done', 'skipped']);
+    expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'in_review', 'blocked', 'done', 'skipped']);
+    // No task is in review: offered with a count of 0, and can be selected
+    expect(button(container, 'status', 'in_review')).toHaveAttribute('aria-label', 'In Review, 0 tasks');
+    expect(button(container, 'status', 'in_review')).toBeEnabled();
     expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(4);
     expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 3 tasks');
     expect(button(container, 'phase', 'all')).toHaveAttribute('aria-label', 'All phases, 12 tasks');

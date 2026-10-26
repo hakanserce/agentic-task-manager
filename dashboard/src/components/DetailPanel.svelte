@@ -6,6 +6,10 @@
   import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import { parseMarkdown } from '../lib/markdown';
+  import { taskTimes } from '../lib/work';
+  import { commitRef } from '../lib/repo';
+  import RepoRef from './RepoRef.svelte';
+  import BranchChip from './BranchChip.svelte';
   import LabelChips from './LabelChips.svelte';
   import Markdown from './Markdown.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
@@ -33,6 +37,19 @@
   const actors = $derived(task ? actorsLine(task) : '');
   const attempts = $derived(task ? earlierAttempts(task) : []);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
+  // Created, started, sent for review, finished, how long the work took, last updated
+  const times = $derived(task ? taskTimes(task, dashboard.loadedAt, dashboard.vocab) : []);
+
+  // Another task opens at its top; the same task re-rendered (auto-refresh, a reload) keeps its scroll position
+  let panel: HTMLElement;
+  let shownId: string | undefined;
+  $effect(() => {
+    const id = task?.id;
+    if (id !== shownId) {
+      shownId = id;
+      if (panel) panel.scrollTop = 0;
+    }
+  });
 
   function onOverlayClick(e: MouseEvent) {
     if (e.target === e.currentTarget) dashboard.closeDetail();
@@ -47,7 +64,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (Escape closes, see above) -->
 <div class="detail-overlay" class:open={dashboard.detailOpen} id="detail-overlay" onclick={onOverlayClick}>
-  <div class="detail-panel" id="detail-panel">
+  <div class="detail-panel" id="detail-panel" bind:this={panel}>
     {#if task}
       {@const ts = typeStyle(task.type)}
       {@const ss = statusStyle(task.status)}
@@ -67,6 +84,7 @@
         >
         <PriorityBadge {task} />
         <StageChip {task} />
+        <BranchChip {task} />
         <LabelChips {task} />
       </div>
       <div class="detail-section">
@@ -183,16 +201,19 @@
       {#if task.commit}
         <div class="detail-section" id="detail-commit">
           <div class="label">Commit</div>
-          <div class="value"><code title={task.commit}>{shortSha(task.commit)}</code></div>
+          <div class="value">
+            <RepoRef ref={commitRef(dashboard.meta, task.commit)} title={task.commit}
+              ><code>{shortSha(task.commit)}</code></RepoRef
+            >
+          </div>
         </div>
       {/if}
-      {#if task.created_at || task.updated_at}
-        <div class="detail-section">
+      {#if times.length}
+        <div class="detail-section" id="detail-times">
           <div class="label">Timestamps</div>
           <div class="value" style="font-size:13px;color:var(--text-muted)">
-            {#if task.created_at}Created: {new Date(task.created_at).toLocaleString()}<br
-              />{/if}{#if task.updated_at}Updated:
-              {new Date(task.updated_at).toLocaleString()}{/if}
+            {#each times as row, i (row.label)}{#if i}<br />{/if}{row.label}:
+              {row.at ? new Date(row.at).toLocaleString() : row.text}{/each}
           </div>
         </div>
       {/if}

@@ -6,6 +6,7 @@
   import type { Task } from '../lib/types';
   import { kindOf, phaseLabel, statusLabel, typeLabel } from '../lib/vocab';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
+  import BranchChip from './BranchChip.svelte';
   import LabelChips from './LabelChips.svelte';
   import PriorityBadge from './PriorityBadge.svelte';
   import StageChip from './StageChip.svelte';
@@ -39,6 +40,7 @@
       <span class="badge" style="background:{ss.bg};color:{ss.color}">{statusLabel(dashboard.vocab, task.status)}</span>
       <PriorityBadge {task} />
       <StageChip {task} />
+      <BranchChip {task} />
       <LabelChips {task} />
       {#if deps.length}
         <span class="deps-label">needs:</span>

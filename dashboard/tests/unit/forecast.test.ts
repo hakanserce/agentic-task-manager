@@ -85,11 +85,11 @@ describe('percentile and pace', () => {
 describe('forecastPhases', () => {
   const f = forecastPhases(tasks, NOW);
 
-  it('reports per-phase progress and state', () => {
-    expect(f.phases.map((p) => [p.phase, p.done, p.total, p.remaining, p.blocked, p.state])).toEqual([
-      [0, 4, 4, 0, 0, 'done'],
-      [1, 4, 6, 1, 1, 'in_progress'],
-      [2, 0, 6, 5, 0, 'not_started'],
+  it('reports per-phase progress and state; skipped tasks count apart, not in the total', () => {
+    expect(f.phases.map((p) => [p.phase, p.done, p.total, p.skipped, p.remaining, p.blocked, p.state])).toEqual([
+      [0, 4, 4, 0, 0, 0, 'done'],
+      [1, 4, 6, 0, 1, 1, 'in_progress'],
+      [2, 0, 5, 1, 5, 0, 'not_started'],
     ]);
   });
 
@@ -131,6 +131,7 @@ describe('activePhases', () => {
   const phase = (n: number, state: PhaseForecast['state'], completedAt?: number): PhaseForecast => ({
     phase: n,
     total: 2,
+    skipped: 0,
     done: state === 'done' ? 2 : 0,
     remaining: state === 'done' ? 0 : 2,
     blocked: 0,

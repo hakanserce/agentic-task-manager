@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { activePhases, forecastPhases } from '../lib/forecast';
   import { progressBreakdown } from '../lib/insights';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
@@ -14,6 +15,22 @@
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
   const statusLabel = (status: string) => vocabStatusLabel(dashboard.vocab, status);
+
+  // "Active phases only", shared with the Progress tab (one saved choice per project): By phase keeps unfinished
+  // phases and those finished in the last N days. Overall and By type stay whole.
+  const active = $derived(dashboard.progressActive);
+  const byPhase = $derived.by(() => {
+    if (!active.only) return p.byPhase;
+    const keep = new Set(
+      activePhases(
+        forecastPhases(dashboard.tasks, Date.now(), dashboard.tasks, dashboard.vocab).phases,
+        Date.now(),
+        active.days,
+      ).map((f) => String(f.phase)),
+    );
+    return p.byPhase.filter((s) => keep.has(s.key));
+  });
+  const hiddenPhases = $derived(p.byPhase.length - byPhase.length);
 </script>
 
 <svelte:window
@@ -56,9 +73,22 @@
     <div class="insights-panel" id="progress-panel" role="dialog" aria-label="Progress details">
       <div class="panel-heading">Progress</div>
       <div class="insights-hero">
-        <Ring ratio={p.overall.ratio} color="var(--green)" size={132} stroke={12} label="All tasks" />
+        <Ring
+          ratio={p.overall.ratio}
+          color="var(--green)"
+          size={132}
+          stroke={12}
+          label="All tasks"
+          skipped={p.overall.skipped}
+          total={p.overall.total}
+        />
         <div class="insights-hero-text">
-          <div class="insights-title">{p.overall.done} of {p.overall.total} tasks done</div>
+          <div class="insights-title">
+            {p.overall.done} of {p.overall.total} tasks done{#if p.overall.skipped}<span
+                class="skipped-note"
+                id="overall-skipped">&nbsp;· {p.overall.skipped} skipped</span
+              >{/if}
+          </div>
           <!-- Status split: a stacked bar (part of a whole), labelled in the legend -->
           <div class="status-bar" aria-hidden="true">
             {#each p.byStatus as s (s.status)}
@@ -79,19 +109,47 @@
           </ul>
         </div>
       </div>
-      {@render group('By phase', p.byPhase, (key) => phaseColor(Number(key)))}
+      {@render group('By phase', byPhase, (key) => phaseColor(Number(key)), phaseFilter)}
       {@render group('By type', p.byType, (key) => typeStyle(key).color)}
     </div>
   {/if}
 </div>
 
-{#snippet group(title: string, shares: typeof p.byPhase, color: (key: string) => string)}
-  <div class="insights-section">
-    <div class="menu-label">{title}</div>
+{#snippet phaseFilter()}
+  <label class="ring-group-filter" title="Unfinished phases, and those finished within the last {active.days} days">
+    <input
+      type="checkbox"
+      id="panel-active-phases-only"
+      checked={active.only}
+      onchange={(e) => (dashboard.progressActive = { ...active, only: e.currentTarget.checked })}
+    />
+    Active phases only
+  </label>
+  {#if active.only && hiddenPhases > 0}
+    <span class="phase-filter-hidden" id="panel-phases-hidden"
+      >{hiddenPhases} older phase{hiddenPhases === 1 ? '' : 's'} hidden</span
+    >
+  {/if}
+{/snippet}
+
+{#snippet group(
+  title: string,
+  shares: typeof p.byPhase,
+  color: (key: string) => string,
+  extra?: import('svelte').Snippet,
+)}
+  <div class="insights-section ring-group">
+    <div class="ring-group-head">
+      <div class="menu-label">{title}</div>
+      {#if extra}{@render extra()}{/if}
+    </div>
     <div class="ring-grid">
       {#each shares as s (s.key)}
-        <div class="ring-cell" title="{capitalize(s.label)}: {s.done} of {s.total} done">
-          <Ring ratio={s.ratio} color={color(s.key)} label={s.label} />
+        <div
+          class="ring-cell"
+          title="{capitalize(s.label)}: {s.done} of {s.total} done{s.skipped ? `, ${s.skipped} skipped` : ''}"
+        >
+          <Ring ratio={s.ratio} color={color(s.key)} label={s.label} skipped={s.skipped} total={s.total} />
           <div class="ring-label">{capitalize(s.label)}</div>
           <div class="ring-count">{s.done}/{s.total}</div>
         </div>

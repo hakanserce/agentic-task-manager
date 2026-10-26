@@ -356,8 +356,9 @@ def touch(task, actor, stamp):
         task["updated_by"] = actor
 
 
-def back_to_todo(task, vocab, actor, stamp):
-    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
+def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
+    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4). The commit
+    goes too, unless `keep_commit`: an expired lease or a release leaves the work in git, to be finished later."""
     task["status"] = status_for(vocab, "todo")
     touch(task, actor, stamp)
     for field in (
@@ -367,13 +368,14 @@ def back_to_todo(task, vocab, actor, stamp):
         "started_by",
         "completed_by",
         "agent",
-        "commit",
         "review_requested_at",
         "waiting_on",
         "questions",
         "blocked_at",
     ):
         task.pop(field, None)
+    if not keep_commit:
+        task.pop("commit", None)
 
 
 def answer_note(questions, answers):
@@ -432,7 +434,8 @@ def change_status(
         check_note(answered)
     stamp = now_iso()
     if new_kind == "todo":
-        back_to_todo(task, vocab, agent, stamp)
+        # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
+        back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
         if answered:
             add_note(task, "answer", answered, agent, stamp)
         if command == "fail":

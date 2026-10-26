@@ -5,7 +5,7 @@ import type { Task, TasksFile } from './types';
 export const DEFAULT_PROJECT_NAME = 'Task Dashboard';
 export const PROJECTS_URL = 'api/projects';
 
-export type ProjectFile = 'tasks.json' | 'claims.json' | 'tasks-archive.json';
+export type ProjectFile = 'tasks.json' | 'claims.json' | 'tasks-archive.json' | 'worktrees.json';
 
 /** Where a project's file is served */
 export function projectFileUrl(project: string, file: ProjectFile): string {
@@ -33,6 +33,8 @@ export interface ProjectEntry {
   /** Its folder or tasks.json is gone */
   missing: boolean;
   summary: ProjectSummary | null;
+  /** Its git worktrees, main first (empty outside git, or for a missing project) */
+  worktrees?: { path: string; branch: string | null; main: boolean }[];
 }
 
 export interface LoadedTasks {
@@ -90,6 +92,17 @@ async function fetchFile(
   return { unchanged: false, text: await resp.text(), validators };
 }
 
+/** fetchFile for a project's file (p/<id>/<file>) */
+export function fetchProjectFile(
+  project: string,
+  file: ProjectFile,
+  fetchFn: typeof fetch,
+  since?: Validators,
+  missing?: string,
+): Promise<FileResult> {
+  return fetchFile(projectFileUrl(project, file), fetchFn, since, missing);
+}
+
 const isProject = (p: unknown): p is ProjectEntry =>
   !!p && typeof p === 'object' && typeof (p as ProjectEntry).id === 'string' && !!(p as ProjectEntry).id;
 
@@ -110,6 +123,11 @@ export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Valida
     path: typeof p.path === 'string' ? p.path : '',
     missing: p.missing === true,
     summary: p.summary && typeof p.summary === 'object' ? p.summary : null,
+    worktrees: Array.isArray(p.worktrees)
+      ? p.worktrees
+          .filter((w) => !!w && typeof w === 'object' && typeof w.path === 'string')
+          .map((w) => ({ path: w.path, branch: typeof w.branch === 'string' ? w.branch : null, main: w.main === true }))
+      : [],
   }));
   return { unchanged: false, projects, validators: file.validators };
 }

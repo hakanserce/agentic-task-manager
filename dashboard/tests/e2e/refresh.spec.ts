@@ -14,10 +14,10 @@ const progress = (page: Page) => page.locator('#progress-card');
 test.describe('reload', () => {
   test('the Reload button re-fetches and re-renders', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
-    await expect(progress(page)).toHaveAccessibleName('Progress 42%, 5 of 12 tasks done');
+    await expect(progress(page)).toHaveAccessibleName('Progress 45%, 5 of 11 tasks done');
     tasksServer.use(standardWithT005Done());
     await page.locator('#reload-btn').click();
-    await expect(progress(page)).toHaveAccessibleName('Progress 50%, 6 of 12 tasks done');
+    await expect(progress(page)).toHaveAccessibleName('Progress 55%, 6 of 11 tasks done');
     await expect(page.locator('.task-card[data-id="T-005"]')).toHaveClass(/status-done/);
     expect(tasksServer.requests).toBe(2);
   });
@@ -81,7 +81,7 @@ test.describe('auto-refresh', () => {
   test('picks up changes on the next tick', async ({ page, tasksServer }) => {
     tasksServer.use(standardWithT005Done());
     await page.clock.runFor(5_000);
-    await expect(progress(page)).toHaveAccessibleName('Progress 50%, 6 of 12 tasks done');
+    await expect(progress(page)).toHaveAccessibleName('Progress 55%, 6 of 11 tasks done');
   });
 
   test('an unchanged file is a 304: nothing is parsed or re-rendered; a change still shows', async ({
@@ -99,7 +99,7 @@ test.describe('auto-refresh', () => {
 
     tasksServer.use(standardWithT005Done());
     await page.clock.runFor(5_000);
-    await expect(progress(page)).toHaveAccessibleName('Progress 50%, 6 of 12 tasks done');
+    await expect(progress(page)).toHaveAccessibleName('Progress 55%, 6 of 11 tasks done');
     expect(tasksServer.notModified).toBe(2);
   });
 

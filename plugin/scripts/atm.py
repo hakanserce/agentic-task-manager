@@ -375,6 +375,44 @@ def main_worktree(root):
     return root
 
 
+def head_branch(git_dir):
+    """The branch checked out per a git directory's HEAD file; a detached HEAD gives its short SHA, no file None."""
+    try:
+        with open(os.path.join(git_dir, "HEAD"), encoding="utf-8") as f:
+            head = f.readline().strip()
+    except OSError:
+        return None
+    if head.startswith("ref: "):
+        ref = head[5:]
+        return ref[len("refs/heads/") :] if ref.startswith("refs/heads/") else ref
+    return head[:7] or None
+
+
+def worktrees(root):
+    """The git worktrees of the project whose main worktree is `root`, main first, as `git worktree list` has them:
+    [{path, branch, main}]. Read from the git directory, without running git, so the server can ask on every poll.
+    Linked worktrees whose folder is gone are left out; outside git (or a bare repository) the list is empty."""
+    git_dir = os.path.join(root, ".git")
+    if not os.path.isdir(git_dir):
+        return []
+    found = [{"path": root, "branch": head_branch(git_dir), "main": True}]
+    linked = os.path.join(git_dir, "worktrees")
+    try:
+        names = sorted(os.listdir(linked))
+    except OSError:
+        names = []
+    for name in names:
+        admin = os.path.join(linked, name)
+        try:
+            with open(os.path.join(admin, "gitdir"), encoding="utf-8") as f:
+                path = os.path.dirname(f.readline().strip())  # the worktree's .git file
+        except OSError:
+            continue
+        if path and os.path.isdir(path):
+            found.append({"path": path, "branch": head_branch(admin), "main": False})
+    return found
+
+
 def project_meta(path):
     """The meta of the project at `path`, or None without a readable tasks.json."""
     data = read_json(os.path.join(path, TASK_DIR, TASKS_FILE))
@@ -966,8 +1004,9 @@ def touch(task, actor, stamp):
         task["updated_by"] = actor
 
 
-def back_to_todo(task, vocab, actor, stamp):
-    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4)."""
+def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
+    """The task returns to the first todo-kind status; its attempt's timestamps and actors go (DM-4.4). The commit
+    goes too, unless `keep_commit`: an expired lease or a release leaves the work in git, to be finished later."""
     task["status"] = status_for(vocab, "todo")
     touch(task, actor, stamp)
     for field in (
@@ -977,13 +1016,14 @@ def back_to_todo(task, vocab, actor, stamp):
         "started_by",
         "completed_by",
         "agent",
-        "commit",
         "review_requested_at",
         "waiting_on",
         "questions",
         "blocked_at",
     ):
         task.pop(field, None)
+    if not keep_commit:
+        task.pop("commit", None)
 
 
 def answer_note(questions, answers):
@@ -1042,7 +1082,8 @@ def change_status(
         check_note(answered)
     stamp = now_iso()
     if new_kind == "todo":
-        back_to_todo(task, vocab, agent, stamp)
+        # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
+        back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
         if answered:
             add_note(task, "answer", answered, agent, stamp)
         if command == "fail":
@@ -1089,6 +1130,79 @@ def change_status(
         if note:
             add_note(task, "outcome", note, agent, stamp)
     return current
+
+
+# ==== repository.py ====
+# `atm repository`: the project's repository web address in meta.repository (e.g. https://github.com/o/r), which the
+# dashboard uses to link commits and pull requests. Git remotes are turned into that address.
+
+SCP_REMOTE = re.compile(r"^(?:[\w.-]+@)?([\w.-]+):(?!//)(.+)$")  # git@github.com:o/r.git
+URL = re.compile(r"^(https?|ssh|git)://(?:[^@/]+@)?([^/:]+)(?::\d+)?(/.*)?$")
+
+
+def repository_url(text):
+    """The web address of a repository: an http(s) URL as given, or a git remote turned into one
+    (git@github.com:o/r.git, ssh://git@github.com/o/r.git, https://github.com/o/r.git -> https://github.com/o/r).
+    Credentials, a trailing .git and a trailing slash go. None if it isn't one."""
+    text = (text or "").strip()
+    m = URL.match(text)
+    if m:
+        scheme, host, path = m.group(1), m.group(2), (m.group(3) or "")
+        web = "https" if scheme in ("ssh", "git") else scheme
+    else:
+        m = SCP_REMOTE.match(text)
+        if not m or "/" in m.group(1):
+            return None
+        web, host, path = "https", m.group(1), "/" + m.group(2)
+    path = re.sub(r"\.git/?$", "", path.rstrip("/")).rstrip("/")
+    if not host or "." not in host and host != "localhost" or not path.strip("/"):
+        return None
+    return f"{web}://{host}{path}"
+
+
+def origin_repository(root):
+    """The web address of the clone's origin remote, or None."""
+    return repository_url(git(["remote", "get-url", "origin"], root) or "")
+
+
+def ensure_repository(paths):
+    """Fill meta.repository from origin when tasks.json has none. Returns the address it set, or None."""
+    if not os.path.isfile(paths["tasks"]):
+        return None
+    url = origin_repository(paths["root"])
+    if not url:
+        return None
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        meta = data.setdefault("meta", {})
+        if meta.get("repository"):
+            return None
+        meta["repository"] = url
+        write_json_atomic(paths["tasks"], data)
+    return url
+
+
+def cmd_repository(args):
+    paths = find_paths(os.getcwd())
+    if args.action is None:
+        if args.url is not None:
+            raise AtmError(f"unexpected argument '{args.url}' (atm repository set URL)", 2)
+        current = load_tasks(paths).get("meta", {}).get("repository")
+        if args.json:
+            out(to_json({"repository": current or None}))
+        elif current:
+            out(current)
+        else:
+            out("No repository address yet. Set it with `atm repository set <url>` (a git remote works too).")
+        return
+    url = repository_url(args.url)
+    if not url:
+        raise AtmError(f"{args.url!r} is not a repository address: give an http(s) URL or a git remote", 2)
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        data.setdefault("meta", {})["repository"] = url
+        write_json_atomic(paths["tasks"], data)
+    out(to_json({"repository": url}) if args.json else f"Repository address set: {url}")
 
 
 # ==== claims.py ====
@@ -1192,7 +1306,7 @@ def expire_claims(paths, data, claims):
         task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
         if task and kind_of(vocab, task.get("status")) == "active":
             stamp = now_iso()
-            back_to_todo(task, vocab, None, stamp)
+            back_to_todo(task, vocab, None, stamp, keep_commit=True)
             add_note(task, "failure", f"lease expired ({claim.get('agent')})", None, stamp)
     return expired
 
@@ -1225,6 +1339,26 @@ def check_holder(claims, task_id, agent, command):
             f"can't {command} {task_id}: it is claimed by {claim.get('agent')} until {claim.get('lease_expires_at')}",
             4,
         )
+
+
+def own_lease_expired(expired, data, task_id, agent, then):
+    """When `agent`'s own claim on `task_id` is among the claims that just expired and the task went back to todo: an
+    error that says so and how to go on (`then`, the command to run after `atm start`). Exit code 4, like a claim
+    conflict. Another agent's expired claim, or none: None."""
+    claim = next((c for c in expired if c.get("task") == task_id and c.get("agent") == agent), None)
+    task = next((t for t in data["tasks"] if t.get("id") == task_id), None)
+    if not claim or not task or kind_of(vocabulary(data), task.get("status")) != "todo":
+        return None
+    until = str(claim.get("lease_expires_at", ""))
+    at = f"{until[11:16]} UTC" if len(until) >= 16 else until
+    minutes = lease_minutes(data)
+    idle = f"{minutes:g} min"
+    kept = " Your commit is kept." if task.get("commit") else ""
+    next_steps = f"Run `atm start {task_id}`" + (f", then `{then}` again." if then else " to claim it again.")
+    return AtmError(
+        f"{task_id}: your lease expired at {at} (no heartbeat for {idle}), so it went back to todo.{kept} {next_steps}",
+        4,
+    )
 
 
 def report_expired(expired):
@@ -1376,6 +1510,9 @@ def cmd_heartbeat(args):
             write_json_atomic(paths["tasks"], data)
         write_store(paths, store)
     if not claim:
+        own = own_lease_expired(expired, data, task_id, agent, None)
+        if own:
+            raise own
         gone = any(c["task"] == task_id for c in expired)
         raise AtmError(f"{task_id} has no live claim" + (" (its lease expired)" if gone else ""), 4)
     if args.json:
@@ -1758,6 +1895,10 @@ def cmd_status(args):
 # ==== tasks.py ====
 # The status commands (start, review, done, fail, release, reject) and notes.
 
+# The commands an agent runs on its own claimed task: if that claim just expired, they explain it instead of refusing
+OWN_LEASE_COMMANDS = ("done", "release", "fail", "review", "block")
+
+
 def cmd_status_change(command):
     def run(args):
         task_id, agent = args.id, agent_identity(args.agent)
@@ -1768,6 +1909,13 @@ def cmd_status_change(command):
             claims = store["claims"]
             expired = expire_claims(paths, data, claims)
             task = find_task(data, task_id)
+            if command in OWN_LEASE_COMMANDS:
+                own = own_lease_expired(expired, data, task_id, agent, f"atm {command} {task_id}")
+                if own:
+                    # Write the expiry first, so `atm show` agrees with the error
+                    write_json_atomic(paths["tasks"], data)
+                    write_store(paths, store)
+                    raise own
             check_holder(claims, task_id, agent, command)
             previous = change_status(
                 task,
@@ -2601,14 +2749,21 @@ def cmd_init(args):
         if not args.json:
             out(("Created tasks.json; meta: " if created else "Updated tasks.json meta: ") + (", ".join(keys) or "-"))
     project_id = ensure_project_id(paths)
+    repository = ensure_repository(paths)
     register(paths)  # the dashboard lists every project atm runs in
     git_repo = in_git(paths["root"])
     changed = ensure_merge_driver(paths) if git_repo else False
     if args.json:
-        out(to_json({"project_id": project_id, "git": git_repo, "gitattributes_added": changed}))
+        out(
+            to_json(
+                {"project_id": project_id, "repository": repository, "git": git_repo, "gitattributes_added": changed}
+            )
+        )
         return
     if project_id:
         out(f"Gave this project an id ({project_id}) in tasks.json meta, for the dashboard's saved view.")
+    if repository:
+        out(f"Recorded the repository address ({repository}), for commit and PR links on the dashboard.")
     if not git_repo:
         out("Not in a git repository: there is no merge driver to set up.")
         return
@@ -3156,7 +3311,7 @@ SERVER_RECORD = "server.json"
 SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
-PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json")
+PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
 PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
 
 
@@ -3385,15 +3540,19 @@ class Summaries:
         self.paths = {}  # project folder -> (atm paths, claims store path): finding them runs git
         self.cache = {}  # project folder -> (stamp, summary or None)
 
+    def store(self, entry):
+        """The project's claims store, shared by all its worktrees."""
+        if entry["path"] not in self.paths:
+            paths = find_paths(entry["path"])
+            self.paths[entry["path"]] = (paths, claims_store_path(paths))
+        return self.paths[entry["path"]][1]
+
     def stamp(self, entry):
         """What the summary depends on, or None when the project is missing."""
         tasks = file_stamp(task_file(entry, TASKS_FILE))
         if tasks is None:
             return None
-        if entry["path"] not in self.paths:
-            paths = find_paths(entry["path"])
-            self.paths[entry["path"]] = (paths, claims_store_path(paths))
-        return (tasks, file_stamp(self.paths[entry["path"]][1]), now().date().isoformat())
+        return (tasks, file_stamp(self.store(entry)), now().date().isoformat())
 
     def summary(self, entry, stamp):
         cached = self.cache.get(entry["path"])
@@ -3412,11 +3571,12 @@ def api_projects(registry, summaries):
     and the day."""
     entries = registry.entries()
     stamps = [summaries.stamp(e) for e in entries]
-    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps).encode("utf-8")).hexdigest()[:16] + '"'
+    trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
+    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps + trees).encode("utf-8")).hexdigest()[:16] + '"'
 
     def body():
         projects = []
-        for entry, stamp in zip(entries, stamps):
+        for entry, stamp, tree in zip(entries, stamps, trees):
             summary = summaries.summary(entry, stamp) if stamp else None
             projects.append(
                 {
@@ -3425,9 +3585,56 @@ def api_projects(registry, summaries):
                     "path": entry["path"],
                     "missing": summary is None,
                     "summary": summary,
+                    "worktrees": tree if summary else [],
                 }
             )
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
+
+    return body, etag
+
+
+def api_claims(summaries, entry):
+    """(body, ETag) of a project's claims.json: the live claims of all its worktrees, from the shared claims store
+    (each worktree's own snapshot has only the claims made there). None when there is no store yet."""
+    store = summaries.store(entry)
+    stamp = file_stamp(store)
+    if stamp is None:
+        return None
+
+    def body():
+        data = read_json(store)
+        claims = data.get("claims") if isinstance(data, dict) else None
+        listed_claims = [c for c in (claims or {}).values() if isinstance(c, dict) and isinstance(c.get("task"), str)]
+        snapshot = {"generated_at": now_iso(), "claims": sorted(listed_claims, key=lambda c: c["task"])}
+        return to_json(snapshot).encode("utf-8")
+
+    return body, file_etag(stamp)
+
+
+def api_worktrees(entry):
+    """(body, ETag) of a project's worktrees.json: its git worktrees, main first, and for each linked one the tasks
+    whose copy there differs from the main worktree's (or that only it has). The dashboard shows them all on one
+    board, each task from the worktree where it got furthest."""
+    trees = worktrees(entry["path"])
+    stamps = [file_stamp(os.path.join(t["path"], TASK_DIR, TASKS_FILE)) for t in trees]
+    etag = '"' + hashlib.sha1(repr([trees, stamps]).encode("utf-8")).hexdigest()[:16] + '"'
+
+    def tasks_of(tree):
+        data = read_json(os.path.join(tree["path"], TASK_DIR, TASKS_FILE))
+        tasks = data.get("tasks") if isinstance(data, dict) else None
+        return [t for t in tasks or [] if isinstance(t, dict) and isinstance(t.get("id"), str)]
+
+    def body():
+        listed_trees = []
+        main = {}
+        for tree in trees:
+            if tree["main"]:
+                main = {t["id"]: t for t in tasks_of(tree)}
+                listed_trees.append(tree)
+            else:
+                differing = [t for t in tasks_of(tree) if main.get(t["id"]) != t]
+                listed_trees.append({**tree, "tasks": differing})
+        return to_json({"generated_at": now_iso(), "worktrees": listed_trees}).encode("utf-8")
 
     return body, etag
 
@@ -3499,7 +3706,19 @@ def cmd_serve_child(args):
             if entry is None:
                 self.send_error_json(404, "unknown project")
                 return
-            p = task_file(entry, match.group(2))
+            name = match.group(2)
+            if not os.path.isfile(task_file(entry, TASKS_FILE)):
+                self.send_error_json(404, "not found")
+                return
+            computed = None
+            if name == "worktrees.json":
+                computed = api_worktrees(entry)
+            elif name == "claims.json":
+                computed = api_claims(summaries, entry)
+            if computed:
+                self.send_conditional(*computed)
+                return
+            p = task_file(entry, name)
             stamp = file_stamp(p)
             if stamp is None:
                 self.send_error_json(404, "not found")
@@ -3629,6 +3848,9 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
+  repository [set URL]
+                 print or set the repository's web address (meta.repository), for commit and PR links; a git
+                 remote is turned into one; atm init fills it from origin
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -3876,6 +4098,9 @@ def build_parser():
     for side in ("base", "ours", "theirs"):
         merge.add_argument(side)
     command("claims", cmd_claims, "list live claims, shared by all worktrees of this clone")
+    repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
+    repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
+    repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
     phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
     phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
     phases.add_argument("number", nargs="?", help="the phase number")

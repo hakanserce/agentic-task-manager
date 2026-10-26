@@ -24,19 +24,54 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
 | `GET /` | the dashboard (`text/html`), from the plugin, held in memory since the server started | no |
 | `GET /api/projects` | the registered projects with their summaries (§3) | yes |
 | `GET /p/<id>/tasks.json` | that project's `.agentic-task-manager/tasks.json`, as stored | yes |
-| `GET /p/<id>/claims.json` | that project's claims snapshot, as stored | yes |
+| `GET /p/<id>/claims.json` | that project's live claims, from every worktree (§2.1) | yes |
 | `GET /p/<id>/tasks-archive.json` | that project's archive, as stored | yes |
+| `GET /p/<id>/worktrees.json` | that project's git worktrees and their changed tasks (§2.2) | yes |
 | `GET /__atm/whoami` | who this server is (§4) | no |
 | anything else | `404` | |
 
 - `<id>` is a project id from `/api/projects` (§3.1). An unknown id gets `404` with `{"error": "unknown project"}`.
-- Only those three file names are served from a project, and only from its `.agentic-task-manager/` folder: no other
-  file, no directory listing, no path segments after the file name. A file that doesn't exist (no archive yet, no
-  claims snapshot yet) gets `404` with `{"error": "not found"}`. The dashboard treats a missing archive or snapshot as
-  empty, as today.
+- Only those four names are served for a project: `tasks.json` and `tasks-archive.json` from its
+  `.agentic-task-manager/` folder, `claims.json` and `worktrees.json` computed. There is no other file, no directory
+  listing, no path segments after the name. A file that doesn't exist (no archive yet, no claims yet) gets `404` with
+  `{"error": "not found"}`. The dashboard treats a missing archive, claims or worktrees as empty.
 - A missing project (§3.1 `missing: true`) answers `404` for its files.
 - The ETag of a project file is its size and nanosecond mtime, as today's `json_etag` (`"<size hex>-<mtime_ns hex>"`).
 - Query strings are ignored.
+
+### 2.1 `claims.json`: claims from every worktree
+
+The claims of all a clone's worktrees are in one store, in the git common directory (`.git/atm/claims.json`; outside
+git, `claims-store.json` in the task folder). The server answers from it, as `{generated_at, claims: [...]}` sorted by
+task, so an agent at work in a linked worktree shows on the project's board. Its ETag is the store's size and mtime.
+Without a store yet, the server falls back to the task folder's own snapshot (`claims.json`, which atm writes there).
+
+### 2.2 `worktrees.json`: the project's git worktrees
+
+```json
+{
+  "generated_at": "2026-10-26T04:30:00Z",
+  "worktrees": [
+    { "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true },
+    {
+      "path": "/Users/me/workplace/atm-agent-2",
+      "branch": "agent-2",
+      "main": false,
+      "tasks": [{ "id": "T-179", "status": "in_progress", "...": "the task as that worktree's tasks.json has it" }]
+    }
+  ]
+}
+```
+
+- The worktrees are those `git worktree list` shows, main first, read from the git directory (`.git/HEAD`,
+  `.git/worktrees/*/gitdir` and `HEAD`). A linked worktree whose folder is gone is left out. `branch` is the checked-out
+  branch, the short SHA of a detached HEAD, or `null`. Outside git the list is empty.
+- Each linked worktree lists the tasks of its own `tasks.json` that differ from the main worktree's copy, or that only
+  it has; the main worktree's tasks are `tasks.json` itself.
+- The ETag changes when a worktree is added or removed, switches branch, or its `tasks.json` changes.
+- The dashboard shows all of them on one board: each task from the worktree where it got furthest (by status kind:
+  todo, blocked, active, review, then done or skipped; the main worktree's copy on a tie), with that worktree's branch
+  on its card.
 
 ## 3. `GET /api/projects`
 
@@ -59,14 +94,15 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
         "needs_you": { "review": 0, "blocked_on_user": 0 },
         "last_activity": "2026-10-25T21:51:38Z",
         "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28]
-      }
+      },
+      "worktrees": [{ "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true }]
     }
   ]
 }
 ```
 
-The ETag changes when the registry or any listed project's `tasks.json` or claims change (the server combines their
-size/mtime stamps). Projects are listed in registry order. The dashboard sorts them.
+The ETag changes when the registry, any listed project's `tasks.json` or claims, or its worktrees change (the server
+combines their size/mtime stamps and the worktree lists). Projects are listed in registry order. The dashboard sorts them.
 
 ### 3.1 Project fields
 
@@ -77,6 +113,7 @@ size/mtime stamps). Projects are listed in registry order. The dashboard sorts t
 | `path` | the project root (the main worktree's folder) |
 | `missing` | `true` when the folder or its `.agentic-task-manager/tasks.json` is gone (or unreadable); the project then has `"summary": null` |
 | `summary` | §3.2, or `null` when `missing` |
+| `worktrees` | its git worktrees, main first, as in §2.2 without `tasks`; empty when `missing` or outside git |
 
 ### 3.2 Summary fields
 

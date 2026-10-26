@@ -67,6 +67,34 @@ test.describe('Progress tab: phase table', () => {
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
   });
 
+  test('the Progress panel shares "Active phases only": By phase follows it, Overall and By type stay whole', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await page.locator('#active-phases-only').check();
+    await page.locator('#active-phases-days').fill('3');
+    await page.locator('#active-phases-days').press('Tab');
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(2);
+
+    await page.locator('#progress-card').click();
+    const panel = page.locator('#progress-panel');
+    const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
+    await expect(panel.locator('#panel-active-phases-only')).toBeChecked();
+    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 1', 'Phase 2']);
+    await expect(panel.locator('#panel-phases-hidden')).toHaveText('1 older phase hidden');
+    const typesBefore = await section('By type').locator('.ring-label').count();
+
+    // Turned off in the panel: off in the tab too
+    await panel.locator('#panel-active-phases-only').uncheck();
+    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1', 'Phase 2']);
+    await expect(panel.locator('#panel-phases-hidden')).toHaveCount(0);
+    await expect(section('By type').locator('.ring-label')).toHaveCount(typesBefore);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#active-phases-only')).not.toBeChecked();
+    await expect(page.locator('#phase-table tbody tr')).toHaveCount(3);
+  });
+
   test('progress bars show each phase', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');
     const width = (phase: number) =>
@@ -74,6 +102,27 @@ test.describe('Progress tab: phase table', () => {
         .locator('.progress-fill')
         .evaluate((el) => (el as HTMLElement).style.width);
     expect([await width(0), await width(1), await width(2)]).toEqual(['100%', '67%', '0%']);
+  });
+
+  test('skipped tasks count as neither done nor left: done and skipped is 100%, the skipped shown apart', async ({
+    page,
+    tasksServer,
+  }) => {
+    const task = (id: string, status: string) => ({ id, name: id, phase: 1, type: 'feature', description: '', status });
+    await openProgress(page, tasksServer, {
+      meta: { project: 'Skips' },
+      tasks: [task('T-1', 'done'), task('T-2', 'done'), task('T-3', 'skipped')],
+    });
+    await expect(cells(page, 1).nth(1)).toHaveText('2/2 · 1 skipped');
+    await expect(row(page, 1)).toHaveAttribute('data-state', 'done');
+    await expect(row(page, 1).locator('.progress-fill')).toHaveAttribute('style', /width: 100%/);
+
+    await page.locator('#progress-card').click();
+    await expect(page.locator('#progress-card')).toHaveAccessibleName('Progress 100%, 2 of 2 tasks done');
+    await expect(page.locator('#overall-skipped')).toHaveText('· 1 skipped');
+    // A thin outer arc on the overall ring, phase 1's and feature's; screen readers hear the count
+    await expect(page.locator('#progress-panel .ring-skip-arc')).toHaveCount(3);
+    await expect(page.getByRole('img', { name: 'Phase 1 100% done, 1 skipped' })).toBeVisible();
   });
 
   test('says when there is not enough history', async ({ page, tasksServer }) => {

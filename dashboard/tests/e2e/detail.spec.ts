@@ -95,3 +95,45 @@ test.describe('detail panel', () => {
     await expect(panel(page).locator('h3')).toHaveText('T-007 Extract auth service');
   });
 });
+
+test.describe('detail panel scroll', () => {
+  const long = Array.from({ length: 60 }, (_, i) => `Paragraph ${i + 1} of a long description.`).join('\n\n');
+  const task = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    name,
+    phase: 0,
+    type: 'feature',
+    description: long,
+    status: 'todo',
+    ...extra,
+  });
+  const data = (name = 'Long one') => ({
+    meta: { project: 'Scroll' },
+    tasks: [task('T-1', name), task('T-2', 'Another long one', { dependencies: ['T-1'] })],
+  });
+  const scrollTop = (page: Page) => panel(page).evaluate((el) => el.scrollTop);
+  async function openScrolled(page: Page) {
+    await openFromCard(page, 'T-1');
+    await panel(page).evaluate((el) => (el.scrollTop = el.scrollHeight));
+    expect(await scrollTop(page)).toBeGreaterThan(200);
+  }
+
+  test('another task opens at its top', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, data(), { tab: 'list' });
+    await openScrolled(page);
+    await section(page, 'Required By').locator('.detail-dep-item', { hasText: 'T-2' }).click();
+    await expect(panel(page).locator('h3')).toHaveText('T-2 Another long one');
+    expect(await scrollTop(page)).toBe(0);
+  });
+
+  test('the same task re-rendered by auto-refresh keeps its position', async ({ page, tasksServer }) => {
+    await page.clock.install();
+    await openDashboard(page, tasksServer, data(), { tab: 'list', autoRefresh: true });
+    await openScrolled(page);
+    const before = await scrollTop(page);
+    tasksServer.use(data('Long one, renamed'));
+    await page.clock.runFor(5_000);
+    await expect(panel(page).locator('h3')).toHaveText('T-1 Long one, renamed');
+    expect(await scrollTop(page)).toBe(before);
+  });
+});

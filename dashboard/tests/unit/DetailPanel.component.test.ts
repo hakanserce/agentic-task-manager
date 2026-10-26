@@ -1,4 +1,4 @@
-import { render } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import { beforeEach, describe, expect, it } from 'vitest';
 import DetailPanel from '../../src/components/DetailPanel.svelte';
@@ -39,11 +39,25 @@ describe('DetailPanel', () => {
     expect(items[1].querySelector('.note-text')).toHaveTextContent('lint failed');
   });
 
-  it('shows the commit, short, with the full SHA on hover', () => {
+  it('shows the commit, short, with the full SHA on hover; without a repository address a click says how to set one', async () => {
     const container = open({ commit: 'e4969ae0123456789abcdef' });
-    const code = container.querySelector('#detail-commit code')!;
-    expect(code).toHaveTextContent(/^e4969ae$/);
-    expect(code).toHaveAttribute('title', 'e4969ae0123456789abcdef');
+    expect(container.querySelector('#detail-commit code')).toHaveTextContent(/^e4969ae$/);
+    const ref = container.querySelector('#detail-commit .repo-ref')!;
+    expect(ref).toHaveAttribute('title', 'e4969ae0123456789abcdef');
+    expect(ref.tagName).toBe('BUTTON');
+    await fireEvent.click(ref);
+    expect(container.querySelector('#detail-commit .repo-hint')).toHaveTextContent('atm repository set <url>');
+  });
+
+  it('links the commit to GitHub when meta.repository is a GitHub repository', () => {
+    const tasks = standard.tasks.map((t) => (t.id === 'T-005' ? { ...t, commit: 'e4969ae0123' } : t));
+    loadIntoDashboard({ ...standard, meta: { ...standard.meta, repository: 'https://github.com/acme/demo' }, tasks });
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-005');
+    flushSync();
+    const link = container.querySelector('#detail-commit a.repo-ref')!;
+    expect(link).toHaveAttribute('href', 'https://github.com/acme/demo/commit/e4969ae0123');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 
   it('a blocked task lists its questions and how to answer them', () => {

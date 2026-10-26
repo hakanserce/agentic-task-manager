@@ -30,7 +30,8 @@ Every command takes `--json`; `atm help` lists them all.
 - Commit: `atm commit <id> --file F [--file F]...`, naming every file the task changed, while the task is still in
   progress; only then `atm done` (or `review`/`block`). A task is never done with its work uncommitted
 - Push: `/atm:push` records the PR with `atm pr <id>... --number N --url U` and merges with `atm merged --pr N`
-- Define: `atm init --meta-file F` (project, vocabularies), `atm phases` (the phases with names and counts),
+- Define: `atm init --meta-file F` (project, vocabularies), `atm repository [set URL]` (the repository's web address,
+  for commit and PR links; `atm init` fills it from origin), `atm phases` (the phases with names and counts),
   `atm phases name <n> "<name>"` / `atm phases unname <n>`, `atm add` (`--json-file` for many), `atm edit <id>`,
   `atm check`, `atm workflow set`
 - Archive: `atm archive` (when atm suggests it), `atm unarchive <id>...`
@@ -52,7 +53,9 @@ atm-cli writes these fields; this is for reading `atm show --json` output, not f
   at most 500 characters each). Older files may have `last_failure` instead of failure notes
 - Git: commit (the task's SHA), pr (`{number, url}`), merged_at. Stages of Done are derived from them: Done, In PR,
   Merged; they never affect dependencies
-- `meta`: project, id, phases, statuses, types, priorities, default_priority, labels, workflow
+- `meta`: project, id, repository (the web address, e.g. `https://github.com/o/r`; commit and PR links work for
+  GitHub, GitLab, Bitbucket and Gitea/Codeberg), repository_type (`github`, `gitlab`, `bitbucket` or `gitea`, for a
+  self-hosted server whose name doesn't say; set with `atm init --meta-file`), phases, statuses, types, priorities, default_priority, labels, workflow
   (`{type: direct|pull-request, base, verify, max_rounds, commit_template, trailers}`), archive (thresholds),
   archived (how many tasks are in `tasks-archive.json`), next_id
 

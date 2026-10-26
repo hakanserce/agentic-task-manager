@@ -8,7 +8,17 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { after, describe, test } from 'node:test';
-import { PLUGIN_BUILD, PLUGIN_VERSION, REPO, baseEnv, makeProject, removeDir, runAtm, tempDir } from './helpers.mjs';
+import {
+  PLUGIN_BUILD,
+  PLUGIN_VERSION,
+  REPO,
+  baseEnv,
+  git,
+  makeProject,
+  removeDir,
+  runAtm,
+  tempDir,
+} from './helpers.mjs';
 
 const TASKS = { meta: { id: 'abcd1234', project: 'Serve' }, tasks: [] };
 // A different range per run: ports of the previous run can still be in TIME_WAIT, and the server deliberately doesn't
@@ -226,7 +236,58 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
-  test('only the three task files of registered projects are served; the rest is 404 or 405', async () => {
+  test("a project's git worktrees: listed, their changed tasks in worktrees.json, their claims in claims.json", async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id) => ({ id, name: id, phase: 0, type: 'feature', status: 'todo' });
+    const root = makeProject({
+      commit: true,
+      files: {
+        '.agentic-task-manager/tasks.json': {
+          meta: { id: 'abcd1234', project: 'Trees' },
+          tasks: [task('T-1'), task('T-2')],
+        },
+      },
+    });
+    const linked = tempDir('atm-worktree-');
+    cleanups.push(
+      () => removeDir(root),
+      () => removeDir(linked),
+    );
+    git(['worktree', 'add', '-q', linked, '-b', 'agent-2'], root);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const base = `http://localhost:${port}`;
+    const api = await (await fetch(`${base}/api/projects`)).json();
+    assert.deepEqual(api.projects[0].worktrees, [
+      { path: root, branch: 'main', main: true },
+      { path: linked, branch: 'agent-2', main: false },
+    ]);
+    const before = await fetch(`${base}/p/abcd1234/worktrees.json`);
+    const etag = before.headers.get('etag');
+    assert.deepEqual((await before.json()).worktrees[1].tasks, []); // nothing differs yet
+
+    // An agent starts T-1 in the linked worktree: only that worktree's tasks.json says so, but the main project's
+    // claims.json (from the shared claims store) and worktrees.json both show it
+    assert.equal(atm(['start', 'T-1', '--agent', 'claude:tree'], linked).code, 0);
+    const after = await fetch(`${base}/p/abcd1234/worktrees.json`, { headers: { 'If-None-Match': etag } });
+    assert.equal(after.status, 200);
+    const changed = (await after.json()).worktrees[1].tasks;
+    assert.deepEqual(
+      changed.map((t) => [t.id, t.status]),
+      [['T-1', 'in_progress']],
+    );
+    const claims = await (await fetch(`${base}/p/abcd1234/claims.json`)).json();
+    assert.deepEqual(
+      claims.claims.map((c) => [c.task, c.agent, c.branch]),
+      [['T-1', 'claude:tree', 'agent-2']],
+    );
+    const mainTasks = await (await fetch(`${base}/p/abcd1234/tasks.json`)).json();
+    assert.equal(mainTasks.tasks[0].status, 'todo');
+    atm(['serve', 'stop'], root);
+  });
+
+  test('only the four files of registered projects are served; the rest is 404 or 405', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);
     const root = project(TASKS, { '.agentic-task-manager/secret.json': { secret: true } });

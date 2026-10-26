@@ -13,24 +13,6 @@
   function onWindowClick(e: MouseEvent) {
     if (open && !root.contains(e.target as Node)) open = false;
   }
-
-  const activeOption = () => root.querySelector<HTMLElement>('.theme-option.active');
-
-  // On open, the current theme is focused and scrolled into view in the (scrollable) list
-  $effect(() => {
-    if (open) activeOption()?.focus();
-  });
-
-  // A radio group: the arrow keys (and Home/End) choose the previous or next theme
-  const STEPS: Record<string, number> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
-  function onThemeKey(e: KeyboardEvent) {
-    const i = THEMES.indexOf(current);
-    const next = e.key === 'Home' ? 0 : e.key === 'End' ? THEMES.length - 1 : i + (STEPS[e.key] ?? NaN);
-    if (!THEMES[next]) return;
-    e.preventDefault();
-    dashboard.setTheme(THEMES[next].id);
-    requestAnimationFrame(() => activeOption()?.focus());
-  }
 </script>
 
 <svelte:window onclick={onWindowClick} onkeydown={(e) => e.key === 'Escape' && (open = false)} />
@@ -65,25 +47,23 @@
           >
         {/each}
       </div>
-      <div class="menu-label">Theme</div>
-      <div class="theme-list" role="radiogroup" aria-label="Theme" tabindex="-1" onkeydown={onThemeKey}>
-        {#each THEMES as theme (theme.id)}
-          <button
-            class="theme-option"
-            class:active={dashboard.theme === theme.id}
-            data-theme={theme.id}
-            role="radio"
-            aria-checked={dashboard.theme === theme.id}
-            tabindex={dashboard.theme === theme.id ? 0 : -1}
-            onclick={() => dashboard.setTheme(theme.id)}
-          >
-            <span class="theme-swatch" aria-hidden="true">
-              {#each theme.swatch as c (c)}<span style="background:{c}"></span>{/each}
-            </span>
-            <span class="theme-name">{theme.name}</span>
-            {#if dashboard.theme === theme.id}<Icon name="check" size={14} />{/if}
-          </button>
-        {/each}
+      <label class="menu-label" for="theme-select">Theme</label>
+      <!-- A native select: compact, and the keyboard (arrows, letters) works as everywhere else. Its arrow is our
+           chevron: the browser's own differs between renders and platforms -->
+      <div class="theme-picker">
+        <span class="theme-swatch" aria-hidden="true">
+          {#each current.swatch as c (c)}<span style="background:{c}"></span>{/each}
+        </span>
+        <span class="select-chevron"><Icon name="chevron-down" size={14} /></span>
+        <select
+          id="theme-select"
+          value={current.id}
+          onchange={(e) => dashboard.setTheme((e.currentTarget as HTMLSelectElement).value)}
+        >
+          {#each THEMES as theme (theme.id)}
+            <option value={theme.id}>{theme.name}</option>
+          {/each}
+        </select>
       </div>
     </div>
   {/if}

@@ -140,12 +140,34 @@ body {
   color: var(--text-muted);
   margin: 4px 0 16px;
 }
-/* A task's description in the detail panel: Markdown that starts flush with its label */
+/* A task's description in the detail panel: Markdown in a box of its own, so its headings don't read as the panel's
+   sections. The page background sets it apart from the panel and keeps code blocks (surface2) visible inside it */
+.detail-description {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  min-width: 0;
+}
 .detail-description .markdown > :first-child {
   margin-top: 0;
 }
 .detail-description .markdown > :last-child {
   margin-bottom: 0;
+}
+/* Headings stay below the panel's section labels: smaller, and the lower levels muted */
+.detail-description .markdown h3 {
+  font-size: 14px;
+  margin-top: 14px;
+}
+.detail-description .markdown h4 {
+  font-size: 13px;
+  margin-top: 12px;
+}
+.detail-description .markdown h5,
+.detail-description .markdown h6 {
+  font-size: 12px;
+  margin-top: 10px;
 }
 /* Rendered Markdown (Markdown.svelte): Help and task descriptions */
 .markdown {
@@ -539,16 +561,37 @@ h1 {
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: 8px;
 }
-/* Each ring is a card of its own, like the Activity charts (.dive-chart): theme tokens only (T-143) */
+/* Each group of rings (By phase, By type) is one card, like the Activity charts (.dive-chart): theme tokens only */
+.ring-group {
+  background: color-mix(in srgb, var(--surface2) 60%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px 8px;
+}
+/* The group's title, and By phase's "Active phases only" (shared with the Progress tab) on the same line */
+.ring-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+.ring-group-head .menu-label {
+  margin-right: auto;
+}
+.ring-group-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
 .ring-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 4px 6px;
-  background: color-mix(in srgb, var(--surface2) 60%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 4px 4px 2px;
 }
 .ring-label {
   font-size: 12px;
@@ -559,6 +602,17 @@ h1 {
   font-size: 11px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+/* Skipped tasks, shown apart from the completion they don't count in (T-162) */
+.skipped-note {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+/* The skipped share, outside the ring: the skipped status colour, at full strength for 3:1 against the surface */
+.ring-skip-arc {
+  stroke: var(--text-muted);
 }
 .ring-value {
   fill: var(--text);
@@ -929,34 +983,34 @@ button.menu-trigger:hover,
   color: var(--text);
   font-weight: 600;
 }
-.theme-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-.theme-option {
+.theme-picker {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: none;
-  border: none;
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 13px;
-  padding: 6px 8px;
-  cursor: pointer;
-  text-align: left;
+  gap: 8px;
 }
-.theme-option:hover {
-  background: color-mix(in srgb, var(--text) 10%, transparent);
-}
-.theme-option.active {
-  font-weight: 600;
-}
-.theme-option .theme-name {
+.theme-picker select {
   flex: 1;
+  min-width: 0;
+  appearance: none;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 28px 5px 8px;
+  cursor: pointer;
+}
+.theme-picker .select-chevron {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.theme-picker select:hover {
+  border-color: var(--text-muted);
 }
 .theme-swatch {
   display: inline-flex;
@@ -1353,12 +1407,68 @@ button.menu-trigger:hover,
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-a.stage-chip.in-pr:hover {
+a.stage-chip:hover,
+button.stage-chip:hover {
   text-decoration: underline;
 }
 .stage-chip.merged {
   color: var(--purple);
   background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+
+/* A task shown from a linked git worktree (BranchChip.svelte) */
+.branch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 160px;
+  overflow: hidden;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.branch-chip .icon {
+  flex: none;
+}
+
+/* Commit and PR references (RepoRef.svelte): links, or, without a repository address, a button with a hint */
+a.repo-ref {
+  color: var(--accent);
+}
+button.repo-ref {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+.repo-ref-unset:not(.stage-chip) {
+  padding: 0;
+  background: none;
+  color: var(--accent);
+}
+.repo-ref-wrap {
+  position: relative;
+  display: inline-block;
+}
+.repo-hint {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 260px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--overlay) 50%, transparent);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: normal;
 }
 .kanban-section {
   display: flex;

@@ -220,8 +220,9 @@ summary. With `--push`, this is the last task's push, watched.
 - If `atm` can't read tasks.json (exit code 1 with a message) → stop the loop, report the error
 - If a task fails verification → `atm fail` it (back to todo), skip it, continue
 - If `atm` exits with code 4 (claimed by another agent) → leave that task alone and continue
-- If `atm` reports that your lease expired → another agent may have taken the task: stop working on it, don't
-  commit it, and continue with the next iteration
+- If `atm` says your lease expired (exit code 4, "your lease expired at …") → the task went back to todo, with your
+  commit kept. Run `atm start <id>` and, if that works, the command again as it says; if another agent has claimed
+  the task in the meantime (exit code 4), leave it and continue with the next iteration
 - If git commit/push fails → log a warning but continue the loop
 - If the task description is too vague to execute → `atm release $TASK_ID`, skip it,
   note it in the summary as "skipped: unclear description"

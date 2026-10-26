@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 184,
+    "next_id": 201,
     "labels": [
       {
         "id": "dashboard",
@@ -35,8 +35,13 @@
       {
         "id": 16,
         "name": "Dashboard polish and worktrees"
+      },
+      {
+        "id": 17,
+        "name": "Overview polish and project identity"
       }
-    ]
+    ],
+    "repository": "https://github.com/hakanserce/agentic-task-manager"
   },
   "tasks": [
     {
@@ -5067,7 +5072,7 @@
       "description": "T-143 misread the request: it gave **every ring** its own border and background.\n\n### What was meant\n- **One card** (border + background, theme tokens) around the whole **By Phase** group of rings.\n- **A second card** around the **By Type** group.\n- The rings inside have no card of their own.\n\n### Steps\n1. Revert the per-ring card style (`.ring-cell`) to plain cells.\n2. Add the group card in `ProgressWidget.svelte` / `app.css`.\n3. Check every theme in both modes.\n4. Update the `agents-progress-panel` and `light-agents-progress-panel` screenshots (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProgressWidget.svelte",
@@ -5075,9 +5080,26 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T08:01:19Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:31:51Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "591495ead4afae9be61c8dbae45eaa70299d96cd",
+      "completed_at": "2026-10-26T00:32:44Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:32:44Z",
+          "kind": "outcome",
+          "text": "Progress panel: one card around By phase and one around By type; the rings inside are plain",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-157",
@@ -5092,7 +5114,7 @@
       "description": "The top bar's Progress panel lists **every** phase under *By Phase* (this repo has 15), while the Progress tab has an **Active phases only** checkbox (T-145).\n\n### What to build\n- Add the same option to the panel's *By Phase* group, **sharing the Progress tab's setting**: one saved choice per project (view-store `progressActive`, and its *N* days), so turning it on in either place applies to both.\n- Reuse `activePhases()` from `forecast.ts`.\n- When phases are hidden, say how many: *\"2 older phases hidden\"*.\n- *Overall* and *By Type* stay unfiltered.\n\n### Tests\n- e2e: the toggle in the panel, and that it follows the Progress tab's setting.\n- Screenshots of the panel in both modes.\n\n> Depends on the By Phase card task (T-156), which changes the same markup.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-156"
       ],
@@ -5102,9 +5124,26 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:01:20Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:37:44Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "2373c5ce71b0fcb4e7b2760ea9410f81d75e549e",
+      "completed_at": "2026-10-26T01:42:28Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:42:28Z",
+          "kind": "outcome",
+          "text": "By phase has an 'Active phases only' checkbox sharing the Progress tab's saved setting (and its days); says how many phases are hidden",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-158",
@@ -5120,7 +5159,7 @@
       "description": "`tasks.json` gets **`meta.repository`**: the repository's web address (e.g. `https://github.com/o/r`), which the dashboard uses to build commit and PR links.\n\n### atm\n- A command to print or set it (e.g. `atm repository [set URL]`, with `--json`).\n- Validate an `http(s)` URL and normalise a git remote (examples below).\n- `atm init` fills it from `git remote get-url origin` when `meta` has none.\n\n```\ngit@github.com:o/r.git      -> https://github.com/o/r\nhttps://github.com/o/r.git  -> https://github.com/o/r\n```\n\n### Skills\n- `/atm:create-tasks` detects it from `origin`, and asks the user when there's no remote or it can't be turned into a web address (they can also skip).\n- `/atm:update-dashboard` mentions how to set it when it's missing.\n\n### Tests and docs\n- Scenarios in `tests/scripts/scenarios/`: set, normalise, refuse a non-URL, init from origin, no remote.\n- `plugin/CLAUDE.md` and `README` document it.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "tests/scripts/scenarios/",
@@ -5133,9 +5172,26 @@
         "README.md"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:32:47Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "6070e9a7d9a625500a3fedf22e43afc7a1044162",
+      "completed_at": "2026-10-26T00:36:48Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:36:48Z",
+          "kind": "outcome",
+          "text": "atm repository [set URL] (git remotes normalised to https web addresses, credentials and .git dropped); atm init fills it from origin; create-tasks asks when missing, /atm:serve mentions it; this repo's address set",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-159",
@@ -5150,7 +5206,7 @@
       "description": "The details panel's *Timestamps* shows only **Created** and **Updated**, but atm already records `started_at`, `completed_at`, `review_requested_at` and `blocked_at`.\n\n### Show them\n- **Started** (with who, if not already in *Who*)\n- **Sent for review**\n- **Finished**\n- **Duration**: the work time `workSpan()` in `lib/work.ts` already computes (start to review request or completion; for a task in progress, *so far*, marked as running), formatted like the rest of the dashboard (`format.ts`, e.g. `42 m`, `2 h 5 m`).\n\nLeave out what a task doesn't have: a todo task shows only *Created* / *Updated*.\n\n### Tests\n- Unit tests for the formatting of each state.\n- e2e on the v4 fixture.\n- Detail panel screenshots in both modes (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -5158,9 +5214,26 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:07:39Z",
-      "updated_at": "2026-10-25T21:29:51Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:36:50Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "d6d7bb2d1497273a60bf4bb2d6c30c2578ee6f27",
+      "completed_at": "2026-10-26T00:38:35Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:38:35Z",
+          "kind": "outcome",
+          "text": "Details panel timestamps: Created, Started, Sent for review, Finished (or Skipped), Duration (work time, 'so far' while active) and Updated, only what the task has",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-160",
@@ -5175,7 +5248,7 @@
       "description": "Build the links in the dashboard from `meta.repository` (T-158), **never stored per task**:\n\n```\ncommit -> <repository>/commit/<sha>\nPR     -> <repository>/pull/<number>\n```\n\n### Where\n- The details panel (`DetailPanel.svelte` `#detail-commit`, now plain text).\n- The *In PR* and *Merged* stage chips (`StageChip.svelte`; *Merged* isn't a link today).\n\n### How\n- **GitHub only for now**: a lib function (e.g. `repoLinks(meta)` in a new `lib/repo.ts`) that returns `null` for other hosts, which then show plain text.\n- Open in a new tab (`rel=noopener`).\n- **When `meta.repository` isn't set**, the commit and PR still look clickable, and clicking shows a hint instead of navigating: how to set it (`atm repository set <url>`, or ask your agent).\n\n### Tests\n- Unit tests: GitHub URLs, trailing slash, other host → `null`.\n- e2e for both links and the hint.\n- Detail panel screenshots in both modes (darwin; delete the `-linux.png` ones per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-158"
       ],
@@ -5186,9 +5259,26 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T08:21:58Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:38:38Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "238104b8db67a48ea1ccb7b8c73a329a16bfa5e4",
+      "completed_at": "2026-10-26T00:41:50Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:41:50Z",
+          "kind": "outcome",
+          "text": "Commit and PR (In PR and Merged chips) link to GitHub from meta.repository (a PR's recorded URL wins); other hosts plain text; without an address they look clickable and explain atm repository set",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-161",
@@ -5203,7 +5293,7 @@
       "description": "T-160 builds commit and PR links for **GitHub only**. Add the other common hosts to `lib/repo.ts`:\n\n- **GitLab:** `<repo>/-/commit/<sha>`, `<repo>/-/merge_requests/<n>`\n- **Bitbucket:** `<repo>/commits/<sha>`, `<repo>/pull-requests/<n>`\n- **Self-hosted** ones where the host can be recognised (or a `meta.repository_type` hint).\n\nUnit tests per host.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-160"
       ],
@@ -5212,9 +5302,26 @@
         "dashboard/tests/unit/"
       ],
       "created_at": "2026-10-25T08:22:05Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "claude:e5ea9db0",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:42:31Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "0e9cb0a3d5aca0c2442771ef2ad5a09333162451",
+      "completed_at": "2026-10-26T01:46:48Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:46:48Z",
+          "kind": "outcome",
+          "text": "GitLab (nested groups), Bitbucket, Gitea/Forgejo/Codeberg links; self-hosted by host name (gitlab.*, github.*) or meta.repository_type",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-162",
@@ -5229,7 +5336,7 @@
       "description": "Skipped tasks count in the total today, so completion **never reaches 100%** (`completionRatio` in `src/lib/insights.ts` divides done by `tasks.length`).\n\n### The rule\nSkipped tasks count as **neither done nor remaining**:\n\n```\npercentage = done / (total - skipped)\n```\n\n*Example:* a phase of 10 tasks, 7 done and 3 skipped, shows **100%**, not 70%.\n\n### Where\nEverywhere a completion percentage or done/total shows:\n- the top bar's progress bar;\n- the Progress panel's *Overall*, *By Phase* and *By Type* rings;\n- the Progress tab's phase table (its done/total column and bar).\n\nThe burndown already leaves skipped tasks out (`burndown.ts`), and `forecast.ts` already treats a phase of done + skipped as finished. A group with **only** skipped tasks must not show 0% or divide by zero: show it as finished, or as a neutral *all skipped* state, and say which in the review.\n\n### Show the skipped count separately\nSo the 100% doesn't hide them. Try several indicators and compare them in screenshots before picking one:\n1. a small muted line under the ring (*\"3 skipped\"*);\n2. a small badge next to the ring with the skipped icon (U+23ED) and the count, with a tooltip;\n3. a thin muted outer arc on the ring for the skipped share;\n4. `7/7 · 3 skipped` in the phase table's count column.\n\nUse theme tokens (the skipped status colour is `var(--text-muted)`), keep labels readable (3:1) in every theme and both modes, and don't rely on colour alone. Show nothing when a group has no skipped tasks.\n\n### Review, then build\n1. `atm review` with screenshots of the options in light and dark, so the user picks one.\n2. Implement the chosen one.\n\n### Tests\n- Unit tests for the ratio: skipped left out, all skipped, none skipped.\n- e2e: a fixture phase with done and skipped tasks shows 100% and the skipped count.\n- Update the affected screenshots (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n\n> Depends on T-156, which changes the Progress panel's markup.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-156"
       ],
@@ -5242,9 +5349,38 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T00:55:10Z",
+          "kind": "review",
+          "text": "Skipped no longer count toward completion. Pick the panel's skipped indicator from screenshots (light+dark) in /private/tmp/claude-501/-Users-hakanserce-workplace-agentic-task-manager/e5ea9db0-2026-4dc9-8570-c856a2e87fbb/scratchpad/t162/: (a) 'N skipped' under the ring, committed; (b) grey skip-icon badge; (c) thin muted outer arc. The table's '0/3 · 1 skipped' is the same in all. Pass to keep (a); reject naming b or c.",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T01:09:32Z",
+          "kind": "rejection",
+          "text": "User chose option (c): a thin muted outer arc on the rings instead of the 'N skipped' text",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T01:17:36Z",
+          "kind": "outcome",
+          "text": "Option (c) chosen by the user: thin outer arc (--text-muted) for the skipped share, count in the ring's label and cell title; a group of only skipped tasks shows 100%; table shows 'N skipped'",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "started_at": "2026-10-26T01:09:37Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "d5e6740019668e9043e824d1ff8e440b4f610b07",
+      "completed_at": "2026-10-26T01:17:36Z",
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-163",
@@ -5259,7 +5395,7 @@
       "description": "The Appearance menu lists all 11 themes as a radio list (T-152), which makes the menu tall (it now scrolls at 60vh). Replace the list with a **combo box**: one closed control showing the current theme, which opens the list of themes.\n\n### How\n- **Prefer a native `<select>`** styled with the theme tokens (accessible and keyboard-friendly for free).\n- If a native select can't be styled acceptably in every theme, use a **custom listbox** following the WAI-ARIA *select-only combobox* pattern: `Enter` / `Space` / `Alt+Down` opens, arrows move, `Enter` picks, `Escape` closes, typing a letter jumps.\n- Choosing a theme applies it at once (`dashboard.setTheme`) and is remembered as today.\n- The light/dark/system mode control stays as it is.\n\n### Clean up\nRemove the now unused `.theme-list` styles and the radiogroup keyboard code in `AppearanceMenu.svelte`.\n\n### Tests and docs\n- Update `tests/e2e/theme.spec.ts` (pick a theme, keyboard).\n- The appearance-menu screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n- `docs/help.md`: *\"one of 11 themes (the arrow keys move through them)\"*.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/AppearanceMenu.svelte",
@@ -5269,9 +5405,26 @@
         "docs/help.md"
       ],
       "created_at": "2026-10-25T19:31:28Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T00:55:13Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "7dd46f4aa6d66a13a38ddcbdad704dc7b1bd4db5",
+      "completed_at": "2026-10-26T01:00:10Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:00:10Z",
+          "kind": "outcome",
+          "text": "Native select styled with theme tokens, current theme's swatch beside it; menu 456px -> 136px tall; radiogroup code and .theme-list styles removed",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-164",
@@ -5286,7 +5439,7 @@
       "description": "The Status filter only offers statuses some task **currently has**: `filterOptions` in `dashboard/src/lib/filters.ts` builds them from\n\n```ts\nnew Set(tasks.map((t) => t.status))\n```\n\nso when every task is *Done*, the list has no *To Do*, *In Progress* and so on.\n\n### The fix\n- Build the options from the **project's statuses**: every status in `vocab.statuses` (the defaults when `meta.statuses` isn't set), in the vocabulary's order and with its labels.\n- **Plus** any status used by a task that isn't in the vocabulary, sorted after them (as today: by `statusRank`, then name).\n- Options with no tasks show a count of 0 and can still be selected (the empty-filter message then shows).\n- Leave the other groups (phase, type, priority, label, agent, stage) built from the data, as today.\n- A saved filter for a status no task has must keep working.\n\n### Tests\n- Unit tests in `tests/unit/filters.test.ts`: all vocabulary statuses listed when tasks use only one; custom `meta.statuses`; an unknown status used by a task is added at the end.\n- e2e: with a fixture where all tasks are done, the Status filter still offers *To Do*.\n- Update any screenshots that show the filter bar (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/lib/filters.ts",
@@ -5294,9 +5447,26 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-25T19:36:02Z",
-      "updated_at": "2026-10-25T21:29:52Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:00:13Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "77c0efc5e505da28f91f17fd9deb94c87a2ab04d",
+      "completed_at": "2026-10-26T01:06:25Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:06:25Z",
+          "kind": "outcome",
+          "text": "Status options come from vocab.statuses plus unknown ones in use; zero-count statuses are selectable",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-165",
@@ -5319,7 +5489,7 @@
         "docs/multi-project-dashboard-proposal.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:51:38Z",
@@ -5338,7 +5508,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-166",
@@ -5366,7 +5537,7 @@
         "tests/scripts/registry.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:55:32Z",
@@ -5385,7 +5556,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-167",
@@ -5413,7 +5585,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:13:38Z",
@@ -5432,7 +5604,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-168",
@@ -5459,7 +5632,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:01:58Z",
@@ -5478,7 +5651,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-169",
@@ -5503,7 +5677,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:17:25Z",
@@ -5522,7 +5696,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-170",
@@ -5550,7 +5725,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:19:25Z",
@@ -5569,7 +5744,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-171",
@@ -5596,7 +5772,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -5620,7 +5796,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-172",
@@ -5648,7 +5825,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:08:12Z",
@@ -5667,7 +5844,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-173",
@@ -5693,7 +5871,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:30:37Z",
@@ -5712,7 +5890,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-174",
@@ -5737,7 +5916,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:35:50Z",
@@ -5756,7 +5935,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-175",
@@ -5782,7 +5962,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:39:51Z",
@@ -5801,7 +5981,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-176",
@@ -5826,7 +6007,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:00:28Z",
@@ -5845,7 +6026,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-177",
@@ -5878,7 +6060,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:44:58Z",
@@ -5897,7 +6079,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-178",
@@ -5924,7 +6107,7 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:03:06Z",
@@ -5943,7 +6126,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-179",
@@ -5959,7 +6143,7 @@
       "description": "`docs/multi-project-dashboard-proposal.md` §3.6.\n\n### Today\nOnly the main worktree is registered, and its dashboard **doesn't see agents working in other worktrees** until their branches merge: each worktree has its own `tasks.json` and `claims.json` snapshot; only the claims store in `.git/atm/` is shared.\n\n### Design first, then implement\n1. List a project's worktrees (`git worktree list`) in `/api/projects`.\n2. Make claims from every worktree visible, e.g. the server reads the shared claims store instead of the per-worktree snapshot.\n3. In the dashboard, either *switch* between worktrees on the project page, or show *all of them on one Kanban*, with a branch chip per card.\n\n> **Ask the user** to choose between those two before building it (`atm block --on user`).\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [
         "T-178"
       ],
@@ -5970,9 +6154,32 @@
         "docs/multi-project-api.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:29:55Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T04:23:30Z",
+          "kind": "answer",
+          "text": "Worktrees on the dashboard: (1) a worktree switcher on the project page (one worktree's tasks at a time, like the project selector), or (2) all worktrees on one Kanban, each card with a branch chip (a task can be in progress in one worktree and todo in another, so cards would merge by the most advanced status)? I'd suggest (1): simpler and no merging rules; claims from every worktree show either way. → (2) All worktrees of a project on one Kanban, each card with a branch chip.",
+          "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T04:36:20Z",
+          "kind": "outcome",
+          "text": "All worktrees on one board: server lists worktrees in /api/projects, serves claims.json from the shared store and worktrees.json (tasks differing per linked worktree); dashboard merges by furthest status kind, with a branch chip on Kanban/list cards and details.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "started_at": "2026-10-26T04:23:37Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "e5882cc64c90603118a4fcaa53d33e3bf50e357b",
+      "completed_at": "2026-10-26T04:36:20Z",
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-180",
@@ -6001,7 +6208,7 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-25T21:18:54Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:48:09Z",
@@ -6020,7 +6227,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-181",
@@ -6049,7 +6257,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T21:35:18Z",
-      "updated_at": "2026-10-26T00:09:18Z",
+      "updated_at": "2026-10-26T00:31:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:52:48Z",
@@ -6068,7 +6276,8 @@
       "pr": {
         "number": 11,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
-      }
+      },
+      "merged_at": "2026-10-26T00:22:47Z"
     },
     {
       "id": "T-182",
@@ -6083,16 +6292,33 @@
       "description": "Opening another task while the details panel is open (a dependency link, *Required By*, a graph node or a card) **keeps the previous task's scroll position**, so the new task opens partway down its description.\n\n### Fix\n- In `DetailPanel.svelte`, reset the scroll container (`#detail-panel`, or whichever element scrolls) to the top whenever the shown task's id changes, e.g. an `$effect` on `task.id`.\n- Re-rendering the **same** task (auto-refresh, a reload) must **not** reset the scroll.\n- Keyboard focus stays where it is today.\n\n### Tests\n- e2e: open a task with a long description, scroll down, follow a dependency link → the panel is at the top.\n- e2e: scroll down, let auto-refresh re-render the same task (swap the fixture response) → the position is kept.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
         "dashboard/tests/e2e/detail.spec.ts"
       ],
       "created_at": "2026-10-25T21:49:53Z",
-      "updated_at": "2026-10-25T21:49:53Z",
+      "updated_at": "2026-10-26T04:44:54Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:22:25Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "5a8e9f90de2504aec065869307fc65048c4b58bd",
+      "completed_at": "2026-10-26T01:27:16Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:27:16Z",
+          "kind": "outcome",
+          "text": "Panel scrolls to the top when the shown task id changes; the same task re-rendered keeps its position",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
     },
     {
       "id": "T-183",
@@ -6107,7 +6333,7 @@
       "description": "Since descriptions render as Markdown (T-142), their `###` headings look like the details panel's own sections (*Dependencies*, *Files*, *Notes*, …), so it's hard to tell **where the description ends and the task's attributes begin**.\n\n### Make the description read as one block\n- Give `#detail-description` a container: for example a subtle border and/or a `surface2` background, rounded corners, inner padding, using **theme tokens only** (no hard-coded colours).\n- Keep its *Description* label outside the box, like the other sections.\n- Scale the Markdown headings inside it down so they stay below the panel's section labels in the visual hierarchy (smaller, muted, or both).\n- Long code blocks scroll horizontally inside the box, not the panel.\n\nTry one or two variants and pick the clearest; check every theme in both modes, and that contrast stays readable (text 4.5:1, borders visible).\n\n### Tests\n- Update the detail panel screenshots in both modes (darwin; delete the matching `-linux.png` files per `CLAUDE.md`).\n- The theme screenshots that show the details panel, if any.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -6115,7 +6341,499 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T21:49:53Z",
-      "updated_at": "2026-10-25T21:49:53Z",
+      "updated_at": "2026-10-26T04:44:54Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:27:19Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "70a3b56d6f29248d81e8e13f782ca9ddf93e27a2",
+      "completed_at": "2026-10-26T01:31:46Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:31:46Z",
+          "kind": "outcome",
+          "text": "Description in a bordered box on the page background (theme tokens), Markdown headings scaled down; checked default, Nord, Solarized, High contrast in both modes",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
+    },
+    {
+      "id": "T-184",
+      "name": "Explain an expired lease when its agent finishes the task",
+      "phase": 16,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "cli"
+      ],
+      "description": "Seen on T-171: the agent's lease ran out during a long test run (no tool calls, so no heartbeat), after which:\n\n1. `atm done T-171` refused with *\"it is todo, not in_progress or in_review\"*, though `atm show` still said `in_progress`: the command expired the claim in memory, then refused **before writing**, so the file kept the old status;\n2. `atm release` refused the same way, and this time the expiry was written (a `failure` note: *lease expired*);\n3. the expiry had dropped the task's `commit` (`back_to_todo` clears it), so `atm done` needed `--commit` again.\n\n### Fix\n- When a status command (`done`, `release`, `fail`, `review`, `block`, `heartbeat`) finds that **this agent's own** claim on the task just expired, say so: *\"T-171: your lease expired at 23:00 (no heartbeat for 30 min), so it went back to todo. Your commit is kept. Run `atm start T-171`, then `atm done T-171` again.\"* Exit code 4, like a claim conflict.\n- Write the expiry **before** refusing, so `atm show` agrees with the error.\n- An expiry keeps the task's `commit` (the work is in git): `back_to_todo` drops it only when called by `reopen`, `reject` and `fail`.\n- Another agent's expired claim keeps today's message.\n\n### Tests\nScenarios in `tests/scripts/scenarios/` with `ATM_NOW` past the lease: `done` by the claim's own agent (the message, exit 4, status `todo` on disk, `commit` kept); `start` then `done` works without `--commit`; another agent's expired claim unchanged. Update `docs/v4/atm-cli.md` (4.2) and the skills' error handling line on expired leases (do-task, loop-tasks).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/model.py",
+        "atm-cli/atm/tasks.py",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/",
+        "docs/v4/atm-cli.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-26T00:24:09Z",
+      "updated_at": "2026-10-26T04:44:54Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T01:31:49Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "bffbab0847a7d7aab294167b54ea8daca5824a82",
+      "completed_at": "2026-10-26T01:37:41Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T01:37:41Z",
+          "kind": "outcome",
+          "text": "Own expired lease: expiry written first, exit 4 with what happened and what to run; expiry and release keep the commit (fail/reject/reopen drop it); 6 scenarios",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 12,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+      }
+    },
+    {
+      "id": "T-185",
+      "name": "Update notice: clipped by the title bar",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "The **\"A new version of the dashboard is ready\"** notice doesn't fit: its bottom part is hidden under the title bar.\n\n`UpdateNotice.svelte` renders before the sticky `.topbar` (`App.svelte`), and the title bar covers it.\n\n## Do\n- Place the notice so it's fully visible on both pages (project view and All projects): either as a banner the title bar pushes down, or as a toast above it (`z-index`).\n- It must not shift or cover the filters row.\n\n## Verify\n- An e2e check that `#update-notice` is fully inside the viewport and not covered by `.topbar` (`elementFromPoint` at its corners).\n- Screenshots in light and dark.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/UpdateNotice.svelte",
+        "dashboard/src/App.svelte",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-186",
+      "name": "Update notice: shown when the page is already the new build",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "cli"
+      ],
+      "description": "The notice showed although the open page already **was** the new version.\n\nThe notice appears when `newBuildReady(dashboardBuild(), serverBuild())` (`lib/load.ts`) is true, i.e. the page's `<meta name=\"atm-dashboard-build\">` differs from the server's whoami `build`.\n\n## Find out\n- How atm serve computes `build` (atm-cli) and how the build writes the meta tag: are they the same value for the same file? (e.g. hash of the file vs. a stamp, or the meta being part of what's hashed)\n- Whether an old server still answering, or `atm serve --refresh`, can report a stale build.\n\n## Do\n- Fix the root cause so a page loaded from the current server never shows the notice.\n- Add a test (atm-cli scenario and/or e2e) that the served page's meta build equals whoami's `build`.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/lib/load.ts",
+        "dashboard/src/lib/release-notes.ts",
+        "atm-cli/atm/",
+        "tests/scripts/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-187",
+      "name": "Update notice: shows only once per new build",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "The notice showed **several times**.\n\nDismissing it sets `#newVersionDismissed` in `state.svelte.ts`, which is forgotten on a reload and isn't shared between tabs, so it comes back.\n\n## Do\n- Remember the server build the user dismissed (localStorage, wrapped in `try/catch`), and show the notice again only for a **different** build.\n- Make sure only one notice is ever on the page.\n\n## Verify\n- Unit test for the dismissal logic.\n- e2e: dismiss, reload → no notice; server reports another build → notice again.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-186"
+      ],
+      "files": [
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/src/components/UpdateNotice.svelte",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-188",
+      "name": "One title bar for every page",
+      "phase": 17,
+      "type": "refactor",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "On **All projects**, the Refresh and theme pills are not pinned to the right as in the project view. It should look **exactly the same**.\n\n`LandingPage.svelte` has its own copy of `<header class=\"topbar\">` (title, project selector, subtitle, `topbar-controls`), separate from `Header.svelte`.\n\n## Do\n- Make one title bar component used by both pages: title row, project selector, version chip, subtitle, controls at the right. The project page adds its charts and the filters row through slots/snippets.\n- Remove the copy from `LandingPage.svelte`.\n\n## Verify\n- e2e: `.topbar-controls` has the same right edge and top on the project page and on `#overview`.\n- Update screenshot baselines for the overview.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/LandingPage.svelte",
+        "dashboard/src/styles/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-189",
+      "name": "Status bar pinned to the bottom on All projects",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "On **All projects** the status bar (`Footer.svelte`) isn't pinned to the bottom of the window; on the project page it is.\n\nThe page layout should be defined **once**, in `App.svelte`, not per page.\n\n## Do\n- Find why the footer stays at the bottom on the project page (a rule tied to `ViewPanel`/`main`?) and not on `.landing`.\n- Give the app one layout: title bar, a main area that grows, the status bar at the bottom, for every route (`project`, `overview`, `none`, `unknown`).\n\n## Verify\n- e2e: with only one project card, the footer's bottom equals the viewport's bottom on `#overview`, on the empty page and on the project page.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-188"
+      ],
+      "files": [
+        "dashboard/src/App.svelte",
+        "dashboard/src/components/LandingPage.svelte",
+        "dashboard/src/components/Footer.svelte",
+        "dashboard/src/styles/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-190",
+      "name": "Project card: a long phase name stays on one line",
+      "phase": 17,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "In `ProjectCard.svelte`, a long phase name in `.project-card-phase` wraps and pushes the **\"1 agent working\"** line down, so the cards in a row no longer line up.\n\n## Do\n- Keep the phase line on one line: cut the name off with an ellipsis (`text-overflow: ellipsis`), keeping `done / total` visible.\n- Show the full phase name in a `title`.\n\n## Verify\n- e2e with a fixture project whose phase name is very long: `.project-card-foot` is at the same height in every card of the row.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/styles/",
+        "dashboard/tests/fixtures/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-191",
+      "name": "Brainstorm: what project cards should show",
+      "phase": 17,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview"
+      ],
+      "description": "The project cards show **too little** about each project. Brainstorm what would help someone glancing at all their projects, and write it up.\n\n## Do\n- Write `docs/project-cards-proposal.md` with options, each with a sketch and what the server summary must add. Ideas to weigh:\n  - recent phases as rings (see the phase-rings tasks)\n  - what agents are doing now (task names, not just a count)\n  - tasks needing you, with their names\n  - the next ready tasks\n  - open PR / branch / CI state (`meta.repository`, task PRs)\n  - last finished task and when\n  - project logo and description\n- Recommend a layout that fits a card, and list follow-up tasks.\n- Review it with the user before follow-up tasks are added (`/atm:create-tasks`).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "docs/project-cards-proposal.md"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-192",
+      "name": "Server summary: the most recently active phases",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "cli",
+        "overview",
+        "progress"
+      ],
+      "description": "The overall progress bar on project cards isn't useful when working incrementally: it sits at 80–90% all the time, since many tasks are long done and more phases will come.\n\nAdd to each project's summary in atm serve's `api/projects` a list of the **last 4 active phases**, for the card to show as rings.\n\n## Do\n- `recent_phases`: up to 4 phases, in phase order, chosen as: phases with open work (`todo`/`active`/`review`/`blocked` kinds), and then the most recently finished phases (by their last `completed_at`) to fill up to 4.\n- Each entry: `id`, `name`, `done`, `total` (skipped tasks left out of `total`, as for `percent`), `percent`.\n- Document the field in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli scenarios: no tasks, all done, one active phase, more than 4 open phases, skipped tasks.\n- `npm run test:scripts` on Python 3.9.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/",
+        "docs/multi-project-api.md",
+        "dashboard/src/lib/load.ts"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-193",
+      "name": "Project card: rings for the recent phases, on one line",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview",
+        "progress"
+      ],
+      "description": "Replace the overall progress bar on `ProjectCard.svelte` with a **ring per recent phase** (`summary.recent_phases`), using `Ring.svelte`.\n\n## Do\n- One row of up to 4 rings, each with its percentage inside and the phase number under it; the full name and `done / total` in a `title`.\n- The row must **always fit on one line** in the card's narrowest width (shrink the rings, drop to fewer if needed).\n- Keep the overall `done / total` as a small muted line, or drop it — decide with the screenshots.\n- Accessible: each ring has an `aria-label` like `Phase 16 · Dashboard polish: 4 of 13 done`.\n\n## Verify\n- Component test for 0, 1 and 4 phases; e2e that the rings sit on one row at the narrowest card width.\n- Screenshot baselines.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-192"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/components/Ring.svelte",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-194",
+      "name": "Check the phase rings live on real projects",
+      "phase": 17,
+      "type": "test",
+      "priority": "P1",
+      "labels": [
+        "dashboard",
+        "overview",
+        "progress"
+      ],
+      "description": "The user wants the phase rings **tested live** before they're settled.\n\n## Do\n- Run `atm serve` with several real projects (this repo and others the user has registered) and open `#overview`.\n- Check with the user: are the right phases picked? Do the rings fit on one line at different window widths? Are they readable in light and dark?\n- Fix what comes up, or record follow-up tasks.\n\nThis is a review with the user: move the task to review and **ask** rather than finishing it on your own.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-193"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectCard.svelte"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-195",
+      "name": "ATM logo",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "branding"
+      ],
+      "description": "ATM needs a **logo**.\n\n## Do\n- Propose 2–3 simple SVG logo designs to the user (e.g. as a quick artifact), and use the one they pick.\n- The logo must work at 16 px (browser tab) and in both light and dark themes (`currentColor` or theme tokens).\n- Use it: in the title bar next to the title, as the page's favicon (inline `data:` SVG, since the dashboard is a single file), and in the About dialog.\n- Keep the source SVG in the repo (e.g. `dashboard/src/assets/atm-logo.svg`).\n\n## Verify\n- Screenshot baselines for the title bar; the favicon link is in the built file.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/assets/atm-logo.svg",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/AboutDialog.svelte",
+        "dashboard/index.html"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-196",
+      "name": "Project logos: atm-cli and server",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "cli",
+        "branding"
+      ],
+      "description": "Each project can have a **logo** that the dashboard shows.\n\n## Do\n- `meta.logo`: a path relative to the project root to an image (SVG, PNG, ICO, WebP). Set with an atm command (e.g. `atm init --meta-file` or a dedicated `atm logo set <path>`).\n- Without `meta.logo`, find a likely one: `logo.svg`/`logo.png`, `.github/logo.*`, `public/favicon.*`, `assets/logo.*` — first match wins.\n- atm serve serves it at `p/<id>/logo` with the right content type and caching; 404 when there is none. Only files inside the project folder; refuse anything outside it or larger than ~512 KB.\n- `api/projects` gets `has_logo` (or a `logo` URL) per project.\n- Document it in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli tests: set, auto-detect, missing, path outside the project, too large.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/",
+        "plugin/scripts/atm.py",
+        "tests/scripts/",
+        "docs/multi-project-api.md"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-197",
+      "name": "Project logos in the project selector and cards",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "branding",
+        "overview"
+      ],
+      "description": "Show each project's logo (`p/<id>/logo`) in the **project selector**, on the **project cards** and next to the project name in the title bar.\n\n## Do\n- A small `ProjectLogo` component: the image when the project has one, otherwise a monogram (the project's initials on a colour derived from its id).\n- Fixed size per place (e.g. 16 px in the selector, 24 px on cards), `object-fit: contain`, rounded.\n- No layout shift while the image loads; fall back to the monogram if it fails.\n\n## Verify\n- Component tests for image / monogram / failed image.\n- e2e with the `tasksServer` fixture serving a logo for one project and none for another; screenshot baselines.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-196"
+      ],
+      "files": [
+        "dashboard/src/components/ProjectLogo.svelte",
+        "dashboard/src/components/ProjectSelector.svelte",
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/tests/e2e/helpers.ts"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-198",
+      "name": "Kanban: completion ring for the tasks shown",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "progress"
+      ],
+      "description": "In the **Kanban** view, show a **completion ring** for the tasks currently on the board, i.e. the ones the search and filters leave.\n\n## Do\n- A `Ring.svelte` in the Kanban board's header area: `done / shown` with the percentage inside; a `title` with the counts.\n- Count skipped tasks the same way as the rest of the dashboard (T-162: left out of the percentage, shown separately).\n- Updates as filters change.\n\n## Verify\n- Unit test for the count from a filtered list; e2e: filter by a phase and check the ring's value.\n- Screenshot baselines.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-162"
+      ],
+      "files": [
+        "dashboard/src/components/KanbanBoard.svelte",
+        "dashboard/src/components/Ring.svelte",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T00:54:01Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-199",
+      "name": "\"Needs you\" chip opens the task, or a list of them",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "dashboard"
+      ],
+      "description": "Clicking the **\"N need(s) you\"** chip in the title bar (`#attention-count` in `Header.svelte`) only switches to the Kanban tab today. It should take you **to the task**.\n\n## Do\n- **One task** needs you: clicking the chip opens its details (`dashboard.showDetail(id)`).\n- **Several**: clicking opens a small popup list under the chip, one row per task: ID, name and why it needs you (*in review* / *blocked on a question*). Clicking a row opens that task's details and closes the popup.\n- The popup closes on `Escape`, a click outside, or choosing a task. Keyboard: arrows move between rows, `Enter` opens; focus returns to the chip on close.\n- Style it like the other title bar menus (`RefreshMenu`, `AppearanceMenu`), with theme tokens.\n- The tasks come from `needingUser(dashboard.tasks, dashboard.vocab)`, as the chip's count does.\n\n## Verify\n- Component test: one task → details open; several → list shows them all and a row opens the right task.\n- e2e with a fixture where 1 and then 3 tasks need you (`#detail-overlay.open` shows the right `data-id`); keyboard and `Escape`.\n- Screenshot of the open popup in light and dark.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/components/NeedsYouMenu.svelte",
+        "dashboard/src/lib/waiting.ts",
+        "dashboard/tests/unit/",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:59:38Z",
+      "updated_at": "2026-10-26T00:59:38Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-200",
+      "name": "Project card: \"needs you\" chip opens the task, or a list of them",
+      "phase": 17,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "dashboard",
+        "overview",
+        "cli"
+      ],
+      "description": "Do the same for the **\"N need(s) you\"** chip on the project cards (`.project-card-need` in `ProjectCard.svelte`), which today opens the project's Kanban filtered to review and blocked.\n\n## Do\n- atm serve's project summary (`api/projects`) lists the tasks that need the user: `id`, `name` and the reason, as the dashboard's `needingUser` decides it (same status kinds). Document it in `docs/multi-project-api.md`; atm-cli scenarios for it.\n- One task: clicking opens that project with the task's details open (`dashboard.openProject(id, …)` plus the task).\n- Several: the same popup list as the title bar chip (reuse its component); a row opens the project and that task.\n\n## Verify\n- atm-cli scenarios for the new summary field.\n- e2e on `#overview`: one and several tasks; the project page opens with `#detail-overlay.open` on the right task.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-199"
+      ],
+      "files": [
+        "atm-cli/atm/",
+        "plugin/scripts/atm.py",
+        "tests/scripts/scenarios/",
+        "docs/multi-project-api.md",
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/lib/state.svelte.ts",
+        "dashboard/tests/e2e/"
+      ],
+      "created_at": "2026-10-26T00:59:38Z",
+      "updated_at": "2026-10-26T00:59:38Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

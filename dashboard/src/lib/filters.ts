@@ -79,7 +79,8 @@ function valuesOf(group: FilterGroup, t: Task, vocab: Vocabulary): string[] {
 
 /**
  * Filter buttons for the values in the data: phases numerically (with their names), types, statuses and priorities
- * in the vocabulary's order and with its labels.
+ * in the vocabulary's order and with its labels. Statuses list the whole vocabulary, so a status no task has yet
+ * (To Do once everything is done) can still be chosen.
  */
 export function filterOptions(
   tasks: Task[],
@@ -87,7 +88,8 @@ export function filterOptions(
 ): Record<FilterGroup, FilterOption[]> {
   const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
   const types = [...new Set(tasks.map((t) => t.type))].sort(byVocabulary(vocab.types.map((t) => t.id)));
-  const statuses = [...new Set(tasks.map((t) => t.status))].sort(
+  // Every status of the project, also those no task has now, then any unknown one a task uses
+  const statuses = [...new Set([...vocab.statuses.map((s) => s.id), ...tasks.map((t) => t.status)])].sort(
     (a, b) => statusRank(vocab, a) - statusRank(vocab, b) || a.localeCompare(b),
   );
   const priorities = [...new Set(tasks.map((t) => priorityOf(vocab, t)))].sort(

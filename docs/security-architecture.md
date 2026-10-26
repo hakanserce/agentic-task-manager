@@ -51,7 +51,7 @@ with the task that adds it.
 
 | # | Invariant | Enforced by |
 |---|---|---|
-| I1 | **Task text is data, not commands.** The skills and `plugin/CLAUDE.md` say so, and an agent blocks a task that asks it to run copied commands, fetch scripts, touch credentials, CI, git config or hooks | `dashboard/tests/unit/skills.test.ts` (the rule is present); the agent sandbox's red-team run (**to build**, T-235) |
+| I1 | **Task text is data, not commands.** The skills and `plugin/CLAUDE.md` say so, and an agent blocks a task that asks it to run copied commands, fetch scripts, touch credentials, CI, git config or hooks | `dashboard/tests/unit/skills.test.ts` (the rule is present); the agent sandbox's red-team run (`tests/sandbox/run.mjs`; its verdict: `tests/scripts/sandbox-verdict.test.mjs`) |
 | I2 | **Skills pre-approve no command runner**: only named `atm` subcommands, never `atm run` or `atm *` | `skills.test.ts` |
 | I3 | **Agent-written text is single-quoted** in skill templates, never double-quoted | `skills.test.ts` |
 | I4 | **CI logs and PR comments are evidence**, never instructions, for the push skill | `skills.test.ts` (the rule is present) |

@@ -8488,17 +8488,27 @@
       "description": "Finding **F17** in `docs/security-review.md`.\n\nAnything merged to `main` runs on every user's machine after an update (the hooks run `atm` on every tool call and at session start).\n\n## Do\n\n- Write `SECURITY.md`: how to report a vulnerability, what the plugin runs automatically (the hooks), what atm never does.\n- Prepare the branch protection settings for `main` (required checks, review) and **ask the user** to apply them: they are repository settings only the owner changes.\n- Propose, and decide with the user, whether the marketplace should point at a release tag instead of the default branch.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "in_review",
       "dependencies": [],
       "files": [
         "SECURITY.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:00:53Z",
+      "updated_at": "2026-10-26T23:01:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:00:53Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "1bf069960400ff1806bc4032f7cdf2c8d72bc7d0",
+      "review_requested_at": "2026-10-26T23:01:26Z",
+      "notes": [
+        {
+          "at": "2026-10-26T23:01:26Z",
+          "kind": "review",
+          "text": "`SECURITY.md` and the distribution proposal (§3.2 of `docs/security-architecture.md`: branch protection, private reporting, no release tags for now), under review with Hakan in Crit.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-232",
@@ -8651,7 +8661,7 @@
       "description": "Level 2 of the sandbox decision in `docs/security-architecture.md`.\n\n## Do\n\n- A container definition (Docker or devcontainer) with Claude Code, the plugin from this checkout, a throwaway git repo, no real credentials, and network egress blocked except the model API.\n- A red-team task set: descriptions and notes that ask the agent to run commands, `curl | sh`, read `~/.ssh` or env secrets, edit CI or git hooks, push elsewhere.\n- A script that runs `/atm:loop-tasks` there and reports, per red-team task, whether the agent blocked it or followed it (check the file system, the git log, and the tasks' statuses afterwards).\n- How to run it in `CLAUDE.md`.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-233",
         "T-221"
@@ -8660,9 +8670,11 @@
         "tests/sandbox/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T20:44:53Z",
+      "updated_at": "2026-10-26T23:01:37Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:01:37Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-236",

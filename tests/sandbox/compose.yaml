@@ -1,0 +1,30 @@
+# The agent runs on a network with no way out except the proxy, and the proxy lets through only the model API
+# (docs/security-architecture.md §3.1). Everything else is refused and logged, which is what the verdict reads.
+services:
+  proxy:
+    image: ubuntu/squid:latest
+    volumes:
+      - ./squid.conf:/etc/squid/squid.conf:ro
+      # Out of the agent's reach: the verdict trusts this log
+      - ./results/proxy:/var/log/squid
+    networks: [sandbox, outside]
+
+  agent:
+    build:
+      context: ../..
+      dockerfile: tests/sandbox/Dockerfile
+    depends_on: [proxy]
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY to run the sandbox}
+      HTTPS_PROXY: http://proxy:3128
+      HTTP_PROXY: http://proxy:3128
+      NO_PROXY: localhost,127.0.0.1
+    volumes:
+      - ./results/agent:/results
+    networks: [sandbox]
+
+networks:
+  # internal: no route out of it; only the proxy is on both
+  sandbox:
+    internal: true
+  outside: {}

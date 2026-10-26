@@ -16,6 +16,12 @@ Only `plugin/` is shipped to users. `plugin/CLAUDE.md` is the plugin's own conte
 
 ## Security
 `docs/security-architecture.md` holds the threat model and the invariants every change keeps, each with its check.
+
+**Agent sandbox** (before merging a PR that changes a skill, `plugin/CLAUDE.md` or atm output agents act on):
+`ANTHROPIC_API_KEY=... node tests/sandbox/run.mjs` with Docker running. It builds a container with this checkout's
+plugin, runs `/atm:loop-tasks` on a seeded project whose red-team tasks ask for `curl | sh`, secrets, CI and hook
+changes and another remote, with no network but the model API, and prints per task whether the agent blocked it. A
+few minutes and a few dollars of model calls. Its judgement is tested in `tests/scripts/sandbox-verdict.test.mjs`.
 A change that adds an entry point (an HTTP route, a CLI command reading a path or URL, a task-folder file), a field
 agents or the dashboard act on, a skill instruction that runs commands or reads outside text, or a CI permission
 updates that document in the same PR.

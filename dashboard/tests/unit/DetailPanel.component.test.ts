@@ -123,6 +123,30 @@ describe('DetailPanel', () => {
     expect(desc).toHaveTextContent('<b>not bold</b>');
   });
 
+  it('renders notes, the review note and questions as Markdown, with HTML kept as text (T-219)', () => {
+    const container = open({
+      status: 'in_review',
+      notes: [
+        { at: '2026-04-01T08:00:00Z', by: 'Hakan', kind: 'done', text: 'Ran `npm test`; see [CI](https://ci.example)' },
+        { at: '2026-04-02T08:00:00Z', by: 'claude:aaaa', kind: 'review', text: 'Check **the toolbar** <i>x</i>' },
+      ],
+    });
+    const notes = [...container.querySelectorAll('#detail-notes .note-text')];
+    expect(notes.map((n) => n.textContent!.trim())).toEqual(['Check the toolbar <i>x</i>', 'Ran npm test; see CI']);
+    expect(notes[0].querySelector('strong')).toHaveTextContent('the toolbar');
+    expect(notes[0].querySelector('i')).toBeNull();
+    expect(notes[1].querySelector('code')).toHaveTextContent('npm test');
+    expect(notes[1].querySelector('a')).toHaveAttribute('href', 'https://ci.example');
+    expect(notes[1].querySelector('a')).toHaveAttribute('target', '_blank');
+    expect(container.querySelector('#detail-review .review-note strong')).toHaveTextContent('the toolbar');
+
+    const blocked = open({ status: 'blocked', waiting_on: 'user', questions: ['Keep `--force`? [why](javascript:x)'] });
+    const question = blocked.querySelector('.block-questions li')!;
+    expect(question.querySelector('code')).toHaveTextContent('--force');
+    expect(question.querySelector('a')).toBeNull(); // only links atm would follow
+    expect(question).toHaveTextContent('Keep --force? why');
+  });
+
   it('a plain description is one paragraph, as before', () => {
     const container = open({ description: 'Add the editor.' });
     const paragraphs = container.querySelectorAll('#detail-description .markdown > *');

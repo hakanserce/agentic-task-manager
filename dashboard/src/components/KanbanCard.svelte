@@ -3,6 +3,7 @@
   import type { KanbanCard } from '../lib/kanban';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
+  import { markdownPlainText } from '../lib/markdown';
   import { kindOf } from '../lib/vocab';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import BranchChip from './BranchChip.svelte';
@@ -53,10 +54,16 @@
     <div class="kanban-claim" title="Claimed by {claim.agent}">{claimSummary(claim, dashboard.loadedAt)}</div>
   {/if}
   {#if review}
-    <div class="kanban-waiting review-wait" title={review.note?.text}>{reviewSummary(review)}</div>
+    <div class="kanban-waiting review-wait" title={review.note && markdownPlainText(review.note.text)}>
+      {reviewSummary(review)}
+    </div>
   {/if}
   {#if block}
-    <div class="kanban-waiting block-wait" class:on-user={block.on === 'user'} title={block.questions.join('\n')}>
+    <div
+      class="kanban-waiting block-wait"
+      class:on-user={block.on === 'user'}
+      title={block.questions.map(markdownPlainText).join('\n')}
+    >
       {blockSummary(block)}
     </div>
   {/if}

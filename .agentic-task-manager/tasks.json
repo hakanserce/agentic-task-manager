@@ -7809,7 +7809,7 @@
       "description": "`dashboard/src/components/AboutDialog.svelte` shows a **This project** section (statuses, phases, types, priorities, workflow) from `dashboard.vocab` and `dashboard.meta`. In the All projects view these still hold the last project that was open, so the section is **stale**.\n\n## Fix\n- **All projects view:** leave the project section out; the dialog shows only the plugin's facts.\n- **A project's view:** head the section with the project's name, with its logo (`ProjectLogo.svelte`) when it has one, instead of the bare *This project*.\n\n## Tests\n- A component test for both views.\n- An e2e check that opening About from All projects, after visiting a project, shows no project section.\n- Update the About screenshots.\n\n*T-216 may later move the project information elsewhere; keep this fix small.*\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/AboutDialog.svelte",
@@ -7817,11 +7817,22 @@
         "dashboard/tests/unit/AboutDialog.component.test.ts"
       ],
       "created_at": "2026-10-26T19:14:58Z",
-      "updated_at": "2026-10-26T19:26:23Z",
+      "updated_at": "2026-10-26T19:29:02Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:26:23Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "ff1dad06dcd4dc46f51b088e35c40efe35d9ab04",
+      "completed_at": "2026-10-26T19:29:02Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T19:29:02Z",
+          "kind": "outcome",
+          "text": "About shows the project section only on a project's page, headed by its name (as in the title bar) and its logo or monogram; on All projects only the plugin's facts.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-218",
@@ -7861,7 +7872,7 @@
       "description": "Task descriptions are rendered as Markdown, but **notes are plain text**: the note list in `dashboard/src/components/DetailPanel.svelte` (`.note-text`), the review note (`.review-note`), and block questions and answers wherever they appear (detail panel, the Needs-you menu, Kanban cards).\n\n## Change\n- Render notes with the existing parser (`dashboard/src/lib/markdown.ts`) and `Markdown.svelte`. Notes are short (atm caps them at 500 characters), so consider an *inline-only* mode (`code`, **strong**, *em*, links) for one-line places such as the Needs-you menu and cards, and full blocks in the detail panel.\n- Keep the escaping guarantees: no raw HTML, links only `http(s)`.\n- Style the rendered notes so they fit the existing note layout (no extra margins from `<p>`).\n\n## Tests\n- Unit tests for the inline-only mode in `tests/unit/markdown.test.ts`.\n- A component test for the detail panel's notes, and an e2e check with a note containing `code` and a link.\n- Update affected screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -7870,9 +7881,11 @@
         "dashboard/tests/unit/markdown.test.ts"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T19:19:57Z",
+      "updated_at": "2026-10-26T19:29:06Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T19:29:06Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

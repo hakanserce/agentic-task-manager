@@ -260,6 +260,13 @@ def project_summary(paths):
             if 0 <= age < SUMMARY_DAYS:
                 completions[SUMMARY_DAYS - 1 - age] += 1
 
+    # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
+    needs_you_tasks = [
+        {"id": t.get("id"), "name": t.get("name") or "", "reason": "review" if k == "review" else "blocked"}
+        for t, k in zip(tasks, kinds)
+        if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
+    ]
+
     return {
         "total": len(tasks),
         "done": done,
@@ -271,6 +278,7 @@ def project_summary(paths):
             "review": kinds.count("review"),
             "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
         },
+        "needs_you_tasks": needs_you_tasks,
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
     }

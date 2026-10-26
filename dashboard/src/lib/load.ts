@@ -1,6 +1,7 @@
 // Loading from atm serve's API (docs/multi-project-api.md): the registered projects from api/projects, and each
 // project's files from p/<id>/. URLs are relative to the page, which the server serves at /.
 import type { Task, TasksFile } from './types';
+import type { NeedsYouItem } from './waiting';
 
 export const DEFAULT_PROJECT_NAME = 'Task Dashboard';
 export const PROJECTS_URL = 'api/projects';
@@ -21,6 +22,8 @@ export interface ProjectSummary {
   current_phase: { id: number; name: string | null; done: number; total: number } | null;
   agents_working: number;
   needs_you: { review: number; blocked_on_user: number };
+  /** The tasks behind needs_you (absent from servers before 0.17) */
+  needs_you_tasks?: NeedsYouItem[];
   last_activity: string | null;
   completions_14d: number[];
 }

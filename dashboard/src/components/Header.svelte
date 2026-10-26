@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dashboardVersion } from '../lib/release-notes';
   import { dashboard } from '../lib/state.svelte';
+  import { needsYouItems } from '../lib/waiting';
   import AppearanceMenu from './AppearanceMenu.svelte';
   import Filters from './Filters.svelte';
   import Logo from './Logo.svelte';
@@ -14,6 +15,8 @@
 
   const title = $derived(dashboard.loaded ? dashboard.projectName + ' — Task Dashboard' : 'Task Dashboard');
   const phaseCount = $derived(new Set(dashboard.tasks.map((t) => t.phase)).size);
+  // Tasks that need the user: in review, or blocked on a question for the user (D-3.3)
+  const needYou = $derived(needsYouItems(dashboard.tasks, dashboard.vocab));
   const counts = $derived(`${dashboard.tasks.length} tasks across ${phaseCount} phase${phaseCount !== 1 ? 's' : ''}`);
 
   $effect(() => {
@@ -51,7 +54,12 @@
         {:else}
           {counts} — loaded from tasks.json
         {/if}
-        <NeedsYouMenu />
+        <NeedsYouMenu
+          items={needYou}
+          onopen={(id) => dashboard.showDetail(id)}
+          chipId="attention-count"
+          menuId="needs-you-menu"
+        />
       {:else}
         Loading tasks.json…
       {/if}

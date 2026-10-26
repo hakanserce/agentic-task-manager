@@ -1,25 +1,40 @@
 <script lang="ts">
-  // The title bar's "N need(s) you" chip (D-3.3): it takes you to the task. One task opens its details; several open a
-  // list of them under the chip (a menu: the arrows, Home and End move, Enter opens, Escape or a click outside closes,
-  // and focus goes back to the chip). It sits in the subtitle's <p>, so it is built from phrasing elements only.
+  // A "N need(s) you" chip (D-3.3) that takes you to the task: one task opens it; several open a list of them under
+  // the chip (a menu: the arrows, Home and End move, Enter opens, Escape or a click outside closes, and focus goes
+  // back to the chip). Used in the title bar and on the overview's project cards. It can sit in a <p>, so it is built
+  // from phrasing elements only.
   import { tick } from 'svelte';
-  import { dashboard } from '../lib/state.svelte';
-  import type { Task } from '../lib/types';
-  import { kindOf } from '../lib/vocab';
-  import { needingUser } from '../lib/waiting';
+  import type { NeedsYouItem } from '../lib/waiting';
 
-  const needYou = $derived(needingUser(dashboard.tasks, dashboard.vocab));
+  let {
+    items,
+    onopen,
+    chipId,
+    chipClass = '',
+    menuId,
+    align = 'left',
+  }: {
+    items: NeedsYouItem[];
+    /** Open task `id` (its details, or its project with its details) */
+    onopen: (id: string) => void;
+    chipId?: string;
+    chipClass?: string;
+    menuId?: string;
+    /** Which edge of the chip the list lines up with */
+    align?: 'left' | 'right';
+  } = $props();
+
   let open = $state(false);
   let root = $state<HTMLElement>();
   let chip = $state<HTMLButtonElement>();
   let list = $state<HTMLElement>();
 
-  const reason = (t: Task) => (kindOf(dashboard.vocab, t.status) === 'review' ? 'in review' : 'blocked on a question');
+  const REASONS = { review: 'in review', blocked: 'blocked on a question' } as const;
   const rows = () => [...(list?.querySelectorAll<HTMLButtonElement>('.needs-you-row') ?? [])];
 
   async function onChip() {
-    if (needYou.length === 1) {
-      dashboard.showDetail(needYou[0].id);
+    if (items.length === 1) {
+      onopen(items[0].id);
       return;
     }
     if (open) {
@@ -38,7 +53,7 @@
 
   function choose(id: string) {
     close();
-    dashboard.showDetail(id);
+    onopen(id);
   }
 
   function onKey(e: KeyboardEvent) {
@@ -65,38 +80,39 @@
 
   // The list closes when it has nothing left to list (the tasks were answered meanwhile)
   $effect(() => {
-    if (open && needYou.length < 2) open = false;
+    if (open && items.length < 2) open = false;
   });
 </script>
 
 <svelte:window onclick={onWindowClick} />
 
-{#if needYou.length}
+{#if items.length}
   <span class="menu-anchor needs-you" bind:this={root}>
     <button
-      class="attention-chip"
-      id="attention-count"
+      class="attention-chip {chipClass}"
+      id={chipId}
       bind:this={chip}
-      aria-haspopup={needYou.length > 1 ? 'menu' : undefined}
-      aria-expanded={needYou.length > 1 ? open : undefined}
-      title={needYou.length === 1 ? `Open ${needYou[0].id} ${needYou[0].name}` : 'Show the tasks that need you'}
-      onclick={onChip}>{needYou.length} need{needYou.length === 1 ? 's' : ''} you</button
+      aria-haspopup={items.length > 1 ? 'menu' : undefined}
+      aria-expanded={items.length > 1 ? open : undefined}
+      title={items.length === 1 ? `Open ${items[0].id} ${items[0].name}` : 'Show the tasks that need you'}
+      onclick={onChip}>{items.length} need{items.length === 1 ? 's' : ''} you</button
     >
     {#if open}
       <span
         class="menu needs-you-menu"
-        id="needs-you-menu"
+        class:align-right={align === 'right'}
+        id={menuId}
         role="menu"
         aria-label="Tasks that need you"
         tabindex="-1"
         bind:this={list}
         onkeydown={onKey}
       >
-        {#each needYou as task (task.id)}
+        {#each items as task (task.id)}
           <button class="needs-you-row" role="menuitem" data-id={task.id} onclick={() => choose(task.id)}>
             <span class="needs-you-id">{task.id}</span>
             <span class="needs-you-name">{task.name}</span>
-            <span class="needs-you-reason">{reason(task)}</span>
+            <span class="needs-you-reason">{REASONS[task.reason]}</span>
           </button>
         {/each}
       </span>

@@ -168,6 +168,7 @@ export class DashboardState {
   #validators: Validators | undefined;
   #projectsValidators: Validators | undefined;
   #pendingNeedsYou = false;
+  #pendingTask: string | null = null;
   // The build the server last said it holds, and the one dismissed in this page (for when storage is unavailable)
   #serverBuild: string | null = null;
   #dismissedBuild = '';
@@ -272,13 +273,14 @@ export class DashboardState {
   }
 
   /** Show project `id`, or the overview for null (a new history entry, so Back returns). With `needsYou`, the project
-   * opens on the Kanban board filtered to the tasks in review and blocked. */
-  openProject(id: string | null, { needsYou = false } = {}) {
+   * opens on the Kanban board filtered to the tasks in review and blocked; with `task`, with that task's details open. */
+  openProject(id: string | null, { needsYou = false, task }: { needsYou?: boolean; task?: string } = {}) {
     let hash = withProjectHash(location.hash, id);
     if (id !== null && needsYou) {
       hash = withViewHash(hash, 'kanban');
       this.#pendingNeedsYou = true;
     }
+    if (id !== null && task) this.#pendingTask = task;
     location.hash = hash;
   }
 
@@ -348,6 +350,11 @@ export class DashboardState {
       this.filters = filtersFrom({ phase: [], type: [], status, priority: [], stage: [], label: [], agent: [] });
     }
     this.loaded = true;
+    if (this.#pendingTask) {
+      // Opened from an overview card's "needs you" list: that task's details
+      this.showDetail(this.#pendingTask);
+      this.#pendingTask = null;
+    }
   }
 
   setOverviewActiveOnly(on: boolean) {

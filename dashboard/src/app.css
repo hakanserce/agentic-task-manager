@@ -2150,6 +2150,10 @@ svg.graph-minimap.hidden {
   padding: 6px;
   gap: 2px;
 }
+.needs-you-menu.align-right {
+  left: auto;
+  right: 0;
+}
 .needs-you-row {
   display: flex;
   align-items: baseline;

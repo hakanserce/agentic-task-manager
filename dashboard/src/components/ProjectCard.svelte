@@ -5,11 +5,13 @@
   import { needsYou } from '../lib/projects';
   import { dashboard } from '../lib/state.svelte';
   import Icon from './Icon.svelte';
+  import NeedsYouMenu from './NeedsYouMenu.svelte';
 
   let { project }: { project: ProjectEntry } = $props();
 
   const s = $derived(project.summary);
   const need = $derived(needsYou(project));
+  const needItems = $derived(project.missing ? [] : (s?.needs_you_tasks ?? []));
   const counted = $derived(s ? s.total - s.skipped : 0);
   const phase = $derived(s?.current_phase);
 
@@ -32,7 +34,16 @@
         >
       </h3>
     {/if}
-    {#if need}
+    {#if needItems.length}
+      <!-- The tasks, from the server's summary: one opens the project on it, several are listed under the chip -->
+      <NeedsYouMenu
+        items={needItems}
+        onopen={(task) => dashboard.openProject(project.id, { task })}
+        chipClass="project-card-need"
+        align="right"
+      />
+    {:else if need}
+      <!-- A server without the list (before 0.17): the project's Kanban, filtered to review and blocked -->
       <button
         class="attention-chip project-card-need"
         title="Open its Kanban board, filtered to the tasks in review and blocked"

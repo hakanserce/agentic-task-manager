@@ -169,6 +169,8 @@ describe('serve', () => {
         task('T-5', 2, 'in_review', { review_requested_at: '2026-03-15T09:00:00Z' }),
         task('T-6', 2, 'blocked', { waiting_on: 'user', questions: ['?'], blocked_at: '2026-03-15T11:00:00Z' }),
         task('T-7', 3, 'todo'),
+        // Blocked on an agent: open, but it doesn't need the user
+        task('T-8', 3, 'blocked', { waiting_on: 'agent', questions: ['?'] }),
       ],
     });
     const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
@@ -181,13 +183,17 @@ describe('serve', () => {
     const first = await fetch(url);
     const byId = Object.fromEntries((await first.json()).projects.map((p) => [p.id, p]));
     assert.deepEqual(byId.abcd1234.summary, {
-      total: 7,
+      total: 8,
       done: 3,
       skipped: 1,
-      percent: 50,
+      percent: 43,
       current_phase: { id: 2, name: 'Two', done: 1, total: 3 },
       agents_working: 0,
       needs_you: { review: 1, blocked_on_user: 1 },
+      needs_you_tasks: [
+        { id: 'T-5', name: 'T-5', reason: 'review' },
+        { id: 'T-6', name: 'T-6', reason: 'blocked' },
+      ],
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
     });

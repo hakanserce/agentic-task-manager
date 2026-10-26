@@ -130,13 +130,51 @@ test.describe('projects', () => {
     await expect(page.locator('.project-card[data-id="asks"] .project-card-need')).toHaveText('2 need you');
   });
 
-  test('“needs you” opens the project’s Kanban, filtered to review and blocked', async ({ page, tasksServer }) => {
+  test('without the task list (an older server), “needs you” opens the Kanban filtered to review and blocked', async ({
+    page,
+    tasksServer,
+  }) => {
     tasksServer.addProject('asks', 'v4', 'Asks', summary({ needs_you: { review: 1, blocked_on_user: 1 } }));
     await openDashboard(page, tasksServer, 'standard');
     await page.locator('.project-card[data-id="asks"] .project-card-need').click();
     await expect(page).toHaveURL(/project=asks/);
     await expect(page.locator('#tab-kanban')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.filter-chip')).toHaveText(['Status: In Review, Blocked']);
+  });
+
+  /** The detail panel is open on task `id`. */
+  const expectDetail = (page: import('@playwright/test').Page, id: string) =>
+    expect(page.locator('#detail-overlay.open #detail-panel h3 > span').first()).toHaveText(id);
+  const T4 = { id: 'T-004', name: 'Account settings page', reason: 'review' };
+  const T5 = { id: 'T-005', name: 'Choose the email provider', reason: 'blocked' };
+
+  test('“needs you” with one task opens the project on that task', async ({ page, tasksServer }) => {
+    const one = summary({ needs_you: { review: 1, blocked_on_user: 0 }, needs_you_tasks: [T4] });
+    tasksServer.addProject('asks', 'v4', 'Asks', one);
+    await openDashboard(page, tasksServer, 'standard');
+    const chip = page.locator('.project-card[data-id="asks"] .project-card-need');
+    await expect(chip).toHaveText('1 needs you');
+    await chip.click();
+    await expect(page).toHaveURL(/project=asks/);
+    await expectDetail(page, 'T-004');
+  });
+
+  test('“needs you” with several lists them on the card; a row opens the project on it', async ({
+    page,
+    tasksServer,
+  }) => {
+    const two = summary({ needs_you: { review: 1, blocked_on_user: 1 }, needs_you_tasks: [T4, T5] });
+    tasksServer.addProject('asks', 'v4', 'Asks', two);
+    await openDashboard(page, tasksServer, 'standard');
+    const card = page.locator('.project-card[data-id="asks"]');
+    await card.locator('.project-card-need').click();
+    const rows = card.locator('.needs-you-menu .needs-you-row');
+    await expect(rows.locator('.needs-you-reason')).toHaveText(['in review', 'blocked on a question']);
+    await expect(rows.first()).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/project=asks/);
+    await expectDetail(page, 'T-005');
   });
 
   test('Active only hides projects with nothing open and nothing done lately; remembered', async ({

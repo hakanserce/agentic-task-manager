@@ -6602,17 +6602,25 @@
       "description": "The project cards show **too little** about each project. Brainstorm what would help someone glancing at all their projects, and write it up.\n\n## Do\n- Write `docs/project-cards-proposal.md` with options, each with a sketch and what the server summary must add. Ideas to weigh:\n  - recent phases as rings (see the phase-rings tasks)\n  - what agents are doing now (task names, not just a count)\n  - tasks needing you, with their names\n  - the next ready tasks\n  - open PR / branch / CI state (`meta.repository`, task PRs)\n  - last finished task and when\n  - project logo and description\n- Recommend a layout that fits a card, and list follow-up tasks.\n- Review it with the user before follow-up tasks are added (`/atm:create-tasks`).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "blocked",
       "dependencies": [],
       "files": [
         "docs/project-cards-proposal.md"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T06:41:45Z",
+      "updated_at": "2026-10-26T06:46:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T06:41:45Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "5f70252356be3bdd4982544a95245b2b886d7a21",
+      "waiting_on": "user",
+      "questions": [
+        "Review docs/project-cards-proposal.md: is the recommended card layout (section 3) the right density, or should cards stay smaller?",
+        "Which options do you want: B working-now rows, D next ready task, E branch/open PR (no CI), F last finished task when idle, G meta.description, and the first needs-you item inline (C)?",
+        "Should /atm:push record the last CI result so cards can show CI state?"
+      ],
+      "blocked_at": "2026-10-26T06:46:28Z"
     },
     {
       "id": "T-192",
@@ -6898,7 +6906,7 @@
       "description": "Do the same for the **\"N need(s) you\"** chip on the project cards (`.project-card-need` in `ProjectCard.svelte`), which today opens the project's Kanban filtered to review and blocked.\n\n## Do\n- atm serve's project summary (`api/projects`) lists the tasks that need the user: `id`, `name` and the reason, as the dashboard's `needingUser` decides it (same status kinds). Document it in `docs/multi-project-api.md`; atm-cli scenarios for it.\n- One task: clicking opens that project with the task's details open (`dashboard.openProject(id, …)` plus the task).\n- Several: the same popup list as the title bar chip (reuse its component); a row opens the project and that task.\n\n## Verify\n- atm-cli scenarios for the new summary field.\n- e2e on `#overview`: one and several tasks; the project page opens with `#detail-overlay.open` on the right task.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-199"
       ],
@@ -6912,9 +6920,11 @@
         "dashboard/tests/e2e/"
       ],
       "created_at": "2026-10-26T00:59:38Z",
-      "updated_at": "2026-10-26T00:59:38Z",
+      "updated_at": "2026-10-26T06:46:29Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T06:46:29Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

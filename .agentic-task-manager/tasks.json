@@ -5319,7 +5319,7 @@
         "docs/multi-project-dashboard-proposal.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T21:55:28Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:51:38Z",
@@ -5334,7 +5334,11 @@
           "text": "docs/multi-project-api.md: routes, Host check, ETags, /api/projects summary fields, whoami, projects.json and server.json formats",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-166",
@@ -5362,7 +5366,7 @@
         "tests/scripts/registry.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:01:55Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T21:55:32Z",
@@ -5377,7 +5381,11 @@
           "text": "atm projects (list/add/remove/prune) over $ATM_HOME/projects.json with its own lock; main worktree; opt-out; damaged file moved aside; tests isolate ATM_HOME",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-167",
@@ -5405,7 +5413,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:17:21Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:13:38Z",
@@ -5420,7 +5428,11 @@
           "text": "init and migrate register the project (silently); the PostToolUse hook registers once (one registry read per call, never waits for the lock), refreshing seen_at/name daily",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-168",
@@ -5447,7 +5459,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:08:09Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:01:58Z",
@@ -5462,7 +5474,11 @@
           "text": "One server per user (ATM_HOME/server.json, port 8765+): dashboard from memory at /, /api/projects (summaries null until T-169), /p/<id>/ files, whoami, Host check, 405; serve --all; the dashboard itself loads the API from T-172",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-169",
@@ -5487,7 +5503,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:19:21Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:17:25Z",
@@ -5502,7 +5518,11 @@
           "text": "/api/projects summaries from query.project_summary (done/(total-skipped), current phase, live claims, needs you, last activity, 14-day completions), cached per project until tasks.json, claims or the day change",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-170",
@@ -5530,7 +5550,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:24:45Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:19:25Z",
@@ -5545,7 +5565,11 @@
           "text": "serve --refresh restarts a running server with an older dashboard (never a newer one) on the same port; a SessionStart hook runs it, and every atm command (so the PostToolUse hook too) checks first, cheaply",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-171",
@@ -5572,7 +5596,7 @@
         "tests/scripts/serve.test.mjs"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:30:32Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -5592,7 +5616,11 @@
       "started_by": "claude:e5ea9db0",
       "completed_at": "2026-10-25T23:30:32Z",
       "completed_by": "claude:e5ea9db0",
-      "commit": "376a1d46be1fd22b80708b09fa178927a1e0e631"
+      "commit": "376a1d46be1fd22b80708b09fa178927a1e0e631",
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-172",
@@ -5620,7 +5648,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T22:13:35Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T22:08:12Z",
@@ -5635,7 +5663,11 @@
           "text": "The dashboard loads api/projects, then the project's files from p/<id>/ (no ./tasks.json); dev server and e2e tasksServer play the API (addProject, noProjects); load error points to /atm:serve",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-173",
@@ -5661,7 +5693,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:35:46Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:30:37Z",
@@ -5676,7 +5708,11 @@
           "text": "#project=<id> and #overview routes; landing: overview with 2+ projects, the project with 1, how to add one with none; unknown-project page; switching resets per-project state and restores that project's view (keyed by the server's id)",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-174",
@@ -5701,7 +5737,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:39:48Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:35:50Z",
@@ -5716,7 +5752,11 @@
           "text": "Selector button next to the title: All projects, then each project with a progress bar and a needs-you dot; filter field with arrows/Home/End/Enter/Escape; badge counts what needs you in other projects; screenshots updated (Linux ones removed for CI)",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-175",
@@ -5742,7 +5782,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:44:55Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:39:51Z",
@@ -5757,7 +5797,11 @@
           "text": "Overview cards from the server summaries: progress (done/(total-skipped), skipped shown), current phase, agents working, last activity, 14-day sparkline, needs-you chip opening the Kanban filtered to review/blocked; needs-you first then recent; Active only toggle (remembered); gone projects say how to remove them",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-176",
@@ -5782,7 +5826,7 @@
         "dashboard/tests/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:03:02Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:00:28Z",
@@ -5797,7 +5841,11 @@
           "text": "Each refresh asks __atm/whoami for the server's build; when it differs from the page's atm-dashboard-build, a bar offers Reload (never reloads by itself); Not now hides it until the next reload",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-177",
@@ -5830,7 +5878,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-25T23:48:05Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:44:58Z",
@@ -5845,7 +5893,11 @@
           "text": "/atm:serve describes one server for all projects (--all, port 8765); update-dashboard skill deleted and every mention replaced; skills describe migrate's registration and cleanup; README (All your projects, what the server exposes, atm projects), Help (Your projects), plugin and root CLAUDE.md updated",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-178",
@@ -5872,7 +5924,7 @@
         "dashboard/tests/e2e/__screenshots__/"
       ],
       "created_at": "2026-10-25T20:34:31Z",
-      "updated_at": "2026-10-26T00:08:22Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T00:03:06Z",
@@ -5887,7 +5939,11 @@
           "text": "0.15.0: versions bumped, CHANGELOG and WHATS-NEW entries, 27 footer screenshots re-baselined (Linux ones removed for CI); verify green",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-179",
@@ -5945,7 +6001,7 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-25T21:18:54Z",
-      "updated_at": "2026-10-25T23:52:45Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:48:09Z",
@@ -5960,7 +6016,11 @@
           "text": "atm phases lists phases with names and counts by kind; phases name/unname change one meta.phases entry under the lock; check warns about named phases without tasks; status shows names; create-tasks names phases one at a time; this repo's phases 15 and 16 named",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-181",
@@ -5989,7 +6049,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-25T21:35:18Z",
-      "updated_at": "2026-10-26T00:00:25Z",
+      "updated_at": "2026-10-26T00:09:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-25T23:52:48Z",
@@ -6004,7 +6064,11 @@
           "text": "skip records skipped_at (reopen clears it, merge driver carries it); migrate backfills completed_at/skipped_at from updated_at in tasks.json and the archive, once, under the lock; archive dating (atm-cli and dashboard) uses skipped_at",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 11,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+      }
     },
     {
       "id": "T-182",

@@ -14,6 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .phases import cmd_phases
+from .logo import cmd_logo
 from .registry import cmd_projects
 from .repository import cmd_repository
 from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
@@ -95,6 +96,9 @@ commands:
   repository [set URL]
                  print or set the repository's web address (meta.repository), for commit and PR links; a git
                  remote is turned into one; atm init fills it from origin
+  logo [set PATH | unset]
+                 print, set or unset the project's logo for the dashboard (meta.logo: an SVG, PNG, WebP or ICO
+                 file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -345,6 +349,9 @@ def build_parser():
     repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
     repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
     repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
+    logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
+    logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
+    logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")
     phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
     phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
     phases.add_argument("number", nargs="?", help="the phase number")

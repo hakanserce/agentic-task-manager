@@ -1205,6 +1205,98 @@ def cmd_repository(args):
     out(to_json({"repository": url}) if args.json else f"Repository address set: {url}")
 
 
+# ==== logo.py ====
+# `atm logo`: the project's logo for the dashboard, in meta.logo (a path relative to the project root), or else one
+# found in the usual places. atm serve serves it at /p/<id>/logo (docs/multi-project-api.md).
+
+LOGO_TYPES = {
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
+}
+MAX_LOGO_BYTES = 512 * 1024
+# Where a logo usually is, first match wins: logo.svg/logo.png in the root, then .github/logo.*, public/favicon.* and
+# assets/logo.*, each in the order of LOGO_TYPES
+LOGO_CANDIDATES = ["logo.svg", "logo.png"] + [
+    f"{base}{ext}" for base in (".github/logo", "public/favicon", "assets/logo") for ext in LOGO_TYPES
+]
+
+
+def logo_file(root, relative):
+    """(absolute path, content type) of the image at `relative` in the project at `root`. AtmError (exit code 2) if
+    it isn't a supported image type, is outside the project (symbolic links followed), is missing or too large."""
+    if not isinstance(relative, str) or not relative.strip():
+        raise AtmError("no logo path given", 2)
+    content_type = LOGO_TYPES.get(os.path.splitext(relative)[1].lower())
+    if not content_type:
+        raise AtmError(f"{relative}: a logo is an SVG, PNG, WebP or ICO image", 2)
+    real_root = os.path.realpath(root)
+    full = os.path.realpath(os.path.join(real_root, relative))
+    if os.path.commonpath([real_root, full]) != real_root:
+        raise AtmError(f"{relative}: the logo must be inside the project folder", 2)
+    if not os.path.isfile(full):
+        raise AtmError(f"{relative}: no such file", 2)
+    if os.path.getsize(full) > MAX_LOGO_BYTES:
+        raise AtmError(f"{relative}: the logo is larger than {MAX_LOGO_BYTES // 1024} KB", 2)
+    return full, content_type
+
+
+def find_logo(root, meta):
+    """(path relative to root, absolute path, content type, how it was found: "set" or "found") of the project's
+    logo, or None. meta.logo wins when it is set (a logo it names that is unusable means no logo); otherwise the first
+    usable LOGO_CANDIDATES file."""
+    if meta.get("logo"):
+        try:
+            return (meta["logo"], *logo_file(root, meta["logo"]), "set")
+        except AtmError:
+            return None
+    for candidate in LOGO_CANDIDATES:
+        try:
+            return (candidate, *logo_file(root, candidate), "found")
+        except AtmError:
+            continue
+    return None
+
+
+def cmd_logo(args):
+    paths = find_paths(os.getcwd())
+    root = paths["root"]
+    if args.action is None:
+        if args.path is not None:
+            raise AtmError(f"unexpected argument '{args.path}' (atm logo set PATH)", 2)
+        meta = load_tasks(paths).get("meta", {})
+        logo = find_logo(root, meta)
+        if args.json:
+            found = {"logo": logo[0], "source": logo[3]} if logo else {"logo": None, "source": None}
+            out(to_json({**found, "set": meta.get("logo")}))
+        elif logo:
+            out(f"{logo[0]}" + (" (found; set one with `atm logo set <path>`)" if logo[3] == "found" else ""))
+        elif meta.get("logo"):
+            out(f"meta.logo is {meta['logo']}, which isn't a usable logo (missing, too large, or outside the project).")
+        else:
+            out("No logo. Set one with `atm logo set <path>` (SVG, PNG, WebP or ICO, inside the project).")
+        return
+    if args.action == "unset":
+        with locked(paths["dir"]):
+            data = load_tasks(paths)
+            removed = data.get("meta", {}).pop("logo", None)
+            if removed is not None:
+                write_json_atomic(paths["tasks"], data)
+        out(to_json({"logo": None}) if args.json else "Logo unset." if removed else "No logo was set.")
+        return
+    if args.path is None:
+        raise AtmError("atm logo set needs a path", 2)
+    # The path is relative to where atm runs, like every path atm takes; it is kept relative to the project root
+    relative = os.path.relpath(os.path.abspath(args.path), os.path.realpath(root)).replace(os.sep, "/")
+    logo_file(root, relative)
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        data.setdefault("meta", {})["logo"] = relative
+        write_json_atomic(paths["tasks"], data)
+    out(to_json({"logo": relative}) if args.json else f"Logo set: {relative}")
+
+
 # ==== claims.py ====
 # Claims: which agent works on which task, until when (the lease); and `next`.
 #
@@ -3343,7 +3435,12 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
-PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
+PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
+# A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
+LOGO_HEADERS = {
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+}
 
 
 def server_url(port, project=None):
@@ -3597,17 +3694,29 @@ class Summaries:
         return summary
 
 
+def project_logo(entry):
+    """(absolute path, content type) of a registered project's logo (meta.logo, or one found), or None."""
+    logo = find_logo(entry["path"], project_meta(entry["path"]) or {})
+    return (logo[1], logo[2]) if logo else None
+
+
 def api_projects(registry, summaries):
-    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
-    and the day."""
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
+    logo and the day."""
     entries = registry.entries()
     stamps = [summaries.stamp(e) for e in entries]
     trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps + trees).encode("utf-8")).hexdigest()[:16] + '"'
+    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
+    etag = (
+        '"'
+        + hashlib.sha1(repr([registry.stamp] + stamps + trees + logo_stamps).encode("utf-8")).hexdigest()[:16]
+        + '"'
+    )
 
     def body():
         projects = []
-        for entry, stamp, tree in zip(entries, stamps, trees):
+        for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
             summary = summaries.summary(entry, stamp) if stamp else None
             projects.append(
                 {
@@ -3617,6 +3726,8 @@ def api_projects(registry, summaries):
                     "missing": summary is None,
                     "summary": summary,
                     "worktrees": tree if summary else [],
+                    # Relative to the dashboard, like the project's files; a new one shows as a new ETag
+                    "logo": f"p/{entry.get('id')}/logo" if logo and summary else None,
                 }
             )
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
@@ -3686,14 +3797,15 @@ def cmd_serve_child(args):
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
 
-        def send(self, status, body=b"", content_type="application/json", etag=None):
+        def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
             if body or status == 200:
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            self.send_header("Cache-Control", "no-store")
+            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+                self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
                 self.wfile.write(body)
@@ -3701,12 +3813,12 @@ def cmd_serve_child(args):
         def send_error_json(self, status, message):
             self.send(status, to_json({"error": message}).encode("utf-8"))
 
-        def send_conditional(self, body_fn, etag, content_type="application/json"):
+        def send_conditional(self, body_fn, etag, content_type="application/json", headers=None):
             if self.headers.get("If-None-Match") == etag:
                 # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
-                self.send(304, etag=etag)
+                self.send(304, etag=etag, headers=headers)
                 return
-            self.send(200, body_fn(), content_type, etag)
+            self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
             port_now = self.server.server_address[1]
@@ -3741,6 +3853,9 @@ def cmd_serve_child(args):
             if not os.path.isfile(task_file(entry, TASKS_FILE)):
                 self.send_error_json(404, "not found")
                 return
+            if name == "logo":
+                self.serve_logo(entry)
+                return
             computed = None
             if name == "worktrees.json":
                 computed = api_worktrees(entry)
@@ -3760,6 +3875,21 @@ def cmd_serve_child(args):
                     return f.read()
 
             self.send_conditional(read, file_etag(stamp))
+
+        def serve_logo(self, entry):
+            """The project's logo (logo.find_logo checks it is inside the project and small enough). The browser
+            may keep it, asking again each time (no-cache) and getting a 304 while it is unchanged."""
+            logo = project_logo(entry)
+            stamp = file_stamp(logo[0]) if logo else None
+            if stamp is None:
+                self.send_error_json(404, "no logo")
+                return
+
+            def read():
+                with open(logo[0], "rb") as f:
+                    return f.read()
+
+            self.send_conditional(read, file_etag(stamp), logo[1], {**LOGO_HEADERS, "Cache-Control": "no-cache"})
 
         def not_allowed(self):
             self.send_error_json(405, "only GET and HEAD")
@@ -3882,6 +4012,9 @@ commands:
   repository [set URL]
                  print or set the repository's web address (meta.repository), for commit and PR links; a git
                  remote is turned into one; atm init fills it from origin
+  logo [set PATH | unset]
+                 print, set or unset the project's logo for the dashboard (meta.logo: an SVG, PNG, WebP or ICO
+                 file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -4132,6 +4265,9 @@ def build_parser():
     repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
     repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
     repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
+    logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
+    logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
+    logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")
     phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
     phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
     phases.add_argument("number", nargs="?", help="the phase number")

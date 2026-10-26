@@ -12,7 +12,7 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
 - **Host check.** A request whose `Host` header isn't `localhost:<port>` or `127.0.0.1:<port>` (the server's own port)
   gets `403` with `{"error": "unexpected Host header"}`, whatever the path. This blocks DNS rebinding.
 - Only `GET` and `HEAD`. Anything else gets `405`.
-- Every response has `Cache-Control: no-store`. No CORS headers are sent.
+- Every response has `Cache-Control: no-store`, except a project's logo (§2.3). No CORS headers are sent.
 - Error responses are JSON, `{"error": "<what went wrong>"}`, with `Content-Type: application/json`.
 - **Conditional requests.** Responses marked *ETag* below carry a strong `ETag`. A request with a matching
   `If-None-Match` gets `304` with no body. The dashboard always sends the last ETag it got.
@@ -27,12 +27,13 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
 | `GET /p/<id>/claims.json` | that project's live claims, from every worktree (§2.1) | yes |
 | `GET /p/<id>/tasks-archive.json` | that project's archive, as stored | yes |
 | `GET /p/<id>/worktrees.json` | that project's git worktrees and their changed tasks (§2.2) | yes |
+| `GET /p/<id>/logo` | that project's logo image (§2.3) | yes |
 | `GET /__atm/whoami` | who this server is (§4) | no |
 | anything else | `404` | |
 
 - `<id>` is a project id from `/api/projects` (§3.1). An unknown id gets `404` with `{"error": "unknown project"}`.
-- Only those four names are served for a project: `tasks.json` and `tasks-archive.json` from its
-  `.agentic-task-manager/` folder, `claims.json` and `worktrees.json` computed. There is no other file, no directory
+- Only those names are served for a project: `tasks.json` and `tasks-archive.json` from its
+  `.agentic-task-manager/` folder, `claims.json` and `worktrees.json` computed, and `logo`. There is no other file, no directory
   listing, no path segments after the name. A file that doesn't exist (no archive yet, no claims yet) gets `404` with
   `{"error": "not found"}`. The dashboard treats a missing archive, claims or worktrees as empty.
 - A missing project (§3.1 `missing: true`) answers `404` for its files.
@@ -73,6 +74,21 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
   todo, blocked, active, review, then done or skipped; the main worktree's copy on a tie), with that worktree's branch
   on its card.
 
+### 2.3 `logo`: the project's logo
+
+- **Which file.** `meta.logo` in the project's `tasks.json`: a path relative to the project root, set with
+  `atm logo set <path>` (and removed with `atm logo unset`). Without it, the first usable file of `logo.svg`,
+  `logo.png`, `.github/logo.*`, `public/favicon.*`, `assets/logo.*` (each `.*` tried as `.svg`, `.png`, `.webp`,
+  `.ico`). A `meta.logo` that is unusable means no logo: nothing is searched for then.
+- **Usable** means an SVG, PNG, WebP or ICO file (by its extension), inside the project folder once symbolic links are
+  followed, and at most 512 KB. `atm logo set` refuses anything else; the server answers `404` with
+  `{"error": "no logo"}` for a project without a usable logo.
+- `Content-Type` is the image type (`image/svg+xml`, `image/png`, `image/webp`, `image/x-icon`). Unlike the other
+  routes it has `Cache-Control: no-cache`: the browser may keep it but asks again, and gets `304` while it is unchanged
+  (the ETag is the file's size and mtime). It also has `Content-Security-Policy: default-src 'none';
+  style-src 'unsafe-inline'; sandbox` and `X-Content-Type-Options: nosniff`, so an SVG opened on its own never runs a
+  script.
+
 ## 3. `GET /api/projects`
 
 ```json
@@ -101,14 +117,15 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
         "last_activity": "2026-10-25T21:51:38Z",
         "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28]
       },
-      "worktrees": [{ "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true }]
+      "worktrees": [{ "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true }],
+      "logo": "p/1f3a9c2e/logo"
     }
   ]
 }
 ```
 
-The ETag changes when the registry, any listed project's `tasks.json` or claims, or its worktrees change (the server
-combines their size/mtime stamps and the worktree lists). Projects are listed in registry order. The dashboard sorts them.
+The ETag changes when the registry, any listed project's `tasks.json`, claims or logo, or its worktrees change (the
+server combines their size/mtime stamps and the worktree lists). Projects are listed in registry order. The dashboard sorts them.
 
 ### 3.1 Project fields
 
@@ -120,6 +137,7 @@ combines their size/mtime stamps and the worktree lists). Projects are listed in
 | `missing` | `true` when the folder or its `.agentic-task-manager/tasks.json` is gone (or unreadable); the project then has `"summary": null` |
 | `summary` | §3.2, or `null` when `missing` |
 | `worktrees` | its git worktrees, main first, as in §2.2 without `tasks`; empty when `missing` or outside git |
+| `logo` | `p/<id>/logo` (relative to the dashboard) when it has a usable logo (§2.3), else `null`; `null` when `missing` |
 
 ### 3.2 Summary fields
 

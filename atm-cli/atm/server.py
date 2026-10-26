@@ -34,6 +34,7 @@ from .core import (
     write_json_atomic,
 )
 from .claims import claims_store_path
+from .logo import find_logo
 from .migrate import TEMPLATE, dashboard_head, describe_migration, migrate
 from .paths import find_paths
 from .query import project_summary
@@ -53,7 +54,12 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
-PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES) + r")")
+PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
+# A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
+LOGO_HEADERS = {
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+}
 
 
 def server_url(port, project=None):
@@ -307,17 +313,29 @@ class Summaries:
         return summary
 
 
+def project_logo(entry):
+    """(absolute path, content type) of a registered project's logo (meta.logo, or one found), or None."""
+    logo = find_logo(entry["path"], project_meta(entry["path"]) or {})
+    return (logo[1], logo[2]) if logo else None
+
+
 def api_projects(registry, summaries):
-    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims
-    and the day."""
+    """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
+    logo and the day."""
     entries = registry.entries()
     stamps = [summaries.stamp(e) for e in entries]
     trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    etag = '"' + hashlib.sha1(repr([registry.stamp] + stamps + trees).encode("utf-8")).hexdigest()[:16] + '"'
+    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
+    etag = (
+        '"'
+        + hashlib.sha1(repr([registry.stamp] + stamps + trees + logo_stamps).encode("utf-8")).hexdigest()[:16]
+        + '"'
+    )
 
     def body():
         projects = []
-        for entry, stamp, tree in zip(entries, stamps, trees):
+        for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
             summary = summaries.summary(entry, stamp) if stamp else None
             projects.append(
                 {
@@ -327,6 +345,8 @@ def api_projects(registry, summaries):
                     "missing": summary is None,
                     "summary": summary,
                     "worktrees": tree if summary else [],
+                    # Relative to the dashboard, like the project's files; a new one shows as a new ETag
+                    "logo": f"p/{entry.get('id')}/logo" if logo and summary else None,
                 }
             )
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
@@ -396,14 +416,15 @@ def cmd_serve_child(args):
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
 
-        def send(self, status, body=b"", content_type="application/json", etag=None):
+        def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
             if body or status == 200:
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            self.send_header("Cache-Control", "no-store")
+            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+                self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
                 self.wfile.write(body)
@@ -411,12 +432,12 @@ def cmd_serve_child(args):
         def send_error_json(self, status, message):
             self.send(status, to_json({"error": message}).encode("utf-8"))
 
-        def send_conditional(self, body_fn, etag, content_type="application/json"):
+        def send_conditional(self, body_fn, etag, content_type="application/json", headers=None):
             if self.headers.get("If-None-Match") == etag:
                 # Unchanged since the dashboard's last poll: it skips parsing and re-rendering (D-5.1)
-                self.send(304, etag=etag)
+                self.send(304, etag=etag, headers=headers)
                 return
-            self.send(200, body_fn(), content_type, etag)
+            self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
             port_now = self.server.server_address[1]
@@ -451,6 +472,9 @@ def cmd_serve_child(args):
             if not os.path.isfile(task_file(entry, TASKS_FILE)):
                 self.send_error_json(404, "not found")
                 return
+            if name == "logo":
+                self.serve_logo(entry)
+                return
             computed = None
             if name == "worktrees.json":
                 computed = api_worktrees(entry)
@@ -470,6 +494,21 @@ def cmd_serve_child(args):
                     return f.read()
 
             self.send_conditional(read, file_etag(stamp))
+
+        def serve_logo(self, entry):
+            """The project's logo (logo.find_logo checks it is inside the project and small enough). The browser
+            may keep it, asking again each time (no-cache) and getting a 304 while it is unchanged."""
+            logo = project_logo(entry)
+            stamp = file_stamp(logo[0]) if logo else None
+            if stamp is None:
+                self.send_error_json(404, "no logo")
+                return
+
+            def read():
+                with open(logo[0], "rb") as f:
+                    return f.read()
+
+            self.send_conditional(read, file_etag(stamp), logo[1], {**LOGO_HEADERS, "Cache-Control": "no-cache"})
 
         def not_allowed(self):
             self.send_error_json(405, "only GET and HEAD")

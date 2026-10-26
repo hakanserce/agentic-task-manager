@@ -6564,7 +6564,7 @@
       "description": "In `ProjectCard.svelte`, a long phase name in `.project-card-phase` wraps and pushes the **\"1 agent working\"** line down, so the cards in a row no longer line up.\n\n## Do\n- Keep the phase line on one line: cut the name off with an ellipsis (`text-overflow: ellipsis`), keeping `done / total` visible.\n- Show the full phase name in a `title`.\n\n## Verify\n- e2e with a fixture project whose phase name is very long: `.project-card-foot` is at the same height in every card of the row.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProjectCard.svelte",
@@ -6572,11 +6572,22 @@
         "dashboard/tests/fixtures/"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T05:47:14Z",
+      "updated_at": "2026-10-26T05:56:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T05:47:14Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6274deb8645b4d7f56a6d570de66ec104e6ec30b",
+      "completed_at": "2026-10-26T05:56:18Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T05:56:18Z",
+          "kind": "outcome",
+          "text": "Phase line: name ellipsized, counts kept, full text in title; card foot pinned to the bottom so a row's feet line up",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-191",
@@ -6756,7 +6767,7 @@
       "description": "Each project can have a **logo** that the dashboard shows.\n\n## Do\n- `meta.logo`: a path relative to the project root to an image (SVG, PNG, ICO, WebP). Set with an atm command (e.g. `atm init --meta-file` or a dedicated `atm logo set <path>`).\n- Without `meta.logo`, find a likely one: `logo.svg`/`logo.png`, `.github/logo.*`, `public/favicon.*`, `assets/logo.*` — first match wins.\n- atm serve serves it at `p/<id>/logo` with the right content type and caching; 404 when there is none. Only files inside the project folder; refuse anything outside it or larger than ~512 KB.\n- `api/projects` gets `has_logo` (or a `logo` URL) per project.\n- Document it in `docs/multi-project-api.md`.\n\n## Verify\n- atm-cli tests: set, auto-detect, missing, path outside the project, too large.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/",
@@ -6765,9 +6776,11 @@
         "docs/multi-project-api.md"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T05:56:21Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T05:56:21Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-197",

@@ -280,6 +280,64 @@ describe('serve', () => {
     atm(['serve', 'stop'], roots[0]);
   });
 
+  test('a project logo: served at p/<id>/logo with its type, listed in api/projects; none, outside or too large is 404', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>';
+    const withLogo = project(
+      { meta: { id: 'logo0001', project: 'Set', logo: 'brand/mark.svg' }, tasks: [] },
+      { 'brand/mark.svg': svg },
+    );
+    const found = project({ meta: { id: 'logo0002', project: 'Found' }, tasks: [] }, { '.github/logo.png': 'png' });
+    const none = project({ meta: { id: 'logo0003', project: 'None' }, tasks: [] });
+    const elsewhere = tempDir('atm-elsewhere-');
+    cleanups.push(() => removeDir(elsewhere));
+    fs.writeFileSync(path.join(elsewhere, 'logo.svg'), svg);
+    const outside = project({
+      meta: { id: 'logo0004', project: 'Outside', logo: path.join(elsewhere, 'logo.svg') },
+      tasks: [],
+    });
+    const big = project(
+      { meta: { id: 'logo0005', project: 'Big' }, tasks: [] },
+      { 'logo.png': 'x'.repeat(513 * 1024) },
+    );
+    for (const p of [withLogo, found, none, outside, big]) assert.equal(atm(['projects', 'add'], p).code, 0);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], withLogo).code, 0);
+    const base = `http://localhost:${port}`;
+
+    const api = await (await fetch(`${base}/api/projects`)).json();
+    assert.deepEqual(Object.fromEntries(api.projects.map((p) => [p.id, p.logo])), {
+      logo0001: 'p/logo0001/logo',
+      logo0002: 'p/logo0002/logo',
+      logo0003: null,
+      logo0004: null,
+      logo0005: null,
+    });
+
+    const logo = await fetch(`${base}/p/logo0001/logo`);
+    assert.equal(logo.status, 200);
+    assert.equal(logo.headers.get('content-type'), 'image/svg+xml');
+    assert.equal(logo.headers.get('cache-control'), 'no-cache');
+    assert.match(logo.headers.get('content-security-policy'), /default-src 'none'.*sandbox/);
+    assert.equal(await logo.text(), svg);
+    const again = await fetch(`${base}/p/logo0001/logo`, { headers: { 'If-None-Match': logo.headers.get('etag') } });
+    assert.equal(again.status, 304);
+    assert.equal((await fetch(`${base}/p/logo0002/logo`)).headers.get('content-type'), 'image/png');
+    for (const id of ['logo0003', 'logo0004', 'logo0005']) {
+      const r = await fetch(`${base}/p/${id}/logo`);
+      assert.deepEqual([id, r.status, (await r.json()).error], [id, 404, 'no logo']);
+    }
+
+    // A logo added later changes the ETag of api/projects
+    const etag = (await fetch(`${base}/api/projects`)).headers.get('etag');
+    fs.writeFileSync(path.join(none, 'logo.svg'), svg);
+    const changed = await fetch(`${base}/api/projects`, { headers: { 'If-None-Match': etag } });
+    assert.equal(changed.status, 200);
+    assert.equal((await changed.json()).projects.find((p) => p.id === 'logo0003').logo, 'p/logo0003/logo');
+    atm(['serve', 'stop'], withLogo);
+  });
+
   test('files and /api/projects have ETags; a poll with one gets 304 until something changes', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);

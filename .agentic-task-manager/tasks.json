@@ -6602,15 +6602,17 @@
       "description": "The project cards show **too little** about each project. Brainstorm what would help someone glancing at all their projects, and write it up.\n\n## Do\n- Write `docs/project-cards-proposal.md` with options, each with a sketch and what the server summary must add. Ideas to weigh:\n  - recent phases as rings (see the phase-rings tasks)\n  - what agents are doing now (task names, not just a count)\n  - tasks needing you, with their names\n  - the next ready tasks\n  - open PR / branch / CI state (`meta.repository`, task PRs)\n  - last finished task and when\n  - project logo and description\n- Recommend a layout that fits a card, and list follow-up tasks.\n- Review it with the user before follow-up tasks are added (`/atm:create-tasks`).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "docs/project-cards-proposal.md"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T00:54:01Z",
+      "updated_at": "2026-10-26T06:41:45Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T06:41:45Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-192",
@@ -6708,7 +6710,7 @@
       "description": "ATM needs a **logo**.\n\n## Do\n- Propose 2–3 simple SVG logo designs to the user (e.g. as a quick artifact), and use the one they pick.\n- The logo must work at 16 px (browser tab) and in both light and dark themes (`currentColor` or theme tokens).\n- Use it: in the title bar next to the title, as the page's favicon (inline `data:` SVG, since the dashboard is a single file), and in the About dialog.\n- Keep the source SVG in the repo (e.g. `dashboard/src/assets/atm-logo.svg`).\n\n## Verify\n- Screenshot baselines for the title bar; the favicon link is in the built file.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/assets/atm-logo.svg",
@@ -6717,10 +6719,10 @@
         "dashboard/index.html"
       ],
       "created_at": "2026-10-26T00:54:01Z",
-      "updated_at": "2026-10-26T06:28:37Z",
+      "updated_at": "2026-10-26T06:41:45Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
-      "commit": "29e8a606ec56f6b4368edda14656ee994d894a53",
+      "commit": "c4837c2dad83ac5e2ddb1ea410c133ec3c4338c1",
       "notes": [
         {
           "at": "2026-10-26T06:19:29Z",
@@ -6733,10 +6735,18 @@
           "kind": "handoff",
           "text": "Re-claiming: another worktree's release dropped the shared claim (one identity for all agents, see T-202).",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-26T06:41:45Z",
+          "kind": "outcome",
+          "text": "Logo A (the board) in dashboard/src/assets/atm-logo.svg; Logo.svelte (currentColor, accent) next to the title and in About; build/favicon.ts injects it as an inline data: SVG favicon. Proposals removed; guardrail now requires the one icon link to be a data: URL.",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-26T06:28:37Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "completed_at": "2026-10-26T06:41:45Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-196",

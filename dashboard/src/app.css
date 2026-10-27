@@ -781,6 +781,16 @@ h1 {
   stroke: var(--text-muted);
   stroke-dasharray: 4 4;
 }
+/* Time per task (T-248): agents alone solid, with you dashed; a task opens on click */
+.chart-median.solid {
+  stroke-dasharray: none;
+}
+.cycle-mark {
+  cursor: pointer;
+}
+.cycle-mark:focus-visible {
+  outline: 2px solid var(--accent);
+}
 .legend-swatch {
   width: 10px;
   height: 10px;

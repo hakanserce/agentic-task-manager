@@ -1,7 +1,8 @@
 <script lang="ts">
   import { shortAgent } from '../lib/claims';
   import { formatMinutes } from '../lib/format';
-  import { median, type ActivitySeries } from '../lib/insights';
+  import { cycleScaleMax, median, type ActivitySeries } from '../lib/insights';
+  import { dashboard } from '../lib/state.svelte';
   import { typeStyle } from '../lib/theme';
   import { formatDate, formatDateTime } from '../lib/timeline';
   import type { TimeUseWithSplit } from '../lib/timeuse';
@@ -52,7 +53,8 @@
   const idle = $derived(use?.idle ?? series.idle);
   const maxBusy = $derived(Math.max(1, Math.ceil(Math.max(0, ...b.map(busyTotal)))));
   const yBusy = $derived(scale(maxBusy));
-  const maxCycle = $derived(Math.max(1, ...series.cycleTimes.map((c) => c.minutes)));
+  // Capped at the 90th percentile: slower tasks are triangles on the top edge (T-248)
+  const maxCycle = $derived(cycleScaleMax(series.cycleTimes.map((c) => c.minutes)));
   const yCycle = $derived(scale(maxCycle));
 
   const short = $derived(series.bucketMs < 86_400_000);
@@ -250,33 +252,73 @@
 
   <section class="dive-chart" id="dive-cycle">
     <header>
-      <h4>Time per task <span>(from start to done; one dot per task, at its completion)</span></h4>
+      <h4>
+        Time per task <span>(from start to done; one dot per task, at its completion)</span>
+        <InfoTip label="time per task">
+          <p>
+            Each task's work time, from its start until it asked for a review or was done, at the time it was done.
+            Solid dots and the solid line (the typical time) are tasks agents did alone; <strong>hollow</strong> dots
+            and the dashed line are <code>interactive</code> tasks, done with you.
+          </p>
+          <p>
+            The scale stops at the slowest 10%: slower tasks are <strong>triangles</strong> on the top edge, their time in
+            the tooltip. Click a task to open it.
+          </p>
+        </InfoTip>
+      </h4>
     </header>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
       {@render frame(formatMinutes(maxCycle))}
       {@render idleBands(false)}
-      {#if series.medianCycleMinutes !== null}
-        <line
-          x1={PAD_L}
-          x2={W - PAD_R}
-          y1={yCycle(series.medianCycleMinutes)}
-          y2={yCycle(series.medianCycleMinutes)}
-          class="chart-median"
-        />
-        <text x={W - PAD_R} y={yCycle(series.medianCycleMinutes) - 4} class="chart-tick" text-anchor="end"
-          >typical {formatMinutes(series.medianCycleMinutes)}</text
-        >
-      {/if}
+      <!-- The typical time of each kind: agents alone solid, labelled on the right; with you dashed, on the left -->
+      {#each perTask as side (side.key)}
+        {#if side.median !== null}
+          {@const y = yCycle(Math.min(side.median, maxCycle))}
+          <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} class="chart-median" class:solid={!side.withYou} />
+          <text
+            x={side.withYou ? PAD_L + 4 : W - PAD_R}
+            y={y - 4}
+            class="chart-tick median-label"
+            data-side={side.key}
+            text-anchor={side.withYou ? 'start' : 'end'}>{side.label} {formatMinutes(side.median)}</text
+          >
+        {/if}
+      {/each}
       {#each series.cycleTimes as c (c.id)}
-        <circle
-          cx={xt(c.time)}
-          cy={yCycle(c.minutes)}
-          r="4"
-          fill={typeStyle(c.type).color}
-          stroke="var(--surface)"
-          stroke-width="1.5"><title>{c.id} {c.name}: {formatMinutes(c.minutes)}</title></circle
+        {@const color = typeStyle(c.type).color}
+        {@const over = c.minutes > maxCycle}
+        <g
+          class="cycle-mark"
+          class:with-you={c.withYou}
+          class:outlier={over}
+          data-id={c.id}
+          role="button"
+          tabindex="0"
+          aria-label="{c.id} {c.name}: {formatMinutes(c.minutes)}"
+          onclick={() => dashboard.showDetail(c.id)}
+          onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && dashboard.showDetail(c.id)}
         >
+          <title>{c.id} {c.name}: {formatMinutes(c.minutes)}{c.withYou ? ' (with you)' : ''}</title>
+          {#if over}
+            {@const x = xt(c.time)}
+            <path
+              d="M{x - 5},9 L{x + 5},9 L{x},2 Z"
+              fill={c.withYou ? 'var(--surface)' : color}
+              stroke={c.withYou ? color : 'var(--surface)'}
+              stroke-width="1.5"
+            />
+          {:else}
+            <circle
+              cx={xt(c.time)}
+              cy={yCycle(c.minutes)}
+              r="4"
+              fill={c.withYou ? 'var(--surface)' : color}
+              stroke={c.withYou ? color : 'var(--surface)'}
+              stroke-width={c.withYou ? 2 : 1.5}
+            />
+          {/if}
+        </g>
       {:else}
         <text x={PAD_L + plotW / 2} y={H / 2} class="chart-tick" text-anchor="middle"
           >No task with both a start and a completion time in this period</text

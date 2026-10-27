@@ -119,7 +119,7 @@ test.describe('Activity widget', () => {
     ]);
     // By kind, not per session (T-247): all agents here (unattributed work counts as an agent), and idle hatched
     await expect(panel.locator('#dive-agents .type-chip')).toHaveText(['Agents', 'Idle']);
-    await expect(panel.locator('#dive-cycle circle')).toHaveCount(6);
+    await expect(panel.locator('#dive-cycle .cycle-mark circle')).toHaveCount(6);
     await expect(panel.locator('#dive-agents .idle-label')).toHaveText(['idle 30 m']);
     await expect(panel.locator('.idle-band')).toHaveCount(3); // the same stretch in all three charts
 
@@ -170,6 +170,44 @@ test.describe('Activity widget', () => {
     await expect(panel.locator('#tooltip-waiting')).toHaveText('Waiting on you 30 m');
     await page.locator('#dive-agents h4 .infotip-button').click();
     await expect(panel.locator('#dive-agents .infotip-popover')).toContainText('Claude Code sessions');
+  });
+
+  test('time per task: an outlier on the top edge, interactive tasks hollow with their own median, a click opens one (T-248)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // Four 10-minute tasks and one of 24 h 40 m join the six (20–80 m): the scale stops at the 90th percentile, 80 m
+    const data = loadFixture('agents');
+    const quick = (id: string, start: string, end: string) => ({
+      id,
+      name: `Task ${id}`,
+      phase: 1,
+      type: 'feature',
+      description: '',
+      status: 'done',
+      started_by: 'claude:alice001',
+      started_at: start,
+      completed_at: end,
+    });
+    for (const id of ['T-101', 'T-102', 'T-103', 'T-104'])
+      data.tasks.push(quick(id, '2026-04-01T10:00:00Z', '2026-04-01T10:10:00Z'));
+    data.tasks.push(quick('T-105', '2026-03-31T10:00:00Z', '2026-04-01T10:40:00Z'));
+    for (const t of data.tasks) if (t.id === 'T-003') t.labels = ['interactive'];
+    tasksServer.use(data);
+    await page.reload();
+    await activityPill(page).click();
+    const chart = page.locator('#dive-cycle');
+    await expect(chart.locator('.cycle-mark.outlier')).toHaveCount(1);
+    await expect(chart.locator('.cycle-mark.outlier')).toHaveAttribute('aria-label', 'T-105 Task T-105: 24 h 40 m');
+    await expect(chart.locator('.cycle-mark.with-you')).toHaveCount(1);
+    await expect(chart.locator('.cycle-mark.with-you')).toHaveAttribute('data-id', 'T-003');
+    // T-003 alone with you (60 m); the other ten: 10, 10, 10, 10, 20, 30, 50, 60, 80, 1480 → 25 m
+    await expect(chart.locator('.median-label')).toHaveText(['agents alone 25 m', 'with you 1 h']);
+    await expect(chart.locator('.chart-median.solid')).toHaveCount(1);
+
+    await chart.locator('.cycle-mark.outlier').click();
+    await expect(page.locator('#detail-overlay')).toHaveClass(/open/);
+    await expect(page.locator('#detail-overlay')).toContainText('T-105');
   });
 
   test('the period: a unit and ‹ › to step back and forth, remembered', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activitySeries,
+  cycleScaleMax,
   gaps,
   MAX_ACTIVITY_BUCKETS,
   median,
@@ -216,6 +217,16 @@ describe('activitySeries', () => {
       ['slow', 180],
     ]);
     expect(s.medianCycleMinutes).toBe(105);
+  });
+
+  it('the time-per-task scale stops at the 90th percentile, so one outlier does not flatten the rest (T-248)', () => {
+    // 20 tasks of 10–29 m and one of 20 h: the scale ends at the 19th value, 28 m
+    const minutes = [...Array.from({ length: 20 }, (_, i) => 10 + i), 1200];
+    expect(cycleScaleMax(minutes)).toBe(28);
+    // Few tasks: the nearest rank is the slowest, so none is an outlier
+    expect(cycleScaleMax([20, 30, 50, 60, 60, 80])).toBe(80);
+    expect(cycleScaleMax([])).toBe(1);
+    expect(cycleScaleMax([0.2])).toBe(1);
   });
 
   it('marks interactive tasks: their time includes working with you (T-246)', () => {

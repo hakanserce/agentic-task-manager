@@ -205,6 +205,16 @@ export function median(values: number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
+/**
+ * The top of the time-per-task scale (T-248): the 90th percentile (nearest rank), so one very slow task doesn't push
+ * all others to the floor; slower ones are drawn on the top edge. At least 1 minute.
+ */
+export function cycleScaleMax(minutes: number[]): number {
+  if (minutes.length === 0) return 1;
+  const s = [...minutes].sort((a, b) => a - b);
+  return Math.max(1, s[Math.ceil(0.9 * s.length) - 1]);
+}
+
 // ---- the period the Activity panel looks at ----
 
 export const ACTIVITY_PRESETS = ['hour', 'day', 'week', 'month', 'all', 'custom'] as const;

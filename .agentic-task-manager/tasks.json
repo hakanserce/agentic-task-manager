@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 278,
+    "next_id": 280,
     "labels": [
       {
         "id": "dashboard",
@@ -10657,6 +10657,63 @@
       "updated_at": "2026-10-27T16:04:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-278",
+      "name": "One branding folder, made by a script from the logo's source",
+      "phase": 24,
+      "type": "refactor",
+      "priority": "P2",
+      "labels": [
+        "branding"
+      ],
+      "description": "The logo's files are spread out: `.github/assets/` holds the GitHub copies (made by hand-run screenshot commands written only in HTML comments), and `docs/logo/` holds logo candidates that were **discarded** (from two different agents' attempts; none of them is the logo). The logo's source is `dashboard/src/assets/atm-logo.svg` (drawn in `currentColor`; the dashboard's logo, favicon and About come from it): it stays where it is, as the one drawing.\n\n## Change\n- A top-level `branding/` folder for everything made from the source, with a `README.md`: what each file is, where it's used (README header, GitHub's social preview, the org's avatar), and how to regenerate it.\n- `branding/generate.mjs`, run as `npm run branding` in `dashboard/` (where Playwright is installed): from the source, it writes\n  - `atm-logo.svg`: the source with the accent blue (`#2f81f7`, the favicon's colour, `dashboard/build/favicon.ts`) instead of `currentColor`;\n  - `atm-logo.png`: 512×512, the blue logo on the dark background (`#0d1117`);\n  - `social-preview.png`: 1280×640 (redesigned by the next task; until then, as today).\n  The HTML it renders lives in the script or next to it in `branding/`, so a change is one edit and one command.\n- Move the files out of `.github/assets/` (delete that folder); point the README's header image at `branding/atm-logo.svg`.\n- Delete `docs/logo/` (the discarded candidates and their comparison page; git history keeps them, commit adedba8).\n- Update what names the old paths: `dashboard/tests/unit/readme-logo.test.ts`, the 0.21.0 CHANGELOG lines can stay (history), `CLAUDE.md` gets one line on `npm run branding` under the dashboard commands.\n\n## Tests\n`readme-logo.test.ts`: the committed `branding/atm-logo.svg` is exactly what the script's transform makes from the source (export the transform from `generate.mjs` and call it), the README points at it, and the PNGs exist. The PNGs themselves aren't compared (they differ by platform).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "branding/README.md",
+        "branding/generate.mjs",
+        "branding/atm-logo.svg",
+        "branding/atm-logo.png",
+        "branding/social-preview.png",
+        "dashboard/package.json",
+        "dashboard/tests/unit/readme-logo.test.ts",
+        "README.md",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-27T16:41:57Z",
+      "updated_at": "2026-10-27T16:41:57Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-279",
+      "name": "A richer social preview: the dashboard, the logo and how to install, from the script",
+      "phase": 24,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "branding",
+        "interactive"
+      ],
+      "description": "Hakan finds the social preview (logo, name, one line) too simple. The card GitHub shows when the repository is linked should say what atm is at a glance.\n\n## Content (1280×640)\n- The logo and the name, *Agentic Task Manager*, with a short line on what it does (task management for Claude Code agents, with a live dashboard).\n- **A hint of the dashboard**: a real, recognisable piece of it (e.g. a Kanban with cards, the progress ring, an agent at work), not a mock-up drawn by hand. Render it from the built dashboard (`plugin/templates/tasks-dashboard.html`) with a fixture, the way the e2e tests do, so it stays true to the product and updates when the dashboard changes; crop or scale it into the card.\n- **How to install**: the two commands (`/plugin marketplace add solo-swe/agentic-task-manager`, `/plugin install atm@solo-swe-plugins`), readable at the card's size.\n- The dark theme, the accent blue; text large enough to read in a link preview.\n\n## Made by the script\n`npm run branding` (`branding/generate.mjs`, previous task) renders it: no hand-made image. Document its inputs (the fixture, the theme) in `branding/README.md`.\n\n## Review with Hakan\nTwo or three layouts first, shown to him (rendered PNGs) before settling one; put the task in review (`atm review`) before showing them. After he approves, Hakan uploads the PNG in Settings → General → Social preview.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-278"
+      ],
+      "files": [
+        "branding/generate.mjs",
+        "branding/social-preview.png",
+        "branding/README.md"
+      ],
+      "created_at": "2026-10-27T16:41:57Z",
+      "updated_at": "2026-10-27T16:41:57Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

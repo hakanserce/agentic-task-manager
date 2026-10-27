@@ -9,6 +9,7 @@
   import { parseInline, parseMarkdown } from '../lib/markdown';
   import { taskTimes } from '../lib/work';
   import { commitRef } from '../lib/repo';
+  import { cutOff } from '../lib/scroll';
   import RepoRef from './RepoRef.svelte';
   import BranchChip from './BranchChip.svelte';
   import LabelChips from './LabelChips.svelte';
@@ -78,14 +79,7 @@
     if (jumpTo !== null && Math.abs(top - jumpTo) < 0.5) jumpTo = null;
     if (jumpTo === null && spacer > 0) spacer = Math.min(spacer, Math.max(0, Math.ceil(bottom - content)));
     const cutBottom = bottom < content - 1;
-    let a = 0;
-    let b = 0;
-    for (const s of body.querySelectorAll<HTMLElement>('.detail-section')) {
-      if (s.offsetTop < top - 1) a++;
-      else if (s.offsetTop + s.offsetHeight > bottom + 1) b++;
-    }
-    above = a;
-    below = b;
+    ({ above, below } = cutOff(top, body.clientHeight, body.querySelectorAll<HTMLElement>('.detail-section')));
     const sections = [...body.querySelectorAll<HTMLElement>('[data-group]')];
     // At the bottom, the last group is the one in view even when it's too short to reach the top (unless a rail click
     // made room to bring its group up)

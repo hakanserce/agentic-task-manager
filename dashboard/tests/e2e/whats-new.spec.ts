@@ -48,6 +48,37 @@ test.describe("What's new", () => {
     await expect(panel(page)).not.toContainText('`');
   });
 
+  test('the releases scroll under the title without a scrollbar, with hints that count and scroll (T-282)', async ({
+    page,
+  }) => {
+    await chip(page).click();
+    const body = panel(page).locator('#whats-new-body');
+    const sizes = await body.evaluate((el) => ({
+      overflows: el.scrollHeight > el.clientHeight,
+      scrollbar: (el as HTMLElement).offsetWidth - el.clientWidth,
+      panelScrolls: el.closest('#whats-new-panel')!.scrollHeight > el.closest('#whats-new-panel')!.clientHeight,
+    }));
+    expect(sizes).toEqual({ overflows: true, scrollbar: 0, panelScrolls: false });
+
+    // At the top: nothing above, the releases cut off below counted
+    const cutBelow = () =>
+      body.evaluate((el) => {
+        const bottom = el.scrollTop + el.clientHeight;
+        return [...el.querySelectorAll<HTMLElement>('.release')].filter(
+          (r) => r.offsetTop + r.offsetHeight > bottom + 1,
+        ).length;
+      });
+    await expect(panel(page).locator('.kanban-more.top')).toHaveCount(0);
+    await expect(panel(page).locator('.kanban-more.bottom')).toHaveText(`▼ ${await cutBelow()} more`);
+
+    // ▼ scrolls a page; then ▲ shows, and the title stays where it was
+    const title = await panel(page).locator('h3').boundingBox();
+    await panel(page).locator('.kanban-more.bottom').click();
+    await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
+    await expect(panel(page).locator('.kanban-more.top')).toHaveText(/^▲ \d+ more$/);
+    expect(await panel(page).locator('h3').boundingBox()).toEqual(title);
+  });
+
   test('closes with ×, the backdrop and Escape', async ({ page }) => {
     await chip(page).click();
     await panel(page).locator('.detail-close').click();

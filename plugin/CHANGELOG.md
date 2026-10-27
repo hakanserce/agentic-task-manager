@@ -16,6 +16,10 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   the last section when the content is too short; scrolling by hand never adds any. The entry of the group in view
   is highlighted. The sections are in that order now (the Activity group was spread over the panel before).
 - **Dependencies** in the details take one line each: a long name ends in "…" and shows in full on hover.
+- **What's new** (T-282): the title, with the × on its line, stays at the top; the releases scroll below it without
+  a scrollbar, with *▲ N more* / *▼ N more* hints (releases cut off). One scroller with these hints
+  (`HintScroll.svelte`) now serves What's new and the Kanban columns, and one count of what is cut off
+  (`cutOff` in `lib/scroll.ts`) serves those and the task details.
 
 ## [0.21.0] - 2026-10-27
 

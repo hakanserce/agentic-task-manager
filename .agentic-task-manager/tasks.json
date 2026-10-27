@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 282,
+    "next_id": 283,
     "labels": [
       {
         "id": "dashboard",
@@ -10781,6 +10781,38 @@
       "updated_at": "2026-10-27T22:13:42Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-282",
+      "name": "What's new without a scrollbar",
+      "phase": 24,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "interactive",
+        "ux"
+      ],
+      "description": "Like the task details (T-280): the What's new dialog shows a vertical scrollbar when the release notes don't fit. Done live with Hakan.\n\n## Change\n- The title, with the × on its line, stays at the top; the releases scroll below it without a scrollbar, with *▲ N more* / *▼ N more* hints (releases cut off) that scroll a page, as in the Kanban columns.\n- One component for a scroller with these hints (`HintScroll.svelte`: what counts as an item, the classes), used by What's new and the Kanban columns (`KanbanScroll.svelte`), and the counting in `src/lib/scroll.ts` (`cutOff`), shared with the task details.\n- Help, About and the Activity popup share `.detail-panel` and stay as they are.\n\n## Tests\nUnit tests for `cutOff`; e2e: What's new has no scrollbar, the hints count the releases cut off and scroll; the Kanban specs still green; refreshed What's new screenshot baselines if any.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/WhatsNew.svelte",
+        "dashboard/src/components/HintScroll.svelte",
+        "dashboard/src/components/KanbanScroll.svelte",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/lib/scroll.ts",
+        "dashboard/src/app.css",
+        "dashboard/tests/unit/scroll.test.ts",
+        "dashboard/tests/e2e/whats-new.spec.ts"
+      ],
+      "created_at": "2026-10-27T22:25:47Z",
+      "updated_at": "2026-10-27T22:25:51Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T22:25:51Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

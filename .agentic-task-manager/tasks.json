@@ -10795,7 +10795,7 @@
       "description": "Like the task details (T-280): the What's new dialog shows a vertical scrollbar when the release notes don't fit. Done live with Hakan.\n\n## Change\n- The title, with the × on its line, stays at the top; the releases scroll below it without a scrollbar, with *▲ N more* / *▼ N more* hints (releases cut off) that scroll a page, as in the Kanban columns.\n- One component for a scroller with these hints (`HintScroll.svelte`: what counts as an item, the classes), used by What's new and the Kanban columns (`KanbanScroll.svelte`), and the counting in `src/lib/scroll.ts` (`cutOff`), shared with the task details.\n- Help, About and the Activity popup share `.detail-panel` and stay as they are.\n\n## Tests\nUnit tests for `cutOff`; e2e: What's new has no scrollbar, the hints count the releases cut off and scroll; the Kanban specs still green; refreshed What's new screenshot baselines if any.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/WhatsNew.svelte",
@@ -10808,11 +10808,26 @@
         "dashboard/tests/e2e/whats-new.spec.ts"
       ],
       "created_at": "2026-10-27T22:25:47Z",
-      "updated_at": "2026-10-27T22:25:51Z",
+      "updated_at": "2026-10-27T22:34:12Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T22:25:51Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "d7da2dc6e61e046933acb27656148dca40831226",
+      "completed_at": "2026-10-27T22:34:11Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T22:34:11Z",
+          "kind": "outcome",
+          "text": "What’s new: title and × pinned, releases scroll without a scrollbar with ▲/▼ hints. One `HintScroll` component now serves What’s new and the Kanban columns; `cutOff` in `lib/scroll.ts` counts for those and the task details. Built live with Hakan.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 27,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
+      }
     }
   ]
 }

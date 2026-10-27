@@ -68,6 +68,12 @@ test.describe('detail panel', () => {
     await expect(section(page, 'Required By')).toHaveCount(0);
   });
 
+  test('a short task that fits opens with Info active, not the last group', async ({ page }) => {
+    await openFromCard(page, 'T-004');
+    await expect(page.locator('#detail-rail .detail-rail-item.active')).toHaveAttribute('data-group', 'info');
+    await expect(page.locator('#detail-panel .kanban-more')).toHaveCount(0);
+  });
+
   test('closes with the × button', async ({ page }) => {
     await openFromCard(page, 'T-004');
     await page.locator('#detail-panel .detail-close').click();
@@ -111,12 +117,49 @@ test.describe('detail panel scroll', () => {
     meta: { project: 'Scroll' },
     tasks: [task('T-1', name), task('T-2', 'Another long one', { dependencies: ['T-1'] })],
   });
-  const scrollTop = (page: Page) => panel(page).evaluate((el) => el.scrollTop);
+  // The sections scroll under the title, in #detail-body (T-280)
+  const body = (page: Page) => page.locator('#detail-body');
+  const scrollTop = (page: Page) => body(page).evaluate((el) => el.scrollTop);
   async function openScrolled(page: Page) {
     await openFromCard(page, 'T-1');
-    await panel(page).evaluate((el) => (el.scrollTop = el.scrollHeight));
+    await body(page).evaluate((el) => (el.scrollTop = el.scrollHeight));
     expect(await scrollTop(page)).toBeGreaterThan(200);
   }
+
+  test('a rail entry brings its group to the top, even a short last group', async ({ page, tasksServer }) => {
+    const activity = { created_at: '2026-01-02T10:00:00Z', notes: [{ kind: 'note', text: 'A note.' }] };
+    await openDashboard(
+      page,
+      tasksServer,
+      { ...data(), tasks: [task('T-1', 'Long one', activity), task('T-2', 'Another', { dependencies: ['T-1'] })] },
+      { tab: 'list' },
+    );
+    await openFromCard(page, 'T-1');
+    for (const group of ['activity', 'ref', 'notes', 'dependencies', 'info']) {
+      await page.locator(`#detail-rail [data-group="${group}"]`).click();
+      await expect(page.locator(`#detail-rail [data-group="${group}"]`)).toHaveClass(/active/);
+      // Where the group's top is, relative to the top of the scroller, once the smooth scroll settles: at the top, or
+      // just below the "▲ N more" hint
+      const hint = group === 'info' ? 0 : 28;
+      await expect
+        .poll(
+          () =>
+            body(page).evaluate(
+              (el, g) =>
+                Math.round(
+                  el.querySelector(`[data-group="${g}"]`)!.getBoundingClientRect().top - el.getBoundingClientRect().top,
+                ),
+              group,
+            ),
+          { message: `the ${group} group's top` },
+        )
+        .toBe(hint);
+      if (hint)
+        expect(
+          await page.locator('#detail-panel .kanban-more.top').evaluate((el) => (el as HTMLElement).offsetHeight),
+        ).toBe(hint);
+    }
+  });
 
   test('another task opens at its top', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, data(), { tab: 'list' });

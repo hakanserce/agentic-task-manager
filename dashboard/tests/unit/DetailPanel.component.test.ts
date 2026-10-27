@@ -23,6 +23,26 @@ function open(fields: Record<string, unknown>, id = 'T-005') {
 describe('DetailPanel', () => {
   beforeEach(() => loadIntoDashboard(standard));
 
+  // The section rail (T-280): one entry per group the task has, in the order of the groups below it
+  const railGroups = (container: HTMLElement) =>
+    [...container.querySelectorAll<HTMLElement>('#detail-rail .detail-rail-item')].map((b) => b.dataset.group);
+  const bodyGroups = (container: HTMLElement) =>
+    [...container.querySelectorAll<HTMLElement>('#detail-body [data-group]')].map((g) => g.dataset.group);
+
+  it('has a rail entry per group, in the order of the groups, Notes only with notes', () => {
+    const plain = open({ notes: [] });
+    expect(railGroups(plain)).not.toContain('notes');
+    expect(railGroups(plain)).toEqual(bodyGroups(plain));
+    expect(railGroups(plain)[0]).toBe('info');
+    expect(railGroups(plain).at(-1)).toBe('ref');
+
+    const noted = open({ notes: [{ at: '2026-04-01T08:00:00Z', kind: 'outcome', text: 'Done' }] });
+    expect(railGroups(noted)).toContain('notes');
+    expect(railGroups(noted)).toEqual(bodyGroups(noted));
+    const labels = [...noted.querySelectorAll('#detail-rail .detail-rail-label')].map((l) => l.textContent);
+    expect(labels).toContain('Notes');
+  });
+
   it('lists the notes newest first, with kind, author and time; a legacy last_failure among them', () => {
     const container = open({
       notes: [

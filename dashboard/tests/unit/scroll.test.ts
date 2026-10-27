@@ -1,5 +1,33 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { scrollToTask } from '../../src/lib/scroll';
+import { cutOff, scrollToTask } from '../../src/lib/scroll';
+
+describe('cutOff', () => {
+  // Items 100px tall, 10px apart: 0–100, 110–210, 220–320, 330–430
+  const items = [0, 110, 220, 330].map((offsetTop) => ({ offsetTop, offsetHeight: 100 }));
+
+  it('counts nothing when everything is in view', () => {
+    expect(cutOff(0, 500, items)).toEqual({ above: 0, below: 0 });
+  });
+
+  it('counts the items partly or fully below the bottom edge', () => {
+    expect(cutOff(0, 250, items)).toEqual({ above: 0, below: 2 });
+  });
+
+  it('counts the items whose top is above the top edge', () => {
+    expect(cutOff(150, 300, items)).toEqual({ above: 2, below: 0 });
+  });
+
+  it('counts both ways in the middle', () => {
+    // 115–315: the first two start above, the last two end below
+    expect(cutOff(115, 200, items)).toEqual({ above: 2, below: 2 });
+  });
+
+  it('allows a pixel of rounding at either edge', () => {
+    // 111–431: the second item starts 1px above and the last ends 1px below, both counted as in view
+    expect(cutOff(111, 320, items)).toEqual({ above: 1, below: 0 });
+    expect(cutOff(108, 320, items)).toEqual({ above: 1, below: 1 });
+  });
+});
 
 describe('scrollToTask', () => {
   afterEach(() => {

@@ -2,6 +2,13 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.22.0] - 2026-10-27
+
+- A task's details no longer show a scrollbar: the title stays put, and hints say when there's more above or below.
+- Jump around a task's details from the new handles on the left: Info, Dependencies, Notes, Activity and Ref.
+- Dependencies in a task's details fit on one line each.
+- What's new scrolls the same way, without a scrollbar.
+
 ## [0.21.0] - 2026-10-27
 
 - atm moved to github.com/solo-swe/agentic-task-manager. Installed it before? Remove the old marketplace and add the new one, as the README explains.

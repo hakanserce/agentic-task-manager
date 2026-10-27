@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 277,
+    "next_id": 284,
     "labels": [
       {
         "id": "dashboard",
@@ -63,6 +63,14 @@
       {
         "id": 23,
         "name": "Maintenance"
+      },
+      {
+        "id": 24,
+        "name": "Testing together"
+      },
+      {
+        "id": 25,
+        "name": "Themes"
       }
     ],
     "repository": "https://github.com/solo-swe/agentic-task-manager"
@@ -10569,7 +10577,7 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-27T08:23:41Z",
-      "updated_at": "2026-10-27T08:54:04Z",
+      "updated_at": "2026-10-27T16:02:07Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T08:31:55Z",
@@ -10588,7 +10596,8 @@
       "pr": {
         "number": 25,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/25"
-      }
+      },
+      "merged_at": "2026-10-27T09:15:58Z"
     },
     {
       "id": "T-276",
@@ -10610,7 +10619,7 @@
         "tests/scripts/helpers.mjs"
       ],
       "created_at": "2026-10-27T08:23:41Z",
-      "updated_at": "2026-10-27T08:54:04Z",
+      "updated_at": "2026-10-27T16:02:07Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T08:38:10Z",
@@ -10629,7 +10638,228 @@
       "pr": {
         "number": 25,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/25"
+      },
+      "merged_at": "2026-10-27T09:15:58Z"
+    },
+    {
+      "id": "T-277",
+      "name": "Test the archive and its UI together on a test project",
+      "phase": 24,
+      "type": "test",
+      "priority": "P2",
+      "labels": [
+        "interactive",
+        "archive"
+      ],
+      "description": "An interactive session with Hakan: walk through archiving (`atm archive`, `atm unarchive`) and everything the dashboard shows about archived tasks, on a throwaway project, and write down what is wrong or confusing. **Nothing is fixed during the session**: problems become follow-up tasks, and only those Hakan approves are added.\n\n## How archiving works (what to expect)\n- `atm archive` moves finished tasks (done- and skipped-kind) from `tasks.json` to `tasks-archive.json`, except those finished in the last `meta.archive.keep_days` days (default 14) and those still in an open PR (`pr` set, no `merged_at`). Options: `--phase N` (repeatable), `--before DATE`, `--keep-days N`, `--dry-run`. It prints what moved and both files' sizes; `meta.archived` counts the archive.\n- The hint (`atm status`, `atm done`): shown when `tasks.json` is over `meta.archive.threshold_kb` (1024) or has more archivable tasks than `threshold_tasks` (500), and something can move. `meta.archive.auto: false` makes the skills only relay it.\n- `atm unarchive <id>...` brings tasks back; `atm list --archived` and `atm show <id>` read the archive; an archived task counts as done for dependencies.\n- The dashboard loads the archive only when a view needs it (D-5.2): the subtitle says *N archived*; the filter bar has *Include archived* (search, List, Graph and the Agents timeline then include archived tasks); the detail panel marks an archived task *· archived* and shows an archived dependency as a stub; the Progress tab, the Project tab and the Activity popup count the history (archived tasks too); the status bar shows an archive notice past the threshold.\n\n## Set up (in a terminal next to Hakan)\n1. A git repository in a new temporary folder (`mktemp -d`), **outside this repository**: this repo's own task list is not the test subject.\n2. `atm init --meta-file <file>` with a project name (e.g. *Archive Test*), named phases 0–2, and `meta.archive.threshold_tasks: 5`, so the hint appears without 500 tasks. `atm init` lists the project on the dashboard.\n3. About 20 tasks (`atm add --json-file`), with dependencies across phases, then statuses through atm only (never by editing the file):\n   - phase 0: all done, finished about 30 days ago (`ATM_NOW=<date 30 days ago> atm start/done`), one skipped;\n   - phase 1: some done 20 days ago, two done today, one done 20 days ago but in an open PR (`atm pr <id> --number 1 --url https://example.com/pr/1`), one in a merged PR (`atm merged --pr 2 --at <date>`);\n   - phase 2: a few to do (one depending on a phase-0 task), one in progress, one in review.\n4. `/atm:serve`, and open the project on the dashboard.\n\n## Walk through, with Hakan watching the dashboard\n1. **The hint**: `atm status` shows it (with the numbers), `atm done` on a task too; the status bar's archive notice.\n2. **Dry run**: `atm archive --dry-run`: which tasks would move, and that the recent ones and the open-PR one stay.\n3. **Archive**: `atm archive`: its report (counts, sizes); then `atm list --archived`, `atm show` of an archived task, `atm status` (the hint is gone, the archived count).\n4. **Dashboard after archiving**:\n   - the subtitle's *N archived*; the Kanban, List and Graph without archived tasks;\n   - *Include archived*: search finds archived tasks; List and Graph show them, marked;\n   - the detail panel of an archived task (*· archived*), and of the phase-2 task whose dependency is archived (the stub);\n   - the Progress tab (burndown, phase table), the Project tab (stats, histogram, agents) and the Activity popup: do the numbers still include the archived work, and are they the same as before archiving?\n   - the Agents timeline with and without *Include archived*;\n   - the Projects Overview card (progress rings, counts, the stats line) and the Omniboard (done in the last 24 hours) for this project.\n5. **Unarchive**: `atm unarchive <id>` for one task: it is back in `tasks.json`, on the Kanban, and the counts change.\n6. **Edge cases if time allows**: `atm archive --phase 0`, `--before`, `--keep-days 0`; archiving with the dashboard open (does it update without a reload?); a dependency on a task that was archived and then unarchived.\n\n## Then\n- Write the findings into this task's outcome note (short), and propose a follow-up task per problem; add only those Hakan approves (`/atm:create-tasks`).\n- Clean up: `atm projects remove <the test project's id>`, and delete the temporary folder.\n",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [],
+      "created_at": "2026-10-27T09:19:02Z",
+      "updated_at": "2026-10-27T16:04:11Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0"
+    },
+    {
+      "id": "T-278",
+      "name": "One branding folder, made by a script from the logo's source",
+      "phase": 24,
+      "type": "refactor",
+      "priority": "P2",
+      "labels": [
+        "branding"
+      ],
+      "description": "The logo's files are spread out: `.github/assets/` holds the GitHub copies (made by hand-run screenshot commands written only in HTML comments), and `docs/logo/` holds logo candidates that were **discarded** (from two different agents' attempts; none of them is the logo). The logo's source is `dashboard/src/assets/atm-logo.svg` (drawn in `currentColor`; the dashboard's logo, favicon and About come from it): it stays where it is, as the one drawing.\n\n## Change\n- A top-level `branding/` folder for everything made from the source, with a `README.md`: what each file is, where it's used (README header, GitHub's social preview, the org's avatar), and how to regenerate it.\n- `branding/generate.mjs`, run as `npm run branding` in `dashboard/` (where Playwright is installed): from the source, it writes\n  - `atm-logo.svg`: the source with the accent blue (`#2f81f7`, the favicon's colour, `dashboard/build/favicon.ts`) instead of `currentColor`;\n  - `atm-logo.png`: 512×512, the blue logo on the dark background (`#0d1117`);\n  - `social-preview.png`: 1280×640 (redesigned by the next task; until then, as today).\n  The HTML it renders lives in the script or next to it in `branding/`, so a change is one edit and one command.\n- Move the files out of `.github/assets/` (delete that folder); point the README's header image at `branding/atm-logo.svg`.\n- Delete `docs/logo/` (the discarded candidates and their comparison page; git history keeps them, commit adedba8).\n- Update what names the old paths: `dashboard/tests/unit/readme-logo.test.ts`, the 0.21.0 CHANGELOG lines can stay (history), `CLAUDE.md` gets one line on `npm run branding` under the dashboard commands.\n\n## Tests\n`readme-logo.test.ts`: the committed `branding/atm-logo.svg` is exactly what the script's transform makes from the source (export the transform from `generate.mjs` and call it), the README points at it, and the PNGs exist. The PNGs themselves aren't compared (they differ by platform).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "branding/README.md",
+        "branding/generate.mjs",
+        "branding/atm-logo.svg",
+        "branding/atm-logo.png",
+        "branding/social-preview.png",
+        "dashboard/package.json",
+        "dashboard/tests/unit/readme-logo.test.ts",
+        "README.md",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-27T16:41:57Z",
+      "updated_at": "2026-10-27T16:41:57Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-279",
+      "name": "A richer social preview: the dashboard, the logo and how to install, from the script",
+      "phase": 24,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "branding",
+        "interactive"
+      ],
+      "description": "Hakan finds the social preview (logo, name, one line) too simple. The card GitHub shows when the repository is linked should say what atm is at a glance.\n\n## Content (1280×640)\n- The logo and the name, *Agentic Task Manager*, with a short line on what it does (task management for Claude Code agents, with a live dashboard).\n- **A hint of the dashboard**: a real, recognisable piece of it (e.g. a Kanban with cards, the progress ring, an agent at work), not a mock-up drawn by hand. Render it from the built dashboard (`plugin/templates/tasks-dashboard.html`) with a fixture, the way the e2e tests do, so it stays true to the product and updates when the dashboard changes; crop or scale it into the card.\n- **How to install**: the two commands (`/plugin marketplace add solo-swe/agentic-task-manager`, `/plugin install atm@solo-swe-plugins`), readable at the card's size.\n- The dark theme, the accent blue; text large enough to read in a link preview.\n\n## Made by the script\n`npm run branding` (`branding/generate.mjs`, previous task) renders it: no hand-made image. Document its inputs (the fixture, the theme) in `branding/README.md`.\n\n## Review with Hakan\nTwo or three layouts first, shown to him (rendered PNGs) before settling one; put the task in review (`atm review`) before showing them. After he approves, Hakan uploads the PNG in Settings → General → Social preview.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-278"
+      ],
+      "files": [
+        "branding/generate.mjs",
+        "branding/social-preview.png",
+        "branding/README.md"
+      ],
+      "created_at": "2026-10-27T16:41:57Z",
+      "updated_at": "2026-10-27T16:41:57Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-280",
+      "name": "Task details without a scrollbar, with a section rail to jump around",
+      "phase": 24,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "interactive",
+        "ux"
+      ],
+      "description": "Hakan finds the task detail panel's vertical scrollbar (when a task's details don't fit) out of place in the dashboard's look. Done live with him: try, look, adjust.\n\n## Change\n- **No scrollbar**: the sections scroll like the Kanban columns (`KanbanScroll.svelte`, T-262): hidden scrollbar, the wheel and trackpad scroll as usual, \"▲ N more\" / \"▼ N more\" hints (sections cut off) that scroll a page.\n- **The title and badges stay** at the top, the × on the title's line; less padding around the panel.\n- **A section rail on the left**: one entry per group, written bottom to top, with an icon; a click brings the group to the top (just below the \"▲\" hint), adding empty space below the last section when the content is too short; scrolling by hand never adds any, and scrolling back up takes it away. The entry of the group in view is highlighted. Groups (only those the task has):\n  - *Info*: in review / blocked, description;\n  - *Dependencies*: Depends on, Required by (one line each; a long name ends in \"…\");\n  - *Notes*;\n  - *Activity*: claimed by, who, timestamps, commit;\n  - *Ref*: use cases, requirements, files.\n- Only the task panel (`#detail-panel`): Help, About, the Activity popup and What's new share `.detail-panel` and keep their layout.\n\n## Tests\nComponent tests for the rail's groups and order, e2e tests for where a rail click lands and the active entry on a short task, the detail specs on the new scroller (`#detail-body`), refreshed detail screenshot baselines.\n",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/app.css",
+        "dashboard/tests/unit/DetailPanel.component.test.ts",
+        "dashboard/src/lib/icons.ts",
+        "dashboard/tests/e2e/detail.spec.ts"
+      ],
+      "created_at": "2026-10-27T21:17:37Z",
+      "updated_at": "2026-10-27T22:15:24Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T21:17:42Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "55a0c7891e307ba2fc8efb8d6be9550faa85f228",
+      "completed_at": "2026-10-27T22:04:02Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T22:04:02Z",
+          "kind": "outcome",
+          "text": "Detail panel: pinned title with the × on its line, a section rail (Info, Dependencies, Notes, Activity, Ref; bottom-to-top labels with icons) that brings a group to the top, sections scrolling without a scrollbar with Kanban-style ▲/▼ hints; one-line dependencies. Built live with Hakan.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 27,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
       }
+    },
+    {
+      "id": "T-281",
+      "name": "Make the List-tab screenshot tests pass locally again",
+      "phase": 24,
+      "type": "test",
+      "priority": "P1",
+      "labels": [
+        "ci"
+      ],
+      "description": "Three screenshot tests fail on a developer Mac with the committed `-darwin.png` baselines: `visual: list tab` (`standard-list`), `visual: v4 (dark|light) › list: labels, priorities, stages` (`v4-dark-list`, `v4-light-list`). About 600 pixels differ (ratio 0.01); earlier the cause looked like a native `<select>` in the List tab rendering a few pixels wider than when the baselines were taken. They have been refreshed by hand before pushes and come back, so the suite is never green locally. Hakan doesn't want failing tests carried forward.\n\n## Change\n- Find what differs: compare the diff images (`test-results/…/*-diff.png`) and confirm the element (the select, a font, sub-pixel layout) and why it varies between runs or machines.\n- Fix the cause so the shot is deterministic: e.g. style the select so its width doesn't depend on the platform's native rendering, or fix its width, or mask it in these shots if its look isn't what the test is about. Never raise the screenshot tolerance or skip the tests.\n- Refresh the three `-darwin.png` baselines only if the fix changes the picture; if it does, delete the matching `-linux.png` and commit the ones CI generates.\n\n## Check\n`npx playwright test visual` passes locally several runs in a row, and `npm run verify` is fully green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-27T22:13:42Z",
+      "updated_at": "2026-10-27T22:13:42Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-282",
+      "name": "What's new without a scrollbar",
+      "phase": 24,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "interactive",
+        "ux"
+      ],
+      "description": "Like the task details (T-280): the What's new dialog shows a vertical scrollbar when the release notes don't fit. Done live with Hakan.\n\n## Change\n- The title, with the × on its line, stays at the top; the releases scroll below it without a scrollbar, with *▲ N more* / *▼ N more* hints (releases cut off) that scroll a page, as in the Kanban columns.\n- One component for a scroller with these hints (`HintScroll.svelte`: what counts as an item, the classes), used by What's new and the Kanban columns (`KanbanScroll.svelte`), and the counting in `src/lib/scroll.ts` (`cutOff`), shared with the task details.\n- Help, About and the Activity popup share `.detail-panel` and stay as they are.\n\n## Tests\nUnit tests for `cutOff`; e2e: What's new has no scrollbar, the hints count the releases cut off and scroll; the Kanban specs still green; refreshed What's new screenshot baselines if any.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/WhatsNew.svelte",
+        "dashboard/src/components/HintScroll.svelte",
+        "dashboard/src/components/KanbanScroll.svelte",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/lib/scroll.ts",
+        "dashboard/src/app.css",
+        "dashboard/tests/unit/scroll.test.ts",
+        "dashboard/tests/e2e/whats-new.spec.ts"
+      ],
+      "created_at": "2026-10-27T22:25:47Z",
+      "updated_at": "2026-10-27T22:34:12Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T22:25:51Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "d7da2dc6e61e046933acb27656148dca40831226",
+      "completed_at": "2026-10-27T22:34:11Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T22:34:11Z",
+          "kind": "outcome",
+          "text": "What’s new: title and × pinned, releases scroll without a scrollbar with ▲/▼ hints. One `HintScroll` component now serves What’s new and the Kanban columns; `cutOff` in `lib/scroll.ts` counts for those and the task details. Built live with Hakan.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 27,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
+      }
+    },
+    {
+      "id": "T-283",
+      "name": "A sticky-note theme: whiteboard or blackboard, cards as sticky notes",
+      "phase": 25,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "interactive",
+        "ux",
+        "theme"
+      ],
+      "description": "Hakan wants to try a playful theme. Done live with him: a few variations first, then the ones he likes.\n\n## Look\n- **The board**: a whiteboard in light mode, a blackboard in dark mode (the mode switch picks it, as for every theme). The board surface (the Kanban and the Omniboard columns, maybe the page around them) looks like the board: e.g. a soft off-white or a slate/chalkboard tone, perhaps a faint texture or frame, chalk-like text on the blackboard.\n- **Task cards as sticky notes**: yellow or pink (or a set), with a slight tilt or shadow, a handwriting-like or rounded font for the name if it stays readable. Statuses, priorities and labels must still read clearly on the note colours (contrast checked like the other themes, `theme-contrast.test.ts`).\n- **Variations** to try together, for example: notes colour by type, by status or by priority; one colour only; tilt on or off; whiteboard with marker-style headings vs. plain.\n\n## How themes work\nA theme is `src/themes/<id>.css` with light and dark variants (`data-theme` / `data-mode` on `<html>`, `lib/appearance.ts`), listed in `src/themes/index.ts` with a swatch for the Appearance menu. The sticky-note look probably needs a few card-level hooks (variables the card styles read) rather than only colour tokens; add them so other themes keep their look.\n\n## Process\n1. Build two or three variations behind the theme, and try them live on the dev server (`npm run dev`) with Hakan.\n2. Keep what he picks; drop the rest.\n3. Tests: the theme is listed and applies (`theme.test.ts`), its contrast passes (`theme-contrast.test.ts`), no hard-coded colours outside the theme (`no-hardcoded-colours.test.ts`), screenshot baselines for the Kanban in both modes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/themes/sticky-notes.css",
+        "dashboard/src/themes/index.ts",
+        "dashboard/src/app.css",
+        "dashboard/tests/unit/theme.test.ts",
+        "dashboard/tests/e2e/visual.spec.ts"
+      ],
+      "created_at": "2026-10-27T22:34:40Z",
+      "updated_at": "2026-10-27T22:34:40Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

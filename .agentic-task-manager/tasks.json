@@ -9998,16 +9998,18 @@
       "description": "**Bug (reported again):** the Activity popup's heading reads `Activity per {unitLabel}` (`ActivityWidget.svelte`), and `unitLabel` is the bar size, not the chosen period: *All time* says \"per 3 hours\", *Week* says \"per day\". T-144 fixed the same mix-up in the chart headings but never covered this line.\n\n## Change\n- The heading is just *Activity* (with its ⓘ); the period label next to it (\"This week\", \"All time\") already names the period, and the chart headings already say the bar size (\"Tasks completed this week, per day\").\n- Go through **every** place in the popup that names a period or a bar size (heading, chart headings, ⓘ texts, the sparkline tooltip, hover tooltips) and make sure none presents the bar size as the period.\n\n## Tests\nUnit tests where a helper builds the text; the e2e coverage per preset is the next task.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ActivityWidget.svelte",
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T07:19:48Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:19:48Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-264",
@@ -10344,17 +10346,28 @@
       "description": "The project selector's first option (`ProjectSelector.svelte`) reads *Projects Overview*, matching the page's title (T-271), instead of *All projects*. Its filtering by typed text matches the new name. Update the unit and e2e tests that list the options, and the selector screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProjectSelector.svelte"
       ],
       "created_at": "2026-10-27T07:06:50Z",
-      "updated_at": "2026-10-27T07:06:51Z",
+      "updated_at": "2026-10-27T07:08:36Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:06:51Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "75653b216976293e92b0ca485b3b93a8d520720e",
+      "completed_at": "2026-10-27T07:08:36Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:08:36Z",
+          "kind": "outcome",
+          "text": "The selector’s first option reads *Projects Overview* (typing *overv* finds it). Tests and the selector screenshots updated.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

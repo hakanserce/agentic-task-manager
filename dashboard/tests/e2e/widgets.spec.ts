@@ -116,7 +116,9 @@ test.describe('Activity widget', () => {
   test('the deep dive: key numbers, and charts by type, by agent and per task', async ({ page }) => {
     await activityPill(page).click();
     const panel = page.locator('#activity-panel');
-    await expect(panel.locator('.activity-heading')).toContainText('Activity per hour');
+    // The heading names no bar size (T-263: "Activity per hour" read as the period); the charts' headings do
+    await expect(panel.locator('#activity-title')).toContainText('Activity');
+    await expect(panel.locator('#activity-title')).not.toContainText('per');
     await expect(panel.locator('#dive-completed h4')).toHaveText('Tasks completed over all time, per hour, by type');
     // 6 done; cycle times 20–80 m, median 55 m, no interactive task; from 08:00 to now (12:00) nobody works 11:00–11:30
     // (see fixtures/agents.md). Three cards (T-246)
@@ -255,10 +257,11 @@ test.describe('Activity widget', () => {
     await expect(label).toHaveText('Today');
 
     await page.locator('[data-range="hour"]').click();
-    await expect(page.locator('.activity-heading')).toContainText('per 5 minutes');
+    await expect(page.locator('#dive-completed h4')).toContainText('per 5 minutes');
     await page.locator('[data-range="week"]').click();
-    // A week reads per day, and the headings say which week (it used to say "per 6 hours")
-    await expect(page.locator('.activity-heading')).toContainText('Activity per day');
+    // A week reads per day, and the headings say which week (it used to say "per 6 hours"); the popup's own heading
+    // names neither (T-263)
+    await expect(page.locator('#activity-title')).not.toContainText('per');
     await expect(page.locator('#dive-completed h4')).toHaveText('Tasks completed this week, per day, by type');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last week');

@@ -8,6 +8,12 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
 **The repository moved to the `solo-swe` organisation.**
 
+### Fixed
+- **Activity popup heading:** it said *Activity per 3 hours* on *All time* and *per day* on *Week*: the bar size,
+  which read as the period. It is now just *Activity*; the period label beside it names the period, and every chart
+  heading names the period and its bar size (*Time per task* now names the period too). T-144 had fixed the chart
+  headings only, and an e2e test pinned the wrong heading.
+
 ### Changed
 - **Repository:** `github.com/solo-swe/agentic-task-manager` (GitHub redirects the old address). `plugin.json`'s
   `homepage` and `repository`, the dashboard's GitHub and Source links, the README and the docs point there.

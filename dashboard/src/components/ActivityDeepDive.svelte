@@ -262,7 +262,7 @@
   <section class="dive-chart" id="dive-cycle">
     <header>
       <h4>
-        Time per task <span>(from start to done; one dot per task, at its completion)</span>
+        Time per task {period} <span>(from start to done; one dot per task, at its completion)</span>
         <InfoTip label="time per task">
           <p>
             Each task's work time, from its start until it asked for a review or was done, at the time it was done.

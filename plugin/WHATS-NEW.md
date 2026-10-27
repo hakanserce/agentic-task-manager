@@ -6,6 +6,7 @@ The short version, for people using atm. The full list of changes, for developer
 
 - atm moved to github.com/solo-swe/agentic-task-manager. Installed it before? Remove the old marketplace and add the new one, as the README explains.
 - Shorter titles: "Projects Overview" for all projects, and just the project's name on each project.
+- The Activity details no longer mix up the period you picked with the size of the bars.
 
 ## [0.20.0] - 2026-10-27
 

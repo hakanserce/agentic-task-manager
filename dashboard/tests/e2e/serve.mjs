@@ -1,8 +1,9 @@
-// Minimal static server for e2e tests. The built dashboard is served as /svelte/tasks-dashboard.html;
-// tasks.json is always supplied per test via page.route.
+// Minimal static server for e2e tests. The built dashboard is served as /svelte/tasks-dashboard.html, with the
+// security headers atm serve sends (T-226); tasks.json is always supplied per test via page.route.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { pageCsp } from './csp.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const VARIANTS = {
@@ -19,7 +20,15 @@ createServer(async (req, res) => {
   }
   try {
     const body = await readFile(file);
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }).end(body);
+    res
+      .writeHead(200, {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+        'content-security-policy': pageCsp(body),
+        'x-content-type-options': 'nosniff',
+        'cross-origin-resource-policy': 'same-origin',
+      })
+      .end(body);
   } catch {
     res.writeHead(404).end('missing build: ' + file);
   }

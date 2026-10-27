@@ -4,7 +4,7 @@ description: >
   Start, stop or check the local server for the task dashboard, one for all your projects. Use when the user says
   "serve the dashboard", "start the dashboard", "open the dashboard", "show all projects", "stop the dashboard
   server", or "is the dashboard running".
-allowed-tools: Bash(atm *)
+allowed-tools: Bash(atm serve:*), Bash(atm projects:*), Bash(atm repository:*), Bash(atm status:*), Bash(atm show:*), Bash(atm list:*)
 ---
 
 # Serve the Dashboard

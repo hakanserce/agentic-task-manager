@@ -2,10 +2,11 @@
 // Per project, not per browser: dashboards of different projects served from the same origin (localhost:8000)
 // share localStorage, so each project's view lives under its own key. Theme, mode, auto-refresh and the last-seen
 // version stay per browser (prefs.ts).
+import { BURNDOWN_RANGES, type BurndownRange } from './burndown';
 import type { FilterGroup, ListSort } from './filters';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
-import { VIEWS, type ViewId } from './tabs';
+import { DEFAULT_VIEW, VIEWS, type ViewId } from './tabs';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, labelsOf, priorityOf, type Vocabulary } from './vocab';
@@ -24,10 +25,10 @@ export interface SavedView {
   listSort: ListSort;
   /** The phase the Progress tab focuses on, or null for all phases */
   progressPhase: number | null;
-  /** The Progress tab lists only active phases: the unfinished ones and the one that finished last */
-  progressActive: { only: boolean };
   /** The filter panel's Phase group lists the finished phases too, not just the active ones */
   filterFinishedPhases: boolean;
+  /** The Progress tab's burndown range: since the (focused or first unfinished) phase started, 14 days, or all time */
+  progressRange: BurndownRange;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
   /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
@@ -56,14 +57,13 @@ export function defaultView(): SavedView {
   return {
     filters: { phase: [], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
     query: '',
-    tab: 'graph',
+    tab: DEFAULT_VIEW,
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
     progressPhase: null,
-    // On by default: the unfinished phases and the last finished one are what most projects want to see
-    progressActive: { only: true },
     filterFinishedPhases: false,
+    progressRange: 'phase',
     graphFiltered: 'hide',
     graph: null,
     agents: null,
@@ -105,7 +105,8 @@ export function readView(key: string): SavedView {
   const view = defaultView();
   const filters = (stored.filters ?? {}) as Record<string, unknown>;
   const kanban = (stored.kanban ?? {}) as Record<string, unknown>;
-  const active = (stored.progressActive ?? {}) as Record<string, unknown>;
+  // Views saved before 0.20.0 also have progressActive ("Active phases only", replaced by folding finished phases,
+  // T-241, T-243): ignored
   return {
     filters: {
       phase: strings(filters.phase),
@@ -125,9 +126,10 @@ export function readView(key: string): SavedView {
     },
     listSort: stored.listSort === 'priority' ? 'priority' : 'file',
     progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
-    // Views saved before 0.17.0 also have `days` (the old "finished within N days" rule): ignored
-    progressActive: { only: bool(active.only, view.progressActive.only) },
     filterFinishedPhases: stored.filterFinishedPhases === true,
+    progressRange: (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
+      ? (stored.progressRange as BurndownRange)
+      : view.progressRange,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graph: graphView(stored.graph),
     agents: agentsWindow(stored.agents),

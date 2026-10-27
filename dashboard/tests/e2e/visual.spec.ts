@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { expect, openDashboard, summary, test } from './helpers';
+import { board, boardCard, expect, openDashboard, summary, test } from './helpers';
 
 /**
  * Screenshot of the view under the title bar (#graph-section). The section is scrolled into view first, and the
@@ -35,7 +35,8 @@ async function sectionScreenshot(page: Page, name: string) {
 for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
   test.describe(`visual: ${fixture}`, () => {
     test.beforeEach(async ({ page, tasksServer }) => {
-      await openDashboard(page, tasksServer, fixture);
+      // On the graph (the default is the Kanban since T-251)
+      await openDashboard(page, tasksServer, fixture, { tab: 'graph' });
       await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
     });
 
@@ -98,6 +99,13 @@ test('visual: agents tab, zoomed in', async ({ page, tasksServer }) => {
   await sectionScreenshot(page, 'agents-agents-zoomed.png');
 });
 
+test('visual: project tab', async ({ page, tasksServer }) => {
+  await page.clock.setFixedTime(AGENTS_NOW);
+  await openDashboard(page, tasksServer, 'agents', { tab: 'project' });
+  await expect(page.locator('#project-info')).toBeVisible();
+  await sectionScreenshot(page, 'agents-project.png');
+});
+
 test('visual: progress and activity details', async ({ page, tasksServer }) => {
   await page.clock.setFixedTime(AGENTS_NOW);
   await openDashboard(page, tasksServer, 'agents');
@@ -122,7 +130,7 @@ test.describe('visual: light mode', () => {
   test.use({ colorScheme: 'light' });
 
   test('full page', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
     await expect(page).toHaveScreenshot('light-standard-page.png', {
       fullPage: true,
@@ -132,7 +140,7 @@ test.describe('visual: light mode', () => {
   });
 
   test('dependency graph', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', { tab: 'graph' });
     await sectionScreenshot(page, 'light-large-90-graph.png');
   });
 
@@ -336,6 +344,7 @@ for (const mode of ['dark', 'light'] as const) {
           ],
           last_activity: '2026-01-01T11:48:00Z',
           last_done: { id: 'T-13', name: 'Status bar pinned to the bottom', completed_at: '2026-01-01T11:48:00Z' },
+          stats: { started: '2025-11-12T09:00:00Z', tasks: 20, agent_minutes: 4440 },
           git: { branch: 'dev/polish', pr: { number: 12, url: 'https://github.com/acme/busy/pull/12', state: 'open' } },
         }),
       )
@@ -368,6 +377,60 @@ for (const mode of ['dark', 'light'] as const) {
     await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-narrow-${mode}.png`, {
       mask: [page.locator('#version-chip')],
     });
+  });
+}
+
+// The All projects board (T-259): cards from two projects with their chips, each column's line, an empty column and
+// "+ N more"
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: all projects board (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await page.clock.setFixedTime(new Date('2026-03-01T12:00:00Z'));
+    tasksServer
+      .addProject(
+        'shop',
+        'minimal',
+        'Shop',
+        summary({
+          last_activity: '2026-03-01T11:00:00Z',
+          board: board(
+            {
+              todo: [boardCard('T-008', 'Password reset', { labels: ['api'] }), boardCard('T-009', 'Email templates')],
+              active: [boardCard('T-007', 'Checkout flow', { by: 'claude:e5ea9db0', since: '2026-03-01T10:00:00Z' })],
+              blocked: [
+                boardCard('T-005', 'Choose the email provider', {
+                  since: '2026-03-01T06:00:00Z',
+                  waiting_on: 'agent',
+                  questions: 1,
+                }),
+              ],
+              done: [boardCard('T-003', 'Product page', { type: 'bugfix', completed_at: '2026-03-01T11:30:00Z' })],
+            },
+            { todo: 12 },
+          ),
+        }),
+      )
+      .addProject(
+        'blog',
+        'minimal',
+        'Blog',
+        summary({
+          last_activity: '2026-03-01T11:50:00Z',
+          board: board({
+            todo: [boardCard('B-1', 'RSS feed', { priority: 'P1', phase: 3, labels: ['ux', 'api', 'seo'] })],
+            blocked: [
+              boardCard('B-2', 'Pick a theme', { since: '2026-03-01T11:00:00Z', waiting_on: 'user', questions: 2 }),
+            ],
+            done: [boardCard('B-4', 'Drafts', { type: 'docs', completed_at: '2026-03-01T11:55:00Z' })],
+          }),
+        }),
+      );
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('#overview-tab-board').click();
+    await expect(page.locator('#projects-overview')).toHaveScreenshot(`all-projects-board-${mode}.png`);
+    // Grouped by project (T-260): a lane each, no chips on the cards
+    await page.locator('#board-group-by-project').check();
+    await expect(page.locator('#projects-overview')).toHaveScreenshot(`all-projects-board-grouped-${mode}.png`);
   });
 }
 

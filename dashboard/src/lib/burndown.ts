@@ -23,6 +23,8 @@ export interface Burndown {
   /** Step series, oldest first; the last point is "now" */
   points: BurndownPoint[];
   forecast?: BurndownForecast;
+  /** No task has any time: there is no timeline to draw yet */
+  untimed?: boolean;
 }
 
 const time = (iso: string | undefined) => {
@@ -37,27 +39,60 @@ function earliest(tasks: Task[], now: number): number {
   return known.length ? Math.min(...known) : now;
 }
 
+/**
+ * The burndown's time range (T-240): since the focused phase, or else the first unfinished one, started (the default:
+ * on a long project, all time squeezes the forecast into a sliver), the last 14 days, or all time.
+ */
+export type BurndownRange = 'phase' | '14d' | 'all';
+export const BURNDOWN_RANGES: BurndownRange[] = ['phase', '14d', 'all'];
+const DAY = 24 * 60 * 60_000;
+
+/** Where the range starts, or undefined for all time (also when the phase has no times to start from) */
+export function rangeStart(
+  range: BurndownRange,
+  tasks: Task[],
+  forecast: Forecast,
+  now: number,
+  focus?: number,
+): number | undefined {
+  if (range === 'all') return undefined;
+  if (range === '14d') return now - 14 * DAY;
+  const phase = focus ?? forecast.phases.find((p) => p.state !== 'done')?.phase;
+  const inPhase = tasks.filter((t) => t.phase === phase);
+  const starts = inPhase.map((t) => time(t.started_at)).filter((t): t is number => t !== undefined);
+  const created = inPhase.map((t) => time(t.created_at)).filter((t): t is number => t !== undefined);
+  const from = starts.length ? Math.min(...starts) : created.length ? Math.min(...created) : undefined;
+  return from !== undefined && from < now ? from : undefined;
+}
+
 export function burndown(
   allTasks: Task[],
   forecast: Forecast,
   now: number,
   phase?: number,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
+  from?: number,
 ): Burndown {
   const kind = (t: Task) => kindOf(vocab, t.status);
   const tasks = allTasks.filter((t) => kind(t) !== 'skipped' && (phase === undefined || t.phase === phase));
   if (tasks.length === 0) return { points: [] };
+  const untimed = !allTasks.some((t) =>
+    [t.created_at, t.started_at, t.completed_at].some((x) => time(x) !== undefined),
+  );
 
   const fallback = earliest(allTasks, now);
   const created = tasks.map((t) => time(t.created_at) ?? fallback);
   const completed = tasks.filter((t) => kind(t) === 'done').map((t) => time(completedAt(t)) ?? fallback);
 
-  const times = [...new Set([...created, ...completed])].filter((t) => t <= now).sort((a, b) => a - b);
+  // With a range, the chart starts at `from` with the state then, and shows the changes after it
+  const times = [...new Set([...created, ...completed])]
+    .filter((t) => t <= now && (from === undefined || t > from))
+    .sort((a, b) => a - b);
   const at = (t: number): BurndownPoint => {
     const scope = created.filter((c) => c <= t).length;
     return { t, scope, remaining: scope - completed.filter((c) => c <= t).length };
   };
-  const points = [...times, now].map(at);
+  const points = [...(from === undefined ? [] : [from]), ...times, now].map(at);
 
   const phases = forecast.phases.filter((p) => p.estimate && (phase === undefined || p.phase === phase));
   const last = phases.at(-1)?.estimate;
@@ -66,6 +101,7 @@ export function burndown(
   const waiting = tasks.filter((t) => kind(t) === 'blocked' || kind(t) === 'review').length;
   return {
     points,
+    ...(untimed ? { untimed } : {}),
     ...(last && current.remaining > waiting
       ? {
           forecast: {

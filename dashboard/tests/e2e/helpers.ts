@@ -15,6 +15,7 @@ const CLAIMS_JSON = /\/p\/([^/]+)\/claims\.json(\?.*)?$/;
 const ARCHIVE_JSON = /\/p\/([^/]+)\/tasks-archive\.json(\?.*)?$/;
 const WORKTREES_JSON = /\/p\/([^/]+)\/worktrees\.json(\?.*)?$/;
 const LOGO = /\/p\/([^/]+)\/logo(\?.*)?$/;
+const SEARCH = /\/api\/search(\?.*)?$/;
 /** The id of the project the fixture serves by default */
 export const FIXTURE_PROJECT = 'fixture';
 
@@ -37,6 +38,27 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
     recent_phases: [],
     ...fields,
   };
+}
+
+/** A board card as a project's summary gives it (docs/multi-project-api.md 3.3) */
+export function boardCard(id: string, name: string, fields: Record<string, unknown> = {}): Record<string, unknown> {
+  return { id, name, type: 'feature', phase: 1, priority: 'P2', labels: [], ...fields };
+}
+
+type BoardColumnId = 'todo' | 'active' | 'review' | 'blocked' | 'done';
+
+/** A project summary's board: the given columns' cards, the rest empty; `counts` says how many a column has in all
+ * (more than its cards: "+ N more"), else as many as its cards */
+export function board(
+  columns: Partial<Record<BoardColumnId, unknown[]>>,
+  counts: Partial<Record<BoardColumnId, number>> = {},
+): Record<string, unknown> {
+  return Object.fromEntries(
+    (['todo', 'active', 'review', 'blocked', 'done'] as const).map((id) => {
+      const cards = columns[id] ?? [];
+      return [id, { count: counts[id] ?? cards.length, cards }];
+    }),
+  );
 }
 
 export function loadFixture(name: string): TasksData {
@@ -70,6 +92,8 @@ export class TasksServer {
   requests = 0;
   /** How many requests were answered 304 Not Modified */
   notModified = 0;
+  /** The queries api/search was asked, in order */
+  searches: string[] = [];
 
   constructor(private page: Page) {}
 
@@ -143,12 +167,42 @@ export class TasksServer {
         ? route.fulfill({ status: 404, body: 'not found' })
         : route.fulfill({ status: 200, contentType: 'application/json', body: this.worktreesBody }),
     );
+    await this.page.route(SEARCH, (route) => {
+      const q = new URL(route.request().url()).searchParams.get('q') ?? '';
+      this.searches.push(q);
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(this.search(q)) });
+    });
     await this.page.route(LOGO, (route) => {
       const svg = this.logos.get(decodeURIComponent(LOGO.exec(route.request().url())![1]));
       return svg
         ? route.fulfill({ status: 200, contentType: 'image/svg+xml', body: svg })
         : route.fulfill({ status: 404, contentType: 'application/json', body: '{"error": "no logo"}' });
     });
+  }
+
+  /** api/search's answer (docs/multi-project-api.md 2.4): per project, the IDs of the tasks in which every word of
+   * `q` appears in the ID, name, description, type, labels or notes, or the project's name */
+  private search(q: string): Record<string, string[]> {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return {};
+    const projects = [
+      { id: this.projectId, name: String(this.meta.project ?? this.projectId), body: this.body ?? '{"tasks":[]}' },
+      ...[...this.others].map(([id, p]) => ({ id, name: p.name, body: p.body })),
+    ];
+    const found: Record<string, string[]> = {};
+    for (const p of projects) {
+      const ids = (JSON.parse(p.body) as TasksData).tasks
+        .filter((t) => {
+          const notes = Array.isArray(t.notes) ? t.notes.map((n) => (n as { text?: string }).text) : [];
+          const text = [p.name, t.id, t.name, t.description, t.type, ...((t.labels as string[]) ?? []), ...notes]
+            .join(' ')
+            .toLowerCase();
+          return words.every((w) => text.includes(w));
+        })
+        .map((t) => String(t.id));
+      if (ids.length) found[p.id] = ids;
+    }
+    return found;
   }
 
   /** Give a project a logo, an SVG served at p/<id>/logo; null lists a logo that fails to load (a 404) */
@@ -220,7 +274,7 @@ export class TasksServer {
   }
 }
 
-type Fixtures = { tasksServer: TasksServer; externalRequestGuard: void };
+type Fixtures = { tasksServer: TasksServer; externalRequestGuard: void; cspGuard: void };
 
 export const test = base.extend<Fixtures>({
   tasksServer: async ({ page }, use) => {
@@ -239,6 +293,20 @@ export const test = base.extend<Fixtures>({
       });
       await use();
       expect(external, 'external requests').toEqual([]);
+    },
+    { auto: true },
+  ],
+
+  // The page runs under the Content-Security-Policy atm serve sends (serve.mjs sends the same, T-226): anything it
+  // blocks (an inline script, a style, an image, a request) fails the test, so the policy and the dashboard agree.
+  cspGuard: [
+    async ({ page }, use) => {
+      const violations: string[] = [];
+      page.on('console', (msg) => {
+        if (/Content Security Policy/i.test(msg.text())) violations.push(msg.text());
+      });
+      await use();
+      expect(violations, 'Content-Security-Policy violations').toEqual([]);
     },
     { auto: true },
   ],

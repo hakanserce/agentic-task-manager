@@ -11,17 +11,26 @@ on:
         type: boolean
         default: false
 
+# The token can read the repository and nothing else: a compromised dependency running in a job can't push, open
+# releases or change settings (docs/security-architecture.md I18)
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: dashboard
 
+# Actions and images are pinned by commit SHA and digest (I19); Dependabot (.github/dependabot.yml) proposes updates for
+# the actions and npm. The images are updated by hand: the Playwright image must match @playwright/test's version.
 jobs:
   check:
     name: Lint, unit tests, build freshness
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
@@ -46,21 +55,27 @@ jobs:
       fail-fast: false
       matrix:
         # Oldest supported version (what macOS's Command Line Tools ship), and a current one
-        python: ['3.9', '3.13']
+        include:
+          - python: '3.9'
+            image: python:3.9@sha256:da5aee29682d12a6649f51c8d6f15b87deb3e6c524b923c41d0cb3304d07c913
+          - python: '3.13'
+            image: python:3.13@sha256:23cf55275b5f3fa89ad0082e6507d3ba74e9a2aeb83e4fe740c24570a1385dd1
     # The official Python images (Debian, with git) rather than setup-python, which has no build of old versions for
     # newer Ubuntu runners
-    container: python:${{ matrix.python }}
+    container: ${{ matrix.image }}
     defaults:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - run: python3 --version && git --version
       # The plugin ships the committed build of atm-cli/; it must match the modules (CI never commits it for you)
       - name: Built atm-cli is up to date
         run: python3 atm-cli/build.py --check
       # The test runner is Node (node:test); the helper under test is Python
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - run: node tests/scripts/run.mjs
@@ -72,9 +87,11 @@ jobs:
     name: Playwright regression suite
     runs-on: ubuntu-latest
     # Pinned image = pinned fonts/rendering, so Linux screenshot baselines are reproducible
-    container: mcr.microsoft.com/playwright:v1.64.1-noble
+    container: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - run: npm ci
       - run: npm run build
       # Baselines are per platform. Any macOS baseline without a Linux counterpart (new, or deleted because the UI
@@ -94,11 +111,12 @@ jobs:
       - name: Generate screenshot baselines
         if: steps.baselines.outputs.generate == 'true'
         run: npx playwright test visual --update-snapshots=${{ steps.baselines.outputs.mode }}
-      - uses: actions/upload-artifact@v4
+      # Only the Linux baselines: whoever downloads it extracts nothing else (docs/security-review.md F16)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: steps.baselines.outputs.generate == 'true'
         with:
           name: linux-screenshot-baselines
-          path: dashboard/tests/e2e/__screenshots__/
+          path: dashboard/tests/e2e/__screenshots__/**/*-linux.png
       - name: Baselines must be committed
         if: steps.baselines.outputs.generate == 'true'
         run: |
@@ -110,7 +128,7 @@ jobs:
       - name: Benchmark the dashboard
         if: steps.baselines.outputs.generate == 'false'
         run: npm run bench -- --dashboard --check
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: ${{ failure() }}
         with:
           name: playwright-report

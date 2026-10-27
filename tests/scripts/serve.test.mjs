@@ -19,6 +19,7 @@ import {
   runAtm,
   tempDir,
 } from './helpers.mjs';
+import { pageCsp } from '../../dashboard/tests/e2e/csp.mjs';
 
 const TASKS = { meta: { id: 'abcd1234', project: 'Serve' }, tasks: [] };
 // A different range per run: ports of the previous run can still be in TIME_WAIT, and the server deliberately doesn't
@@ -173,6 +174,7 @@ describe('serve', () => {
         task('T-8', 3, 'blocked', { waiting_on: 'agent', questions: ['?'] }),
       ],
     });
+    const card = (id, phase) => ({ id, name: id, type: 'feature', phase, priority: 'P2', labels: [] });
     const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
     const gone = project({ meta: { id: 'ffff6666', project: 'Gone' }, tasks: [] });
     const port = ports();
@@ -206,6 +208,23 @@ describe('serve', () => {
       description: null,
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+      // The All projects board (T-257): nothing ready in phase 2 (the first unfinished); T-5 waits for a review; T-6
+      // blocked on the user before T-8 on an agent; T-1 the only one finished in the last 24 hours
+      board: {
+        todo: { count: 0, cards: [] },
+        active: { count: 0, cards: [] },
+        review: { count: 1, cards: [{ ...card('T-5', 2), since: '2026-03-15T09:00:00Z' }] },
+        blocked: {
+          count: 2,
+          cards: [
+            { ...card('T-6', 2), since: '2026-03-15T11:00:00Z', waiting_on: 'user', questions: 1 },
+            { ...card('T-8', 3), since: null, waiting_on: 'agent', questions: 1 },
+          ],
+        },
+        done: { count: 1, cards: [{ ...card('T-1', 1), completed_at: '2026-03-15T10:00:00Z' }] },
+      },
+      // The card's line (T-255): no creation times, no work recorded
+      stats: { started: null, tasks: 8, agent_minutes: 0 },
     });
     assert.deepEqual(
       [
@@ -261,6 +280,133 @@ describe('serve', () => {
     assert.equal(summary.next[0].name.length, 80);
     assert.ok(summary.next[0].name.endsWith('…'));
     assert.deepEqual(summary.last_done, { id: 'T-6', name: 'T-6', completed_at: '2026-03-02T10:00:00Z' });
+    atm(['serve', 'stop'], root);
+  });
+
+  test("stats: started, tasks and agent time, archived tasks included; a symlinked archive isn't read (T-255)", async () => {
+    const atmHome = home();
+    const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
+    const atm = (args, cwd) => runAtm(args, cwd, env);
+    const task = (id, status, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status, ...extra });
+    const tasks = [
+      // claude:x on two tasks at once, 10:00–11:00 (until the review request) and 10:30–11:30: 90 minutes
+      task('A', 'done', {
+        created_at: '2026-03-01T09:00:00Z',
+        started_by: 'claude:x',
+        started_at: '2026-03-10T10:00:00Z',
+        review_requested_at: '2026-03-10T11:00:00Z',
+        completed_at: '2026-03-10T12:00:00Z',
+      }),
+      task('B', 'done', {
+        started_by: 'claude:x',
+        started_at: '2026-03-10T10:30:00Z',
+        completed_at: '2026-03-10T11:30:00Z',
+      }),
+      // A person's work isn't agent time
+      task('C', 'done', {
+        started_by: 'Hakan',
+        started_at: '2026-03-10T08:00:00Z',
+        completed_at: '2026-03-10T09:00:00Z',
+      }),
+      // Nobody recorded (before v4), still at work: 11:00 until now, 60 minutes
+      task('D', 'in_progress', { started_at: '2026-03-15T11:00:00Z' }),
+    ];
+    const archive = {
+      meta: {},
+      tasks: [
+        // 30 minutes, and the project's first task
+        task('E', 'done', {
+          created_at: '2026-02-20T08:00:00Z',
+          started_by: 'claude:y',
+          started_at: '2026-02-20T10:00:00Z',
+          completed_at: '2026-02-20T10:30:00Z',
+        }),
+        // Also in tasks.json: counted once, from there
+        task('A', 'done', {
+          started_by: 'claude:z',
+          started_at: '2026-01-01T00:00:00Z',
+          completed_at: '2026-01-02T00:00:00Z',
+        }),
+      ],
+    };
+    const root = project(
+      { meta: { id: 'abcd1234', project: 'Stats' }, tasks },
+      { '.agentic-task-manager/tasks-archive.json': archive },
+    );
+    const linked = project({ meta: { id: 'eeee5555', project: 'Linked' }, tasks: [task('L', 'todo')] });
+    assert.equal(atm(['projects', 'add'], linked).code, 0);
+    const elsewhere = path.join(atmHome, 'archive.json');
+    fs.writeFileSync(elsewhere, JSON.stringify(archive));
+    fs.symlinkSync(elsewhere, path.join(linked, '.agentic-task-manager/tasks-archive.json'));
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const stats = (id) => api.projects.find((p) => p.id === id).summary.stats;
+    assert.deepEqual(stats('abcd1234'), { started: '2026-02-20T08:00:00Z', tasks: 5, agent_minutes: 180 });
+    // A task folder with a linked file is refused whole: listed without a summary, nothing read through the link
+    assert.equal(api.projects.find((p) => p.id === 'eeee5555').summary, null);
+    atm(['serve', 'stop'], root);
+  });
+
+  test('board: ready tasks of the first open phase (10 at most), the longest running first, 30 done today at most (T-257)', async () => {
+    const atmHome = home();
+    const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
+    const atm = (args, cwd) => runAtm(args, cwd, env);
+    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const ready = Array.from({ length: 12 }, (_, i) => task(`T-${String(i + 1).padStart(2, '0')}`, 0, 'todo'));
+    const done = Array.from({ length: 31 }, (_, i) =>
+      task(`D-${String(i + 1).padStart(2, '0')}`, 0, 'done', {
+        completed_at: `2026-03-15T${String(Math.floor(i / 3)).padStart(2, '0')}:${String((i % 3) * 10).padStart(2, '0')}:00Z`,
+      }),
+    );
+    const root = project({
+      meta: { id: 'bbbb2222', project: 'Board' },
+      tasks: [
+        ...ready,
+        // Phase 1 is not the first unfinished phase: not on the board
+        task('T-20', 1, 'todo'),
+        task('A', 0, 'in_progress', { started_by: 'claude:x', started_at: '2026-03-15T10:00:00Z' }),
+        task('B', 0, 'in_progress', { started_by: 'claude:y', started_at: '2026-03-15T09:00:00Z', labels: ['ux'] }),
+        // Finished yesterday morning: more than 24 hours ago
+        task('OLD', 0, 'done', { completed_at: '2026-03-14T11:00:00Z' }),
+        ...done,
+      ],
+    });
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const { board } = api.projects.find((p) => p.id === 'bbbb2222').summary;
+    assert.equal(board.todo.count, 12);
+    assert.deepEqual(
+      board.todo.cards.map((c) => c.id),
+      ['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'T-06', 'T-07', 'T-08', 'T-09', 'T-10'],
+    );
+    assert.deepEqual(board.active.cards, [
+      {
+        id: 'B',
+        name: 'B',
+        type: 'feature',
+        phase: 0,
+        priority: 'P2',
+        labels: ['ux'],
+        by: 'claude:y',
+        since: '2026-03-15T09:00:00Z',
+      },
+      {
+        id: 'A',
+        name: 'A',
+        type: 'feature',
+        phase: 0,
+        priority: 'P2',
+        labels: [],
+        by: 'claude:x',
+        since: '2026-03-15T10:00:00Z',
+      },
+    ]);
+    assert.equal(board.done.count, 31);
+    assert.equal(board.done.cards.length, 30);
+    assert.equal(board.done.cards[0].id, 'D-31');
+    assert.ok(!board.done.cards.some((c) => c.id === 'OLD'));
     atm(['serve', 'stop'], root);
   });
 
@@ -529,6 +675,122 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
+  test('security headers: the page has the CSP the e2e suite runs under; every response is nosniff, same-origin (T-226)', async () => {
+    const atm = atmIn(home());
+    const root = project(TASKS);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const page = await fetch(`http://localhost:${port}/`);
+    const body = Buffer.from(await page.arrayBuffer());
+    assert.equal(page.headers.get('content-security-policy'), pageCsp(body));
+    assert.match(page.headers.get('content-security-policy'), /script-src 'sha256-[^']+' 'sha256-[^']+';/);
+    for (const p of ['/', '/api/projects', '/p/abcd1234/tasks.json', '/nope']) {
+      const r = await fetch(`http://localhost:${port}${p}`);
+      assert.equal(r.headers.get('x-content-type-options'), 'nosniff', p);
+      assert.equal(r.headers.get('cross-origin-resource-policy'), 'same-origin', p);
+    }
+    atm(['serve', 'stop'], root);
+  });
+
+  test('[::1] on the port is the server too, so nobody else can answer for localhost; a taken [::1] moves it on (T-227, F10)', async () => {
+    const atm = atmIn(home());
+    const root = project(TASKS);
+    const port = ports();
+    // Another process already listens on [::1]:port (skipped where IPv6 is missing)
+    const squatter = net.createServer();
+    const v6 = await new Promise((resolve) => {
+      squatter.once('error', () => resolve(false));
+      squatter.listen(port, '::1', () => resolve(true));
+    });
+    try {
+      assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+      const status = JSON.parse(atm(['serve', 'status', '--json'], root).stdout);
+      if (v6) assert.notEqual(status.port, port, 'moved past the taken [::1] port');
+      if (v6) {
+        // [::1] on the server's own port answers as atm, and can't be taken by anyone else
+        const res = await new Promise((resolve, reject) => {
+          const req = http.request(
+            { host: '::1', port: status.port, path: '/__atm/whoami', headers: { Host: `localhost:${status.port}` } },
+            (r2) => {
+              let body = '';
+              r2.on('data', (c) => (body += c));
+              r2.on('end', () => resolve({ status: r2.statusCode, body }));
+            },
+          );
+          req.on('error', reject);
+          req.end();
+        });
+        assert.equal(res.status, 200);
+        assert.equal(JSON.parse(res.body).atm, true);
+        const second = net.createServer();
+        const taken = await new Promise((resolve) => {
+          second.once('error', (e) => resolve(e.code));
+          second.listen(status.port, '::1', () => resolve('listening'));
+        });
+        second.close();
+        assert.equal(taken, 'EADDRINUSE');
+      }
+      atm(['serve', 'stop'], root);
+    } finally {
+      squatter.close();
+    }
+  });
+
+  test('one project with unreadable (deeply nested) JSON is listed as missing; the others are fine (T-227, F18)', async () => {
+    const atm = atmIn(home());
+    const good = project(TASKS);
+    const bad = project({ meta: { id: 'bad00000', project: 'Bad' }, tasks: [] });
+    const port = ports();
+    assert.equal(atm(['projects', 'add'], bad).code, 0);
+    fs.writeFileSync(path.join(bad, '.agentic-task-manager/tasks.json'), '['.repeat(100000) + ']'.repeat(100000));
+    assert.equal(atm(['serve', '--port', String(port)], good).code, 0);
+    const r = await fetch(`http://localhost:${port}/api/projects`);
+    assert.equal(r.status, 200);
+    const projects = Object.fromEntries((await r.json()).projects.map((p) => [p.id, p]));
+    assert.equal(projects.abcd1234.missing, false);
+    assert.equal(projects.bad00000.missing, true);
+    atm(['serve', 'stop'], good);
+  });
+
+  test('two projects with the same meta.id both stay reachable; ATM_HOME is private (T-227, F18)', async () => {
+    const atmHome = path.join(tempDir('atm-parent-'), 'home');
+    const atm = atmIn(atmHome);
+    const first = project(TASKS);
+    const second = project({
+      meta: { id: 'abcd1234', project: 'Copy' },
+      tasks: [{ id: 'T-1', name: 'x', phase: 0, type: 'feature', status: 'todo' }],
+    });
+    assert.equal(atm(['projects', 'add'], first).code, 0);
+    assert.equal(atm(['projects', 'add'], second).code, 0);
+    assert.equal(fs.statSync(atmHome).mode & 0o777, 0o700);
+    const listed = JSON.parse(atm(['projects', '--json'], first).stdout);
+    const ids = listed.projects.map((p) => p.id);
+    assert.equal(new Set(ids).size, 2, ids.join(', '));
+    assert.ok(ids.includes('abcd1234'));
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], first).code, 0);
+    for (const id of ids) assert.equal((await fetch(`http://localhost:${port}/p/${id}/tasks.json`)).status, 200, id);
+    atm(['serve', 'stop'], first);
+    removeDir(path.dirname(atmHome));
+  });
+
+  test('a task file that is a symlink is never served, wherever it points (T-224, F8)', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const root = project(TASKS);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    // Linked after the server started (atm itself refuses such a folder): an archive pointing at a private file
+    const secret = path.join(atmHome, 'id_rsa.json');
+    fs.writeFileSync(secret, '{"tasks": [], "secret": "PRIVATE KEY"}');
+    fs.symlinkSync(secret, path.join(root, '.agentic-task-manager/tasks-archive.json'));
+    const r = await fetch(`http://localhost:${port}/p/abcd1234/tasks-archive.json`);
+    assert.equal(r.status, 404);
+    assert.doesNotMatch(await r.text(), /PRIVATE KEY/);
+    assert.equal((await fetch(`http://localhost:${port}/p/abcd1234/tasks.json`)).status, 200);
+    atm(['serve', 'stop'], root);
+  });
+
   test('a request for another Host is refused (DNS rebinding)', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);
@@ -541,6 +803,52 @@ describe('serve', () => {
     assert.deepEqual(JSON.parse(refused.body), { error: 'unexpected Host header' });
     assert.equal((await rawGet(port, '/', `localhost:${port + 1}`)).status, 403);
     atm(['serve', 'stop'], root);
+  });
+
+  test('api/search: every word, in any field or the project name, case-insensitive, read-only, capped (T-258)', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id, extra = {}) => ({ id, name: `Task ${id}`, phase: 0, type: 'feature', status: 'todo', ...extra });
+    const shop = project({
+      meta: { id: 'aaaa1111', project: 'Shop' },
+      tasks: [
+        task('T-1', { name: 'Checkout page' }),
+        task('T-2', { description: 'Pay with a CARD' }),
+        task('T-3', { type: 'bugfix', labels: ['payments'] }),
+        task('T-4', { notes: [{ at: '2026-01-01T00:00:00Z', kind: 'note', text: 'Ask about refunds' }] }),
+      ],
+    });
+    const blog = project({
+      meta: { id: 'bbbb2222', project: 'Blog' },
+      tasks: Array.from({ length: 205 }, (_, i) => task(`B-${i + 1}`, { name: 'Write a post' })),
+    });
+    for (const p of [shop, blog]) assert.equal(atm(['projects', 'add'], p).code, 0);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], shop).code, 0);
+    const search = async (q, extra = '') =>
+      (await fetch(`http://localhost:${port}/api/search?q=${encodeURIComponent(q)}${extra}`)).json();
+
+    assert.deepEqual(await search('checkout'), { aaaa1111: ['T-1'] });
+    assert.deepEqual(await search('card'), { aaaa1111: ['T-2'] });
+    assert.deepEqual(await search('BUGFIX payments'), { aaaa1111: ['T-3'] });
+    assert.deepEqual(await search('refunds'), { aaaa1111: ['T-4'] });
+    assert.deepEqual(await search('t-1'), { aaaa1111: ['T-1'] });
+    // Every word must appear; the project's name counts for all its tasks
+    assert.deepEqual(await search('checkout refunds'), {});
+    assert.deepEqual(await search('shop card'), { aaaa1111: ['T-2'] });
+    assert.deepEqual((await search('shop')).aaaa1111, ['T-1', 'T-2', 'T-3', 'T-4']);
+    // At most 200 per project; an empty query finds nothing; other parameters are ignored
+    assert.equal((await search('post')).bbbb2222.length, 200);
+    assert.deepEqual(await search('  '), {});
+    assert.deepEqual(await search('checkout', '&x=1&project=bbbb2222'), { aaaa1111: ['T-1'] });
+    // Only the first 200 characters of the query count
+    assert.deepEqual(await search('checkout' + ' '.repeat(192) + 'nothing-like-this'), { aaaa1111: ['T-1'] });
+
+    // The same checks as every route: another Host is refused, and nothing but GET and HEAD
+    const refused = await rawGet(port, '/api/search?q=checkout', `evil.example:${port}`);
+    assert.equal(refused.status, 403);
+    assert.equal((await fetch(`http://localhost:${port}/api/search?q=x`, { method: 'POST' })).status, 405);
+    atm(['serve', 'stop'], shop);
   });
 
   test('a busy port moves the server to the next free one', async () => {

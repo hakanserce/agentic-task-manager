@@ -10,6 +10,8 @@ export const GAP_CAP_MINUTES = 30;
 export const HISTORY = 10;
 /** Below this many timed completions there is no estimate. */
 export const MIN_HISTORY = 3;
+/** The label of tasks done together with the user: not part of the agents' pace */
+export const INTERACTIVE_LABEL = 'interactive';
 
 const MINUTE = 60_000;
 
@@ -123,7 +125,10 @@ export function forecastPhases(
   history: Task[] = tasks,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
 ): Forecast {
-  const p = pace(taskDurations(history, vocab));
+  // Tasks done together with the user (labelled interactive) include the time spent waiting on them: they would slow
+  // the pace agents keep when they work alone (docs/progress-tab-review.md §1.4, T-240)
+  const interactive = new Set(history.filter((t) => t.labels?.includes(INTERACTIVE_LABEL)).map((t) => t.id));
+  const p = pace(taskDurations(history, vocab).filter((d) => !interactive.has(d.id)));
   const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
   const kind = (t: Task) => kindOf(vocab, t.status);
   let cumulative = 0;
@@ -169,6 +174,37 @@ export function forecastPhases(
         };
       }
       return result;
+    }),
+  };
+}
+
+/** Phase numbers as ranges: [0, 1, 2, 4, 6, 7] → "0–2, 4, 6–7" (the folded row of finished phases, T-241) */
+export function phaseRanges(phases: number[]): string {
+  const sorted = [...new Set(phases)].sort((a, b) => a - b);
+  const ranges: string[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
+    ranges.push(j > i ? `${sorted[i]}–${sorted[j]}` : `${sorted[i]}`);
+    i = j;
+  }
+  return ranges.join(', ');
+}
+
+/**
+ * A filtered slice's phases with the whole project's estimates (T-239): the loop works through whole phases, so when
+ * a phase finishes doesn't depend on the filter. The slice keeps its own counts and state; a phase the slice has
+ * finished keeps no estimate.
+ */
+export function withWholePhaseEstimates(slice: Forecast, whole: Forecast): Forecast {
+  const estimates = new Map(whole.phases.map((p) => [p.phase, p.estimate]));
+  return {
+    pace: whole.pace,
+    phases: slice.phases.map((p) => {
+      const estimate = p.state === 'done' ? undefined : estimates.get(p.phase);
+      const rest = { ...p };
+      delete rest.estimate;
+      return estimate ? { ...rest, estimate } : rest;
     }),
   };
 }

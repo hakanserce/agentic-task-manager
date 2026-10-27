@@ -4,7 +4,9 @@ import {
   forecastPhases,
   pace,
   percentile,
+  phaseRanges,
   taskDurations,
+  withWholePhaseEstimates,
   type PhaseForecast,
 } from '../../src/lib/forecast';
 import type { Task } from '../../src/lib/types';
@@ -122,6 +124,39 @@ describe('forecastPhases', () => {
     const withHistory = forecastPhases(phase2, NOW, tasks);
     expect(withHistory.pace?.likely).toBe(8.5);
     expect(withHistory.phases[0].estimate!.minutes.likely).toBe(5 * 8.5);
+  });
+
+  it('leaves tasks labelled interactive out of the pace: they include waiting on the user (T-240)', () => {
+    const base = forecastPhases(tasks, NOW).pace!;
+    // The slowest timed task, done with the user: without it, the pace may only get faster
+    const slowest = taskDurations(tasks).reduce((a, b) => (b.minutes > a.minutes ? b : a));
+    const labelled = tasks.map((x) => (x.id === slowest.id ? { ...x, labels: ['interactive'] } : x));
+    const withInteractive = forecastPhases(labelled, NOW).pace!;
+    expect(withInteractive.basedOn).toBe(base.basedOn - 1);
+    expect(withInteractive.likely).toBeLessThanOrEqual(base.likely);
+  });
+
+  it("a slice keeps its own counts, but each phase's finish is the whole phase's (T-239)", () => {
+    const whole = forecastPhases(tasks, NOW);
+    // One task of phase 2: alone it would be estimated as 1 task after phase 1's, not phase 2's five
+    const slice = forecastPhases(
+      tasks.filter((x) => x.phase !== 2 || x.id === tasks.find((y) => y.phase === 2 && y.status === 'todo')!.id),
+      NOW,
+      tasks,
+    );
+    const merged = withWholePhaseEstimates(slice, whole);
+    expect(merged.phases.map((p) => [p.phase, p.total])).toEqual(slice.phases.map((p) => [p.phase, p.total]));
+    expect(merged.phases[2].estimate).toEqual(whole.phases[2].estimate);
+    expect(slice.phases[2].estimate).not.toEqual(whole.phases[2].estimate);
+    expect(merged.phases[0].estimate).toBeUndefined(); // finished
+  });
+});
+
+describe('phaseRanges (T-241)', () => {
+  it('joins consecutive phases into ranges', () => {
+    expect(phaseRanges([4, 0, 1, 2, 6, 7])).toBe('0–2, 4, 6–7');
+    expect(phaseRanges([3])).toBe('3');
+    expect(phaseRanges([])).toBe('');
   });
 });
 

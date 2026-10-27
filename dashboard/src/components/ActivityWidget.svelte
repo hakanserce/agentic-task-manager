@@ -3,16 +3,20 @@
     ACTIVITY_PRESET_LABELS,
     ACTIVITY_PRESETS,
     activitySeries,
+    ongoing,
     periodPhrase,
     PRESET_BUCKET_MS,
     rangeLabel,
     rangeWindow,
+    sparklineTitle,
     STEPPED_PRESETS,
     type ActivityPreset,
   } from '../lib/insights';
   import { dashboard } from '../lib/state.svelte';
+  import { timeUse } from '../lib/timeuse';
   import ActivityDeepDive from './ActivityDeepDive.svelte';
   import Icon from './Icon.svelte';
+  import InfoTip from './InfoTip.svelte';
 
   // Compact: completions per period (bars) with their rolling average (line, same scale). Click: the deep dive.
   // Archived completions count too once the archive is loaded (dashboard.history)
@@ -29,6 +33,14 @@
       : activitySeries(dashboard.history, period, dashboard.loadedAt, dashboard.vocab, PRESET_BUCKET_MS[range.preset]),
   );
   const phrase = $derived(periodPhrase(range, dashboard.loadedAt));
+  // Where the time went in the period (timeuse.ts, shared with the Progress tab), and who works now: from the live
+  // claims, only for a period that runs up to now (T-246)
+  const use = $derived(open ? timeUse(dashboard.history, period, dashboard.loadedAt, dashboard.vocab) : null);
+  const workingNow = $derived(
+    !period || period.end >= dashboard.loadedAt
+      ? new Set([...dashboard.claims.values()].map((c) => c.agent)).size
+      : null,
+  );
 
   // A period reaching back before tasks.json's oldest completion needs the archive (D-5.2)
   const oldest = $derived(
@@ -91,7 +103,7 @@
       class="widget-card activity-card"
       id="activity-card"
       aria-expanded={open}
-      title="Activity: {series.totalCompleted} tasks completed, per {series.unitLabel} · click for details"
+      title={sparklineTitle(series, dashboard.loadedAt)}
       aria-label="Activity: {series.totalCompleted} tasks completed"
       onclick={() => (open = !open)}
     >
@@ -99,7 +111,9 @@
         <svg class="sparkline" width={W} height={H} viewBox="0 0 {W} {H}" aria-hidden="true">
           {#each series.buckets as b, i (b.start)}
             {#if b.completed.length}
+              <!-- The current period, not over yet, lighter: it would otherwise look like a drop -->
               <rect
+                class:ongoing={ongoing(b, dashboard.loadedAt)}
                 x={i * step + 1}
                 y={y(b.completed.length)}
                 width={Math.max(1, step - 2)}
@@ -117,7 +131,27 @@
     {#if open}
       <div class="insights-panel wide" id="activity-panel" role="dialog" aria-label="Activity details">
         <div class="panel-heading activity-heading">
-          <span>Activity <span>per {detail?.unitLabel ?? series.unitLabel}</span></span>
+          <span
+            >Activity <span>per {detail?.unitLabel ?? series.unitLabel}</span>
+            <InfoTip label="activity">
+              <p>
+                The whole project, archived tasks included: the search and filters don't apply here. All times are for
+                the chosen period.
+              </p>
+              <p>
+                <strong>Agents working</strong>: at least one agent at work on a task, from its start until it asked for
+                a review or was done. <strong>Agent time</strong> adds up agents working in parallel.
+              </p>
+              <p>
+                <strong>Waiting on you</strong>: nobody working while a task waited for your review or answer.
+                <strong>Idle</strong>: nobody working and nothing waiting, for 10 minutes or more, nights included.
+              </p>
+              <p>
+                <strong>Time per task</strong>: from a task's start until it asked for a review, or was done; tasks
+                labelled <code>interactive</code> are counted apart, as <em>with you</em>.
+              </p>
+            </InfoTip></span
+          >
           <span class="activity-period">
             {#if stepped}
               <button
@@ -174,7 +208,7 @@
           </div>
         {/if}
         {#if detail}
-          <ActivityDeepDive series={detail} period={phrase} />
+          <ActivityDeepDive series={detail} period={phrase} {use} {workingNow} />
         {/if}
       </div>
     {/if}

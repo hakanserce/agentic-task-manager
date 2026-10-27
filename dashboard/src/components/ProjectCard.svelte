@@ -2,9 +2,10 @@
   // One project on the overview (docs/multi-project-dashboard-proposal.md 3.5), from its server summary
   import { formatAgo } from '../lib/claims';
   import type { ProjectEntry } from '../lib/load';
-  import { needsYou } from '../lib/projects';
+  import { needsYou, statsLine } from '../lib/projects';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor } from '../lib/theme';
+  import { safeUrl } from '../lib/url';
   import Icon from './Icon.svelte';
   import NeedsYouMenu from './NeedsYouMenu.svelte';
   import ProjectLogo from './ProjectLogo.svelte';
@@ -36,6 +37,8 @@
   const moreWork = $derived(Math.max(0, working.length - 2));
   // The git line and the task finished last (T-208; absent from servers before 0.18)
   const git = $derived(s?.git);
+  // Only an http(s) address becomes a link (T-225)
+  const prUrl = $derived(safeUrl(git?.pr?.url));
   const lastDone = $derived(s?.last_done);
 
   // Completions per day over the last 14 days: thin bars, like the Activity widget (narrow, so the last finished
@@ -134,6 +137,11 @@
       </p>
     {/if}
 
+    {#if s.stats}
+      <!-- One line of stats (T-255), archived tasks included; the Project tab has the rest -->
+      <p class="project-card-stats">{statsLine(s.stats, dashboard.loadedAt)}</p>
+    {/if}
+
     {#if byName}
       <ul
         class="project-card-work"
@@ -165,10 +173,10 @@
         {#if git.branch}<span class="project-card-branch" title="Branch {git.branch}">{git.branch}</span>{/if}
         {#if git.pr}
           {#if git.branch}<span class="muted">·</span>{/if}
-          {#if git.pr.url}
+          {#if prUrl}
             <a
               class="project-card-pr"
-              href={git.pr.url}
+              href={prUrl}
               target="_blank"
               rel="noopener noreferrer"
               title="Pull request #{git.pr.number}, {git.pr.state}">PR #{git.pr.number}</a

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "workflow set refuses a base branch with shell characters (T-222, F5)",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["workflow", "set", "pull-request", "--base", "main$(touch x)"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["meta.workflow.base must be a branch name"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } }
+    }
+  },
+  {
+    "name": "workflow set refuses a base branch starting with -",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["workflow", "set", "direct", "--base=--upload-pack=x"],
+    "expect": { "exit": 1, "stderrIncludes": ["meta.workflow.base must be a branch name"] }
+  },
+  {
+    "name": "workflow reports a pulled base branch with shell characters",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "workflow": { "type": "pull-request", "base": "main;curl x|sh" } },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["workflow", "--json"],
+    "expect": { "exit": 1, "stderrIncludes": ["meta.workflow.base must be a branch name"] }
+  },
+  {
+    "name": "a branch name with slashes, dots and dashes is fine",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["workflow", "set", "pull-request", "--base", "release/v1.2-rc_1"],
+    "expect": { "stdoutIncludes": ["release/v1.2-rc_1"] }
+  },
+  {
+    "name": "pr refuses a URL that isn't http(s), and nothing changes (T-225, F9)",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } } },
+    "args": ["pr", "T-001", "--number", "7", "--url", "javascript:alert(1)"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["--url must be an http:// or https:// address"],
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "done" }] } }
+    }
+  },
+  {
+    "name": "a task ID with shell characters stops every command, and atm check names it (T-222, F5)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1;curl x|sh", "name": "x", "phase": 0, "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["status"],
+    "expect": { "exit": 1, "stderrIncludes": ["has characters atm doesn't allow"] }
+  },
+  {
+    "name": "atm check lists task IDs with shell characters",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "fine", "phase": 0, "type": "feature", "status": "todo" },
+            { "id": "T-2$(x)", "name": "x", "phase": 0, "type": "feature", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["check", "--json"],
+    "expect": {
+      "exit": 1,
+      "json": {
+        "errors": ["'T-2$(x)': an ID is letters, digits, '.', '_' and '-', at most 64, not starting with '-'"],
+        "warnings": []
+      }
+    }
+  }
+]

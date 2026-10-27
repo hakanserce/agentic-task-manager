@@ -44,8 +44,8 @@ describe('reading and writing', () => {
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
       listSort: 'priority',
       progressPhase: 2,
-      progressActive: { only: true },
       filterFinishedPhases: true,
+      progressRange: '14d',
       graphFiltered: 'dim',
       graph: { k: 1.5, x: -120, y: 40 },
       agents: { start: 1000, end: 61_000, followEnd: true },
@@ -56,17 +56,16 @@ describe('reading and writing', () => {
     expect(readView(key)).toEqual(view);
   });
 
-  it('"Active phases only" is on by default and when malformed; a saved choice is kept; `days` is ignored', () => {
-    expect(defaultView().progressActive).toEqual({ only: true });
-    localStorage.setItem(key, JSON.stringify({ progressActive: { only: 'yes', days: 0 } }));
-    expect(readView(key).progressActive).toEqual({ only: true });
-    localStorage.setItem(key, JSON.stringify({ progressActive: { only: false, days: 14 } }));
-    expect(readView(key).progressActive).toEqual({ only: false });
+  it('an old view\'s "Active phases only" is dropped quietly; the burndown range defaults to the phase (T-240, T-243)', () => {
+    localStorage.setItem(key, JSON.stringify({ progressActive: { only: false }, progressRange: 'decade' }));
+    const view = readView(key);
+    expect(view).not.toHaveProperty('progressActive');
+    expect(view.progressRange).toBe('phase');
   });
 
   it('projects are kept apart', () => {
     writeView(key, { ...defaultView(), tab: 'progress' });
-    expect(readView(projectKey({ id: 'p2' })).tab).toBe('graph');
+    expect(readView(projectKey({ id: 'p2' })).tab).toBe('kanban');
   });
 
   it('nothing stored, or junk, gives the defaults', () => {
@@ -98,10 +97,10 @@ describe('reading and writing', () => {
   });
 
   it('clearView forgets the project', () => {
-    writeView(key, { ...defaultView(), tab: 'kanban' });
+    writeView(key, { ...defaultView(), tab: 'graph' });
     clearView(key);
     expect(localStorage.getItem(key)).toBeNull();
-    expect(readView(key).tab).toBe('graph');
+    expect(readView(key).tab).toBe('kanban');
   });
 
   it('the old per-browser "group by phase" choice seeds projects that have no saved view yet', () => {

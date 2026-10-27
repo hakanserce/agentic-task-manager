@@ -17,6 +17,12 @@ export interface Prefs {
   theme: string;
   /** The overview shows only active projects (lib/projects.ts) */
   overviewActiveOnly: boolean;
+  /** The overview's tab: 'projects' or 'board' (lib/routes.ts) */
+  overviewTab: string;
+  /** The All projects board shows a lane per project (lib/allboard.ts) */
+  boardGroupByProject: boolean;
+  /** The All projects board's search (T-261) */
+  boardQuery: string;
 }
 
 function storage(): Storage | null {

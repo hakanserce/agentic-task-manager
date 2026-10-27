@@ -7,7 +7,9 @@ with nothing to install.
 """
 
 import argparse
+import base64
 import contextlib
+import errno
 import hashlib
 import json
 import os
@@ -17,9 +19,10 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 
 # ==== core.py ====
@@ -147,10 +150,12 @@ def write_json_atomic(p, value):
 
 
 def read_json(p):
+    """The file's JSON, or None when it can't be read or parsed. Deeply nested JSON (a hostile file) raises
+    RecursionError in the parser; that is unreadable too, not a crash (docs/security-review.md F12, F18)."""
     try:
         with open(p, encoding="utf-8") as f:
             return json.load(f)
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError):
         return None
 
 
@@ -195,6 +200,24 @@ def whoami(port):
 # Where a project's task files are: the project root, the task folder, legacy locations.
 
 LEGACY_DIRS = ["docs", "."]
+# The files atm reads and writes in the task folder; a repository can commit any of them as a symlink
+FOLDER_FILES = (TASKS_FILE, "tasks-archive.json", ".gitignore", ".gitattributes")
+
+
+def check_task_folder(root, task_dir):
+    """Refuse a task folder atm would read or write outside the project through (docs/security-review.md F7): a
+    cloned repository can commit `.agentic-task-manager` or its files as symlinks to anything the user can write,
+    such as ~/.zshrc."""
+    if os.path.islink(task_dir):
+        raise AtmError(f"{task_dir} is a symlink; atm works only on a real folder inside the project")
+    if not os.path.isdir(task_dir):
+        return
+    real_root = os.path.realpath(root)
+    if os.path.commonpath([os.path.realpath(task_dir), real_root]) != real_root:
+        raise AtmError(f"{task_dir} leads outside the project ({os.path.realpath(task_dir)})")
+    for name in FOLDER_FILES:
+        if os.path.islink(os.path.join(task_dir, name)):
+            raise AtmError(f"{os.path.join(task_dir, name)} is a symlink; atm reads and writes only regular files there")
 
 
 def project_root(cwd):
@@ -215,6 +238,7 @@ def project_root(cwd):
 def find_paths(cwd):
     root = project_root(cwd)
     task_dir = os.path.join(root, TASK_DIR)
+    check_task_folder(root, task_dir)
     legacy = None
     for d in LEGACY_DIRS:
         candidate = os.path.normpath(os.path.join(root, d, TASKS_FILE))
@@ -287,14 +311,22 @@ def lock_is_stale(lock, owner):
 
 
 def break_lock(lock, owner):
-    """Move a stale lock aside. Re-checks the owner first, so a lock that another waiter broke and re-took meanwhile
-    is left alone. Returns True if this process broke it."""
-    if lock_owner(lock) != owner:
-        return False
+    """Move a stale lock aside. Returns True if this process broke it.
+
+    Rename first, then check the owner inside the renamed directory (docs/security-review.md F13): checking first and
+    renaming after leaves a gap in which another waiter breaks the same stale lock and takes a fresh one, and this
+    process would then move the fresh lock aside, leaving two holders. If what was moved isn't the stale lock judged
+    here, it goes back."""
     aside = f"{lock}.stale.{os.getpid()}.{os.urandom(4).hex()}"
     try:
         os.rename(lock, aside)
     except OSError:
+        return False
+    if lock_owner(aside) != owner:
+        try:
+            os.rename(aside, lock)  # someone else's live lock: put it back
+        except OSError:
+            pass  # a newer lock is in place already; the moved one was broken by another waiter too
         return False
     shutil.rmtree(aside, ignore_errors=True)
     return True
@@ -363,6 +395,27 @@ SEEN_EVERY = 24 * 3600  # seconds between seen_at updates, so the registry isn't
 def atm_home():
     """The user's atm folder: ATM_HOME, else ~/.agentic-task-manager."""
     return os.path.abspath(os.path.expanduser(os.environ.get("ATM_HOME") or "~/.agentic-task-manager"))
+
+
+def ensure_home(home):
+    """Create the atm folder readable by its owner only: it lists the user's projects and the server's pid and port
+    (docs/security-review.md F18). A folder that exists already keeps its permissions."""
+    os.makedirs(home, mode=0o700, exist_ok=True)
+
+
+# A project id is a key in URLs (#project=<id>, p/<id>/...): letters, digits, '.', '_' and '-'
+PROJECT_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
+def unique_id(registry, path, wanted):
+    """The id for the project at `path`: `wanted` unless another project already has it or it isn't a valid id; then
+    one made from the path, so two projects never shadow each other (F18)."""
+    taken = {e.get("id") for e in registry["projects"] if e.get("path") != path}
+    if PROJECT_ID.fullmatch(wanted) and wanted not in taken:
+        return wanted
+    suffix = hashlib.sha1(path.encode("utf-8")).hexdigest()[:7]
+    base = wanted if PROJECT_ID.fullmatch(wanted) and len(wanted) <= 56 else "p"
+    return f"{base}-{suffix}"
 
 
 def main_worktree(root):
@@ -468,9 +521,9 @@ def find_entry(registry, path):
     return next((e for e in registry["projects"] if e["path"] == path), None)
 
 
-def entry_for(path, meta, stamp):
+def entry_for(registry, path, meta, stamp):
     return {
-        "id": project_id(meta, path),
+        "id": unique_id(registry, path, project_id(meta, path)),
         "name": project_name(meta, path),
         "path": path,
         "added_at": stamp,
@@ -497,9 +550,9 @@ def update_entry(registry, path, meta):
         return "unlisted"
     stamp = now_iso()
     if entry is None:
-        registry["projects"].append(entry_for(path, meta, stamp))
+        registry["projects"].append(entry_for(registry, path, meta, stamp))
         return "added"
-    fresh = {"id": project_id(meta, path), "name": project_name(meta, path)}
+    fresh = {"id": unique_id(registry, path, project_id(meta, path)), "name": project_name(meta, path)}
     changed = any(entry.get(k) != v for k, v in fresh.items())
     if not (changed or seen_long_ago(entry)):
         return "unchanged"
@@ -519,6 +572,7 @@ def register(paths, wait=True):
     if meta is None:
         return None
     home = atm_home()
+    ensure_home(home)
     try:
         with locked(home, timeout=None if wait else 0):
             registry, _ = read_registry(home)
@@ -566,6 +620,7 @@ def damaged_notice(damaged):
 
 
 def projects_list(home, as_json):
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         if damaged:
@@ -586,6 +641,7 @@ def projects_add(home, target, as_json):
     path, meta = resolve_project(target)
     if not listed(meta):
         raise AtmError(f"{path} opts out of the dashboard (meta.dashboard.listed is false)")
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         result = update_entry(registry, path, meta)
@@ -605,6 +661,7 @@ def projects_remove(home, target, as_json):
     candidates = {target, os.path.abspath(os.path.expanduser(target))}
     if os.path.isdir(target):
         candidates.add(main_worktree(find_paths(os.path.abspath(target))["root"]))
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         entry = next((e for e in registry["projects"] if e.get("id") in candidates or e["path"] in candidates), None)
@@ -621,6 +678,7 @@ def projects_remove(home, target, as_json):
 
 
 def projects_prune(home, as_json):
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         gone = [e for e in registry["projects"] if is_missing(e)]
@@ -724,6 +782,31 @@ def _terms(meta, key, defaults, need_kind=False):
 
 WORKFLOW_DEFAULTS = {"verify": True, "max_rounds": 3, "commit_template": "feat({id}): {name}"}
 
+# Strings from tasks.json that agents put into shell commands (a base branch, task IDs) are kept to characters a
+# shell doesn't treat specially (docs/security-review.md F5): no `;`, `$`, quotes, spaces, or a leading `-`
+BRANCH_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}")
+TASK_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def valid_branch(value):
+    return isinstance(value, str) and bool(BRANCH_NAME.fullmatch(value)) and ".." not in value
+
+
+def valid_task_id(value):
+    return isinstance(value, str) and bool(TASK_ID.fullmatch(value))
+
+
+def split_id(task_id):
+    """(prefix, digits) of an ID that ends in a number ("T-001" -> ("T-", "001")), else None. A plain scan from the
+    end, not a regex: `^(.*?)(\\d+)$` backtracks quadratically on a long run of digits without an end (a hostile ID,
+    docs/security-review.md F12)."""
+    if not isinstance(task_id, str):
+        return None
+    end = len(task_id)
+    while end and task_id[end - 1].isdigit():
+        end -= 1
+    return (task_id[:end], task_id[end:]) if end < len(task_id) else None
+
 
 def check_workflow(workflow):
     """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
@@ -732,7 +815,7 @@ def check_workflow(workflow):
     if not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES:
         raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
     checks = (
-        ("base", lambda v: isinstance(v, str) and v, "a branch name"),
+        ("base", valid_branch, "a branch name (letters, digits, `.`, `_`, `/`, `-`; not starting with `-`)"),
         ("verify", lambda v: isinstance(v, bool), "true or false"),
         ("max_rounds", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0, "a positive whole number"),
         ("commit_template", lambda v: isinstance(v, str) and v, "a message template like \"feat({id}): {name}\""),
@@ -939,6 +1022,20 @@ def load_tasks(paths):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
+    # Agents put task IDs into shell commands: an ID with shell characters stops every command (atm check lists them)
+    for i, task in enumerate(data["tasks"]):
+        # Every command looks tasks up by ID and follows dependencies: a malformed task stops them all with a clear
+        # message instead of a traceback halfway through (docs/security-review.md F12). atm check lists them all.
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str):
+            raise AtmError(f"{paths['tasks']}: task #{i + 1} isn't a task (an object with an \"id\"); run atm check")
+        if not valid_task_id(task["id"]):
+            raise AtmError(
+                f"{paths['tasks']}: the task ID {task['id']!r} has characters atm doesn't allow (letters, digits, '.', "
+                "'_' and '-' only): fix it in the file, then run atm check"
+            )
+        deps = task.get("dependencies", [])
+        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+            raise AtmError(f"{paths['tasks']}: {task['id']}'s dependencies aren't a list of IDs; run atm check")
     _archive["paths"], _archive["data"] = paths, None
     return data
 
@@ -1026,6 +1123,14 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         task.pop("commit", None)
 
 
+def add_interval(task, field, start, end, on=None):
+    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+    interval = {"from": start, "to": end}
+    if on:
+        interval["on"] = on
+    task.setdefault(field, []).append(interval)
+
+
 def answer_note(questions, answers):
     """One note for an unblocked task: each question with its answer."""
     pairs = []
@@ -1081,6 +1186,12 @@ def change_status(
     if answered is not None:
         check_note(answered)
     stamp = now_iso()
+    # A block's or a review's start goes when the task moves on: keep each interval, so waiting time can be measured
+    old_kind = kind_of(vocab, current)
+    if old_kind == "blocked" and task.get("blocked_at"):
+        add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
+    elif old_kind == "review" and task.get("review_requested_at"):
+        add_interval(task, "reviews", task["review_requested_at"], stamp)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
@@ -2026,11 +2137,147 @@ def git_summary(paths, tasks):
         pr = t.get("pr")
         if isinstance(pr, dict) and isinstance(pr.get("number"), int):
             entry = prs.setdefault(pr["number"], {"number": pr["number"], "url": None, "state": "open"})
-            if isinstance(pr.get("url"), str) and pr["url"]:
+            # The dashboard links to it: only a web address (docs/security-review.md F9)
+            if isinstance(pr.get("url"), str) and re.match(r"https?://\S+\Z", pr["url"], re.IGNORECASE):
                 entry["url"] = pr["url"]
             if t.get("merged_at"):
                 entry["state"] = "merged"
     return {"branch": branch, "pr": prs[max(prs)] if prs else None}
+
+
+BOARD_CAP = 30  # cards per column of the All projects board (docs/all-projects-kanban-proposal.md, 3.1)
+BOARD_READY_CAP = 10  # ready tasks per project, so one project's new batch doesn't fill the To Do column
+BOARD_DONE_HOURS = 24
+
+
+def board_card(vocab, task, **extra):
+    """What a project's Kanban card shows, nothing more (T-257)."""
+    labels = task.get("labels")
+    card = {
+        "id": task.get("id"),
+        "name": capped(task.get("name")),
+        "type": task.get("type"),
+        "phase": as_phase_id(phase_of(task)),
+        "priority": priority_of(vocab, task),
+        "labels": [l for l in labels if isinstance(l, str)] if isinstance(labels, list) else [],
+    }
+    card.update(extra)
+    return card
+
+
+def board_column(cards, cap=BOARD_CAP):
+    """A column: its first `cap` cards, and how many there are in all (for "+ N more")."""
+    return {"count": len(cards), "cards": cards[:cap]}
+
+
+def board(data, store, tasks, kinds, open_phases, vocab, current, live):
+    """The project's cards for the All projects board (T-257), one rule per column: the tasks ready to start in the
+    first unfinished phase, in the loop's order; everything in progress (longest running first), in review (longest
+    waiting first) and blocked (on the user first, then longest waiting); what was finished in the last 24 hours,
+    newest first."""
+    of_kind = lambda kind: [t for t, k in zip(tasks, kinds) if k == kind]
+    first_phase = open_phases[0] if open_phases else None
+    ready = [t for t in ready_in_order(data, store) if phase_of(t) == first_phase]
+    claimed_by = {c.get("task"): c.get("agent") for c in live}
+    since = lambda t, field: t.get(field) or t.get("updated_at")
+    active = sorted(of_kind("active"), key=lambda t: str(t.get("started_at") or ""))
+    review = sorted(of_kind("review"), key=lambda t: str(since(t, "review_requested_at") or ""))
+    blocked = sorted(
+        of_kind("blocked"),
+        key=lambda t: (t.get("waiting_on") != "user", str(since(t, "blocked_at") or "")),
+    )
+    cutoff = current.timestamp() - BOARD_DONE_HOURS * 3600
+    finished_at = lambda t: parse_time(t.get("completed_at"))
+    done = [t for t in of_kind("done") if finished_at(t) and finished_at(t).timestamp() > cutoff]
+    done.sort(key=lambda t: str(t.get("completed_at")), reverse=True)
+    return {
+        "todo": board_column([board_card(vocab, t) for t in ready], BOARD_READY_CAP),
+        "active": board_column(
+            [
+                board_card(vocab, t, by=claimed_by.get(t.get("id")) or started_by(t), since=since(t, "started_at"))
+                for t in active
+            ]
+        ),
+        "review": board_column([board_card(vocab, t, since=since(t, "review_requested_at")) for t in review]),
+        "blocked": board_column(
+            [
+                board_card(
+                    vocab,
+                    t,
+                    since=since(t, "blocked_at"),
+                    waiting_on=t.get("waiting_on"),
+                    questions=len(t.get("questions") or []),
+                )
+                for t in blocked
+            ]
+        ),
+        "done": board_column([board_card(vocab, t, completed_at=t.get("completed_at")) for t in done]),
+    }
+
+
+def work_span(vocab, task, current):
+    """A task's work as (start, end) timestamps, as the dashboard counts it (work.ts): from started_at until it asked
+    for a review or was done, or until now while active; None for a task that holds none."""
+    start = parse_time(task.get("started_at"))
+    if not start:
+        return None
+    kind = kind_of(vocab, task.get("status"))
+    if kind == "active":
+        end = max(current, start)
+    elif kind in ("done", "review"):
+        end = (
+            parse_time(task.get("review_requested_at"))
+            or parse_time(task.get("completed_at") if kind == "done" else task.get("updated_at"))
+            or start
+        )
+    else:
+        return None
+    return (start.timestamp(), max(end, start).timestamp())
+
+
+def agent_minutes(vocab, tasks, current):
+    """Agent time (docs/project-stats-proposal.md, T-255): the work of tasks an agent started, or nobody recorded
+    (before v4), each agent's spans merged so an agent on two tasks counts once; parallel agents add up. As the
+    dashboard's Project tab counts it (projectstats.ts)."""
+    spans = {}
+    for i, t in enumerate(tasks):
+        starter = started_by(t)
+        if starter and not str(starter).startswith("claude:"):
+            continue
+        span = work_span(vocab, t, current)
+        if span:
+            spans.setdefault(starter or i, []).append(span)  # unattributed spans are each their own
+    total = 0.0
+    for agent_spans in spans.values():
+        end = None
+        for s, e in sorted(agent_spans):
+            if end is None or s > end:
+                total += e - s
+                end = e
+            elif e > end:
+                total += e - end
+                end = e
+    return round(total / 60)
+
+
+def project_stats(paths, data, vocab, tasks, current):
+    """The overview card's line (T-255): when the project started (its first task's created_at, else meta.created),
+    how many tasks it has, and the agent time, archived tasks included; an unreadable archive is left out. (A task
+    folder with a symlinked file never gets here: find_paths refuses it, docs/security-review.md F8.)"""
+    try:
+        archived = [t for t in load_archive(paths)["tasks"] if isinstance(t, dict)]
+    except AtmError:
+        archived = []
+    ids = {t.get("id") for t in tasks}
+    every = tasks + [t for t in archived if t.get("id") not in ids]
+    created = [parse_time(t.get("created_at")) for t in every]
+    created = [c for c in created if c] or [parse_time((data.get("meta") or {}).get("created"))]
+    started = min((c for c in created if c), default=None)
+    return {
+        "started": started.strftime("%Y-%m-%dT%H:%M:%SZ") if started else None,
+        "tasks": len(every),
+        "agent_minutes": agent_minutes(vocab, every, current),
+    }
 
 
 def project_summary(paths):
@@ -2130,6 +2377,8 @@ def project_summary(paths):
         "description": description(data.get("meta")),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
+        "board": board(data, store, tasks, kinds, open_phases, vocab, current, live),
+        "stats": project_stats(paths, data, vocab, tasks, current),
     }
 
 
@@ -2388,25 +2637,20 @@ def cmd_note(args):
 # Status and timestamps are not edited here: they change only through the status commands.
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
-ID_PATTERN = re.compile(r"^(.*?)(\d+)$")
 DEFAULT_ID = ("T-", 3)
 
 
 def id_format(data):
     """The project's ID pattern: the prefix and digit count of its last numbered task ID (T-001: "T-", 3)."""
     for task in reversed(data["tasks"]):
-        m = ID_PATTERN.match(str(task.get("id", "")))
-        if m:
-            return m.group(1), len(m.group(2))
+        parts = split_id(task.get("id"))
+        if parts:
+            return parts[0], len(parts[1])
     return DEFAULT_ID
 
 
 def highest_number(data, prefix):
-    numbers = [
-        int(m.group(2))
-        for m in (ID_PATTERN.match(str(t.get("id", ""))) for t in data["tasks"])
-        if m and m.group(1) == prefix
-    ]
+    numbers = [int(p[1]) for p in (split_id(t.get("id")) for t in data["tasks"]) if p and p[0] == prefix]
     return max(numbers, default=0)
 
 
@@ -2487,25 +2731,26 @@ def new_task(vocab, fields, actor, stamp):
 def find_cycle(tasks):
     """A dependency cycle among `tasks` (as a list of IDs), or None."""
     deps = {t["id"]: t.get("dependencies") or [] for t in tasks}
-    state = {}
-
-    def visit(node, path):
-        state[node] = "visiting"
-        for dep in deps.get(node, []):
-            if state.get(dep) == "visiting":
-                return path[path.index(dep):] + [dep] if dep in path else [node, dep]
-            if dep in deps and dep not in state:
-                cycle = visit(dep, path + [dep])
-                if cycle:
-                    return cycle
-        state[node] = "done"
-        return None
-
-    for node in deps:
-        if node not in state:
-            cycle = visit(node, [node])
-            if cycle:
-                return cycle
+    done = set()
+    # Depth-first with an explicit stack, not recursion: a chain of thousands of tasks (or a hostile file) can't hit
+    # Python's recursion limit (docs/security-review.md F12). `path` is the current chain; `on_path` its positions.
+    for start in deps:
+        if start in done:
+            continue
+        path, on_path, stack = [start], {start: 0}, [iter(deps[start])]
+        while stack:
+            dep = next(stack[-1], None)
+            if dep is None:
+                node = path.pop()
+                del on_path[node]
+                done.add(node)
+                stack.pop()
+            elif dep in on_path:
+                return path[on_path[dep] :] + [dep]
+            elif dep in deps and dep not in done:
+                on_path[dep] = len(path)
+                path.append(dep)
+                stack.append(iter(deps[dep]))
     return None
 
 
@@ -2676,6 +2921,8 @@ def check_data(data, root, files=False, archived=()):
             errors.append(f"task #{i + 1}: needs an \"id\" (a non-empty string)")
             continue
         task_id = task["id"]
+        if not valid_task_id(task_id):
+            errors.append(f"{task_id!r}: an ID is letters, digits, '.', '_' and '-', at most 64, not starting with '-'")
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")
@@ -2929,6 +3176,13 @@ def merge_notes(ours, theirs):
     return sorted(merged, key=lambda n: str(n.get("at", "")) if isinstance(n, dict) else "")
 
 
+def merge_intervals(ours, theirs):
+    """Past blocks and reviews only grow: both sides', one per start, oldest first."""
+    starts = {i.get("from") for i in ours if isinstance(i, dict)}
+    merged = list(ours) + [i for i in theirs if isinstance(i, dict) and i.get("from") not in starts]
+    return sorted(merged, key=lambda i: str(i.get("from", "")) if isinstance(i, dict) else "")
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -2945,6 +3199,8 @@ def merge_task(base, ours, theirs, vocab):
             value = progress.get(key, MISSING)
         elif key == "notes":
             value = merge_notes(ours.get(key, []), theirs.get(key, []))
+        elif key in ("blocks", "reviews"):
+            value = merge_intervals(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict:
@@ -2955,13 +3211,13 @@ def merge_task(base, ours, theirs, vocab):
 
 
 def next_free_id(task_id, used):
-    m = re.match(r"^(.*?)(\d+)$", task_id)
-    if not m:
+    parts = split_id(task_id)
+    if not parts:
         n = 2
         while f"{task_id}-{n}" in used:
             n += 1
         return f"{task_id}-{n}"
-    prefix, digits = m.group(1), m.group(2)
+    prefix, digits = parts
     numbers = [int(x[len(prefix) :]) for x in used if x.startswith(prefix) and x[len(prefix) :].isdigit()]
     return prefix + str(max(numbers) + 1).zfill(len(digits))
 
@@ -3269,6 +3525,10 @@ def cmd_unarchive(args):
 
 # Pathspecs that stage more than the files named: another agent's work can be in the same tree
 WHOLE_TREE = {".", "-A", "--all", "-u", "--update", ":/", "*"}
+# git reads a path as a pattern (`*.env` is every .env file, `src/[id]` matches `src/i`); with this, a --file names
+# exactly one file (docs/security-review.md F6)
+LITERAL = ["--literal-pathspecs"]
+HTTP_URL = re.compile(r"https?://[^\s]+\Z", re.IGNORECASE)
 CO_AUTHORED = re.compile(r"^co-authored-by:", re.IGNORECASE)
 
 
@@ -3340,7 +3600,8 @@ def run_git(args, root):
     result = subprocess.run(["git"] + args, cwd=root, capture_output=True, text=True)
     if result.returncode != 0:
         message = (result.stderr or result.stdout).strip()
-        raise AtmError(f"git {args[0]} failed: {message}")
+        command = next((a for a in args if not a.startswith("-")), "")
+        raise AtmError(f"git {command} failed: {message}")
     return result.stdout.strip()
 
 
@@ -3359,7 +3620,7 @@ def commit_paths(root, files):
         # A deleted file is fine as long as git knows it: still in the index (deleted by hand) or in HEAD (`git rm`)
         if (
             not os.path.exists(full)
-            and git(["ls-files", "--error-unmatch", "--", relative], root) is None
+            and git(LITERAL + ["ls-files", "--error-unmatch", "--", relative], root) is None
             and git(["cat-file", "-e", f"HEAD:{relative}"], root) is None
         ):
             raise AtmError(f"{name}: no such file, and git doesn't track it")
@@ -3401,11 +3662,16 @@ def cmd_commit(args):
     if tasks_file not in files:
         files.append(tasks_file)
     # A deletion already staged with `git rm` is in neither the tree nor the index: there is nothing to add for it
-    to_add = [f for f in files if git(["ls-files", "--error-unmatch", "--", f], root) is not None or os.path.lexists(os.path.join(root, f))]
+    to_add = [
+        f
+        for f in files
+        if git(LITERAL + ["ls-files", "--error-unmatch", "--", f], root) is not None
+        or os.path.lexists(os.path.join(root, f))
+    ]
     if to_add:
-        run_git(["add", "-A", "--"] + to_add, root)
+        run_git(LITERAL + ["add", "-A", "--"] + to_add, root)
     # With paths, git commits only those, so whatever else is staged stays staged and out of this commit
-    run_git(["commit", "-q", "-m", message, "--"] + files, root)
+    run_git(LITERAL + ["commit", "-q", "-m", message, "--"] + files, root)
     sha = run_git(["rev-parse", "HEAD"], root)
     # The SHA is known only once the commit exists, so tasks.json records it as a change for the next commit
     with locked(paths["dir"]):
@@ -3426,6 +3692,9 @@ def cmd_pr(args):
     agent = agent_identity(args.agent)
     if args.number <= 0:
         raise AtmError("--number must be a positive whole number", 2)
+    # The dashboard links to it: only a web address, never javascript: or data: (docs/security-review.md F9)
+    if not HTTP_URL.match(args.url):
+        raise AtmError(f"--url must be an http:// or https:// address, not {args.url!r}", 2)
     paths = find_paths(os.getcwd())
     with locked(paths["dir"]):
         data = load_tasks(paths)
@@ -3510,6 +3779,18 @@ def dashboard_head(p):
     return page_tags(head)
 
 
+def written_by_atm(path):
+    """Whether an old server record is one atm wrote here: owned by this user and not tracked by git (atm always kept
+    it out of git). A record that came with the repository is only deleted: atm never contacts its port or signals its
+    pid (docs/security-review.md F14)."""
+    try:
+        if os.stat(path).st_uid != os.getuid():
+            return False
+    except (OSError, AttributeError):  # missing, or no uids (Windows)
+        return False
+    return not is_tracked(os.path.dirname(path), path)
+
+
 def clean_up_old_dashboard(task_dir):
     """Per-project dashboards (0.10.0-0.14.0): delete the project's copy of the dashboard, stop its server if one still
     runs (only when whoami confirms it serves this folder), and remove the server's record and log. Returns what was
@@ -3521,7 +3802,7 @@ def clean_up_old_dashboard(task_dir):
         removed = True
     stopped = None
     record_path = os.path.join(task_dir, OLD_SERVER_RECORD)
-    record = read_json(record_path)
+    record = read_json(record_path) if written_by_atm(record_path) else None
     if record is not None:
         info = whoami(record.get("port")) if isinstance(record, dict) else None
         if info and info.get("folder") == task_dir and info.get("pid") == record.get("pid"):
@@ -3707,12 +3988,40 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
+# A task file the server will read into memory and send (a big project's archive is a few MB)
+MAX_SERVED_BYTES = 100_000_000
 PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
 # A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
 LOGO_HEADERS = {
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     "X-Content-Type-Options": "nosniff",
 }
+# On every response: no content sniffing, and no other site may embed it (docs/security-review.md F11)
+SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "Cross-Origin-Resource-Policy": "same-origin"}
+INLINE_SCRIPT = re.compile(rb"<script\b([^>]*)>(.*?)</script>", re.S | re.I)
+
+
+def page_csp(page):
+    """The dashboard's Content-Security-Policy: only its own inline scripts run (by hash), it talks only to this
+    server, and no page may frame it. Any script injected into it, or a `javascript:` link, is refused by the browser.
+    tests/e2e/serve.mjs builds the same policy, so the e2e suite runs under it."""
+    hashes = [
+        "'sha256-" + base64.b64encode(hashlib.sha256(body).digest()).decode("ascii") + "'"
+        for attrs, body in INLINE_SCRIPT.findall(page)
+        if b"src=" not in attrs
+    ]
+    return "; ".join(
+        [
+            "default-src 'none'",
+            "script-src " + (" ".join(hashes) or "'none'"),
+            "style-src 'unsafe-inline'",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "base-uri 'none'",
+            "form-action 'none'",
+            "frame-ancestors 'none'",
+        ]
+    )
 
 
 def server_url(port, project=None):
@@ -3745,7 +4054,7 @@ def ensure_server(home, port):
     record = live_server(home)
     if record:
         return record, False
-    os.makedirs(home, exist_ok=True)
+    ensure_home(home)
     with open(os.path.join(home, SERVER_LOG), "ab") as log:
         child = subprocess.Popen(
             [sys.executable, os.path.abspath(__file__), "_serve-child", home, str(port)],
@@ -3771,7 +4080,10 @@ def project_for(paths):
     register(paths)
     path = main_worktree(paths["root"])
     meta = project_meta(path) or project_meta(paths["root"]) or {}
-    return project_id(meta, path), listed(meta)
+    # The id the registry gave it: meta.id, or another when that one is taken (registry.unique_id)
+    registry = read_json(os.path.join(atm_home(), REGISTRY_FILE)) or {}
+    entry = next((e for e in registry.get("projects", []) if isinstance(e, dict) and e.get("path") == path), None)
+    return (entry or {}).get("id") or project_id(meta, path), listed(meta)
 
 
 def serve_start(paths, port, overview):
@@ -3892,10 +4204,16 @@ def cmd_serve(args):
 
 
 def port_in_use(port):
-    """Something accepts connections on 127.0.0.1:port."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", port)) == 0
+    """Something accepts connections on 127.0.0.1:port or [::1]:port (`localhost` may resolve to either)."""
+    for family, host in ((socket.AF_INET, "127.0.0.1"), (socket.AF_INET6, "::1")):
+        try:
+            with socket.socket(family, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                if s.connect_ex((host, port)) == 0:
+                    return True
+        except OSError:  # no IPv6 on this machine
+            pass
+    return False
 
 
 def file_stamp(p):
@@ -3936,6 +4254,18 @@ class Registry:
 
 def task_file(entry, name):
     return os.path.join(entry["path"], TASK_DIR, name)
+
+
+def served_file(entry, name):
+    """The project's task file `name` if it may be served: a regular file, not a symlink, in a task folder that isn't
+    one either (docs/security-review.md F8: a repository could otherwise link tasks-archive.json to ~/.ssh/id_rsa).
+    None otherwise."""
+    folder = os.path.join(entry["path"], TASK_DIR)
+    p = os.path.join(folder, name)
+    if os.path.islink(folder) or os.path.islink(p) or not os.path.isfile(p):
+        return None
+    real_folder = os.path.realpath(folder)
+    return p if os.path.dirname(os.path.realpath(p)) == real_folder else None
 
 
 class Summaries:
@@ -3980,13 +4310,21 @@ def project_logo(entry):
     return (logo[1], logo[2]) if logo else None
 
 
+def quietly(fn, default):
+    """fn(), or `default` if it fails: one project's broken files never break the list of all projects (F18)."""
+    try:
+        return fn()
+    except Exception:  # noqa: BLE001 - any failure in one project's files
+        return default
+
+
 def api_projects(registry, summaries):
     """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
-    logo and the day."""
+    logo and the day. A project whose files can't be read is listed as missing; the others are unaffected."""
     entries = registry.entries()
-    stamps = [summaries.stamp(e) for e in entries]
-    trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    stamps = [quietly(lambda e=e: summaries.stamp(e), None) for e in entries]
+    trees = [quietly(lambda e=e: worktrees(e["path"]), []) if stamp else [] for e, stamp in zip(entries, stamps)]
+    logos = [quietly(lambda e=e: project_logo(e), None) if stamp else None for e, stamp in zip(entries, stamps)]
     logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
     etag = (
         '"'
@@ -3997,7 +4335,7 @@ def api_projects(registry, summaries):
     def body():
         projects = []
         for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
-            summary = summaries.summary(entry, stamp) if stamp else None
+            summary = quietly(lambda: summaries.summary(entry, stamp), None) if stamp else None
             projects.append(
                 {
                     "id": entry.get("id"),
@@ -4013,6 +4351,50 @@ def api_projects(registry, summaries):
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
 
     return body, etag
+
+
+SEARCH_QUERY_CAP = 200  # characters of the query that count
+SEARCH_RESULTS_CAP = 200  # task IDs per project
+
+
+def search_text(task):
+    """What a task is found by: its ID, name, description, type, labels and notes (T-258)."""
+    strings = [task.get(f) for f in ("id", "name", "description", "type")]
+    strings += task.get("labels") if isinstance(task.get("labels"), list) else []
+    strings += [n.get("text") for n in task.get("notes") or [] if isinstance(n, dict)]
+    return " ".join(s for s in strings if isinstance(s, str)).lower()
+
+
+def api_search(registry, query):
+    """The body of /api/search?q=: per project, the IDs of the tasks.json tasks (not the archive) in which every word of
+    the query appears, case-insensitively, as the dashboard's own search finds them; the project's name counts as part
+    of every task's text. Read-only, like every route; `{}` for an empty query."""
+    terms = query[:SEARCH_QUERY_CAP].lower().split()
+    results = {}
+    if not terms:
+        return to_json(results).encode("utf-8")
+    for entry in registry.entries():
+
+        def matches(entry=entry):
+            p = served_file(entry, TASKS_FILE)
+            stamp = file_stamp(p) if p else None
+            if stamp is None or stamp[0] > MAX_SERVED_BYTES:
+                return []
+            data = read_json(p)
+            tasks = data.get("tasks") if isinstance(data, dict) else None
+            name = str(entry.get("name") or "").lower()
+            return [
+                t["id"]
+                for t in tasks or []
+                if isinstance(t, dict)
+                and isinstance(t.get("id"), str)
+                and all(term in f"{name} {search_text(t)}" for term in terms)
+            ]
+
+        ids = quietly(matches, [])
+        if ids:
+            results[entry.get("id")] = ids[:SEARCH_RESULTS_CAP]
+    return to_json(results).encode("utf-8")
 
 
 def api_claims(summaries, entry):
@@ -4080,11 +4462,14 @@ def cmd_serve_child(args):
     # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
     # report another build than the page has, and the page would offer a reload forever
     version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
+    page_headers = {"Content-Security-Policy": page_csp(page)}
     registry = Registry(home)
     summaries = Summaries()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
+        # A connection that sends nothing (or trickles) is dropped instead of holding a thread forever (F18)
+        timeout = 30
 
         def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
@@ -4093,7 +4478,7 @@ def cmd_serve_child(args):
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+            for name, value in {"Cache-Control": "no-store", **SECURITY_HEADERS, **(headers or {})}.items():
                 self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
@@ -4110,6 +4495,16 @@ def cmd_serve_child(args):
             self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
+            # One bad request, or one project's broken files, gets a 500, never a dead handler thread with no answer
+            try:
+                self.handle_get()
+            except Exception:  # noqa: BLE001
+                try:
+                    self.send_error_json(500, "internal error")
+                except OSError:
+                    pass
+
+        def handle_get(self):
             port_now = self.server.server_address[1]
             if self.headers.get("Host") not in (f"localhost:{port_now}", f"127.0.0.1:{port_now}"):
                 # A page on another site that points its own domain at 127.0.0.1 (DNS rebinding) is refused
@@ -4117,13 +4512,16 @@ def cmd_serve_child(args):
                 return
             path = urlsplit(self.path).path
             if path == "/":
-                self.send(200, page, "text/html; charset=utf-8")
+                self.send(200, page, "text/html; charset=utf-8", headers=page_headers)
             elif path == WHOAMI:
                 info = {"atm": True, "pid": os.getpid(), "port": port_now, "version": version, "build": build}
                 self.send(200, to_json(info).encode("utf-8"))
             elif path == "/api/projects":
                 body, etag = api_projects(registry, summaries)
                 self.send_conditional(body, etag)
+            elif path == "/api/search":
+                query = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
+                self.send(200, api_search(registry, query))
             else:
                 self.serve_project_file(path)
 
@@ -4139,7 +4537,7 @@ def cmd_serve_child(args):
                 self.send_error_json(404, "unknown project")
                 return
             name = match.group(2)
-            if not os.path.isfile(task_file(entry, TASKS_FILE)):
+            if served_file(entry, TASKS_FILE) is None:
                 self.send_error_json(404, "not found")
                 return
             if name == "logo":
@@ -4153,10 +4551,14 @@ def cmd_serve_child(args):
             if computed:
                 self.send_conditional(*computed)
                 return
-            p = task_file(entry, name)
-            stamp = file_stamp(p)
+            p = served_file(entry, name)
+            stamp = file_stamp(p) if p else None
             if stamp is None:
                 self.send_error_json(404, "not found")
+                return
+            if stamp[0] > MAX_SERVED_BYTES:
+                # Each poll reads the whole file into memory: a runaway file is refused, not served
+                self.send_error_json(413, f"larger than {MAX_SERVED_BYTES // 1_000_000} MB")
                 return
 
             def read():
@@ -4191,18 +4593,33 @@ def cmd_serve_child(args):
         # same option would also let it share a port another server listens on, hence port_in_use() first.
         allow_reuse_address = True
 
-    server = None
+    class Server6(Server):
+        address_family = socket.AF_INET6
+
+    # Browsers, curl and urllib try [::1] before 127.0.0.1 for `localhost`: the server listens on both, so no other
+    # local user can take [::1] on our port and answer for us (docs/security-review.md F10). Without IPv6, 127.0.0.1
+    # alone is enough: nobody can listen on [::1] then.
+    server = server6 = None
     for candidate in range(port, port + PORT_TRIES):
         if port_in_use(candidate):
             continue
         try:
             server = Server(("127.0.0.1", candidate), Handler)
-            break
         except OSError:
             continue
+        try:
+            server6 = Server6(("::1", candidate), Handler)
+        except OSError as e:
+            if e.errno == errno.EADDRINUSE:
+                server.server_close()
+                server = None
+                continue
+        break
     if server is None:
         sys.stderr.write(f"atm: no free port in {port}-{port + PORT_TRIES - 1}\n")
         return
+    if server6 is not None:
+        threading.Thread(target=server6.serve_forever, daemon=True).start()
     record = {
         "pid": os.getpid(),
         "port": server.server_address[1],
@@ -4628,6 +5045,11 @@ def main(argv):
         return e.code
     except AtmExit as e:
         return e.code
+    except Exception as e:  # noqa: BLE001
+        # A file atm didn't expect (a hostile or damaged one) is an error message, not a traceback: the skills and
+        # the merge driver read stderr (docs/security-review.md F12)
+        report(AtmError(f"unexpected error ({type(e).__name__}: {e}); run atm check, and report it if that is clean"), as_json)
+        return 1
     return 0
 
 

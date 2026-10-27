@@ -27,13 +27,13 @@ async function columns(page: Page) {
 
 test.describe('dependency graph', () => {
   test('one node per task and one edge per dependency', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     await expect(nodes(page)).toHaveCount(12);
     await expect(edges(page)).toHaveCount(12);
   });
 
   test('lays tasks out in topological columns', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     expect(await columns(page)).toEqual([
       ['T-001', 'T-010', 'T-012'],
       ['T-002', 'T-003'],
@@ -46,20 +46,20 @@ test.describe('dependency graph', () => {
   });
 
   test('nodes show id and name', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     const node = nodes(page).filter({ hasText: 'T-004' });
     await expect(node).toContainText('User login');
   });
 
   test('a dependency cycle still renders every task', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'cycle');
+    await openDashboard(page, tasksServer, 'cycle', { tab: 'graph' });
     await expect(nodes(page)).toHaveCount(5);
     await expect(edges(page)).toHaveCount(5);
     expect(await columns(page)).toEqual([['T-001'], ['T-002', 'T-003', 'T-004', 'T-005']]);
   });
 
   test('hidden dependencies are ignored for layout and edges', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     await openFilters(page);
     await filterButton(page, 'phase', '2').click();
     await expect(nodes(page)).toHaveCount(4);
@@ -68,7 +68,7 @@ test.describe('dependency graph', () => {
   });
 
   test('tasks outside the filters can be hidden (the default) or greyed out', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     const choice = page.locator('#graph-filtered');
     await expect(choice).toHaveCount(0); // nothing is filtered out yet
     await page.locator('#task-search').fill('editor');

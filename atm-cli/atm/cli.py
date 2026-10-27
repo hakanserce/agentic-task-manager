@@ -423,6 +423,11 @@ def main(argv):
         return e.code
     except AtmExit as e:
         return e.code
+    except Exception as e:  # noqa: BLE001
+        # A file atm didn't expect (a hostile or damaged one) is an error message, not a traceback: the skills and
+        # the merge driver read stderr (docs/security-review.md F12)
+        report(AtmError(f"unexpected error ({type(e).__name__}: {e}); run atm check, and report it if that is clean"), as_json)
+        return 1
     return 0
 
 

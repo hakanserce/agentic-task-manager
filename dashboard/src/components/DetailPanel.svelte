@@ -203,12 +203,15 @@
         </div>
       {/if}
       {#if task.commit}
+        {@const ref = commitRef(dashboard.meta, task.commit)}
         <div class="detail-section" id="detail-commit">
           <div class="label">Commit</div>
           <div class="value">
-            <RepoRef ref={commitRef(dashboard.meta, task.commit)} title={task.commit}
-              ><code>{shortSha(task.commit)}</code></RepoRef
-            >
+            <RepoRef {ref} title={task.commit}><code>{shortSha(task.commit)}</code></RepoRef>
+            <!-- The dashboard doesn't know whether the commit was pushed: a task in a PR or merged was -->
+            {#if ref.kind === 'link' && !task.pr && !task.merged_at}
+              <span class="commit-unpushed" id="detail-commit-note">The link works once the commit is pushed</span>
+            {/if}
           </div>
         </div>
       {/if}

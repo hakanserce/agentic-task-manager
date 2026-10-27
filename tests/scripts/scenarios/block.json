@@ -56,7 +56,7 @@
     }
   },
   {
-    "name": "unblock: back to todo; the questions and answers become an answer note",
+    "name": "unblock: back to todo; the questions and answers become an answer note, the block an interval",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -86,6 +86,7 @@
               "status": "todo",
               "updated_at": "2026-05-01T10:00:00Z",
               "updated_by": "Hakan",
+              "blocks": [{ "from": "2026-05-01T09:30:00Z", "to": "2026-05-01T10:00:00Z", "on": "user" }],
               "notes": [
                 {
                   "at": "2026-05-01T10:00:00Z",
@@ -121,6 +122,97 @@
           { "at": "2026-05-01T10:00:00Z", "kind": "answer", "text": "A? → Yes; B? → (no answer)", "by": "Hakan" }
         ],
         "claim": null
+      }
+    }
+  },
+  {
+    "name": "each block is kept: block, unblock, block again and skip leave two intervals (T-244)",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } },
+      "commands": [
+        ["sh", "-c", "ATM_NOW=2026-05-01T10:00:00Z \"$ATM\" block T-1 --on user --question A? --agent alice"],
+        ["sh", "-c", "ATM_NOW=2026-05-01T11:00:00Z \"$ATM\" unblock T-1 --answer Yes --agent Hakan"],
+        ["sh", "-c", "ATM_NOW=2026-05-01T12:00:00Z \"$ATM\" block T-1 --on agent --reason Schema --agent alice"]
+      ]
+    },
+    "args": ["skip", "T-1", "--reason", "Not needed", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T12:30:00Z", "ATM_AGENT": "Hakan" },
+    "expect": {
+      "json": {
+        "id": "T-1",
+        "status": "skipped",
+        "updated_at": "2026-05-01T12:30:00Z",
+        "updated_by": "Hakan",
+        "blocks": [
+          { "from": "2026-05-01T10:00:00Z", "to": "2026-05-01T11:00:00Z", "on": "user" },
+          { "from": "2026-05-01T12:00:00Z", "to": "2026-05-01T12:30:00Z", "on": "agent" }
+        ],
+        "notes": [
+          { "at": "2026-05-01T11:00:00Z", "kind": "answer", "text": "A? → Yes", "by": "Hakan" },
+          { "at": "2026-05-01T12:00:00Z", "kind": "note", "text": "Schema", "by": "alice" },
+          { "at": "2026-05-01T12:30:00Z", "kind": "note", "text": "Skipped: Not needed", "by": "Hakan" }
+        ],
+        "skipped_at": "2026-05-01T12:30:00Z",
+        "claim": null
+      }
+    }
+  },
+  {
+    "name": "the merge driver keeps both branches' blocks and reviews, one per start, oldest first (T-244)",
+    "setup": {
+      "files": {
+        "base.json": {
+          "tasks": [{ "id": "T-1", "status": "todo", "blocks": [{ "from": "1", "to": "2", "on": "user" }] }]
+        },
+        "ours.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "blocks": [
+                { "from": "1", "to": "2", "on": "user" },
+                { "from": "5", "to": "6", "on": "agent" }
+              ],
+              "reviews": [{ "from": "7", "to": "8" }]
+            }
+          ]
+        },
+        "theirs.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "blocks": [
+                { "from": "1", "to": "2", "on": "user" },
+                { "from": "3", "to": "4", "on": "user" }
+              ],
+              "reviews": [{ "from": "0", "to": "1" }]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["merge-driver", "base.json", "ours.json", "theirs.json"],
+    "expect": {
+      "exit": 0,
+      "files": {
+        "ours.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "blocks": [
+                { "from": "1", "to": "2", "on": "user" },
+                { "from": "3", "to": "4", "on": "user" },
+                { "from": "5", "to": "6", "on": "agent" }
+              ],
+              "reviews": [
+                { "from": "0", "to": "1" },
+                { "from": "7", "to": "8" }
+              ]
+            }
+          ]
+        }
       }
     }
   },

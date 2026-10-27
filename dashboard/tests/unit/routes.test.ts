@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ProjectEntry } from '../../src/lib/load';
-import { hasOverviewHash, parseProjectHash, routeFor, withProjectHash } from '../../src/lib/routes';
+import {
+  hasOverviewHash,
+  isOverviewTab,
+  parseOverviewTab,
+  parseProjectHash,
+  routeFor,
+  withProjectHash,
+} from '../../src/lib/routes';
 
 const project = (id: string, missing = false): ProjectEntry => ({
   id,
@@ -19,11 +26,25 @@ describe('the project in the URL', () => {
     expect(hasOverviewHash('#project=abc')).toBe(false);
   });
 
-  it('is set or replaced by the overview, keeping the view and dialogs', () => {
+  it('is set or replaced by the overview, keeping dialogs, and the view where the page has it', () => {
     expect(withProjectHash('#view=kanban', 'abc')).toBe('#view=kanban&project=abc');
     expect(withProjectHash('#project=abc&view=list&about', 'def')).toBe('#view=list&about&project=def');
-    expect(withProjectHash('#project=abc&view=list', null)).toBe('#view=list&overview');
     expect(withProjectHash('#overview', 'a b')).toBe('#project=a%20b');
+    // A project's tab stays out of the overview, the overview's out of a project
+    expect(withProjectHash('#project=abc&view=list&about', null)).toBe('#about&overview');
+    expect(withProjectHash('#overview&view=board', 'abc')).toBe('#project=abc');
+    expect(withProjectHash('#overview&view=projects', null)).toBe('#view=projects&overview');
+  });
+});
+
+describe('the overview tab in the URL', () => {
+  it('is read from #view= when it is one of the overview’s', () => {
+    expect(parseOverviewTab('#overview&view=board')).toBe('board');
+    expect(parseOverviewTab('#overview&view=projects')).toBe('projects');
+    expect(parseOverviewTab('#overview&view=kanban')).toBeNull();
+    expect(parseOverviewTab('#overview')).toBeNull();
+    expect(isOverviewTab('board')).toBe(true);
+    expect(isOverviewTab(3)).toBe(false);
   });
 });
 

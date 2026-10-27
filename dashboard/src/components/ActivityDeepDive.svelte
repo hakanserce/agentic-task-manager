@@ -1,14 +1,24 @@
 <script lang="ts">
   import { shortAgent } from '../lib/claims';
   import { formatMinutes } from '../lib/format';
-  import type { ActivitySeries } from '../lib/insights';
+  import { cycleScaleMax, median, type ActivitySeries } from '../lib/insights';
+  import { dashboard } from '../lib/state.svelte';
   import { typeStyle } from '../lib/theme';
   import { formatDate, formatDateTime } from '../lib/timeline';
+  import type { TimeUseWithSplit } from '../lib/timeuse';
+  import InfoTip from './InfoTip.svelte';
+  import TimeSplitBar from './TimeSplitBar.svelte';
 
   // Three charts on one time axis, each answering one question: what got done (completions by type), who was
   // working (agents busy, stacked per agent), and how long tasks took. One hover reads a period across all three.
-  // `period` names the selected period for the headings: "this week", "today", "over all time" (periodPhrase)
-  let { series, period }: { series: ActivitySeries; period: string } = $props();
+  // `period` names the selected period for the headings: "this week", "today", "over all time" (periodPhrase).
+  // `use` is where the period's time went; `workingNow` the agents working now, null for a period in the past.
+  let {
+    series,
+    period,
+    use = null,
+    workingNow = null,
+  }: { series: ActivitySeries; period: string; use?: TimeUseWithSplit | null; workingNow?: number | null } = $props();
 
   const W = 640;
   const PAD_L = 34;
@@ -32,20 +42,33 @@
 
   const maxDone = $derived(Math.max(1, ...b.map((x) => x.completed.length)));
   const yDone = $derived(scale(maxDone));
-  const busyTotal = (x: (typeof b)[number]) => Object.values(x.agentBusy).reduce((s, v) => s + v, 0);
+  // Who was working, by kind (T-247): agents in the accent, people in a lighter shade of it; per session in the tooltip
+  const KINDS = [
+    { key: 'agents', label: 'Agents', color: 'var(--accent)' },
+    { key: 'people', label: 'People', color: 'color-mix(in srgb, var(--accent) 45%, var(--surface))' },
+  ] as const;
+  const kinds = $derived(KINDS.filter((k) => b.some((x) => x.byKind[k.key] > 0)));
+  const busyTotal = (x: (typeof b)[number]) => x.byKind.agents + x.byKind.people;
+  // Idle and waiting on you as the Where the time went bar has them (timeuse.ts); idle alone without it
+  const idle = $derived(use?.idle ?? series.idle);
   const maxBusy = $derived(Math.max(1, Math.ceil(Math.max(0, ...b.map(busyTotal)))));
   const yBusy = $derived(scale(maxBusy));
-  const maxCycle = $derived(Math.max(1, ...series.cycleTimes.map((c) => c.minutes)));
+  // Capped at the 90th percentile: slower tasks are triangles on the top edge (T-248)
+  const maxCycle = $derived(cycleScaleMax(series.cycleTimes.map((c) => c.minutes)));
   const yCycle = $derived(scale(maxCycle));
 
   const short = $derived(series.bucketMs < 86_400_000);
   const when = (t: number) => (short ? formatDateTime(t) : formatDate(t));
-  const periodHours = $derived((b[n - 1].end - b[0].start) / 3_600_000);
-  const perHour = $derived(series.totalCompleted / Math.max(1e-9, periodHours));
-  const rate = $derived(
-    perHour >= 1 || periodHours <= 24 ? `${perHour.toFixed(1)} / hour` : `${(perHour * 24).toFixed(1)} / day`,
+  // Time per task, two medians: tasks agents do alone, and `interactive` ones that include working with you
+  const perTask = $derived(
+    [
+      { key: 'alone', label: 'agents alone', withYou: false },
+      { key: 'with-you', label: 'with you', withYou: true },
+    ].map((side) => {
+      const minutes = series.cycleTimes.filter((c) => c.withYou === side.withYou).map((c) => c.minutes);
+      return { ...side, median: median(minutes), count: minutes.length };
+    }),
   );
-  const avgBusy = $derived(b.reduce((s, x) => s + busyTotal(x), 0) / n);
   const pct = (v: number) => `${Math.round(v * 100)}%`;
 
   let hover = $state<number | null>(null);
@@ -58,26 +81,41 @@
   const hb = $derived(hover === null ? null : b[hover]);
 </script>
 
+<!-- Three cards, one question each (docs/activity-popup-review.md §3.1): what got done, how long tasks take, and where
+     the time went -->
 <div class="kpi-row">
-  <div class="kpi">
-    <span class="kpi-value">{series.totalCompleted}</span><span class="kpi-label">tasks completed</span>
-  </div>
-  <div class="kpi"><span class="kpi-value">{rate}</span><span class="kpi-label">completion rate</span></div>
-  <div class="kpi">
-    <span class="kpi-value">{series.medianCycleMinutes === null ? '–' : formatMinutes(series.medianCycleMinutes)}</span
-    ><span class="kpi-label">typical time per task</span>
-  </div>
-  <div class="kpi">
-    <span class="kpi-value">{avgBusy.toFixed(1)}</span><span class="kpi-label"
-      >agents busy on average · {series.workingNow} now</span
+  <div class="kpi" id="kpi-done">
+    <span class="kpi-head"
+      ><span class="kpi-value">{series.totalCompleted}</span>
+      <InfoTip label="tasks done">
+        <p>Tasks finished in this period: done, not skipped.</p>
+      </InfoTip></span
     >
+    <span class="kpi-label">tasks done</span>
   </div>
-  <!-- The swatch is the idle hatching of the charts below, so the number and the stretches read as one thing -->
-  <div class="kpi" id="kpi-idle" title="Time in this period when no agent was working on a task: hatched in the charts">
-    <span class="kpi-value">{series.idleMs ? formatMinutes(series.idleMs / 60_000) : '–'}</span><span class="kpi-label"
-      >{#if series.idleMs}<span class="idle-swatch"></span>{/if}idle (no agent working)</span
-    >
+  <div class="kpi kpi-pair" id="kpi-time">
+    {#each perTask as side (side.key)}
+      <div class="kpi-side" data-side={side.key}>
+        <span class="kpi-value">{side.median === null ? '–' : formatMinutes(side.median)}</span>
+        <span class="kpi-label">{side.label} <span>({side.count} task{side.count === 1 ? '' : 's'})</span></span>
+      </div>
+    {/each}
+    <InfoTip label="time per task">
+      <p>
+        The typical (median) time from a task's start until it asked for a review, or was done. <strong
+          >Agents alone</strong
+        >: tasks agents do by themselves. <strong>With you</strong>: tasks labelled <code>interactive</code>, which
+        include working with you.
+      </p>
+      <p>A task whose lease expired is measured from its restart.</p>
+    </InfoTip>
   </div>
+  {#if use}
+    <div class="kpi kpi-where" id="kpi-where">
+      <TimeSplitBar {use} />
+      {#if workingNow}<span class="kpi-label" id="kpi-working-now">{workingNow} working now</span>{/if}
+    </div>
+  {/if}
 </div>
 
 {#snippet frame(max: string)}
@@ -92,7 +130,7 @@
 
 <!-- Stretches with no agent at work, hatched behind the marks of every chart -->
 {#snippet idleBands(labelled: boolean)}
-  {#each series.idle as g (g.start)}
+  {#each idle as g (g.start)}
     {@const x0 = Math.max(PAD_L, xt(g.start))}
     {@const x1 = Math.min(W - PAD_R, xt(g.end))}
     {#if x1 > x0}
@@ -111,7 +149,16 @@
 <div class="deep-dive">
   <section class="dive-chart" id="dive-completed">
     <header>
-      <h4>Tasks completed {period}, per {series.unitLabel}, by type</h4>
+      <h4>
+        Tasks completed {period}, per {series.unitLabel}, by type
+        <InfoTip label="tasks completed">
+          <p>
+            Per {series.unitLabel}, the tasks done in it (not skipped), stacked by type, in the dashboard's type
+            colours. A task counts when it was done, so one that waited for a review counts at the review's end.
+          </p>
+          <p>Idle stretches (nobody working, nothing waiting on you) are hatched behind the bars.</p>
+        </InfoTip>
+      </h4>
       <div class="type-legend">
         {#each series.types as t (t.type)}
           <span class="type-chip"
@@ -146,35 +193,66 @@
 
   <section class="dive-chart" id="dive-agents">
     <header>
-      <h4>Agents working {period} <span>(1 = one agent busy the whole {series.unitLabel})</span></h4>
+      <h4>
+        Who was working {period} <span>(1 = one busy the whole {series.unitLabel})</span>
+        <InfoTip label="who was working">
+          <p>
+            Per {series.unitLabel}, how many were at work on tasks: <strong>agents</strong> (Claude Code sessions, and
+            work recorded before atm kept who started a task) and <strong>people</strong>. One on two tasks at once
+            counts once. Hover for each session.
+          </p>
+          <p>
+            <strong>Waiting on you</strong>: nobody working while a task waited for your review or answer.
+            <strong>Idle</strong> (hatched): nobody working and nothing waiting, for 10 minutes or more, nights included.
+          </p>
+        </InfoTip>
+      </h4>
       <div class="type-legend">
-        {#each series.agents as a (a)}
-          <span class="type-chip"
-            ><span class="legend-swatch" style="background:{agentColor(a)}"></span>{agentName(a)}</span
+        {#each kinds as k (k.key)}
+          <span class="type-chip" data-kind={k.key}
+            ><span class="legend-swatch" style="background:{k.color}"></span>{k.label}</span
           >
         {:else}
           <span class="chart-empty">No task has a start time in this period</span>
         {/each}
+        {#if use?.waitingMs}
+          <span class="type-chip" data-kind="waiting"
+            ><span class="legend-swatch time-split-waiting"></span>Waiting on you</span
+          >
+        {/if}
+        {#if idle.length}
+          <span class="type-chip" data-kind="idle"><span class="legend-swatch time-split-idle"></span>Idle</span>
+        {/if}
       </div>
     </header>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
       {@render frame(String(maxBusy))}
       {@render idleBands(true)}
+      {#each use?.waiting ?? [] as g (g.start)}
+        {@const x0 = Math.max(PAD_L, xt(g.start))}
+        {@const x1 = Math.min(W - PAD_R, xt(g.end))}
+        {#if x1 > x0}
+          <rect x={x0} y="4" width={x1 - x0} height={H - 6} class="waiting-band"
+            ><title>Waiting on you {formatMinutes((g.end - g.start) / 60_000)}: {when(g.start)} – {when(g.end)}</title
+            ></rect
+          >
+        {/if}
+      {/each}
       {#each Array.from({ length: maxBusy - 1 }, (_, k) => k + 1) as level (level)}
         <line x1={PAD_L} x2={W - PAD_R} y1={yBusy(level)} y2={yBusy(level)} class="chart-grid" />
       {/each}
       {#each b as bucket, i (bucket.start)}
-        {@const segments = series.agents.filter((a) => bucket.agentBusy[a])}
-        {#each segments as a, j (a)}
-          {@const below = segments.slice(0, j).reduce((sum, x) => sum + bucket.agentBusy[x], 0)}
+        {@const segments = kinds.filter((k) => bucket.byKind[k.key])}
+        {#each segments as k, j (k.key)}
+          {@const below = segments.slice(0, j).reduce((sum, x) => sum + bucket.byKind[x.key], 0)}
           <rect
             x={PAD_L + i * slot + 1}
-            y={yBusy(below + bucket.agentBusy[a])}
+            y={yBusy(below + bucket.byKind[k.key])}
             width={Math.max(1, slot - 2)}
-            height={Math.max(0.5, yBusy(below) - yBusy(below + bucket.agentBusy[a]) - (j > 0 ? 1 : 0))}
+            height={Math.max(0.5, yBusy(below) - yBusy(below + bucket.byKind[k.key]) - (j > 0 ? 1 : 0))}
             rx="1.5"
-            fill={agentColor(a)}
+            fill={k.color}
           />
         {/each}
       {/each}
@@ -183,33 +261,73 @@
 
   <section class="dive-chart" id="dive-cycle">
     <header>
-      <h4>Time per task <span>(from start to done; one dot per task, at its completion)</span></h4>
+      <h4>
+        Time per task <span>(from start to done; one dot per task, at its completion)</span>
+        <InfoTip label="time per task">
+          <p>
+            Each task's work time, from its start until it asked for a review or was done, at the time it was done.
+            Solid dots and the solid line (the typical time) are tasks agents did alone; <strong>hollow</strong> dots
+            and the dashed line are <code>interactive</code> tasks, done with you.
+          </p>
+          <p>
+            The scale stops at the slowest 10%: slower tasks are <strong>triangles</strong> on the top edge, their time in
+            the tooltip. Click a task to open it.
+          </p>
+        </InfoTip>
+      </h4>
     </header>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
       {@render frame(formatMinutes(maxCycle))}
       {@render idleBands(false)}
-      {#if series.medianCycleMinutes !== null}
-        <line
-          x1={PAD_L}
-          x2={W - PAD_R}
-          y1={yCycle(series.medianCycleMinutes)}
-          y2={yCycle(series.medianCycleMinutes)}
-          class="chart-median"
-        />
-        <text x={W - PAD_R} y={yCycle(series.medianCycleMinutes) - 4} class="chart-tick" text-anchor="end"
-          >typical {formatMinutes(series.medianCycleMinutes)}</text
-        >
-      {/if}
+      <!-- The typical time of each kind: agents alone solid, labelled on the right; with you dashed, on the left -->
+      {#each perTask as side (side.key)}
+        {#if side.median !== null}
+          {@const y = yCycle(Math.min(side.median, maxCycle))}
+          <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} class="chart-median" class:solid={!side.withYou} />
+          <text
+            x={side.withYou ? PAD_L + 4 : W - PAD_R}
+            y={y - 4}
+            class="chart-tick median-label"
+            data-side={side.key}
+            text-anchor={side.withYou ? 'start' : 'end'}>{side.label} {formatMinutes(side.median)}</text
+          >
+        {/if}
+      {/each}
       {#each series.cycleTimes as c (c.id)}
-        <circle
-          cx={xt(c.time)}
-          cy={yCycle(c.minutes)}
-          r="4"
-          fill={typeStyle(c.type).color}
-          stroke="var(--surface)"
-          stroke-width="1.5"><title>{c.id} {c.name}: {formatMinutes(c.minutes)}</title></circle
+        {@const color = typeStyle(c.type).color}
+        {@const over = c.minutes > maxCycle}
+        <g
+          class="cycle-mark"
+          class:with-you={c.withYou}
+          class:outlier={over}
+          data-id={c.id}
+          role="button"
+          tabindex="0"
+          aria-label="{c.id} {c.name}: {formatMinutes(c.minutes)}"
+          onclick={() => dashboard.showDetail(c.id)}
+          onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && dashboard.showDetail(c.id)}
         >
+          <title>{c.id} {c.name}: {formatMinutes(c.minutes)}{c.withYou ? ' (with you)' : ''}</title>
+          {#if over}
+            {@const x = xt(c.time)}
+            <path
+              d="M{x - 5},9 L{x + 5},9 L{x},2 Z"
+              fill={c.withYou ? 'var(--surface)' : color}
+              stroke={c.withYou ? color : 'var(--surface)'}
+              stroke-width="1.5"
+            />
+          {:else}
+            <circle
+              cx={xt(c.time)}
+              cy={yCycle(c.minutes)}
+              r="4"
+              fill={c.withYou ? 'var(--surface)' : color}
+              stroke={c.withYou ? color : 'var(--surface)'}
+              stroke-width={c.withYou ? 2 : 1.5}
+            />
+          {/if}
+        </g>
       {:else}
         <text x={PAD_L + plotW / 2} y={H / 2} class="chart-tick" text-anchor="middle"
           >No task with both a start and a completion time in this period</text
@@ -244,6 +362,15 @@
             <strong>{pct(hb.agentBusy[a])}</strong>
           </div>
         {/each}
+      {/if}
+      {#if use}
+        {@const split = use.split(hb.start, hb.end)}
+        {#if split.waitingMs}
+          <div class="tooltip-type" id="tooltip-waiting">
+            <span class="legend-dot time-split-waiting"></span>Waiting on you
+            <strong>{formatMinutes(split.waitingMs / 60_000)}</strong>
+          </div>
+        {/if}
       {/if}
       {#each hb.completed.slice(0, 5) as c (c.id)}<div class="tooltip-task">{c.id} {c.name}</div>{/each}
       {#if hb.completed.length > 5}<div class="tooltip-task">+{hb.completed.length - 5} more</div>{/if}

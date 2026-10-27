@@ -58,6 +58,24 @@ describe('DetailPanel', () => {
     const link = container.querySelector('#detail-commit a.repo-ref')!;
     expect(link).toHaveAttribute('href', 'https://github.com/acme/demo/commit/e4969ae0123');
     expect(link).toHaveAttribute('target', '_blank');
+    // Nothing says the commit was pushed: the link may not work yet
+    expect(container.querySelector('#detail-commit-note')).toHaveTextContent(
+      'The link works once the commit is pushed',
+    );
+  });
+
+  it('no push warning when the task is in a PR, or without a link', () => {
+    const tasks = standard.tasks.map((t) =>
+      t.id === 'T-005' ? { ...t, commit: 'e4969ae0123', pr: { number: 3 } } : t,
+    );
+    loadIntoDashboard({ ...standard, meta: { ...standard.meta, repository: 'https://github.com/acme/demo' }, tasks });
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-005');
+    flushSync();
+    expect(container.querySelector('#detail-commit a.repo-ref')).not.toBeNull();
+    expect(container.querySelector('#detail-commit-note')).toBeNull();
+    // Without a repository address there is no link to warn about
+    expect(open({ commit: 'e4969ae0123' }).querySelector('#detail-commit-note')).toBeNull();
   });
 
   it('a blocked task lists its questions and how to answer them', () => {

@@ -31,15 +31,15 @@ describe('AboutDialog', () => {
     expect(location.hash).toBe('#about');
   });
 
-  it("shows the project's vocabularies: the defaults, or meta's lists and workflow", () => {
+  it("shows the project's vocabularies, short: statuses, phases and types, the defaults or meta's lists (T-255)", () => {
     render(AboutDialog);
     dashboard.openDialog('about');
     flushSync();
     const vocab = () => document.querySelector('#about-vocab')!;
     expect(vocab()).toHaveTextContent('In Review (review)');
     expect(vocab()).toHaveTextContent('Numbered, without names');
-    expect(vocab()).toHaveTextContent('P2 Medium (default)');
-    expect(vocab()).not.toHaveTextContent('Workflow');
+    // Priorities and the workflow are on the Project tab
+    expect(vocab()).not.toHaveTextContent('Priorities');
 
     loadIntoDashboard({
       ...standard,
@@ -58,7 +58,18 @@ describe('AboutDialog', () => {
     expect(vocab()).toHaveTextContent('Statuses Backlog (todo) · Doing (active) · Shipped (done)');
     expect(vocab()).toHaveTextContent('Phases 1 Core');
     expect(vocab()).toHaveTextContent('Types Spike');
-    expect(vocab()).toHaveTextContent('Workflow pull-request');
+    expect(vocab()).not.toHaveTextContent('Workflow');
+  });
+
+  it('Project details closes the dialog and opens the Project tab (T-255)', async () => {
+    render(AboutDialog);
+    dashboard.openDialog('about');
+    flushSync();
+    await fireEvent.click(screen.getByRole('button', { name: 'Project details' }));
+    expect(dashboard.dialog).toBeNull();
+    expect(dashboard.tab).toBe('project');
+    expect(location.hash).toContain('view=project');
+    dashboard.selectTab('kanban');
   });
 
   it("heads the project's section with its name and logo, and leaves it out away from a project (T-217)", () => {

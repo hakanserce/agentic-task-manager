@@ -1,5 +1,7 @@
 // Numbers behind the Progress and Activity widgets in the top bar: completion shares (overall, per phase, per type)
-// and activity over time (completions, cumulative done vs scope, cycle time, work in progress).
+// and activity over time (completions, who was working, time per task).
+import { isAgent } from './actors';
+import { INTERACTIVE_LABEL } from './forecast';
 import { completions, type Completion } from './timeline';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, type StatusKind, type Vocabulary } from './vocab';
@@ -23,7 +25,10 @@ export interface StatusCount {
 }
 
 export interface ProgressBreakdown {
+  /** Every task of the project, the archived ones included */
   overall: Share;
+  /** Archived tasks: counted as done in `overall`, and in the other numbers only when they were passed in */
+  archived: number;
   byStatus: StatusCount[];
   byPhase: Share[];
   byType: Share[];
@@ -47,14 +52,30 @@ function groupBy<K>(tasks: Task[], key: (t: Task) => K): Map<K, Task[]> {
   return groups;
 }
 
-export function progressBreakdown(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): ProgressBreakdown {
+/**
+ * The Progress widget's numbers. `tasks` is tasks.json's tasks, or the history once the archive is loaded;
+ * `unloadedArchived` is how many archived tasks are not among them (meta.archived until the archive is loaded): they
+ * are all finished, so the overall share counts them as done without loading the archive (T-238), and archiving
+ * never lowers the percentage. A skipped one among them counts as done until the archive is loaded and the numbers
+ * become exact.
+ */
+export function progressBreakdown(
+  tasks: Task[],
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+  unloadedArchived = 0,
+  archived = unloadedArchived,
+): ProgressBreakdown {
   const statusCounts = groupBy(tasks, (t) => t.status);
   const rank = (s: string) => {
     const kind = kindOf(vocab, s);
     return kind ? KIND_ORDER.indexOf(kind) : KIND_ORDER.length;
   };
+  const current = share('all', 'All tasks', tasks, vocab);
+  const done = current.done + unloadedArchived;
+  const total = current.total + unloadedArchived;
   return {
-    overall: share('all', 'All tasks', tasks, vocab),
+    overall: { ...current, done, total, ratio: total ? done / total : current.ratio },
+    archived,
     byStatus: [...statusCounts]
       .map(([status, list]) => ({ status, count: list.length }))
       .sort((a, b) => rank(a.status) - rank(b.status) || a.status.localeCompare(b.status)),
@@ -77,14 +98,10 @@ export interface ActivityBucket {
   byType: Record<string, number>;
   /** Mean completions per bucket over this and the two before it */
   average: number;
-  /** Tasks done by the end of the bucket */
-  cumulativeDone: number;
-  /** Tasks that existed by the end of the bucket (created_at, else always) */
-  scope: number;
-  /** Tasks in progress at the end of the bucket (from started_at to completed_at) */
-  wip: number;
   /** How much of the bucket each agent spent working on tasks, 0–1 per agent (agent "" = unattributed) */
   agentBusy: Record<string, number>;
+  /** agentBusy summed by kind (T-247): Claude sessions and unattributed work are agents, anyone else people */
+  byKind: { agents: number; people: number };
 }
 
 export interface CycleTime {
@@ -94,6 +111,8 @@ export interface CycleTime {
   /** When it was completed (ms) */
   time: number;
   minutes: number;
+  /** An `interactive` task: its time includes working with you (docs/activity-popup-review.md §3) */
+  withYou: boolean;
 }
 
 export interface ActivitySeries {
@@ -108,8 +127,6 @@ export interface ActivitySeries {
   types: { type: string; count: number }[];
   /** Agents that worked in the period, by name (unattributed last): the order their colours follow */
   agents: string[];
-  /** Agents working on a task now */
-  workingNow: number;
   /** Stretches of at least MIN_IDLE_MS when no agent worked on any task, between the first start and now */
   idle: { start: number; end: number }[];
   idleMs: number;
@@ -180,6 +197,16 @@ export function median(values: number[]): number | null {
   const s = [...values].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+/**
+ * The top of the time-per-task scale (T-248): the 90th percentile (nearest rank), so one very slow task doesn't push
+ * all others to the floor; slower ones are drawn on the top edge. At least 1 minute.
+ */
+export function cycleScaleMax(minutes: number[]): number {
+  if (minutes.length === 0) return 1;
+  const s = [...minutes].sort((a, b) => a - b);
+  return Math.max(1, s[Math.ceil(0.9 * s.length) - 1]);
 }
 
 // ---- the period the Activity panel looks at ----
@@ -296,6 +323,28 @@ export function periodPhrase(range: ActivityRange, now: number): string {
   }
 }
 
+/** Whether a bucket's period isn't over yet at `now`: the sparkline draws it lighter, as it is still filling up */
+export const ongoing = (bucket: ActivityBucket, now: number) => bucket.end > now;
+
+/**
+ * The Activity sparkline's tooltip (docs/activity-popup-review.md §1): what the bars and the line are, and what the
+ * current bucket has so far: "Tasks completed per day, all time: 236 · the line is the average of the last 3 days ·
+ * this day so far: 12 · click for details".
+ */
+export function sparklineTitle(series: ActivitySeries, now: number): string {
+  const unit = series.unitLabel;
+  // "day" → "days", "30 days" → "periods of 30 days"
+  const counted = /^\d/.test(unit);
+  const parts = [
+    `Tasks completed per ${unit}, all time: ${series.totalCompleted}`,
+    `the line is the average of the last 3 ${counted ? `periods of ${unit}` : `${unit}s`}`,
+  ];
+  const last = series.buckets.at(-1);
+  if (last && ongoing(last, now))
+    parts.push(`${counted ? `the current ${unit}` : `this ${unit}`} so far: ${last.completed.length}`);
+  return [...parts, 'click for details'].join(' · ');
+}
+
 /**
  * Activity bucketed by `bucketMs` (one of the sizes above; a preset's own, PRESET_BUCKET_MS) or else by the smallest
  * of a few natural lengths that fits the time span; null without completions. With `period`, only that period is
@@ -345,22 +394,20 @@ export function activitySeries(
       const overlap = Math.min(end, w.end) - Math.max(start, w.start);
       if (overlap > 0) agentBusy[w.agent] = (agentBusy[w.agent] ?? 0) + overlap / bucketMs;
     }
-    // An agent on two tasks at once is still one agent at work (Unattributed stands for many: not capped)
-    for (const a of Object.keys(agentBusy)) if (a) agentBusy[a] = Math.min(1, agentBusy[a]);
+    // An agent on two tasks at once is still one agent at work; unattributed work counts as one agent too (T-247)
+    const byKind = { agents: 0, people: 0 };
+    for (const a of Object.keys(agentBusy)) {
+      agentBusy[a] = Math.min(1, agentBusy[a]);
+      byKind[a && !isAgent(a) ? 'people' : 'agents'] += agentBusy[a];
+    }
     buckets.push({
       start,
       end,
       agentBusy,
+      byKind,
       completed,
       byType,
       average: recent.reduce((a, b) => a + b, 0) / recent.length,
-      cumulativeDone: all.filter((c) => c.time < end).length,
-      scope: tasks.filter((t) => (ms(t.created_at) ?? -Infinity) < end).length,
-      // Agent work in progress at the bucket's end (a task waiting for review isn't)
-      wip: tasks.filter((t) => {
-        const span = workSpan(t, now, vocab);
-        return !!span && span.start < end && (span.live || span.end >= end);
-      }).length,
     });
   }
 
@@ -372,7 +419,14 @@ export function activitySeries(
       ({ s, c, w }) =>
         s !== null && c !== null && w !== null && w >= s && (!period || (c >= period.start && c < period.end)),
     )
-    .map(({ t, s, c, w }) => ({ id: t.id, name: t.name, type: t.type, time: c!, minutes: (w! - s!) / 60_000 }))
+    .map(({ t, s, c, w }) => ({
+      id: t.id,
+      name: t.name,
+      type: t.type,
+      time: c!,
+      minutes: (w! - s!) / 60_000,
+      withYou: !!t.labels?.includes(INTERACTIVE_LABEL),
+    }))
     .sort((a, b) => a.time - b.time);
 
   const typeTotals = new Map<string, number>();
@@ -385,7 +439,6 @@ export function activitySeries(
       (a, b) => Number(a === '') - Number(b === '') || a.localeCompare(b),
     ),
     ...idleIn(work, first, period ? Math.min(period.end, now) : Math.max(last, now)),
-    workingNow: new Set(tasks.filter((t) => kind(t) === 'active').map((t) => startedBy(t) ?? '')).size,
     unitLabel,
     bucketMs,
     buckets,

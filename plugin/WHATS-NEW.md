@@ -2,6 +2,14 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.20.0] - 2026-10-27
+
+- All projects has a Board tab: what's being worked on, waiting for you and just finished, across every project, with a search box.
+- A new Project tab shows who works on a project, its vocabulary, and stats such as agent time and how long tasks take.
+- Activity and Progress now show where the time went: agents working, waiting on you, or idle.
+- The Kanban opens first and no longer makes the page scroll; long columns show how many more cards are above or below.
+- atm is hardened against hostile task files and repositories, and agents treat task text as information, not commands.
+
 ## [0.19.0] - 2026-10-26
 
 - Notes, questions and answers show formatting: code, lists, bold text and links.

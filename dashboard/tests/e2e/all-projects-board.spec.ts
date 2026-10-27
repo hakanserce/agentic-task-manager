@@ -1,0 +1,223 @@
+// The All projects page's Board tab (T-259, docs/all-projects-kanban-proposal.md §3, §4): every project's tasks in
+// one board, from the projects' board summaries.
+import { board, boardCard, expect, openDashboard, summary, test, type TasksServer } from './helpers';
+import type { Page } from '@playwright/test';
+
+const NOW = new Date('2026-03-01T12:00:00Z');
+
+/** Two projects: Shop (v4 fixture), and Blog, the more recently active one */
+function addProjects(tasksServer: TasksServer) {
+  tasksServer
+    .addProject(
+      'shop',
+      'v4',
+      'Shop',
+      summary({
+        last_activity: '2026-03-01T11:00:00Z',
+        board: board(
+          {
+            todo: [boardCard('T-008', 'Password reset'), boardCard('T-009', 'Email templates', { labels: ['api'] })],
+            active: [boardCard('T-007', 'Checkout flow', { by: 'claude:aaa', since: '2026-03-01T10:00:00Z' })],
+            blocked: [
+              boardCard('T-005', 'Choose the email provider', {
+                since: '2026-03-01T06:00:00Z',
+                waiting_on: 'agent',
+                questions: 1,
+              }),
+            ],
+            done: [boardCard('T-003', 'Product page', { completed_at: '2026-03-01T11:30:00Z' })],
+          },
+          { todo: 12 },
+        ),
+      }),
+    )
+    .addProject(
+      'blog',
+      'minimal',
+      'Blog',
+      summary({
+        last_activity: '2026-03-01T11:50:00Z',
+        board: board({
+          todo: [boardCard('B-1', 'RSS feed', { priority: 'P1', labels: ['ux', 'api', 'seo'] })],
+          active: [boardCard('B-3', 'Comments', { by: 'alice', since: '2026-03-01T09:00:00Z' })],
+          blocked: [
+            boardCard('B-2', 'Pick a theme', { since: '2026-03-01T11:00:00Z', waiting_on: 'user', questions: 2 }),
+          ],
+          done: [boardCard('B-4', 'Drafts', { completed_at: '2026-03-01T11:55:00Z' })],
+        }),
+      }),
+    );
+}
+
+async function openBoard(page: Page, tasksServer: TasksServer) {
+  await page.clock.setFixedTime(NOW);
+  addProjects(tasksServer);
+  await openDashboard(page, tasksServer, 'standard');
+  await page.locator('#overview-tab-board').click();
+  await expect(page.locator('#all-board')).toBeVisible();
+}
+
+const column = (page: Page, id: string) => page.locator(`#all-board .kanban-column[data-status="${id}"]`);
+const ids = (page: Page, id: string) => column(page, id).locator('.board-card .kanban-card-id');
+
+test.describe('All projects board', () => {
+  test('the Projects tab is the default; Board shows the columns, each in its own order', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.clock.setFixedTime(NOW);
+    addProjects(tasksServer);
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('#overview-tab-projects')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#projects-grid')).toBeVisible();
+    await page.locator('#overview-tab-board').click();
+    await expect(page).toHaveURL(/view=board/);
+    await expect(page.locator('#projects-grid')).toHaveCount(0);
+
+    await expect(column(page, 'todo').locator('.kanban-column-title')).toHaveText('To Do · ready');
+    // To Do: the most recently active project first, then each project's (the loop's) order
+    await expect(ids(page, 'todo')).toHaveText(['B-1', 'T-008', 'T-009']);
+    // In progress: longest running first; blocked: on you first; done: newest first
+    await expect(ids(page, 'active')).toHaveText(['B-3', 'T-007']);
+    await expect(ids(page, 'blocked')).toHaveText(['B-2', 'T-005']);
+    await expect(ids(page, 'done')).toHaveText(['B-4', 'T-003']);
+    // The columns count everything, the cards not shown too
+    await expect(column(page, 'todo').locator('.kanban-count')).toHaveText('13');
+  });
+
+  test('cards: the project chip, the badges, and the column’s line', async ({ page, tasksServer }) => {
+    await openBoard(page, tasksServer);
+    const b1 = page.locator('#all-board .board-card[data-project="blog"][data-id="B-1"]');
+    await expect(b1.locator('.board-project-name')).toHaveText('Blog');
+    await expect(b1.locator('.project-logo')).toHaveAttribute('data-initials', 'BL');
+    await expect(b1.locator('.priority-badge')).toHaveText('P1');
+    await expect(b1.locator('.label-chip')).toHaveText(['ux', 'api', '+1']);
+    await expect(b1.locator('.kanban-card-name')).toHaveText('RSS feed');
+
+    const status = (project: string, id: string) =>
+      page.locator(`#all-board .board-card[data-project="${project}"][data-id="${id}"] .board-card-status`);
+    await expect(status('blog', 'B-3')).toHaveText('alice · 3 h ago');
+    await expect(status('blog', 'B-2')).toHaveText('Waiting on you · 1 h · 2 questions');
+    await expect(status('blog', 'B-2')).toHaveClass(/on-user/);
+    await expect(status('shop', 'T-005')).toHaveText('Waiting on an agent · 6 h · 1 question');
+    await expect(status('blog', 'B-4')).toHaveText('Done 5 m ago');
+  });
+
+  test('empty columns say why', async ({ page, tasksServer }) => {
+    await openBoard(page, tasksServer);
+    await expect(column(page, 'review').locator('.kanban-empty')).toHaveText('Nothing waiting for a review');
+    await expect(column(page, 'review').locator('.kanban-count')).toHaveText('0');
+  });
+
+  test('a card opens its task in its project; the chip opens the project', async ({ page, tasksServer }) => {
+    await openBoard(page, tasksServer);
+    await page.locator('#all-board .board-card[data-project="shop"][data-id="T-005"]').click();
+    await expect(page).toHaveURL(/project=shop/);
+    await expect(page.locator('#detail-overlay.open #detail-panel h3 > span').first()).toHaveText('T-005');
+
+    await page.goBack();
+    await expect(page.locator('#all-board')).toBeVisible();
+    await page.locator('#all-board .board-card[data-id="B-1"] .board-project-chip').click();
+    await expect(page).toHaveURL(/project=blog/);
+    await expect(page.locator('#detail-overlay.open')).toHaveCount(0);
+  });
+
+  test('“+ N more” opens the project’s Kanban', async ({ page, tasksServer }) => {
+    await openBoard(page, tasksServer);
+    const more = column(page, 'todo').locator('.board-more');
+    await expect(more).toHaveText(['+ 10 more in Shop']);
+    await more.click();
+    await expect(page).toHaveURL(/project=shop/);
+    await expect(page.locator('#tab-kanban')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('the tab is remembered, #view= links to it, and Back returns to the other', async ({ page, tasksServer }) => {
+    await openBoard(page, tasksServer);
+    await page.locator('#overview-tab-projects').click();
+    await expect(page.locator('#projects-grid')).toBeVisible();
+    await page.goBack();
+    await expect(page.locator('#all-board')).toBeVisible();
+    // Without a view in the link: the last tab chosen
+    await page.goto('tasks-dashboard.html#overview');
+    await page.reload();
+    await expect(page.locator('#overview-tab-board')).toHaveAttribute('aria-selected', 'true');
+    await page.goto('tasks-dashboard.html#overview&view=projects');
+    await expect(page.locator('#projects-grid')).toBeVisible();
+  });
+
+  test('group by project: a lane per project, the most recently active first, none for an empty one; remembered (T-260)', async ({
+    page,
+    tasksServer,
+  }) => {
+    tasksServer.addProject(
+      'quiet',
+      'minimal',
+      'Quiet',
+      summary({ last_activity: '2026-03-01T11:59:00Z', board: board({}) }),
+    );
+    await openBoard(page, tasksServer);
+    await page.locator('#board-group-by-project').check();
+    const lanes = page.locator('#all-board .board-lane');
+    await expect(lanes).toHaveCount(2);
+    await expect(lanes.locator('.board-lane-name')).toHaveText(['Blog', 'Shop']);
+    // In a lane, the cards don't repeat the project; "+ N more" doesn't either
+    await expect(lanes.first().locator('.board-project-chip')).toHaveCount(0);
+    await expect(page.locator('.board-lane[data-project="shop"] .board-more')).toHaveText(['+ 10 more']);
+    await expect(page.locator('.board-lane[data-project="blog"] [data-status="todo"] .kanban-card-id')).toHaveText([
+      'B-1',
+    ]);
+
+    await page.reload();
+    await expect(page.locator('#board-group-by-project')).toBeChecked();
+    await expect(lanes).toHaveCount(2);
+    await page.locator('.board-lane[data-project="shop"] .board-lane-name').click();
+    await expect(page).toHaveURL(/project=shop/);
+  });
+
+  test('search: a match in a description narrows the board, asked once per pause; clearing restores it (T-261)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openBoard(page, tasksServer);
+    const search = page.locator('#board-search');
+    // T-005's description: "Pick a provider for transactional email." (the card itself has no description)
+    await search.pressSequentially('transactional', { delay: 20 });
+    await expect(page.locator('#all-board .board-card')).toHaveCount(1);
+    await expect(page.locator('#all-board .board-card[data-project="shop"][data-id="T-005"]')).toHaveCount(1);
+    await expect(column(page, 'blocked').locator('.kanban-count')).toHaveText('1 of 2');
+    await expect(column(page, 'todo').locator('.kanban-count')).toHaveText('0 of 13');
+    await expect(column(page, 'todo').locator('.kanban-empty')).toHaveText('No match');
+    // No "+ N more" while searching: the search looks at the board's cards
+    await expect(page.locator('#all-board .board-more')).toHaveCount(0);
+    expect(tasksServer.searches).toEqual(['transactional']);
+
+    // A project's name finds its tasks (Shop's cards are its v4 tasks; Blog's are made up); remembered across a reload
+    await search.fill('shop');
+    await expect(page.locator('#all-board .board-card')).toHaveCount(5);
+    await page.reload();
+    await expect(page.locator('#board-search')).toHaveValue('shop');
+    await expect(page.locator('#all-board .board-card')).toHaveCount(5);
+
+    await page.locator('.board-search .search-clear').click();
+    await expect(page.locator('#all-board .board-card')).toHaveCount(9);
+    await expect(column(page, 'todo').locator('.kanban-count')).toHaveText('13');
+  });
+
+  test('Active only applies to the board too', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(NOW);
+    const idle = summary({
+      total: 5,
+      done: 5,
+      percent: 100,
+      current_phase: null,
+      last_activity: '2026-01-01T00:00:00Z',
+      board: board({ done: [boardCard('I-1', 'Old work', { completed_at: '2026-01-01T00:00:00Z' })] }),
+    });
+    tasksServer.addProject('idle', 'minimal', 'Idle', idle);
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('#overview-tab-board').click();
+    await expect(page.locator('#all-board .board-card')).toHaveCount(0);
+    await page.locator('#active-projects-only').uncheck();
+    await expect(page.locator('#all-board .board-card[data-id="I-1"]')).toHaveCount(1);
+  });
+});

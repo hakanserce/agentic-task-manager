@@ -26,7 +26,9 @@ import {
 } from './filters';
 import { parseDialogHash, withDialogHash, type DialogId } from './dialogs';
 import { hasViewHash, parseViewHash, withViewHash, type ViewId } from './tabs';
-import { routeFor, withProjectHash, type Route } from './routes';
+import { isOverviewTab, parseOverviewTab, routeFor, withProjectHash, type OverviewTab, type Route } from './routes';
+import { formatHash, hashParams } from './hash';
+import type { BurndownRange } from './burndown';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
@@ -35,6 +37,13 @@ import { loadWorktrees, mergeWorktrees, type Worktree, type WorktreesResult } fr
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
 
 const RELOAD_SPIN_MS = 400;
+/** A filter group with nothing selected ("All"), for the groups the Progress tab doesn't apply */
+const NO_VALUES = emptyFilters().status;
+
+function savedOverviewTab(): OverviewTab {
+  const tab = getPref('overviewTab', 'projects');
+  return isOverviewTab(tab) ? tab : 'projects';
+}
 
 function releaseNotesUnseen(): boolean {
   const version = dashboardVersion();
@@ -55,6 +64,12 @@ export class DashboardState {
   newVersionReady = $state(false);
   /** The overview shows only active projects (open work, or activity lately); remembered per browser */
   overviewActiveOnly = $state(getPref('overviewActiveOnly', true));
+  /** The overview's tab, project cards or the board (T-259): "#view=board" in a link, else the last one chosen */
+  overviewTab = $state<OverviewTab>(parseOverviewTab(location.hash) ?? savedOverviewTab());
+  /** The All projects board in a lane per project (T-260); remembered per browser */
+  boardGroupByProject = $state(getPref('boardGroupByProject', false));
+  /** The All projects board's search (T-261), over every project's tasks through api/search; remembered per browser */
+  boardQuery = $state(getPref('boardQuery', ''));
   tasks = $state.raw<Task[]>([]);
   // Never mutated, only replaced on (re)load, so a plain Map in $state.raw is reactive enough
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -110,9 +125,16 @@ export class DashboardState {
   base = $derived(this.includeArchived ? this.history : this.tasks);
   searched = $derived(searchTasks(this.base, this.query));
   filtered = $derived(filterTasks(this.searched, this.filters, this.vocab));
-  /** History (archived tasks too, once loaded) matching the search and filters: for the Progress tab */
+  /**
+   * The Progress tab's tasks: the history (archived tasks too, once loaded) matching the search and filters, except
+   * the status and stage filters. Progress *is* the split by status, so those would make it meaningless (T-239).
+   */
   historyFiltered = $derived(
-    this.includeArchived ? this.filtered : filterTasks(searchTasks(this.history, this.query), this.filters, this.vocab),
+    filterTasks(
+      searchTasks(this.history, this.query),
+      { ...this.filters, status: NO_VALUES, stage: NO_VALUES },
+      this.vocab,
+    ),
   );
 
   /** Task shown in the detail panel; the panel keeps its last content while closed. */
@@ -129,10 +151,10 @@ export class DashboardState {
   listSort = $state<ListSort>('file');
   /** The phase the Progress tab focuses on; null for all phases */
   progressPhase = $state<number | null>(null);
-  /** The Progress tab lists only active phases (the unfinished ones and the one that finished last) */
-  progressActive = $state.raw<{ only: boolean }>({ only: true });
   /** The filter panel's Phase group lists the finished phases too (part of the saved view) */
   filterFinishedPhases = $state(false);
+  /** The Progress tab's burndown range (part of the saved view) */
+  progressRange = $state<BurndownRange>('phase');
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */
@@ -236,7 +258,11 @@ export class DashboardState {
     }
     this.projectsLoaded = true;
     this.route = routeFor(this.projects, location.hash);
-    if (this.route.page !== 'project') return null;
+    if (this.route.page !== 'project') {
+      // A task's details belong to its project's page (Back from a task opened on the overview)
+      this.detailOpen = false;
+      return null;
+    }
     if (this.route.id !== this.projectId) this.switchProject(this.route.id);
     // The project page wasn't shown, so nothing followed a #view= in the link that opened it
     if (hasViewHash(location.hash)) this.tab = parseViewHash(location.hash);
@@ -274,13 +300,17 @@ export class DashboardState {
   }
 
   /** Show project `id`, or the overview for null (a new history entry, so Back returns). With `needsYou`, the project
-   * opens on the Kanban board filtered to the tasks in review and blocked; with `task`, with that task's details open. */
-  openProject(id: string | null, { needsYou = false, task }: { needsYou?: boolean; task?: string } = {}) {
+   * opens on the Kanban board filtered to the tasks in review and blocked; with `task`, with that task's details open;
+   * with `view`, on that tab. */
+  openProject(
+    id: string | null,
+    { needsYou = false, task, view }: { needsYou?: boolean; task?: string; view?: ViewId } = {},
+  ) {
     let hash = withProjectHash(location.hash, id);
     if (id !== null && needsYou) {
       hash = withViewHash(hash, 'kanban');
       this.#pendingNeedsYou = true;
-    }
+    } else if (id !== null && view) hash = withViewHash(hash, view);
     if (id !== null && task) this.#pendingTask = task;
     location.hash = hash;
   }
@@ -288,6 +318,12 @@ export class DashboardState {
   /** The URL changed (a link, Back): pick up the dialog, and the page when it names another one. */
   onHashChange() {
     this.dialog = parseDialogHash(location.hash);
+    // An overview tab from the URL (Back, a link) is the last one shown, so it is remembered too
+    const overviewTab = parseOverviewTab(location.hash);
+    if (overviewTab) {
+      this.overviewTab = overviewTab;
+      setPref('overviewTab', overviewTab);
+    }
     const route = routeFor(this.projects, location.hash);
     if (JSON.stringify(route) !== JSON.stringify(this.route)) void this.reload();
   }
@@ -358,6 +394,27 @@ export class DashboardState {
     }
   }
 
+  /** Select an overview tab: remembered per browser, and in the URL so Back returns to the other */
+  selectOverviewTab(tab: OverviewTab) {
+    setPref('overviewTab', tab);
+    if (tab !== this.overviewTab) {
+      const params = hashParams(location.hash);
+      params.set('view', tab);
+      location.hash = formatHash(params);
+    }
+    this.overviewTab = tab;
+  }
+
+  setBoardGroupByProject(on: boolean) {
+    this.boardGroupByProject = on;
+    setPref('boardGroupByProject', on);
+  }
+
+  setBoardQuery(query: string) {
+    this.boardQuery = query;
+    setPref('boardQuery', query);
+  }
+
   setOverviewActiveOnly(on: boolean) {
     this.overviewActiveOnly = on;
     setPref('overviewActiveOnly', on);
@@ -385,6 +442,12 @@ export class DashboardState {
 
   toggleFilter(group: FilterGroup, value: string) {
     this.filters = toggleFilter(this.filters, group, value);
+  }
+
+  /** No filters and no search */
+  clearFilters() {
+    this.filters = emptyFilters();
+    this.query = '';
   }
 
   showDetail(id: string) {
@@ -445,8 +508,8 @@ export class DashboardState {
       },
       listSort: this.listSort,
       progressPhase: this.progressPhase,
-      progressActive: this.progressActive,
       filterFinishedPhases: this.filterFinishedPhases,
+      progressRange: this.progressRange,
       graphFiltered: this.graphFiltered,
       graph: this.graphView,
       agents: this.agentsWindow,
@@ -481,8 +544,8 @@ export class DashboardState {
     this.kanbanShowAllDone = view.kanban.showAllDone;
     this.listSort = view.listSort;
     this.progressPhase = view.progressPhase;
-    this.progressActive = view.progressActive;
     this.filterFinishedPhases = view.filterFinishedPhases;
+    this.progressRange = view.progressRange;
     this.graphFiltered = view.graphFiltered;
     this.graphView = view.graph;
     this.agentsWindow = view.agents;

@@ -6,9 +6,10 @@ never write: they read tasks.json and the claims store without the lock (both ar
 
 import json
 import os
+import re
 
 from .claims import next_task, read_store, ready_in_order
-from .core import now, out, parse_iso, to_json
+from .core import AtmError, now, out, parse_iso, to_json
 from .model import (
     archive_hint,
     archive_path,
@@ -277,11 +278,147 @@ def git_summary(paths, tasks):
         pr = t.get("pr")
         if isinstance(pr, dict) and isinstance(pr.get("number"), int):
             entry = prs.setdefault(pr["number"], {"number": pr["number"], "url": None, "state": "open"})
-            if isinstance(pr.get("url"), str) and pr["url"]:
+            # The dashboard links to it: only a web address (docs/security-review.md F9)
+            if isinstance(pr.get("url"), str) and re.match(r"https?://\S+\Z", pr["url"], re.IGNORECASE):
                 entry["url"] = pr["url"]
             if t.get("merged_at"):
                 entry["state"] = "merged"
     return {"branch": branch, "pr": prs[max(prs)] if prs else None}
+
+
+BOARD_CAP = 30  # cards per column of the All projects board (docs/all-projects-kanban-proposal.md, 3.1)
+BOARD_READY_CAP = 10  # ready tasks per project, so one project's new batch doesn't fill the To Do column
+BOARD_DONE_HOURS = 24
+
+
+def board_card(vocab, task, **extra):
+    """What a project's Kanban card shows, nothing more (T-257)."""
+    labels = task.get("labels")
+    card = {
+        "id": task.get("id"),
+        "name": capped(task.get("name")),
+        "type": task.get("type"),
+        "phase": as_phase_id(phase_of(task)),
+        "priority": priority_of(vocab, task),
+        "labels": [l for l in labels if isinstance(l, str)] if isinstance(labels, list) else [],
+    }
+    card.update(extra)
+    return card
+
+
+def board_column(cards, cap=BOARD_CAP):
+    """A column: its first `cap` cards, and how many there are in all (for "+ N more")."""
+    return {"count": len(cards), "cards": cards[:cap]}
+
+
+def board(data, store, tasks, kinds, open_phases, vocab, current, live):
+    """The project's cards for the All projects board (T-257), one rule per column: the tasks ready to start in the
+    first unfinished phase, in the loop's order; everything in progress (longest running first), in review (longest
+    waiting first) and blocked (on the user first, then longest waiting); what was finished in the last 24 hours,
+    newest first."""
+    of_kind = lambda kind: [t for t, k in zip(tasks, kinds) if k == kind]
+    first_phase = open_phases[0] if open_phases else None
+    ready = [t for t in ready_in_order(data, store) if phase_of(t) == first_phase]
+    claimed_by = {c.get("task"): c.get("agent") for c in live}
+    since = lambda t, field: t.get(field) or t.get("updated_at")
+    active = sorted(of_kind("active"), key=lambda t: str(t.get("started_at") or ""))
+    review = sorted(of_kind("review"), key=lambda t: str(since(t, "review_requested_at") or ""))
+    blocked = sorted(
+        of_kind("blocked"),
+        key=lambda t: (t.get("waiting_on") != "user", str(since(t, "blocked_at") or "")),
+    )
+    cutoff = current.timestamp() - BOARD_DONE_HOURS * 3600
+    finished_at = lambda t: parse_time(t.get("completed_at"))
+    done = [t for t in of_kind("done") if finished_at(t) and finished_at(t).timestamp() > cutoff]
+    done.sort(key=lambda t: str(t.get("completed_at")), reverse=True)
+    return {
+        "todo": board_column([board_card(vocab, t) for t in ready], BOARD_READY_CAP),
+        "active": board_column(
+            [
+                board_card(vocab, t, by=claimed_by.get(t.get("id")) or started_by(t), since=since(t, "started_at"))
+                for t in active
+            ]
+        ),
+        "review": board_column([board_card(vocab, t, since=since(t, "review_requested_at")) for t in review]),
+        "blocked": board_column(
+            [
+                board_card(
+                    vocab,
+                    t,
+                    since=since(t, "blocked_at"),
+                    waiting_on=t.get("waiting_on"),
+                    questions=len(t.get("questions") or []),
+                )
+                for t in blocked
+            ]
+        ),
+        "done": board_column([board_card(vocab, t, completed_at=t.get("completed_at")) for t in done]),
+    }
+
+
+def work_span(vocab, task, current):
+    """A task's work as (start, end) timestamps, as the dashboard counts it (work.ts): from started_at until it asked
+    for a review or was done, or until now while active; None for a task that holds none."""
+    start = parse_time(task.get("started_at"))
+    if not start:
+        return None
+    kind = kind_of(vocab, task.get("status"))
+    if kind == "active":
+        end = max(current, start)
+    elif kind in ("done", "review"):
+        end = (
+            parse_time(task.get("review_requested_at"))
+            or parse_time(task.get("completed_at") if kind == "done" else task.get("updated_at"))
+            or start
+        )
+    else:
+        return None
+    return (start.timestamp(), max(end, start).timestamp())
+
+
+def agent_minutes(vocab, tasks, current):
+    """Agent time (docs/project-stats-proposal.md, T-255): the work of tasks an agent started, or nobody recorded
+    (before v4), each agent's spans merged so an agent on two tasks counts once; parallel agents add up. As the
+    dashboard's Project tab counts it (projectstats.ts)."""
+    spans = {}
+    for i, t in enumerate(tasks):
+        starter = started_by(t)
+        if starter and not str(starter).startswith("claude:"):
+            continue
+        span = work_span(vocab, t, current)
+        if span:
+            spans.setdefault(starter or i, []).append(span)  # unattributed spans are each their own
+    total = 0.0
+    for agent_spans in spans.values():
+        end = None
+        for s, e in sorted(agent_spans):
+            if end is None or s > end:
+                total += e - s
+                end = e
+            elif e > end:
+                total += e - end
+                end = e
+    return round(total / 60)
+
+
+def project_stats(paths, data, vocab, tasks, current):
+    """The overview card's line (T-255): when the project started (its first task's created_at, else meta.created),
+    how many tasks it has, and the agent time, archived tasks included; an unreadable archive is left out. (A task
+    folder with a symlinked file never gets here: find_paths refuses it, docs/security-review.md F8.)"""
+    try:
+        archived = [t for t in load_archive(paths)["tasks"] if isinstance(t, dict)]
+    except AtmError:
+        archived = []
+    ids = {t.get("id") for t in tasks}
+    every = tasks + [t for t in archived if t.get("id") not in ids]
+    created = [parse_time(t.get("created_at")) for t in every]
+    created = [c for c in created if c] or [parse_time((data.get("meta") or {}).get("created"))]
+    started = min((c for c in created if c), default=None)
+    return {
+        "started": started.strftime("%Y-%m-%dT%H:%M:%SZ") if started else None,
+        "tasks": len(every),
+        "agent_minutes": agent_minutes(vocab, every, current),
+    }
 
 
 def project_summary(paths):
@@ -381,6 +518,8 @@ def project_summary(paths):
         "description": description(data.get("meta")),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
+        "board": board(data, store, tasks, kinds, open_phases, vocab, current, live),
+        "stats": project_stats(paths, data, vocab, tasks, current),
     }
 
 

@@ -38,7 +38,34 @@ export interface ProjectSummary {
   needs_you_tasks?: NeedsYouItem[];
   last_activity: string | null;
   completions_14d: number[];
+  /** The project's cards for the All projects board (absent before 0.20; lib/allboard.ts) */
+  board?: ProjectBoard;
+  /** The overview card's line, archived tasks included (absent before 0.20; lib/projects.ts statsLine) */
+  stats?: { started: string | null; tasks: number; agent_minutes: number };
 }
+
+/** A card on the All projects board: what a project's Kanban card shows, plus its column's fields */
+export interface BoardCard {
+  id: string;
+  name: string;
+  type: string;
+  phase: number | null;
+  priority: string | null;
+  labels: string[];
+  /** In progress: who works on it */
+  by?: string | null;
+  /** In progress, review, blocked: since when */
+  since?: string | null;
+  /** Blocked: who decides, and how many questions */
+  waiting_on?: string | null;
+  questions?: number;
+  /** Done: when */
+  completed_at?: string | null;
+}
+
+export type BoardColumnId = 'todo' | 'active' | 'review' | 'blocked' | 'done';
+/** A project's column: its first cards, and how many there are in all */
+export type ProjectBoard = Record<BoardColumnId, { count: number; cards: BoardCard[] }>;
 
 /** A registered project, as api/projects lists it */
 export interface ProjectEntry {
@@ -152,6 +179,23 @@ export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Valida
     logo: typeof p.logo === 'string' && LOGO_URL.test(p.logo) ? p.logo : null,
   }));
   return { unchanged: false, projects, validators: file.validators };
+}
+
+export const SEARCH_URL = 'api/search';
+
+/**
+ * The tasks matching `query` in every project (api/search, T-258): their IDs per project id. Anything unexpected in
+ * the answer is left out; a failed request throws.
+ */
+export async function searchProjects(query: string, fetchFn: typeof fetch = fetch): Promise<Map<string, Set<string>>> {
+  const res = await fetchFn(`${SEARCH_URL}?q=${encodeURIComponent(query)}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`${SEARCH_URL}: HTTP ${res.status}`);
+  const data: unknown = await res.json();
+  const found = new Map<string, Set<string>>();
+  if (data && typeof data === 'object' && !Array.isArray(data))
+    for (const [project, ids] of Object.entries(data))
+      if (Array.isArray(ids)) found.set(project, new Set(ids.filter((id): id is string => typeof id === 'string')));
+  return found;
 }
 
 export const WHOAMI_URL = '__atm/whoami';

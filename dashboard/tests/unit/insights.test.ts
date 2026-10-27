@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activitySeries,
+  cycleScaleMax,
   gaps,
   MAX_ACTIVITY_BUCKETS,
   median,
@@ -9,6 +10,7 @@ import {
   PRESET_BUCKET_MS,
   rangeLabel,
   rangeWindow,
+  sparklineTitle,
 } from '../../src/lib/insights';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
@@ -84,6 +86,22 @@ describe('progressBreakdown', () => {
     expect(progressBreakdown([]).overall.ratio).toBe(0);
   });
 
+  it('archived tasks count as done overall, so archiving never lowers the percentage (T-238)', () => {
+    const current = [task('a', { status: 'done' }), task('b', { status: 'todo' }), task('c', { status: 'todo' })];
+    // 6 archived, not loaded: counted from meta.archived
+    const p = progressBreakdown(current, undefined, 6);
+    expect(p.overall).toMatchObject({ done: 7, total: 9 });
+    expect(p.overall.ratio).toBeCloseTo(7 / 9);
+    expect(p.archived).toBe(6);
+    // Phases and types are the tasks passed in: tasks.json's until the archive is loaded
+    expect(p.byPhase.map((s) => s.total)).toEqual([3]);
+    // Loaded: the history has them, and the count is only for the tooltip
+    const archived = Array.from({ length: 6 }, (_, i) => task(`x${i}`, { status: 'done' }));
+    const loaded = progressBreakdown([...current, ...archived], undefined, 0, 6);
+    expect(loaded.overall).toMatchObject({ done: 7, total: 9 });
+    expect(loaded.archived).toBe(6);
+  });
+
   it('skipped tasks count as neither done nor left: 7 done and 3 skipped is 100%, the 3 shown apart', () => {
     const tasks = [
       ...Array.from({ length: 7 }, (_, i) => task(`d${i}`, { status: 'done' })),
@@ -127,7 +145,7 @@ describe('progressBreakdown', () => {
 });
 
 describe('activitySeries', () => {
-  it('measures time per task and agent work until the review was requested; reviews are not work in progress', () => {
+  it('measures time per task and agent work until the review was requested', () => {
     const s = activitySeries(
       [
         worked('a', 0, 4, { agent: 'alice', review_requested_at: iso(T0 + H) }),
@@ -137,13 +155,10 @@ describe('activitySeries', () => {
       T0 + 5 * H,
     )!;
     expect(s.cycleTimes.map((c) => [c.id, c.minutes])).toEqual([['a', 60]]);
-    expect(s.workingNow).toBe(0);
     // Each worked one hour (hourly buckets, aligned to the clock: 08:00, 09:00, ...), not until completion or now
     const busyHours = (agent: string) => s.buckets.reduce((sum, b) => sum + (b.agentBusy[agent] ?? 0), 0);
     expect(busyHours('alice')).toBeCloseTo(1);
     expect(busyHours('bob')).toBeCloseTo(1);
-    // At 09:00 alice works, at 10:00 bob; after that both tasks only wait for their reviews
-    expect(s.buckets.map((b) => b.wip)).toEqual([1, 1, 0, 0, 0]);
   });
 
   it("follows a project's statuses by kind", () => {
@@ -157,7 +172,8 @@ describe('activitySeries', () => {
     const tasks = [worked('a', 0, 1, { status: 'shipped' }), worked('b', 1, undefined, { status: 'doing' })];
     expect(activitySeries(tasks, null, T0 + 2 * H)).toBeNull();
     const s = activitySeries(tasks, null, T0 + 2 * H, vocab)!;
-    expect([s.totalCompleted, s.workingNow]).toEqual([1, 1]);
+    // b, in the project's active status, is still at work in the last bucket
+    expect([s.totalCompleted, s.buckets.at(-1)!.byKind.agents]).toEqual([1, 1]);
   });
 
   it('is null without completions', () => {
@@ -182,12 +198,6 @@ describe('activitySeries', () => {
     expect(s.buckets[0].byType).toEqual({ feature: 1, test: 1 });
     // Mean of this bucket and up to two before it
     expect(s.buckets.map((b) => b.average)).toEqual([2, 1, 1, 2 / 3]);
-    expect(s.buckets.map((b) => b.cumulativeDone)).toEqual([2, 2, 3, 4]);
-    // Buckets are whole clock hours (08:00–09:00, …), so they end at T0 + 0.83 h, 1.83 h, … f is created in the third
-    // hour
-    expect(s.buckets.map((b) => b.scope)).toEqual([5, 5, 6, 6]);
-    // In progress at each bucket's end: c (1–2.5), d (2–3.2), e (3–)
-    expect(s.buckets.map((b) => b.wip)).toEqual([0, 1, 1, 1]);
     expect(s.types).toEqual([
       { type: 'feature', count: 3 },
       { type: 'test', count: 1 },
@@ -203,6 +213,24 @@ describe('activitySeries', () => {
     expect(s.medianCycleMinutes).toBe(105);
   });
 
+  it('the time-per-task scale stops at the 90th percentile, so one outlier does not flatten the rest (T-248)', () => {
+    // 20 tasks of 10–29 m and one of 20 h: the scale ends at the 19th value, 28 m
+    const minutes = [...Array.from({ length: 20 }, (_, i) => 10 + i), 1200];
+    expect(cycleScaleMax(minutes)).toBe(28);
+    // Few tasks: the nearest rank is the slowest, so none is an outlier
+    expect(cycleScaleMax([20, 30, 50, 60, 60, 80])).toBe(80);
+    expect(cycleScaleMax([])).toBe(1);
+    expect(cycleScaleMax([0.2])).toBe(1);
+  });
+
+  it('marks interactive tasks: their time includes working with you (T-246)', () => {
+    const s = activitySeries([worked('alone', 0, 1), worked('pair', 1, 3, { labels: ['ux', 'interactive'] })])!;
+    expect(s.cycleTimes.map((c) => [c.id, c.withYou])).toEqual([
+      ['alone', false],
+      ['pair', true],
+    ]);
+  });
+
   it('picks longer buckets for longer spans, never more than the maximum', () => {
     const days = activitySeries([worked('a', 0, 1), worked('b', 0, 24 * 20)])!;
     expect(days.unitLabel).toBe('day');
@@ -216,6 +244,24 @@ describe('activitySeries', () => {
     expect(s.totalCompleted).toBe(1);
     expect(s.cycleTimes).toEqual([]);
     expect(s.medianCycleMinutes).toBeNull();
+  });
+});
+
+describe('the sparkline tooltip (T-249)', () => {
+  it('says what the line is, and what the current bucket has so far while it is not over', () => {
+    const tasks = [worked('a', 0, 0.5), worked('b', 0.2, 0.6), worked('c', 1, 2.5)];
+    // The last bucket is the hour from 10:00; at 10:40 it isn't over
+    const s = activitySeries(tasks, null, T0 + 2.5 * H)!;
+    expect(sparklineTitle(s, T0 + 2.5 * H)).toBe(
+      'Tasks completed per hour, all time: 3 · the line is the average of the last 3 hours · this hour so far: 1 · ' +
+        'click for details',
+    );
+    // Later, the last bucket is over: nothing "so far"
+    expect(sparklineTitle(s, T0 + 5 * H)).toBe(
+      'Tasks completed per hour, all time: 3 · the line is the average of the last 3 hours · click for details',
+    );
+    const months = activitySeries([worked('a', 0, 1), worked('b', 0, 24 * 365 * 5)])!;
+    expect(sparklineTitle(months, Date.parse('2040-01-01'))).toContain('the average of the last 3 periods of 30 days');
   });
 });
 
@@ -257,13 +303,12 @@ describe('rangeWindow and activity in a period', () => {
     expect(rangeLabel({ preset: 'all' }, now)).toBe('All time');
   });
 
-  it('a period limits the buckets and counts, but the cumulative total includes earlier work', () => {
+  it('a period limits the buckets and counts', () => {
     const tasks = [worked('a', 0, 0.5), worked('b', 1, 2.5), worked('c', 2, 2.7)];
     const s = activitySeries(tasks, { start: T0 + 2 * H, end: T0 + 3 * H })!;
     expect(s.unitLabel).toBe('5 minutes');
     expect(s.totalCompleted).toBe(2);
     expect(s.cycleTimes.map((c) => c.id)).toEqual(['b', 'c']);
-    expect(s.buckets.at(-1)!.cumulativeDone).toBe(3);
   });
 
   it('each stepped period has its natural bucket: an hour per 5 minutes, a day per hour, a week or month per day', () => {
@@ -335,6 +380,23 @@ describe('idle stretches', () => {
     )!;
     expect(s.agents).toEqual(['x', 'y']);
     expect(s.buckets[0].agentBusy.x).toBeLessThanOrEqual(1);
-    expect(s.workingNow).toBe(0);
+  });
+
+  it('per bucket by kind: Claude sessions and unattributed work are agents, anyone else people, each capped (T-247)', () => {
+    const s = activitySeries(
+      [
+        worked('a', 0, 1, { agent: 'claude:a1' }),
+        worked('b', 0, 0.5, { agent: 'Hakan' }),
+        worked('c', 0, 1),
+        worked('d', 0, 1),
+      ],
+      null,
+      T0 + H,
+    )!;
+    // Two unattributed tasks over the same hour are one agent, like a session on two tasks
+    expect(s.buckets[0].agentBusy['']).toBe(1);
+    expect(s.buckets[0].byKind.agents).toBeCloseTo(s.buckets[0].agentBusy['claude:a1'] + 1);
+    expect(s.buckets[0].byKind.people).toBeCloseTo(s.buckets[0].agentBusy.Hakan);
+    expect(s.buckets[0].byKind.people).toBeGreaterThan(0);
   });
 });

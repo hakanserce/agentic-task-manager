@@ -1,6 +1,5 @@
 <script lang="ts">
   import { pluginInfo } from '../lib/plugin-info';
-  import { workflowType } from '../lib/stages';
   import { dashboard } from '../lib/state.svelte';
   import Dialog from './Dialog.svelte';
   import Logo from './Logo.svelte';
@@ -14,10 +13,15 @@
     const listed = dashboard.projects.find((p) => p.id === route.id);
     return { id: route.id, name: dashboard.projectName, logo: listed?.logo };
   });
-  // The project's vocabularies, so a user can see what the agents will use (D-1.4)
+  // The project's vocabularies, short, so a user can see what the agents will use (D-1.4); the rest (priorities,
+  // workflow, people, stats) is on the Project tab (T-255)
   const vocab = $derived(dashboard.vocab);
   const phases = $derived([...vocab.phaseNames].sort(([a], [b]) => a - b));
-  const workflow = $derived(workflowType(dashboard.meta));
+
+  function openProjectTab() {
+    dashboard.closeDialog();
+    dashboard.selectTab('project');
+  }
 </script>
 
 <Dialog id="about" title="About" open={dashboard.dialog === 'about'} onclose={() => dashboard.closeDialog()}>
@@ -44,16 +48,10 @@
       <dd>{phases.length ? phases.map(([id, name]) => `${id} ${name}`).join(' · ') : 'Numbered, without names'}</dd>
       <dt>Types</dt>
       <dd>{vocab.types.map((t) => t.label).join(' · ')}</dd>
-      <dt>Priorities</dt>
-      <dd>
-        {vocab.priorities
-          .map((p) => `${p.id} ${p.label}${p.id === vocab.defaultPriority ? ' (default)' : ''}`)
-          .join(' · ')}
-      </dd>
-      {#if workflow}
-        <dt>Workflow</dt>
-        <dd>{workflow}</dd>
-      {/if}
     </dl>
+    <p class="about-project-details">
+      <button id="about-project-details" onclick={openProjectTab}>Project details</button>: priorities, workflow,
+      people, agents and stats, on the Project tab
+    </p>
   {/if}
 </Dialog>

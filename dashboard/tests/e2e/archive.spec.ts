@@ -41,6 +41,37 @@ test.describe('archive', () => {
     await expect(page.locator('#dep-graph [data-id="T-090"]')).toHaveCount(1);
   });
 
+  test('the header Progress widget counts archived tasks as done, without loading the archive (T-238)', async ({
+    page,
+    tasksServer,
+  }) => {
+    const counts = async () => {
+      const label = (await page.locator('#progress-card').getAttribute('aria-label'))!;
+      const [, done, total] = /(\d+) of (\d+) tasks done/.exec(label)!.map(Number);
+      return { done, total };
+    };
+    // tasks.json's own count: the standard fixture's done tasks, of all but the skipped ones
+    const tasks = loadFixture('standard').tasks;
+    const before = {
+      done: tasks.filter((t) => t.status === 'done').length,
+      total: tasks.filter((t) => t.status !== 'skipped').length,
+    };
+    tasksServer.archive('archive');
+    await openDashboard(page, tasksServer, archivedProject(), { tab: 'list' });
+    expect(await counts()).toEqual({ done: before.done + 3, total: before.total + 3 });
+    await expect(page.locator('#progress-card')).toHaveAttribute('title', /\(3 archived, done\)/);
+    expect(tasksServer.archiveRequests).toBe(0);
+    // Its popover needs the archived tasks themselves: opening it loads the archive, and the count becomes exact: of
+    // the three archived tasks one was skipped, which counts as neither done nor to do
+    await page.locator('#progress-card').click();
+    await expect.poll(() => tasksServer.archiveRequests).toBe(1);
+    await expect(page.locator('#overall-archived')).toContainText('3 archived');
+    const archive = loadFixture('archive').tasks;
+    const archivedDone = archive.filter((t) => t.status === 'done').length;
+    const archivedCounted = archive.filter((t) => t.status !== 'skipped').length;
+    await expect.poll(counts).toEqual({ done: before.done + archivedDone, total: before.total + archivedCounted });
+  });
+
   test('the Progress tab loads it and counts archived tasks', async ({ page, tasksServer }) => {
     tasksServer.archive('archive');
     await openDashboard(page, tasksServer, archivedProject(), { tab: 'progress' });

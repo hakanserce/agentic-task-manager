@@ -148,6 +148,15 @@ describe('ProjectCard: the git line and the task finished last (T-208)', () => {
     expect(container.querySelector('.project-card-pr-state')).toHaveClass('open');
   });
 
+  it('a PR address that is not http(s) is never a link (T-225)', () => {
+    const { container } = render(ProjectCard, {
+      project: withFields({ git: { branch: null, pr: { number: 4, url: 'javascript:alert(1)', state: 'open' } } }),
+    });
+    expect(container.querySelector('a.project-card-pr')).toBeNull();
+    expect(container.querySelector('[href^="javascript"]')).toBeNull();
+    expect(text(container.querySelector('.project-card-git'))).toBe('PR #4 open');
+  });
+
   it('a merged PR without a recorded address: plain text; neither branch nor PR: an empty row in its place', () => {
     const merged = render(ProjectCard, {
       project: withFields({ git: { branch: null, pr: { number: 3, url: null, state: 'merged' } } }),

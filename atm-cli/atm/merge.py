@@ -6,12 +6,11 @@ instead of line by line. Design: docs/parallel-agents-design.md, option E and la
 
 import contextlib
 import os
-import re
 import sys
 
 from .core import SCRIPT_DIR, AtmError, AtmExit, git, in_git, now, out, read_json, rel, to_json, write_json_atomic
 from .lock import locked
-from .model import kind_of, load_tasks, vocabulary
+from .model import kind_of, load_tasks, split_id, vocabulary
 from .paths import find_paths
 from .registry import register
 from .repository import ensure_repository
@@ -83,6 +82,13 @@ def merge_notes(ours, theirs):
     return sorted(merged, key=lambda n: str(n.get("at", "")) if isinstance(n, dict) else "")
 
 
+def merge_intervals(ours, theirs):
+    """Past blocks and reviews only grow: both sides', one per start, oldest first."""
+    starts = {i.get("from") for i in ours if isinstance(i, dict)}
+    merged = list(ours) + [i for i in theirs if isinstance(i, dict) and i.get("from") not in starts]
+    return sorted(merged, key=lambda i: str(i.get("from", "")) if isinstance(i, dict) else "")
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -99,6 +105,8 @@ def merge_task(base, ours, theirs, vocab):
             value = progress.get(key, MISSING)
         elif key == "notes":
             value = merge_notes(ours.get(key, []), theirs.get(key, []))
+        elif key in ("blocks", "reviews"):
+            value = merge_intervals(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict:
@@ -109,13 +117,13 @@ def merge_task(base, ours, theirs, vocab):
 
 
 def next_free_id(task_id, used):
-    m = re.match(r"^(.*?)(\d+)$", task_id)
-    if not m:
+    parts = split_id(task_id)
+    if not parts:
         n = 2
         while f"{task_id}-{n}" in used:
             n += 1
         return f"{task_id}-{n}"
-    prefix, digits = m.group(1), m.group(2)
+    prefix, digits = parts
     numbers = [int(x[len(prefix) :]) for x in used if x.startswith(prefix) and x[len(prefix) :].isdigit()]
     return prefix + str(max(numbers) + 1).zfill(len(digits))
 

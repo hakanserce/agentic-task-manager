@@ -130,10 +130,12 @@ def write_json_atomic(p, value):
 
 
 def read_json(p):
+    """The file's JSON, or None when it can't be read or parsed. Deeply nested JSON (a hostile file) raises
+    RecursionError in the parser; that is unreadable too, not a crash (docs/security-review.md F12, F18)."""
     try:
         with open(p, encoding="utf-8") as f:
             return json.load(f)
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError):
         return None
 
 

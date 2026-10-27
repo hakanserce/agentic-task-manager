@@ -1,0 +1,123 @@
+// The All projects board (docs/all-projects-kanban-proposal.md §3, §4): every project's board summary (api/projects)
+// merged into five columns, each sorted by its own rule and cut at one cap, with "+ N more" per project for the rest.
+import type { BoardCard, BoardColumnId, ProjectEntry } from './load';
+
+/** Cards per column, as the server caps each project's columns */
+export const BOARD_CAP = 30;
+
+export interface AllBoardCard {
+  project: ProjectEntry;
+  card: BoardCard;
+}
+
+export interface AllBoardColumn {
+  id: BoardColumnId;
+  label: string;
+  cards: AllBoardCard[];
+  /** Cards left out (by a project's own cap or the column's), per project, in project order */
+  more: { project: ProjectEntry; count: number }[];
+  /** What an empty column says */
+  empty: string;
+  /** The column's cards in all, shown or not, whatever a search leaves ("N of M") */
+  total: number;
+}
+
+export const BOARD_COLUMNS: { id: BoardColumnId; label: string; empty: string }[] = [
+  { id: 'todo', label: 'To Do · ready', empty: 'Nothing ready to start' },
+  { id: 'active', label: 'In progress', empty: 'Nothing in progress' },
+  { id: 'review', label: 'In review', empty: 'Nothing waiting for a review' },
+  { id: 'blocked', label: 'Blocked', empty: 'Nothing blocked' },
+  { id: 'done', label: 'Done · last 24 h', empty: 'Nothing finished in the last 24 hours' },
+];
+
+// A time for sorting, oldest first or newest first; an unknown time sorts last either way
+const time = (iso: string | null | undefined) => {
+  const t = Date.parse(iso ?? '');
+  return Number.isNaN(t) ? Infinity : t;
+};
+const recent = (iso: string | null | undefined) => {
+  const t = Date.parse(iso ?? '');
+  return Number.isNaN(t) ? -Infinity : t;
+};
+
+/** The column's cards from every project, in its order (§4): To Do by project (most recently active first) then the
+ * loop's order; in progress longest running first; review longest waiting first; blocked on you first, then longest
+ * waiting; done most recent first. */
+function sortCards(id: BoardColumnId, cards: AllBoardCard[]): AllBoardCard[] {
+  const sorted = [...cards];
+  switch (id) {
+    case 'todo':
+      // Stable: within a project, the server's (the loop's) order stays
+      return sorted.sort(
+        (a, b) => recent(b.project.summary?.last_activity) - recent(a.project.summary?.last_activity) || 0,
+      );
+    case 'active':
+    case 'review':
+      return sorted.sort((a, b) => time(a.card.since) - time(b.card.since) || 0);
+    case 'blocked':
+      return sorted.sort(
+        (a, b) =>
+          Number(a.card.waiting_on !== 'user') - Number(b.card.waiting_on !== 'user') ||
+          time(a.card.since) - time(b.card.since) ||
+          0,
+      );
+    case 'done':
+      return sorted.sort((a, b) => recent(b.card.completed_at) - recent(a.card.completed_at) || 0);
+  }
+}
+
+const hasBoard = (p: ProjectEntry) => !p.missing && !!p.summary?.board;
+
+/** A search's matches (api/search, T-261): task IDs per project id; null while not searching */
+export type BoardMatch = ReadonlyMap<string, ReadonlySet<string>> | null;
+
+/**
+ * The board of `projects` (those the page shows): projects without a board summary (a missing one, an older
+ * server) add nothing. With `match`, only the board's cards among the search's results, and no "+ N more" (the
+ * search looks at the board's cards only); `total` still counts the whole column, for "N of M".
+ */
+export function allBoard(
+  projects: readonly ProjectEntry[],
+  cap = BOARD_CAP,
+  match: BoardMatch = null,
+): AllBoardColumn[] {
+  const withBoard = projects.filter(hasBoard);
+  return BOARD_COLUMNS.map(({ id, label, empty }) => {
+    const all = sortCards(
+      id,
+      withBoard.flatMap((project) => project.summary!.board![id].cards.map((card) => ({ project, card }))),
+    );
+    const total = withBoard.reduce((n, project) => n + project.summary!.board![id].count, 0);
+    if (match) {
+      const cards = all.filter((c) => match.get(c.project.id)?.has(c.card.id)).slice(0, cap);
+      return { id, label, cards, more: [], empty: 'No match', total };
+    }
+    const cards = all.slice(0, cap);
+    const more = withBoard
+      .map((project) => ({
+        project,
+        count: project.summary!.board![id].count - cards.filter((c) => c.project === project).length,
+      }))
+      .filter((m) => m.count > 0);
+    return { id, label, cards, more, empty, total };
+  });
+}
+
+export interface AllBoardLane {
+  project: ProjectEntry;
+  columns: AllBoardColumn[];
+}
+
+/** Grouped by project (T-260, §2): a lane per project with the five columns, the most recently active first; a
+ * project with nothing on the board (or, searching, nothing matching) gets no lane. */
+export function allBoardLanes(
+  projects: readonly ProjectEntry[],
+  cap = BOARD_CAP,
+  match: BoardMatch = null,
+): AllBoardLane[] {
+  return projects
+    .filter(hasBoard)
+    .sort((a, b) => recent(b.summary?.last_activity) - recent(a.summary?.last_activity) || 0)
+    .map((project) => ({ project, columns: allBoard([project], cap, match) }))
+    .filter((lane) => lane.columns.some((c) => c.cards.length || c.more.length));
+}

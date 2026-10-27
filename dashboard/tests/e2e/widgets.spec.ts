@@ -24,12 +24,46 @@ test.describe('Progress widget', () => {
     await expect(progressPill(page)).toHaveAttribute('aria-expanded', 'true');
     const panel = page.locator('#progress-panel');
     await expect(panel.locator('.insights-title')).toHaveText('6 of 8 tasks done');
-    await expect(panel.locator('.status-legend li')).toHaveText(['Done6', 'In Progress1', 'To Do1']);
-    const section = (title: string) => panel.locator('.insights-section').filter({ hasText: title });
-    await expect(section('By phase').locator('.ring-label')).toHaveText(['Phase 0', 'Phase 1']);
-    await expect(section('By phase').locator('.ring-count')).toHaveText(['4/4', '2/4']);
-    await expect(section('By type').locator('.ring-label')).toHaveText(['Bugfix', 'Docs', 'Feature', 'Infra', 'Test']);
-    await expect(section('By type').locator('.ring-count')).toHaveText(['1/1', '1/1', '2/3', '1/1', '1/2']);
+    await expect(panel.locator('.insights-hero .status-legend li')).toHaveText(['Done6', 'In Progress1', 'To Do1']);
+    // Phase 0 is finished: a chip; phase 1 a ring (T-243)
+    await expect(panel.locator('#progress-by-phase .ring-label')).toHaveText(['Phase 1']);
+    await expect(panel.locator('#progress-by-phase .ring-count')).toHaveText(['2/4']);
+    await expect(panel.locator('#progress-finished-chips')).toHaveText('✓ 0');
+    // By type: one stacked bar, a segment per type, and its legend
+    await expect(panel.locator('#progress-by-type .type-bar-segment')).toHaveCount(5);
+    await expect(panel.locator('#progress-by-type li')).toHaveText([
+      'Bugfix 1/1',
+      'Docs 1/1',
+      'Feature 2/3',
+      'Infra 1/1',
+      'Test 1/2',
+    ]);
+  });
+
+  test('Go to: the Progress tab, or the Kanban filtered to a status (T-243)', async ({ page }) => {
+    const panel = page.locator('#progress-panel');
+    await progressPill(page).click();
+    await expect(panel.locator('.go-to-link')).toHaveText([
+      'Progress tab',
+      'In review (0)',
+      'Blocked (0)',
+      'In progress (1)',
+    ]);
+    await expect(panel.locator('.go-to-link[data-go="review"]')).toBeDisabled();
+
+    await panel.locator('.go-to-link[data-go="active"]').click();
+    await expect(panel).toHaveCount(0);
+    await expect(page.locator('#tab-kanban')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.task-card')).toHaveCount(1);
+
+    // A status in the legend does the same
+    await progressPill(page).click();
+    await panel.locator('.status-legend-link[data-status="todo"]').click();
+    await expect(page.locator('.task-card')).toHaveCount(1);
+
+    await progressPill(page).click();
+    await panel.locator('.go-to-link[data-go="progress"]').click();
+    await expect(page.locator('#progress')).toBeVisible();
   });
 
   test('closes on Escape, on a click outside, and with the pill', async ({ page }) => {
@@ -52,6 +86,31 @@ test.describe('Activity widget', () => {
     await expect(activityPill(page)).toHaveAccessibleName('Activity: 6 tasks completed');
     await expect(activityPill(page).locator('svg.sparkline rect')).toHaveCount(4); // 08:00, 09:00, 10:00, 11:00
     await expect(activityPill(page).locator('svg.sparkline path')).toHaveCount(1);
+    // At 12:00 the last hour is over: nothing "so far", no lighter bar
+    await expect(activityPill(page)).toHaveAttribute(
+      'title',
+      'Tasks completed per hour, all time: 6 · the line is the average of the last 3 hours · click for details',
+    );
+    await expect(activityPill(page).locator('svg.sparkline rect.ongoing')).toHaveCount(0);
+  });
+
+  test('the sparkline: the current hour, not over yet, lighter and counted "so far" (T-249)', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-04-01T11:30:00Z'));
+    await page.reload();
+    await expect(activityPill(page)).toHaveAttribute('title', /· this hour so far: \d+ · click for details$/);
+    await expect(activityPill(page).locator('svg.sparkline rect').last()).toHaveClass(/ongoing/);
+  });
+
+  test('the popup and the completed chart explain themselves (T-249)', async ({ page }) => {
+    await activityPill(page).click();
+    const panel = page.locator('#activity-panel');
+    await panel.locator('.activity-heading .infotip-button').click();
+    const about = page.getByRole('dialog', { name: 'About activity' });
+    await expect(about).toContainText("the search and filters don't apply here");
+    await panel.locator('.activity-heading .infotip-button').click();
+    await expect(about).toHaveCount(0);
+    await panel.locator('#dive-completed .infotip-button').click();
+    await expect(page.getByRole('dialog', { name: 'About tasks completed' })).toContainText('stacked by type');
   });
 
   test('the deep dive: key numbers, and charts by type, by agent and per task', async ({ page }) => {
@@ -59,14 +118,23 @@ test.describe('Activity widget', () => {
     const panel = page.locator('#activity-panel');
     await expect(panel.locator('.activity-heading')).toContainText('Activity per hour');
     await expect(panel.locator('#dive-completed h4')).toHaveText('Tasks completed over all time, per hour, by type');
-    // 6 done in 4 h (08:00–12:00); 1.4 agents busy on average; idle 11:00–11:30 (see fixtures/agents.md)
-    await expect(panel.locator('.kpi')).toHaveText([
-      '6tasks completed',
-      '1.5 / hourcompletion rate',
-      '55 mtypical time per task',
-      '1.4agents busy on average · 1 now',
-      '30 midle (no agent working)',
+    // 6 done; cycle times 20–80 m, median 55 m, no interactive task; from 08:00 to now (12:00) nobody works 11:00–11:30
+    // (see fixtures/agents.md). Three cards (T-246)
+    await expect(panel.locator('#kpi-done .kpi-value')).toHaveText('6');
+    await expect(panel.locator('#kpi-time .kpi-side')).toHaveText([
+      '55 m agents alone (6 tasks)',
+      '– with you (0 tasks)',
     ]);
+    await expect(panel.locator('#kpi-where .status-legend li')).toHaveText([
+      'Agents working3 h 30 m',
+      'Waiting on you0 m',
+      'Idle30 m',
+    ]);
+    await expect(panel.locator('#kpi-where .time-split-agents')).toHaveText(
+      '5 h 30 m of agent time, up to 3 agents at once',
+    );
+    // No claims: nobody is shown working now
+    await expect(panel.locator('#kpi-working-now')).toHaveCount(0);
     await expect(panel.locator('#dive-completed .type-chip')).toHaveText([
       'feature2',
       'bugfix1',
@@ -74,17 +142,14 @@ test.describe('Activity widget', () => {
       'infra1',
       'test1',
     ]);
-    await expect(panel.locator('#dive-agents .type-chip')).toHaveText([
-      'claude:alice001',
-      'claude:bob00002',
-      'Unattributed',
-    ]);
-    await expect(panel.locator('#dive-cycle circle')).toHaveCount(6);
+    // By kind, not per session (T-247): all agents here (unattributed work counts as an agent), and idle hatched
+    await expect(panel.locator('#dive-agents .type-chip')).toHaveText(['Agents', 'Idle']);
+    await expect(panel.locator('#dive-cycle .cycle-mark circle')).toHaveCount(6);
     await expect(panel.locator('#dive-agents .idle-label')).toHaveText(['idle 30 m']);
     await expect(panel.locator('.idle-band')).toHaveCount(3); // the same stretch in all three charts
 
     // Hovering a period reads it across the charts: 09:00–10:00
-    const chart = (await panel.locator('#dive-agents svg').boundingBox())!;
+    const chart = (await panel.locator('#dive-agents > svg').boundingBox())!;
     const plot = { x: chart.x + (34 / 640) * chart.width, w: ((640 - 42) / 640) * chart.width };
     await page.mouse.move(plot.x + plot.w * 0.375, chart.y + chart.height / 2);
     const tooltip = panel.locator('.deep-dive-tooltip');
@@ -100,6 +165,76 @@ test.describe('Activity widget', () => {
     ]);
   });
 
+  test('who was working: agents and people, and waiting on you instead of idle (T-247)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // T-005 (09:10–10:30) was a person's; T-006 (10:00–11:00) then waited for your review until 11:30, when nobody
+    // worked: no idle stretch is left
+    const data = loadFixture('agents');
+    for (const t of data.tasks) {
+      if (t.id === 'T-005') t.started_by = 'Hakan';
+      if (t.id === 'T-006') {
+        t.review_requested_at = '2026-04-01T11:00:00Z';
+        t.completed_at = '2026-04-01T11:30:00Z';
+        t.reviews = [{ from: '2026-04-01T11:00:00Z', to: '2026-04-01T11:30:00Z' }];
+      }
+    }
+    tasksServer.use(data);
+    await page.reload();
+    await activityPill(page).click();
+    const panel = page.locator('#activity-panel');
+    await expect(panel.locator('#dive-agents .type-chip')).toHaveText(['Agents', 'People', 'Waiting on you']);
+    await expect(panel.locator('#dive-agents .waiting-band')).toHaveCount(1);
+    await expect(panel.locator('#dive-agents .idle-band')).toHaveCount(0);
+
+    // The 11:00 hour: alice from 11:30, and the half hour waiting on you
+    const chart = (await panel.locator('#dive-agents > svg').boundingBox())!;
+    const plot = { x: chart.x + (34 / 640) * chart.width, w: ((640 - 42) / 640) * chart.width };
+    await page.mouse.move(plot.x + plot.w * 0.875, chart.y + chart.height / 2);
+    await expect(panel.locator('#tooltip-waiting')).toHaveText('Waiting on you 30 m');
+    await page.locator('#dive-agents h4 .infotip-button').click();
+    await expect(panel.locator('#dive-agents .infotip-popover')).toContainText('Claude Code sessions');
+  });
+
+  test('time per task: an outlier on the top edge, interactive tasks hollow with their own median, a click opens one (T-248)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // Four 10-minute tasks and one of 24 h 40 m join the six (20–80 m): the scale stops at the 90th percentile, 80 m
+    const data = loadFixture('agents');
+    const quick = (id: string, start: string, end: string) => ({
+      id,
+      name: `Task ${id}`,
+      phase: 1,
+      type: 'feature',
+      description: '',
+      status: 'done',
+      started_by: 'claude:alice001',
+      started_at: start,
+      completed_at: end,
+    });
+    for (const id of ['T-101', 'T-102', 'T-103', 'T-104'])
+      data.tasks.push(quick(id, '2026-04-01T10:00:00Z', '2026-04-01T10:10:00Z'));
+    data.tasks.push(quick('T-105', '2026-03-31T10:00:00Z', '2026-04-01T10:40:00Z'));
+    for (const t of data.tasks) if (t.id === 'T-003') t.labels = ['interactive'];
+    tasksServer.use(data);
+    await page.reload();
+    await activityPill(page).click();
+    const chart = page.locator('#dive-cycle');
+    await expect(chart.locator('.cycle-mark.outlier')).toHaveCount(1);
+    await expect(chart.locator('.cycle-mark.outlier')).toHaveAttribute('aria-label', 'T-105 Task T-105: 24 h 40 m');
+    await expect(chart.locator('.cycle-mark.with-you')).toHaveCount(1);
+    await expect(chart.locator('.cycle-mark.with-you')).toHaveAttribute('data-id', 'T-003');
+    // T-003 alone with you (60 m); the other ten: 10, 10, 10, 10, 20, 30, 50, 60, 80, 1480 → 25 m
+    await expect(chart.locator('.median-label')).toHaveText(['agents alone 25 m', 'with you 1 h']);
+    await expect(chart.locator('.chart-median.solid')).toHaveCount(1);
+
+    await chart.locator('.cycle-mark.outlier').click();
+    await expect(page.locator('#detail-overlay')).toHaveClass(/open/);
+    await expect(page.locator('#detail-overlay')).toContainText('T-105');
+  });
+
   test('the period: a unit and ‹ › to step back and forth, remembered', async ({ page }) => {
     await activityPill(page).click();
     const label = page.locator('#activity-period');
@@ -109,10 +244,10 @@ test.describe('Activity widget', () => {
     await page.locator('[data-range="day"]').click();
     await expect(label).toHaveText('Today');
     await expect(page.locator('#activity-next')).toBeDisabled();
-    await expect(page.locator('.kpi').first()).toHaveText('6tasks completed');
+    await expect(page.locator('#kpi-done')).toHaveText('6 tasks done');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Yesterday');
-    await expect(page.locator('.kpi').first()).toHaveText('0tasks completed');
+    await expect(page.locator('#kpi-done')).toHaveText('0 tasks done');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Mon, Mar 30');
     await page.locator('#activity-next').click();
@@ -127,7 +262,7 @@ test.describe('Activity widget', () => {
     await expect(page.locator('#dive-completed h4')).toHaveText('Tasks completed this week, per day, by type');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last week');
-    await expect(page.locator('#dive-agents h4')).toContainText('Agents working last week');
+    await expect(page.locator('#dive-agents h4')).toContainText('Who was working last week');
     await page.locator('[data-range="month"]').click();
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last month');
@@ -146,11 +281,41 @@ test.describe('Activity widget', () => {
     await page.locator('#activity-from').dispatchEvent('change');
     await page.locator('#activity-to').fill('2026-04-01T10:00');
     await page.locator('#activity-to').dispatchEvent('change');
-    await expect(page.locator('.kpi').first()).toHaveText('3tasks completed');
+    await expect(page.locator('#kpi-done')).toHaveText('3 tasks done');
   });
 
-  test('the key numbers stay on one line, and the idle one is keyed to the hatching', async ({ page, tasksServer }) => {
-    // Nobody working now, three days on: the idle time runs to "75 h …", which used to put its "m" on a line of its own
+  test('time per task: agents alone and with you; who works now, for a period up to now (T-246)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // T-003 (08:40–09:40) and T-005 (09:10–10:30) worked with you
+    const data = loadFixture('agents');
+    for (const t of data.tasks) if (t.id === 'T-003' || t.id === 'T-005') t.labels = ['interactive'];
+    tasksServer.use(data);
+    tasksServer.claims([
+      {
+        task: 'T-007',
+        agent: 'claude:alice001',
+        branch: null,
+        claimed_at: '2026-04-01T11:30:00Z',
+        lease_expires_at: '2026-04-01T12:30:00Z',
+      },
+    ]);
+    await page.reload();
+    await activityPill(page).click();
+    // Alone: 20, 30, 50, 60 → 40 m; with you: 60, 80 → 70 m
+    await expect(page.locator('#kpi-time .kpi-side')).toHaveText([
+      '40 m agents alone (4 tasks)',
+      '1 h 10 m with you (2 tasks)',
+    ]);
+    await expect(page.locator('#kpi-working-now')).toHaveText('1 working now');
+    await page.locator('[data-range="day"]').click();
+    await page.locator('#activity-prev').click();
+    await expect(page.locator('#kpi-working-now')).toHaveCount(0);
+  });
+
+  test('the key numbers stay on one line, and idle is keyed to the hatching', async ({ page, tasksServer }) => {
+    // Nobody working now, three days on: a long time such as "75 h 39 m" used to put its "m" on a line of its own
     const data = loadFixture('agents');
     for (const t of data.tasks) if (t.status === 'in_progress') t.status = 'todo';
     tasksServer.use(data);
@@ -159,10 +324,10 @@ test.describe('Activity widget', () => {
       await page.setViewportSize({ width, height: 900 });
       await page.reload();
       await activityPill(page).click();
-      const idle = page.locator('#kpi-idle');
-      await expect(idle.locator('.kpi-value')).toHaveText(/^\d+ h \d+ m$/);
-      await expect(idle.locator('.idle-swatch')).toHaveCount(1);
-      for (const value of await page.locator('.kpi-value').all()) {
+      const idle = page.locator('#kpi-where [data-part="idle"]');
+      await expect(idle.locator('strong')).toHaveText(/^\d+ h \d+ m$/);
+      await expect(idle.locator('.time-split-idle')).toHaveCount(1);
+      for (const value of await page.locator('.kpi-value, #kpi-where strong').all()) {
         // One line high, and nothing spilling out of its box (it's a flex item, so a block)
         const fits = await value.evaluate(
           (el) =>

@@ -76,6 +76,31 @@ def _terms(meta, key, defaults, need_kind=False):
 
 WORKFLOW_DEFAULTS = {"verify": True, "max_rounds": 3, "commit_template": "feat({id}): {name}"}
 
+# Strings from tasks.json that agents put into shell commands (a base branch, task IDs) are kept to characters a
+# shell doesn't treat specially (docs/security-review.md F5): no `;`, `$`, quotes, spaces, or a leading `-`
+BRANCH_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}")
+TASK_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def valid_branch(value):
+    return isinstance(value, str) and bool(BRANCH_NAME.fullmatch(value)) and ".." not in value
+
+
+def valid_task_id(value):
+    return isinstance(value, str) and bool(TASK_ID.fullmatch(value))
+
+
+def split_id(task_id):
+    """(prefix, digits) of an ID that ends in a number ("T-001" -> ("T-", "001")), else None. A plain scan from the
+    end, not a regex: `^(.*?)(\\d+)$` backtracks quadratically on a long run of digits without an end (a hostile ID,
+    docs/security-review.md F12)."""
+    if not isinstance(task_id, str):
+        return None
+    end = len(task_id)
+    while end and task_id[end - 1].isdigit():
+        end -= 1
+    return (task_id[:end], task_id[end:]) if end < len(task_id) else None
+
 
 def check_workflow(workflow):
     """meta.workflow (docs/v4/skills-and-workflows.md S-1.1), when set: raises AtmError naming what's wrong."""
@@ -84,7 +109,7 @@ def check_workflow(workflow):
     if not isinstance(workflow, dict) or workflow.get("type") not in WORKFLOW_TYPES:
         raise AtmError(f"meta.workflow.type must be one of {', '.join(WORKFLOW_TYPES)}")
     checks = (
-        ("base", lambda v: isinstance(v, str) and v, "a branch name"),
+        ("base", valid_branch, "a branch name (letters, digits, `.`, `_`, `/`, `-`; not starting with `-`)"),
         ("verify", lambda v: isinstance(v, bool), "true or false"),
         ("max_rounds", lambda v: isinstance(v, int) and not isinstance(v, bool) and v > 0, "a positive whole number"),
         ("commit_template", lambda v: isinstance(v, str) and v, "a message template like \"feat({id}): {name}\""),
@@ -291,6 +316,20 @@ def load_tasks(paths):
     if not isinstance(data, dict) or not isinstance(data.get("tasks"), list):
         raise AtmError(f"{paths['tasks']} is not a valid task file (expected an object with a 'tasks' list)")
     vocabulary(data)  # an unusable vocabulary stops every command before anything is written
+    # Agents put task IDs into shell commands: an ID with shell characters stops every command (atm check lists them)
+    for i, task in enumerate(data["tasks"]):
+        # Every command looks tasks up by ID and follows dependencies: a malformed task stops them all with a clear
+        # message instead of a traceback halfway through (docs/security-review.md F12). atm check lists them all.
+        if not isinstance(task, dict) or not isinstance(task.get("id"), str):
+            raise AtmError(f"{paths['tasks']}: task #{i + 1} isn't a task (an object with an \"id\"); run atm check")
+        if not valid_task_id(task["id"]):
+            raise AtmError(
+                f"{paths['tasks']}: the task ID {task['id']!r} has characters atm doesn't allow (letters, digits, '.', "
+                "'_' and '-' only): fix it in the file, then run atm check"
+            )
+        deps = task.get("dependencies", [])
+        if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+            raise AtmError(f"{paths['tasks']}: {task['id']}'s dependencies aren't a list of IDs; run atm check")
     _archive["paths"], _archive["data"] = paths, None
     return data
 
@@ -378,6 +417,14 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         task.pop("commit", None)
 
 
+def add_interval(task, field, start, end, on=None):
+    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+    interval = {"from": start, "to": end}
+    if on:
+        interval["on"] = on
+    task.setdefault(field, []).append(interval)
+
+
 def answer_note(questions, answers):
     """One note for an unblocked task: each question with its answer."""
     pairs = []
@@ -433,6 +480,12 @@ def change_status(
     if answered is not None:
         check_note(answered)
     stamp = now_iso()
+    # A block's or a review's start goes when the task moves on: keep each interval, so waiting time can be measured
+    old_kind = kind_of(vocab, current)
+    if old_kind == "blocked" and task.get("blocked_at"):
+        add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
+    elif old_kind == "review" and task.get("review_requested_at"):
+        add_interval(task, "reviews", task["review_requested_at"], stamp)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))

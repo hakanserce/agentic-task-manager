@@ -6,6 +6,7 @@ atomically. A linked git worktree registers its repository's main worktree. Form
 
 import hashlib
 import os
+import re
 
 from .core import (
     TASK_DIR,
@@ -31,6 +32,27 @@ SEEN_EVERY = 24 * 3600  # seconds between seen_at updates, so the registry isn't
 def atm_home():
     """The user's atm folder: ATM_HOME, else ~/.agentic-task-manager."""
     return os.path.abspath(os.path.expanduser(os.environ.get("ATM_HOME") or "~/.agentic-task-manager"))
+
+
+def ensure_home(home):
+    """Create the atm folder readable by its owner only: it lists the user's projects and the server's pid and port
+    (docs/security-review.md F18). A folder that exists already keeps its permissions."""
+    os.makedirs(home, mode=0o700, exist_ok=True)
+
+
+# A project id is a key in URLs (#project=<id>, p/<id>/...): letters, digits, '.', '_' and '-'
+PROJECT_ID = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+
+def unique_id(registry, path, wanted):
+    """The id for the project at `path`: `wanted` unless another project already has it or it isn't a valid id; then
+    one made from the path, so two projects never shadow each other (F18)."""
+    taken = {e.get("id") for e in registry["projects"] if e.get("path") != path}
+    if PROJECT_ID.fullmatch(wanted) and wanted not in taken:
+        return wanted
+    suffix = hashlib.sha1(path.encode("utf-8")).hexdigest()[:7]
+    base = wanted if PROJECT_ID.fullmatch(wanted) and len(wanted) <= 56 else "p"
+    return f"{base}-{suffix}"
 
 
 def main_worktree(root):
@@ -136,9 +158,9 @@ def find_entry(registry, path):
     return next((e for e in registry["projects"] if e["path"] == path), None)
 
 
-def entry_for(path, meta, stamp):
+def entry_for(registry, path, meta, stamp):
     return {
-        "id": project_id(meta, path),
+        "id": unique_id(registry, path, project_id(meta, path)),
         "name": project_name(meta, path),
         "path": path,
         "added_at": stamp,
@@ -165,9 +187,9 @@ def update_entry(registry, path, meta):
         return "unlisted"
     stamp = now_iso()
     if entry is None:
-        registry["projects"].append(entry_for(path, meta, stamp))
+        registry["projects"].append(entry_for(registry, path, meta, stamp))
         return "added"
-    fresh = {"id": project_id(meta, path), "name": project_name(meta, path)}
+    fresh = {"id": unique_id(registry, path, project_id(meta, path)), "name": project_name(meta, path)}
     changed = any(entry.get(k) != v for k, v in fresh.items())
     if not (changed or seen_long_ago(entry)):
         return "unchanged"
@@ -187,6 +209,7 @@ def register(paths, wait=True):
     if meta is None:
         return None
     home = atm_home()
+    ensure_home(home)
     try:
         with locked(home, timeout=None if wait else 0):
             registry, _ = read_registry(home)
@@ -234,6 +257,7 @@ def damaged_notice(damaged):
 
 
 def projects_list(home, as_json):
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         if damaged:
@@ -254,6 +278,7 @@ def projects_add(home, target, as_json):
     path, meta = resolve_project(target)
     if not listed(meta):
         raise AtmError(f"{path} opts out of the dashboard (meta.dashboard.listed is false)")
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         result = update_entry(registry, path, meta)
@@ -273,6 +298,7 @@ def projects_remove(home, target, as_json):
     candidates = {target, os.path.abspath(os.path.expanduser(target))}
     if os.path.isdir(target):
         candidates.add(main_worktree(find_paths(os.path.abspath(target))["root"]))
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         entry = next((e for e in registry["projects"] if e.get("id") in candidates or e["path"] in candidates), None)
@@ -289,6 +315,7 @@ def projects_remove(home, target, as_json):
 
 
 def projects_prune(home, as_json):
+    ensure_home(home)
     with locked(home):
         registry, damaged = read_registry(home)
         gone = [e for e in registry["projects"] if is_missing(e)]

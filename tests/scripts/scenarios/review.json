@@ -60,6 +60,7 @@
               "updated_by": "Hakan",
               "completed_at": "2026-05-01T10:00:00Z",
               "completed_by": "Hakan",
+              "reviews": [{ "from": "2026-05-01T09:30:00Z", "to": "2026-05-01T10:00:00Z" }],
               "notes": [{ "at": "2026-05-01T10:00:00Z", "kind": "outcome", "text": "Looks good", "by": "Hakan" }]
             }
           ]
@@ -68,7 +69,7 @@
     }
   },
   {
-    "name": "reject: back to todo with what needs to change; the attempt is cleared",
+    "name": "reject: back to todo with what needs to change; the attempt is cleared, the review kept as an interval",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -96,6 +97,7 @@
               "status": "todo",
               "updated_at": "2026-05-01T10:00:00Z",
               "updated_by": "Hakan",
+              "reviews": [{ "from": "2026-05-01T09:30:00Z", "to": "2026-05-01T10:00:00Z" }],
               "notes": [
                 {
                   "at": "2026-05-01T10:00:00Z",

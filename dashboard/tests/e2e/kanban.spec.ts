@@ -189,17 +189,75 @@ test.describe('Kanban board', () => {
     await expect(column(page, 'done').locator('.kanban-card')).toHaveCount(20);
   });
 
-  test('columns reach down to the bottom of the window, and scroll inside (T-237)', async ({ page, tasksServer }) => {
+  test('columns reach down to the status bar and scroll inside; the page itself never scrolls (T-237, T-262)', async ({
+    page,
+    tasksServer,
+  }) => {
     for (const height of [1600, 720]) {
       await page.setViewportSize({ width: 1280, height });
       await openKanban(page, tasksServer, 'kanban');
       const done = column(page, 'done');
+      // "Show all" is remembered: only the first round has the button
+      const showAll = done.getByRole('button', { name: /Show all/ });
+      if (await showAll.count()) await showAll.click();
+      // One scrollbar at most: the page is exactly the window's height
+      expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(height);
+      const footer = (await page.locator('footer').boundingBox())!;
       const box = (await done.boundingBox())!;
-      expect(height - (box.y + box.height)).toBeGreaterThanOrEqual(0);
-      expect(height - (box.y + box.height)).toBeLessThanOrEqual(height > 1000 ? 32 : 400);
+      expect(footer.y - (box.y + box.height)).toBeGreaterThanOrEqual(0);
+      expect(footer.y - (box.y + box.height)).toBeLessThanOrEqual(40);
       const cards = done.locator('.kanban-cards');
       expect(await cards.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     }
+  });
+
+  test('a long column hides its scrollbar and says how many cards are above and below (T-262)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openKanban(page, tasksServer, 'kanban');
+    const done = column(page, 'done');
+    await done.getByRole('button', { name: /Show all/ }).click();
+    const cards = done.locator('.kanban-cards');
+    // Reaching the button scrolled the column down: back to the top
+    await cards.evaluate((el) => (el.scrollTop = 0));
+    // No scrollbar takes room: the scroller is as wide inside as it is outside
+    expect(await cards.evaluate((el) => (el as HTMLElement).offsetWidth - el.clientWidth)).toBe(0);
+    await expect(done.locator('.kanban-more.top')).toHaveCount(0);
+    await expect(done.locator('.kanban-more.bottom')).toHaveText(/^▼ \d+ more$/);
+
+    // The wheel scrolls the column, not the page
+    const box = (await cards.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 400);
+    await expect.poll(() => cards.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await expect(done.locator('.kanban-more.top')).toHaveText(/^▲ \d+ more$/);
+
+    // At the end, nothing below; a hint scrolls a page back up
+    await cards.evaluate((el) => (el.scrollTop = el.scrollHeight));
+    await expect(done.locator('.kanban-more.bottom')).toHaveCount(0);
+    const before = await cards.evaluate((el) => el.scrollTop);
+    await done.locator('.kanban-more.top').click();
+    await expect.poll(() => cards.evaluate((el) => el.scrollTop)).toBeLessThan(before);
+
+    // A short column shows neither
+    await expect(column(page, 'in_progress').locator('.kanban-more')).toHaveCount(0);
+  });
+
+  test('grouped by phase, the lanes scroll as one and the page still does not (T-262)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openKanban(page, tasksServer, 'kanban');
+    await page.locator('#kanban-group-by-phase').check();
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(720);
+    const kanban = page.locator('#kanban');
+    expect(await kanban.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    // Columns are as long as their cards: nothing is cut off inside a lane
+    await expect(page.locator('.kanban-more')).toHaveCount(0);
   });
 
   test('many long labels stay on one line; +N shows them all without opening the task (T-256)', async ({

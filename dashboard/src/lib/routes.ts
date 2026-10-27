@@ -22,11 +22,27 @@ export function hasOverviewHash(hash: string): boolean {
   return hashParams(hash).has('overview');
 }
 
-/** `hash` showing project `id`, or the overview for null; the view and other parameters are kept. */
+/** The All projects page's tabs (T-259): the project cards, or the board of every project's tasks */
+export const OVERVIEW_TABS = ['projects', 'board'] as const;
+export type OverviewTab = (typeof OVERVIEW_TABS)[number];
+
+export function isOverviewTab(value: unknown): value is OverviewTab {
+  return OVERVIEW_TABS.includes(value as OverviewTab);
+}
+
+/** The overview tab a hash names ("#overview&view=board"), or null */
+export function parseOverviewTab(hash: string): OverviewTab | null {
+  const view = hashParams(hash).get('view');
+  return isOverviewTab(view) ? view : null;
+}
+
+/** `hash` showing project `id`, or the overview for null. Other parameters are kept, and the view too when the page
+ * has it: a project's tab stays out of the overview, the overview's tab out of a project. */
 export function withProjectHash(hash: string, id: string | null): string {
   const params = hashParams(hash);
   params.delete('project');
   params.delete('overview');
+  if (params.has('view') && isOverviewTab(params.get('view')) !== (id === null)) params.delete('view');
   if (id === null) params.set('overview', '');
   else params.set('project', id);
   return formatHash(params);

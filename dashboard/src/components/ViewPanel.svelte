@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { adjacentView, parseViewHash, VIEW_ICONS, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
+  import { adjacentView, GROUP_END, parseViewHash, VIEW_ICONS, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
   import { dashboard } from '../lib/state.svelte';
   import AgentsTab from './AgentsTab.svelte';
   import DepGraph from './DepGraph.svelte';
   import Icon from './Icon.svelte';
   import KanbanBoard from './KanbanBoard.svelte';
   import ProgressTab from './ProgressTab.svelte';
+  import ProjectTab from './ProjectTab.svelte';
   import TaskGrid from './TaskGrid.svelte';
 
   const view = $derived(dashboard.tab);
@@ -42,6 +43,7 @@
           onclick={() => select(id)}
           onkeydown={onTabKeydown}><Icon name={VIEW_ICONS[id]} size={15} />{VIEW_LABELS[id]}</button
         >
+        {#if id === GROUP_END}<span class="view-tab-divider" aria-hidden="true"></span>{/if}
       {/each}
     </div>
   </div>
@@ -69,6 +71,16 @@
       hidden={view !== 'progress'}
     >
       <ProgressTab />
+    </div>
+    <div
+      class="view-panel"
+      id="panel-project"
+      role="tabpanel"
+      aria-labelledby="tab-project"
+      hidden={view !== 'project'}
+    >
+      <!-- Mounted only while selected, like the Agents tab: it counts the whole history -->
+      {#if view === 'project'}<ProjectTab />{/if}
     </div>
   </div>
 </div>

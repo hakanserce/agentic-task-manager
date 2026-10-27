@@ -4,6 +4,8 @@ The server holds the plugin's dashboard in memory and serves each registered pro
 Its routes and record are described in docs/multi-project-api.md.
 """
 
+import base64
+import errno
 import hashlib
 import os
 import re
@@ -11,9 +13,10 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from .core import (
     PLUGIN_ROOT,
@@ -41,6 +44,7 @@ from .query import project_summary
 from .registry import (
     REGISTRY_FILE,
     atm_home,
+    ensure_home,
     listed,
     main_worktree,
     project_id,
@@ -54,12 +58,40 @@ SERVER_LOG = "server.log"
 DEFAULT_PORT = 8765
 PORT_TRIES = 100
 PROJECT_FILES = ("tasks.json", "claims.json", "tasks-archive.json", "worktrees.json")
+# A task file the server will read into memory and send (a big project's archive is a few MB)
+MAX_SERVED_BYTES = 100_000_000
 PROJECT_FILE = re.compile(r"/p/([^/]+)/(" + "|".join(re.escape(f) for f in PROJECT_FILES + ("logo",)) + r")")
 # A logo is the project's own file, which could be an SVG with a script: it is shown as an image, never run
 LOGO_HEADERS = {
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     "X-Content-Type-Options": "nosniff",
 }
+# On every response: no content sniffing, and no other site may embed it (docs/security-review.md F11)
+SECURITY_HEADERS = {"X-Content-Type-Options": "nosniff", "Cross-Origin-Resource-Policy": "same-origin"}
+INLINE_SCRIPT = re.compile(rb"<script\b([^>]*)>(.*?)</script>", re.S | re.I)
+
+
+def page_csp(page):
+    """The dashboard's Content-Security-Policy: only its own inline scripts run (by hash), it talks only to this
+    server, and no page may frame it. Any script injected into it, or a `javascript:` link, is refused by the browser.
+    tests/e2e/serve.mjs builds the same policy, so the e2e suite runs under it."""
+    hashes = [
+        "'sha256-" + base64.b64encode(hashlib.sha256(body).digest()).decode("ascii") + "'"
+        for attrs, body in INLINE_SCRIPT.findall(page)
+        if b"src=" not in attrs
+    ]
+    return "; ".join(
+        [
+            "default-src 'none'",
+            "script-src " + (" ".join(hashes) or "'none'"),
+            "style-src 'unsafe-inline'",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "base-uri 'none'",
+            "form-action 'none'",
+            "frame-ancestors 'none'",
+        ]
+    )
 
 
 def server_url(port, project=None):
@@ -92,7 +124,7 @@ def ensure_server(home, port):
     record = live_server(home)
     if record:
         return record, False
-    os.makedirs(home, exist_ok=True)
+    ensure_home(home)
     with open(os.path.join(home, SERVER_LOG), "ab") as log:
         child = subprocess.Popen(
             [sys.executable, os.path.abspath(__file__), "_serve-child", home, str(port)],
@@ -118,7 +150,10 @@ def project_for(paths):
     register(paths)
     path = main_worktree(paths["root"])
     meta = project_meta(path) or project_meta(paths["root"]) or {}
-    return project_id(meta, path), listed(meta)
+    # The id the registry gave it: meta.id, or another when that one is taken (registry.unique_id)
+    registry = read_json(os.path.join(atm_home(), REGISTRY_FILE)) or {}
+    entry = next((e for e in registry.get("projects", []) if isinstance(e, dict) and e.get("path") == path), None)
+    return (entry or {}).get("id") or project_id(meta, path), listed(meta)
 
 
 def serve_start(paths, port, overview):
@@ -239,10 +274,16 @@ def cmd_serve(args):
 
 
 def port_in_use(port):
-    """Something accepts connections on 127.0.0.1:port."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.5)
-        return s.connect_ex(("127.0.0.1", port)) == 0
+    """Something accepts connections on 127.0.0.1:port or [::1]:port (`localhost` may resolve to either)."""
+    for family, host in ((socket.AF_INET, "127.0.0.1"), (socket.AF_INET6, "::1")):
+        try:
+            with socket.socket(family, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                if s.connect_ex((host, port)) == 0:
+                    return True
+        except OSError:  # no IPv6 on this machine
+            pass
+    return False
 
 
 def file_stamp(p):
@@ -283,6 +324,18 @@ class Registry:
 
 def task_file(entry, name):
     return os.path.join(entry["path"], TASK_DIR, name)
+
+
+def served_file(entry, name):
+    """The project's task file `name` if it may be served: a regular file, not a symlink, in a task folder that isn't
+    one either (docs/security-review.md F8: a repository could otherwise link tasks-archive.json to ~/.ssh/id_rsa).
+    None otherwise."""
+    folder = os.path.join(entry["path"], TASK_DIR)
+    p = os.path.join(folder, name)
+    if os.path.islink(folder) or os.path.islink(p) or not os.path.isfile(p):
+        return None
+    real_folder = os.path.realpath(folder)
+    return p if os.path.dirname(os.path.realpath(p)) == real_folder else None
 
 
 class Summaries:
@@ -327,13 +380,21 @@ def project_logo(entry):
     return (logo[1], logo[2]) if logo else None
 
 
+def quietly(fn, default):
+    """fn(), or `default` if it fails: one project's broken files never break the list of all projects (F18)."""
+    try:
+        return fn()
+    except Exception:  # noqa: BLE001 - any failure in one project's files
+        return default
+
+
 def api_projects(registry, summaries):
     """(body, ETag) of /api/projects. The ETag changes with the registry, and with each project's tasks.json, claims,
-    logo and the day."""
+    logo and the day. A project whose files can't be read is listed as missing; the others are unaffected."""
     entries = registry.entries()
-    stamps = [summaries.stamp(e) for e in entries]
-    trees = [worktrees(e["path"]) if stamp else [] for e, stamp in zip(entries, stamps)]
-    logos = [project_logo(e) if stamp else None for e, stamp in zip(entries, stamps)]
+    stamps = [quietly(lambda e=e: summaries.stamp(e), None) for e in entries]
+    trees = [quietly(lambda e=e: worktrees(e["path"]), []) if stamp else [] for e, stamp in zip(entries, stamps)]
+    logos = [quietly(lambda e=e: project_logo(e), None) if stamp else None for e, stamp in zip(entries, stamps)]
     logo_stamps = [file_stamp(logo[0]) if logo else None for logo in logos]
     etag = (
         '"'
@@ -344,7 +405,7 @@ def api_projects(registry, summaries):
     def body():
         projects = []
         for entry, stamp, tree, logo in zip(entries, stamps, trees, logos):
-            summary = summaries.summary(entry, stamp) if stamp else None
+            summary = quietly(lambda: summaries.summary(entry, stamp), None) if stamp else None
             projects.append(
                 {
                     "id": entry.get("id"),
@@ -360,6 +421,50 @@ def api_projects(registry, summaries):
         return to_json({"generated_at": now_iso(), "projects": projects}).encode("utf-8")
 
     return body, etag
+
+
+SEARCH_QUERY_CAP = 200  # characters of the query that count
+SEARCH_RESULTS_CAP = 200  # task IDs per project
+
+
+def search_text(task):
+    """What a task is found by: its ID, name, description, type, labels and notes (T-258)."""
+    strings = [task.get(f) for f in ("id", "name", "description", "type")]
+    strings += task.get("labels") if isinstance(task.get("labels"), list) else []
+    strings += [n.get("text") for n in task.get("notes") or [] if isinstance(n, dict)]
+    return " ".join(s for s in strings if isinstance(s, str)).lower()
+
+
+def api_search(registry, query):
+    """The body of /api/search?q=: per project, the IDs of the tasks.json tasks (not the archive) in which every word of
+    the query appears, case-insensitively, as the dashboard's own search finds them; the project's name counts as part
+    of every task's text. Read-only, like every route; `{}` for an empty query."""
+    terms = query[:SEARCH_QUERY_CAP].lower().split()
+    results = {}
+    if not terms:
+        return to_json(results).encode("utf-8")
+    for entry in registry.entries():
+
+        def matches(entry=entry):
+            p = served_file(entry, TASKS_FILE)
+            stamp = file_stamp(p) if p else None
+            if stamp is None or stamp[0] > MAX_SERVED_BYTES:
+                return []
+            data = read_json(p)
+            tasks = data.get("tasks") if isinstance(data, dict) else None
+            name = str(entry.get("name") or "").lower()
+            return [
+                t["id"]
+                for t in tasks or []
+                if isinstance(t, dict)
+                and isinstance(t.get("id"), str)
+                and all(term in f"{name} {search_text(t)}" for term in terms)
+            ]
+
+        ids = quietly(matches, [])
+        if ids:
+            results[entry.get("id")] = ids[:SEARCH_RESULTS_CAP]
+    return to_json(results).encode("utf-8")
 
 
 def api_claims(summaries, entry):
@@ -427,11 +532,14 @@ def cmd_serve_child(args):
     # From the bytes it serves, not a second read of the file: a build writing the file in between would make whoami
     # report another build than the page has, and the page would offer a reload forever
     version, build = page_tags(page[:HEAD_BYTES].decode("utf-8", errors="replace"))
+    page_headers = {"Content-Security-Policy": page_csp(page)}
     registry = Registry(home)
     summaries = Summaries()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         server_version = "atm"
+        # A connection that sends nothing (or trickles) is dropped instead of holding a thread forever (F18)
+        timeout = 30
 
         def send(self, status, body=b"", content_type="application/json", etag=None, headers=None):
             self.send_response(status)
@@ -440,7 +548,7 @@ def cmd_serve_child(args):
                 self.send_header("Content-Length", str(len(body)))
             if etag:
                 self.send_header("ETag", etag)
-            for name, value in {"Cache-Control": "no-store", **(headers or {})}.items():
+            for name, value in {"Cache-Control": "no-store", **SECURITY_HEADERS, **(headers or {})}.items():
                 self.send_header(name, value)
             self.end_headers()
             if body and self.command != "HEAD":
@@ -457,6 +565,16 @@ def cmd_serve_child(args):
             self.send(200, body_fn(), content_type, etag, headers)
 
         def do_GET(self):
+            # One bad request, or one project's broken files, gets a 500, never a dead handler thread with no answer
+            try:
+                self.handle_get()
+            except Exception:  # noqa: BLE001
+                try:
+                    self.send_error_json(500, "internal error")
+                except OSError:
+                    pass
+
+        def handle_get(self):
             port_now = self.server.server_address[1]
             if self.headers.get("Host") not in (f"localhost:{port_now}", f"127.0.0.1:{port_now}"):
                 # A page on another site that points its own domain at 127.0.0.1 (DNS rebinding) is refused
@@ -464,13 +582,16 @@ def cmd_serve_child(args):
                 return
             path = urlsplit(self.path).path
             if path == "/":
-                self.send(200, page, "text/html; charset=utf-8")
+                self.send(200, page, "text/html; charset=utf-8", headers=page_headers)
             elif path == WHOAMI:
                 info = {"atm": True, "pid": os.getpid(), "port": port_now, "version": version, "build": build}
                 self.send(200, to_json(info).encode("utf-8"))
             elif path == "/api/projects":
                 body, etag = api_projects(registry, summaries)
                 self.send_conditional(body, etag)
+            elif path == "/api/search":
+                query = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
+                self.send(200, api_search(registry, query))
             else:
                 self.serve_project_file(path)
 
@@ -486,7 +607,7 @@ def cmd_serve_child(args):
                 self.send_error_json(404, "unknown project")
                 return
             name = match.group(2)
-            if not os.path.isfile(task_file(entry, TASKS_FILE)):
+            if served_file(entry, TASKS_FILE) is None:
                 self.send_error_json(404, "not found")
                 return
             if name == "logo":
@@ -500,10 +621,14 @@ def cmd_serve_child(args):
             if computed:
                 self.send_conditional(*computed)
                 return
-            p = task_file(entry, name)
-            stamp = file_stamp(p)
+            p = served_file(entry, name)
+            stamp = file_stamp(p) if p else None
             if stamp is None:
                 self.send_error_json(404, "not found")
+                return
+            if stamp[0] > MAX_SERVED_BYTES:
+                # Each poll reads the whole file into memory: a runaway file is refused, not served
+                self.send_error_json(413, f"larger than {MAX_SERVED_BYTES // 1_000_000} MB")
                 return
 
             def read():
@@ -538,18 +663,33 @@ def cmd_serve_child(args):
         # same option would also let it share a port another server listens on, hence port_in_use() first.
         allow_reuse_address = True
 
-    server = None
+    class Server6(Server):
+        address_family = socket.AF_INET6
+
+    # Browsers, curl and urllib try [::1] before 127.0.0.1 for `localhost`: the server listens on both, so no other
+    # local user can take [::1] on our port and answer for us (docs/security-review.md F10). Without IPv6, 127.0.0.1
+    # alone is enough: nobody can listen on [::1] then.
+    server = server6 = None
     for candidate in range(port, port + PORT_TRIES):
         if port_in_use(candidate):
             continue
         try:
             server = Server(("127.0.0.1", candidate), Handler)
-            break
         except OSError:
             continue
+        try:
+            server6 = Server6(("::1", candidate), Handler)
+        except OSError as e:
+            if e.errno == errno.EADDRINUSE:
+                server.server_close()
+                server = None
+                continue
+        break
     if server is None:
         sys.stderr.write(f"atm: no free port in {port}-{port + PORT_TRIES - 1}\n")
         return
+    if server6 is not None:
+        threading.Thread(target=server6.serve_forever, daemon=True).start()
     record = {
         "pid": os.getpid(),
         "port": server.server_address[1],

@@ -325,12 +325,12 @@ describe('DashboardState saved view', () => {
     s.resetView();
     expect(s.query).toBe('');
     expect(s.filters.type.size).toBe(0);
-    expect(s.tab).toBe('graph');
+    expect(s.tab).toBe('kanban');
     expect([s.kanbanShowAllDone, s.agentsWindow, s.graphView, s.graphFiltered]).toEqual([false, null, null, 'hide']);
     history.replaceState(null, '', '/');
     const next = new DashboardState();
     await next.load();
-    expect(next.tab).toBe('graph');
+    expect(next.tab).toBe('kanban');
   });
 });
 

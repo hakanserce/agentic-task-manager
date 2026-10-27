@@ -7,6 +7,7 @@ import {
   newBuildReady,
   parseTasksFile,
   projectFileUrl,
+  searchProjects,
   serverBuild,
 } from '../../src/lib/load';
 import archive from '../fixtures/archive.json';
@@ -60,6 +61,25 @@ describe('a new dashboard build on the server', () => {
     // The build the user dismissed isn't offered again; another one is
     expect(newBuildReady('b1', 'b2', 'b2')).toBe(false);
     expect(newBuildReady('b1', 'b3', 'b2')).toBe(true);
+  });
+});
+
+describe('searchProjects (T-261)', () => {
+  it('asks api/search past the cache, and keeps only task IDs per project', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse({ a1: ['T-1', 2, 'T-3'], b2: 'nope', c3: [] }));
+    const found = await searchProjects('a b&c', fetchFn);
+    expect(fetchFn).toHaveBeenCalledWith('api/search?q=a%20b%26c', { cache: 'no-store' });
+    expect([...found].map(([id, ids]) => [id, [...ids]])).toEqual([
+      ['a1', ['T-1', 'T-3']],
+      ['c3', []],
+    ]);
+    expect((await searchProjects('x', vi.fn().mockResolvedValue(jsonResponse(['nope'])))).size).toBe(0);
+  });
+
+  it('throws on a failed request', async () => {
+    await expect(searchProjects('x', vi.fn().mockResolvedValue(jsonResponse('no', 500)))).rejects.toThrow(
+      'api/search: HTTP 500',
+    );
   });
 });
 

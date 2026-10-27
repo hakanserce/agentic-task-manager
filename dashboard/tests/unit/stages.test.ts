@@ -32,11 +32,11 @@ describe('stageOf', () => {
 describe('doneSections', () => {
   it('In PR per PR (newest PR first), then Done, then Merged; empty sections left out; order kept', () => {
     const cards = [
-      task('A', { pr: { number: 7, url: 'u7' } }),
+      task('A', { pr: { number: 7, url: 'https://example.com/pr/7' } }),
       task('B'),
-      task('C', { pr: { number: 9, url: 'u9' } }),
+      task('C', { pr: { number: 9, url: 'javascript:alert(9)' } }),
       task('D', { pr: { number: 5 }, merged_at: '2026-04-01T00:00:00Z' }),
-      task('E', { pr: { number: 7, url: 'u7' } }),
+      task('E', { pr: { number: 7, url: 'https://example.com/pr/7' } }),
     ].map(card);
     const sections = doneSections(cards);
     expect(sections.map((s) => [s.label, s.cards.map((c) => c.task.id)])).toEqual([
@@ -45,7 +45,8 @@ describe('doneSections', () => {
       ['Done', ['B']],
       ['Merged', ['D']],
     ]);
-    expect(sections[1].url).toBe('u7');
+    expect(sections[1].url).toBe('https://example.com/pr/7');
+    expect(sections[0].url).toBeUndefined(); // a javascript: URL is never a link (T-225)
     expect(doneSections([card(task('B'))]).map((s) => s.id)).toEqual(['done']);
   });
 });

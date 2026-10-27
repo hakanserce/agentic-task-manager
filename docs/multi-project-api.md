@@ -23,6 +23,7 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
 |---|---|---|
 | `GET /` | the dashboard (`text/html`), from the plugin, held in memory since the server started | no |
 | `GET /api/projects` | the registered projects with their summaries (§3) | yes |
+| `GET /api/search?q=<text>` | the tasks matching a search, in every project (§2.4) | no |
 | `GET /p/<id>/tasks.json` | that project's `.agentic-task-manager/tasks.json`, as stored | yes |
 | `GET /p/<id>/claims.json` | that project's live claims, from every worktree (§2.1) | yes |
 | `GET /p/<id>/tasks-archive.json` | that project's archive, as stored | yes |
@@ -38,7 +39,7 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
   `{"error": "not found"}`. The dashboard treats a missing archive, claims or worktrees as empty.
 - A missing project (§3.1 `missing: true`) answers `404` for its files.
 - The ETag of a project file is its size and nanosecond mtime, as today's `json_etag` (`"<size hex>-<mtime_ns hex>"`).
-- Query strings are ignored.
+- Query strings are ignored, except `q` on `api/search`.
 
 ### 2.1 `claims.json`: claims from every worktree
 
@@ -91,6 +92,17 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
   style-src 'unsafe-inline'; sandbox` and `X-Content-Type-Options: nosniff`, so an SVG opened on its own never runs a
   script.
 
+### 2.4 `api/search`: tasks across projects
+
+For the All projects board's search box (T-258): `{ "<project id>": ["T-001", ...] }`, the IDs (in file order) of
+each project's `tasks.json` tasks, not the archive's, in which every word of `q` appears, case-insensitively, as the
+dashboard's own search finds them: in the ID, name, description, type, labels or note texts, or the project's name
+(so a project's name finds all its tasks). Projects without a match are left out; an empty `q` gives `{}`.
+
+Only the first 200 characters of `q` count, and at most 200 IDs come back per project. Like every route it is
+read-only and answers only on loopback with a matching Host (§1); other parameters are ignored. The Vite dev server
+answers the same.
+
 ## 3. `GET /api/projects`
 
 ```json
@@ -122,7 +134,15 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
         "needs_you": { "review": 1, "blocked_on_user": 0 },
         "needs_you_tasks": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "reason": "review" }],
         "last_activity": "2026-10-25T21:51:38Z",
-        "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28]
+        "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28],
+        "board": {
+          "todo": { "count": 1, "cards": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line", "type": "polish", "phase": 17, "priority": "P2", "labels": ["overview"] }] },
+          "active": { "count": 1, "cards": [{ "id": "T-188", "name": "One title bar for every page", "type": "feature", "phase": 17, "priority": "P1", "labels": [], "by": "claude:e5ea9db0", "since": "2026-10-20T09:12:00Z" }] },
+          "review": { "count": 1, "cards": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "type": "bugfix", "phase": 17, "priority": "P2", "labels": [], "since": "2026-10-25T21:40:02Z" }] },
+          "blocked": { "count": 0, "cards": [] },
+          "done": { "count": 28, "cards": ["… 28 cards, each with completed_at"] }
+        },
+        "stats": { "started": "2026-08-12T09:30:00Z", "tasks": 236, "agent_minutes": 4440 }
       },
       "worktrees": [{ "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true }],
       "logo": "p/1f3a9c2e/logo"
@@ -148,7 +168,7 @@ change (the server combines their size/mtime stamps and the worktree lists). Pro
 
 ### 3.2 Summary fields
 
-Counted from `tasks.json` only (not the archive), by status **kind** (the project's vocabulary), with atm-cli's own
+Counted from `tasks.json` only (not the archive; `stats` excepted), by status **kind** (the project's vocabulary), with atm-cli's own
 logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_tasks` are capped at 80 characters
 (the 80th is "…"), so the response stays small with many projects.
 
@@ -172,6 +192,27 @@ logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_
 | `needs_you_tasks` | those same tasks, in file order: `{ id, name, reason }`, `reason` being `"review"` or `"blocked"` (on a question for the user). The card's "needs you" chip opens them |
 | `last_activity` | the newest of all tasks' `updated_at`, `started_at`, `completed_at`, `review_requested_at`, `blocked_at` and `skipped_at`, and of note times; `null` without any |
 | `completions_14d` | 14 integers, oldest first, ending with today: done-kind tasks by the UTC day of `completed_at` (tasks without `completed_at` aren't counted) |
+| `board` | the cards for the All projects board (§3.3) |
+| `stats` | the overview card's line (T-255), archived tasks included (a task in both files counted once, from `tasks.json`; an unreadable archive left out): `started`, the earliest `created_at` (else `meta.created`, else `null`); `tasks`, how many; `agent_minutes`, the agent time as the Project tab counts it: the work (`started_at` until the review request or completion, until now while active) of tasks an agent (`claude:…`) or nobody recorded started, each agent's spans merged, added up. Computed when the summary is (a change to `tasks.json` or the claims), so a running task's time grows between changes only then |
+
+### 3.3 The board
+
+`board` has one column per kind (docs/all-projects-kanban-proposal.md §3.1), each `{ count, cards }`: `count` is how
+many tasks follow the column's rule, `cards` the first of them (so the dashboard can say *+ N more*).
+
+| Column | Rule | Order | At most |
+|---|---|---|---|
+| `todo` | ready to start (the tasks `next` takes from: to do, dependencies done, not claimed) in the first unfinished phase | the loop's | 10 |
+| `active` | every active-kind task | longest running first (`started_at`) | 30 |
+| `review` | every review-kind task | longest waiting first | 30 |
+| `blocked` | every blocked-kind task | blocked on the user first, then longest waiting | 30 |
+| `done` | done-kind tasks with `completed_at` in the last 24 hours | newest first | 30 |
+
+A card is what a project's Kanban card shows: `{ id, name, type, phase, priority, labels }` (the name capped as
+above, the priority the project's default when a task has none), plus `by` (the claim's agent, else `started_by`) on
+`active`; `since` (`started_at`, `review_requested_at` or `blocked_at`, else `updated_at`, else `null`) on `active`,
+`review` and `blocked`;
+`waiting_on` and `questions` (how many) on `blocked`; `completed_at` on `done`.
 
 ## 4. `GET /__atm/whoami`
 

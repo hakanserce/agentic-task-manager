@@ -35,7 +35,7 @@ const PROJECT = [
 
 describe('timeUse (T-245)', () => {
   it('splits all time into agents working, waiting on you and idle; agent time adds up parallel agents', () => {
-    const use = timeUse(PROJECT, null, NOW)!;
+    const use = timeUse(PROJECT, null, t(330))!;
     expect([use.from, use.to]).toEqual([t(0), t(330)]);
     // Waiting: the review (90–150) and the block (150–200), less the work until 100
     expect(minutes(use.waitingMs)).toBe(100);
@@ -48,6 +48,13 @@ describe('timeUse (T-245)', () => {
     expect(use.maxAgents).toBe(2);
   });
 
+  it('all time runs up to now: the time since the last work is idle', () => {
+    const use = timeUse(PROJECT, null, NOW)!;
+    expect(use.to).toBe(NOW);
+    expect(use.idle.at(-1)).toEqual({ start: t(330), end: NOW });
+    expect(minutes(use.idleMs)).toBe(40 + 670);
+  });
+
   it('a pause under 10 minutes counts as working, not idle', () => {
     const use = timeUse(
       [
@@ -55,7 +62,7 @@ describe('timeUse (T-245)', () => {
         task('T2', { started_by: 'a', started_at: at(35), completed_at: at(60) }),
       ],
       null,
-      NOW,
+      t(60),
     )!;
     expect(use.idle).toEqual([]);
     expect(minutes(use.workingMs)).toBe(60);
@@ -85,7 +92,7 @@ describe('timeUse (T-245)', () => {
   });
 
   it('split gives the same three parts for a bucket', () => {
-    const use = timeUse(PROJECT, null, NOW)!;
+    const use = timeUse(PROJECT, null, t(330))!;
     const inMinutes = (s: ReturnType<typeof use.split>) => [s.workingMs, s.waitingMs, s.idleMs].map(minutes);
     expect(inMinutes(use.split(t(0), t(60)))).toEqual([60, 0, 0]);
     expect(inMinutes(use.split(t(90), t(150)))).toEqual([10, 50, 0]);

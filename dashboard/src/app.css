@@ -710,10 +710,11 @@ h1 {
   transition: stroke-dasharray 0.6s ease;
 }
 
-/* Five across in the wide panel; fewer per row when the panel is narrower, rather than squeezing the numbers */
+/* Three cards (T-246): tasks done, time per task, where the time went (the widest). They wrap onto more rows, and
+   stack, when the panel is narrower, rather than squeezing the numbers */
 .kpi-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 .kpi {
@@ -722,6 +723,34 @@ h1 {
   padding: 10px;
   display: flex;
   flex-direction: column;
+  flex: 1 1 100px;
+}
+.kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Time per task: agents alone and with you side by side, the ⓘ in the corner */
+.kpi-pair {
+  flex: 1 1 210px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+.kpi-side {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.kpi-side .kpi-label span {
+  white-space: nowrap;
+}
+.kpi-where {
+  flex: 2 1 300px;
+  gap: 4px;
+}
+.kpi-where strong {
+  white-space: nowrap;
 }
 /* One line: "75 h 39 m" must not leave its "m" on a line of its own */
 .kpi-value {

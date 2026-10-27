@@ -91,7 +91,8 @@ export function waitingIntervals(task: Task, now: number, vocab: Vocabulary = DE
 }
 
 /**
- * Where the time went in `period` (null: all time, up to the last work or wait), or null when no work falls in it.
+ * Where the time went in `period` (null: all time, up to now, like the Activity charts' idle hatching), or null when
+ * no work falls in it.
  * `split` gives the same three-way split for part of it (a chart's bucket).
  */
 export function timeUse(
@@ -107,7 +108,7 @@ export function timeUse(
   const waitingAll = mergeIntervals(tasks.flatMap((t) => waitingIntervals(t, now, vocab)));
   const firstWork = Math.min(...work.map((w) => w.start));
   const from = Math.max(period?.start ?? -Infinity, firstWork);
-  const to = period ? Math.min(period.end, now) : Math.max(...work.map((w) => w.end), ...waitingAll.map((w) => w.end));
+  const to = period ? Math.min(period.end, now) : now;
   if (!work.length || to <= from) return null;
 
   const working = mergeIntervals(clip(work, from, to));

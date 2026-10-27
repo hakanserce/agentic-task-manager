@@ -8964,7 +8964,7 @@
       "description": "`docs/progress-tab-review.md` §1.6 (approved), coordinated with the Activity popup and project stats decisions (T-213, T-214).\n\nReplace the *Agent utilisation* section with three numbers for the burndown's selected range:\n- **Agent time**: time agents spent working on tasks (parallel agents add up);\n- **Waiting on you**: time tasks spent in review or blocked on the user;\n- **Idle**: time with no agent working.\n\nEach with a tooltip and an ⓘ. Drop the working-day basis and the per-session table (the Agents tab has them). Reuse the computations the Activity popup uses where they exist.\n\n## Verify\n\nUnit tests for the three numbers (including overlaps); e2e; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-240",
         "T-245"
@@ -8974,11 +8974,22 @@
         "dashboard/src/lib/utilization.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-27T00:05:45Z",
+      "updated_at": "2026-10-27T00:08:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:05:45Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "0fd67a4f978632c5bd056be34426cbe485789b5b",
+      "completed_at": "2026-10-27T00:08:26Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:08:26Z",
+          "kind": "outcome",
+          "text": "The Progress tab shows the Where the time went bar (`TimeSplitBar`, `timeuse.ts`) for the burndown range; the utilisation panel, `utilization.ts` and the per-session table are gone. The three numbers are unit-tested in `timeuse.test.ts` (T-245).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-243",
@@ -9112,7 +9123,7 @@
       "description": "`docs/activity-popup-review.md` §3 and §3.1 (approved).\n\n- Replace the KPI row with three cards: **Tasks done**; **Time per task** with two medians, *agents alone* (no `interactive` label) and *with you* (`interactive`), each with its count (*–* when none); **Where the time went** (`TimeSplitBar`).\n- Drop *completion rate* and *agents busy on average*; *N working now* only when the period includes now, from the claims.\n- An ⓘ on each card; cards stack on narrow screens.\n\n## Verify\n\ne2e for the cards and the two medians; the T-210 one-line test still holds; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-245",
         "T-240"
@@ -9123,9 +9134,11 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-27T00:08:28Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:08:28Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-247",

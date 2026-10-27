@@ -11,6 +11,7 @@
     type ActivityPreset,
   } from '../lib/insights';
   import { dashboard } from '../lib/state.svelte';
+  import { timeUse } from '../lib/timeuse';
   import ActivityDeepDive from './ActivityDeepDive.svelte';
   import Icon from './Icon.svelte';
 
@@ -29,6 +30,14 @@
       : activitySeries(dashboard.history, period, dashboard.loadedAt, dashboard.vocab, PRESET_BUCKET_MS[range.preset]),
   );
   const phrase = $derived(periodPhrase(range, dashboard.loadedAt));
+  // Where the time went in the period (timeuse.ts, shared with the Progress tab), and who works now: from the live
+  // claims, only for a period that runs up to now (T-246)
+  const use = $derived(open ? timeUse(dashboard.history, period, dashboard.loadedAt, dashboard.vocab) : null);
+  const workingNow = $derived(
+    !period || period.end >= dashboard.loadedAt
+      ? new Set([...dashboard.claims.values()].map((c) => c.agent)).size
+      : null,
+  );
 
   // A period reaching back before tasks.json's oldest completion needs the archive (D-5.2)
   const oldest = $derived(
@@ -174,7 +183,7 @@
           </div>
         {/if}
         {#if detail}
-          <ActivityDeepDive series={detail} period={phrase} />
+          <ActivityDeepDive series={detail} period={phrase} {use} {workingNow} />
         {/if}
       </div>
     {/if}

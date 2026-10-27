@@ -93,14 +93,23 @@ test.describe('Activity widget', () => {
     const panel = page.locator('#activity-panel');
     await expect(panel.locator('.activity-heading')).toContainText('Activity per hour');
     await expect(panel.locator('#dive-completed h4')).toHaveText('Tasks completed over all time, per hour, by type');
-    // 6 done in 4 h (08:00–12:00); 1.4 agents busy on average; idle 11:00–11:30 (see fixtures/agents.md)
-    await expect(panel.locator('.kpi')).toHaveText([
-      '6tasks completed',
-      '1.5 / hourcompletion rate',
-      '55 mtypical time per task',
-      '1.4agents busy on average · 1 now',
-      '30 midle (no agent working)',
+    // 6 done; cycle times 20–80 m, median 55 m, no interactive task; from 08:00 to now (12:00) nobody works 11:00–11:30
+    // (see fixtures/agents.md). Three cards (T-246)
+    await expect(panel.locator('#kpi-done .kpi-value')).toHaveText('6');
+    await expect(panel.locator('#kpi-time .kpi-side')).toHaveText([
+      '55 m agents alone (6 tasks)',
+      '– with you (0 tasks)',
     ]);
+    await expect(panel.locator('#kpi-where .status-legend li')).toHaveText([
+      'Agents working3 h 30 m',
+      'Waiting on you0 m',
+      'Idle30 m',
+    ]);
+    await expect(panel.locator('#kpi-where .time-split-agents')).toHaveText(
+      '5 h 30 m of agent time, up to 3 agents at once',
+    );
+    // No claims: nobody is shown working now
+    await expect(panel.locator('#kpi-working-now')).toHaveCount(0);
     await expect(panel.locator('#dive-completed .type-chip')).toHaveText([
       'feature2',
       'bugfix1',
@@ -143,10 +152,10 @@ test.describe('Activity widget', () => {
     await page.locator('[data-range="day"]').click();
     await expect(label).toHaveText('Today');
     await expect(page.locator('#activity-next')).toBeDisabled();
-    await expect(page.locator('.kpi').first()).toHaveText('6tasks completed');
+    await expect(page.locator('#kpi-done')).toHaveText('6 tasks done');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Yesterday');
-    await expect(page.locator('.kpi').first()).toHaveText('0tasks completed');
+    await expect(page.locator('#kpi-done')).toHaveText('0 tasks done');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Mon, Mar 30');
     await page.locator('#activity-next').click();
@@ -180,11 +189,41 @@ test.describe('Activity widget', () => {
     await page.locator('#activity-from').dispatchEvent('change');
     await page.locator('#activity-to').fill('2026-04-01T10:00');
     await page.locator('#activity-to').dispatchEvent('change');
-    await expect(page.locator('.kpi').first()).toHaveText('3tasks completed');
+    await expect(page.locator('#kpi-done')).toHaveText('3 tasks done');
   });
 
-  test('the key numbers stay on one line, and the idle one is keyed to the hatching', async ({ page, tasksServer }) => {
-    // Nobody working now, three days on: the idle time runs to "75 h …", which used to put its "m" on a line of its own
+  test('time per task: agents alone and with you; who works now, for a period up to now (T-246)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // T-003 (08:40–09:40) and T-005 (09:10–10:30) worked with you
+    const data = loadFixture('agents');
+    for (const t of data.tasks) if (t.id === 'T-003' || t.id === 'T-005') t.labels = ['interactive'];
+    tasksServer.use(data);
+    tasksServer.claims([
+      {
+        task: 'T-007',
+        agent: 'claude:alice001',
+        branch: null,
+        claimed_at: '2026-04-01T11:30:00Z',
+        lease_expires_at: '2026-04-01T12:30:00Z',
+      },
+    ]);
+    await page.reload();
+    await activityPill(page).click();
+    // Alone: 20, 30, 50, 60 → 40 m; with you: 60, 80 → 70 m
+    await expect(page.locator('#kpi-time .kpi-side')).toHaveText([
+      '40 m agents alone (4 tasks)',
+      '1 h 10 m with you (2 tasks)',
+    ]);
+    await expect(page.locator('#kpi-working-now')).toHaveText('1 working now');
+    await page.locator('[data-range="day"]').click();
+    await page.locator('#activity-prev').click();
+    await expect(page.locator('#kpi-working-now')).toHaveCount(0);
+  });
+
+  test('the key numbers stay on one line, and idle is keyed to the hatching', async ({ page, tasksServer }) => {
+    // Nobody working now, three days on: a long time such as "75 h 39 m" used to put its "m" on a line of its own
     const data = loadFixture('agents');
     for (const t of data.tasks) if (t.status === 'in_progress') t.status = 'todo';
     tasksServer.use(data);
@@ -193,10 +232,10 @@ test.describe('Activity widget', () => {
       await page.setViewportSize({ width, height: 900 });
       await page.reload();
       await activityPill(page).click();
-      const idle = page.locator('#kpi-idle');
-      await expect(idle.locator('.kpi-value')).toHaveText(/^\d+ h \d+ m$/);
-      await expect(idle.locator('.idle-swatch')).toHaveCount(1);
-      for (const value of await page.locator('.kpi-value').all()) {
+      const idle = page.locator('#kpi-where [data-part="idle"]');
+      await expect(idle.locator('strong')).toHaveText(/^\d+ h \d+ m$/);
+      await expect(idle.locator('.time-split-idle')).toHaveCount(1);
+      for (const value of await page.locator('.kpi-value, #kpi-where strong').all()) {
         // One line high, and nothing spilling out of its box (it's a flex item, so a block)
         const fits = await value.evaluate(
           (el) =>

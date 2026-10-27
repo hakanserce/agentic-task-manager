@@ -1,14 +1,23 @@
 <script lang="ts">
   import { shortAgent } from '../lib/claims';
   import { formatMinutes } from '../lib/format';
-  import type { ActivitySeries } from '../lib/insights';
+  import { median, type ActivitySeries } from '../lib/insights';
   import { typeStyle } from '../lib/theme';
   import { formatDate, formatDateTime } from '../lib/timeline';
+  import type { TimeUse } from '../lib/timeuse';
+  import InfoTip from './InfoTip.svelte';
+  import TimeSplitBar from './TimeSplitBar.svelte';
 
   // Three charts on one time axis, each answering one question: what got done (completions by type), who was
   // working (agents busy, stacked per agent), and how long tasks took. One hover reads a period across all three.
-  // `period` names the selected period for the headings: "this week", "today", "over all time" (periodPhrase)
-  let { series, period }: { series: ActivitySeries; period: string } = $props();
+  // `period` names the selected period for the headings: "this week", "today", "over all time" (periodPhrase).
+  // `use` is where the period's time went; `workingNow` the agents working now, null for a period in the past.
+  let {
+    series,
+    period,
+    use = null,
+    workingNow = null,
+  }: { series: ActivitySeries; period: string; use?: TimeUse | null; workingNow?: number | null } = $props();
 
   const W = 640;
   const PAD_L = 34;
@@ -40,12 +49,16 @@
 
   const short = $derived(series.bucketMs < 86_400_000);
   const when = (t: number) => (short ? formatDateTime(t) : formatDate(t));
-  const periodHours = $derived((b[n - 1].end - b[0].start) / 3_600_000);
-  const perHour = $derived(series.totalCompleted / Math.max(1e-9, periodHours));
-  const rate = $derived(
-    perHour >= 1 || periodHours <= 24 ? `${perHour.toFixed(1)} / hour` : `${(perHour * 24).toFixed(1)} / day`,
+  // Time per task, two medians: tasks agents do alone, and `interactive` ones that include working with you
+  const perTask = $derived(
+    [
+      { key: 'alone', label: 'agents alone', withYou: false },
+      { key: 'with-you', label: 'with you', withYou: true },
+    ].map((side) => {
+      const minutes = series.cycleTimes.filter((c) => c.withYou === side.withYou).map((c) => c.minutes);
+      return { ...side, median: median(minutes), count: minutes.length };
+    }),
   );
-  const avgBusy = $derived(b.reduce((s, x) => s + busyTotal(x), 0) / n);
   const pct = (v: number) => `${Math.round(v * 100)}%`;
 
   let hover = $state<number | null>(null);
@@ -58,26 +71,41 @@
   const hb = $derived(hover === null ? null : b[hover]);
 </script>
 
+<!-- Three cards, one question each (docs/activity-popup-review.md §3.1): what got done, how long tasks take, and where
+     the time went -->
 <div class="kpi-row">
-  <div class="kpi">
-    <span class="kpi-value">{series.totalCompleted}</span><span class="kpi-label">tasks completed</span>
-  </div>
-  <div class="kpi"><span class="kpi-value">{rate}</span><span class="kpi-label">completion rate</span></div>
-  <div class="kpi">
-    <span class="kpi-value">{series.medianCycleMinutes === null ? '–' : formatMinutes(series.medianCycleMinutes)}</span
-    ><span class="kpi-label">typical time per task</span>
-  </div>
-  <div class="kpi">
-    <span class="kpi-value">{avgBusy.toFixed(1)}</span><span class="kpi-label"
-      >agents busy on average · {series.workingNow} now</span
+  <div class="kpi" id="kpi-done">
+    <span class="kpi-head"
+      ><span class="kpi-value">{series.totalCompleted}</span>
+      <InfoTip label="tasks done">
+        <p>Tasks finished in this period: done, not skipped.</p>
+      </InfoTip></span
     >
+    <span class="kpi-label">tasks done</span>
   </div>
-  <!-- The swatch is the idle hatching of the charts below, so the number and the stretches read as one thing -->
-  <div class="kpi" id="kpi-idle" title="Time in this period when no agent was working on a task: hatched in the charts">
-    <span class="kpi-value">{series.idleMs ? formatMinutes(series.idleMs / 60_000) : '–'}</span><span class="kpi-label"
-      >{#if series.idleMs}<span class="idle-swatch"></span>{/if}idle (no agent working)</span
-    >
+  <div class="kpi kpi-pair" id="kpi-time">
+    {#each perTask as side (side.key)}
+      <div class="kpi-side" data-side={side.key}>
+        <span class="kpi-value">{side.median === null ? '–' : formatMinutes(side.median)}</span>
+        <span class="kpi-label">{side.label} <span>({side.count} task{side.count === 1 ? '' : 's'})</span></span>
+      </div>
+    {/each}
+    <InfoTip label="time per task">
+      <p>
+        The typical (median) time from a task's start until it asked for a review, or was done. <strong
+          >Agents alone</strong
+        >: tasks agents do by themselves. <strong>With you</strong>: tasks labelled <code>interactive</code>, which
+        include working with you.
+      </p>
+      <p>A task whose lease expired is measured from its restart.</p>
+    </InfoTip>
   </div>
+  {#if use}
+    <div class="kpi kpi-where" id="kpi-where">
+      <TimeSplitBar {use} />
+      {#if workingNow}<span class="kpi-label" id="kpi-working-now">{workingNow} working now</span>{/if}
+    </div>
+  {/if}
 </div>
 
 {#snippet frame(max: string)}

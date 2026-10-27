@@ -1,5 +1,6 @@
 // Numbers behind the Progress and Activity widgets in the top bar: completion shares (overall, per phase, per type)
 // and activity over time (completions, cumulative done vs scope, cycle time, work in progress).
+import { INTERACTIVE_LABEL } from './forecast';
 import { completions, type Completion } from './timeline';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, type StatusKind, type Vocabulary } from './vocab';
@@ -113,6 +114,8 @@ export interface CycleTime {
   /** When it was completed (ms) */
   time: number;
   minutes: number;
+  /** An `interactive` task: its time includes working with you (docs/activity-popup-review.md §3) */
+  withYou: boolean;
 }
 
 export interface ActivitySeries {
@@ -127,8 +130,6 @@ export interface ActivitySeries {
   types: { type: string; count: number }[];
   /** Agents that worked in the period, by name (unattributed last): the order their colours follow */
   agents: string[];
-  /** Agents working on a task now */
-  workingNow: number;
   /** Stretches of at least MIN_IDLE_MS when no agent worked on any task, between the first start and now */
   idle: { start: number; end: number }[];
   idleMs: number;
@@ -391,7 +392,14 @@ export function activitySeries(
       ({ s, c, w }) =>
         s !== null && c !== null && w !== null && w >= s && (!period || (c >= period.start && c < period.end)),
     )
-    .map(({ t, s, c, w }) => ({ id: t.id, name: t.name, type: t.type, time: c!, minutes: (w! - s!) / 60_000 }))
+    .map(({ t, s, c, w }) => ({
+      id: t.id,
+      name: t.name,
+      type: t.type,
+      time: c!,
+      minutes: (w! - s!) / 60_000,
+      withYou: !!t.labels?.includes(INTERACTIVE_LABEL),
+    }))
     .sort((a, b) => a.time - b.time);
 
   const typeTotals = new Map<string, number>();
@@ -404,7 +412,6 @@ export function activitySeries(
       (a, b) => Number(a === '') - Number(b === '') || a.localeCompare(b),
     ),
     ...idleIn(work, first, period ? Math.min(period.end, now) : Math.max(last, now)),
-    workingNow: new Set(tasks.filter((t) => kind(t) === 'active').map((t) => startedBy(t) ?? '')).size,
     unitLabel,
     bucketMs,
     buckets,

@@ -153,7 +153,6 @@ describe('activitySeries', () => {
       T0 + 5 * H,
     )!;
     expect(s.cycleTimes.map((c) => [c.id, c.minutes])).toEqual([['a', 60]]);
-    expect(s.workingNow).toBe(0);
     // Each worked one hour (hourly buckets, aligned to the clock: 08:00, 09:00, ...), not until completion or now
     const busyHours = (agent: string) => s.buckets.reduce((sum, b) => sum + (b.agentBusy[agent] ?? 0), 0);
     expect(busyHours('alice')).toBeCloseTo(1);
@@ -173,7 +172,7 @@ describe('activitySeries', () => {
     const tasks = [worked('a', 0, 1, { status: 'shipped' }), worked('b', 1, undefined, { status: 'doing' })];
     expect(activitySeries(tasks, null, T0 + 2 * H)).toBeNull();
     const s = activitySeries(tasks, null, T0 + 2 * H, vocab)!;
-    expect([s.totalCompleted, s.workingNow]).toEqual([1, 1]);
+    expect([s.totalCompleted, s.buckets.at(-1)!.wip]).toEqual([1, 1]);
   });
 
   it('is null without completions', () => {
@@ -217,6 +216,14 @@ describe('activitySeries', () => {
       ['slow', 180],
     ]);
     expect(s.medianCycleMinutes).toBe(105);
+  });
+
+  it('marks interactive tasks: their time includes working with you (T-246)', () => {
+    const s = activitySeries([worked('alone', 0, 1), worked('pair', 1, 3, { labels: ['ux', 'interactive'] })])!;
+    expect(s.cycleTimes.map((c) => [c.id, c.withYou])).toEqual([
+      ['alone', false],
+      ['pair', true],
+    ]);
   });
 
   it('picks longer buckets for longer spans, never more than the maximum', () => {
@@ -351,6 +358,5 @@ describe('idle stretches', () => {
     )!;
     expect(s.agents).toEqual(['x', 'y']);
     expect(s.buckets[0].agentBusy.x).toBeLessThanOrEqual(1);
-    expect(s.workingNow).toBe(0);
   });
 });

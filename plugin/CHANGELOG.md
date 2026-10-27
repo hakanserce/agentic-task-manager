@@ -17,6 +17,8 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
 - **Titles:** the All projects page is titled *Projects Overview*; a project's page by its name alone, without
   *— Task Dashboard* (the title bar and the browser tab). *Task Dashboard* stays while loading and for a project
   without a name.
+- **The atm logo on GitHub:** the README is headed by the logo (`.github/assets/atm-logo.svg`, the dashboard's in the
+  accent blue) instead of an emoji, and `.github/assets/social-preview.png` is the repository's preview card.
 
 ## [0.20.0] - 2026-10-27
 

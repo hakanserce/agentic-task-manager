@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 272,
+    "next_id": 273,
     "labels": [
       {
         "id": "dashboard",
@@ -10232,16 +10232,54 @@
       "description": "The title bar and the browser tab (`Header.svelte`):\n- the All projects page: *Projects Overview* instead of *All projects — Task Dashboard*;\n- a project's page: just the project's name, without *— Task Dashboard*.\n\nWhile loading, and for a project without a name, the title stays *Task Dashboard*. The project selector's *All projects* option is unchanged.\n\n## Tests\nUpdate the e2e and unit tests that expect the old titles, and the screenshots that show them.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/Header.svelte"
       ],
       "created_at": "2026-10-27T06:56:17Z",
-      "updated_at": "2026-10-27T06:56:23Z",
+      "updated_at": "2026-10-27T06:58:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:56:23Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "97f4d47c608cb656db34d89e76d32e54c06aa65c",
+      "completed_at": "2026-10-27T06:58:28Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T06:58:28Z",
+          "kind": "outcome",
+          "text": "All projects is titled *Projects Overview*; a project page by its name alone (title bar and browser tab). Tests and 16 screenshots updated.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-272",
+      "name": "The atm logo on GitHub: README header and a social preview image",
+      "phase": 22,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "branding"
+      ],
+      "description": "The README's title uses a 🔄 emoji and GitHub shows its generated preview card; use the atm logo (the board, `dashboard/src/assets/atm-logo.svg`) instead.\n\n## Change\n- `.github/assets/atm-logo.svg`: the same drawing in the accent blue (`#2f81f7`, the favicon's colour) instead of `currentColor`, so it shows on GitHub's light and dark themes.\n- `README.md`: a centered header with the logo above the title; the emoji goes.\n- `.github/assets/social-preview.png` (1280×640): the logo, the name and the one-line description, from `.github/assets/social-preview.html`. GitHub has no API for it: Hakan uploads it in Settings → General → Social preview (and may use the logo for the org's avatar).\n\n## Tests\nA unit test that the README's logo has the same shapes as `atm-logo.svg`, so they can't drift apart, and that the README references it.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        ".github/assets/atm-logo.svg",
+        ".github/assets/social-preview.html",
+        ".github/assets/social-preview.png",
+        "README.md"
+      ],
+      "created_at": "2026-10-27T06:59:00Z",
+      "updated_at": "2026-10-27T06:59:07Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T06:59:07Z",
       "started_by": "claude:e5ea9db0"
     }
   ]

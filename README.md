@@ -1,4 +1,8 @@
-# 🔄 Agentic Task Manager
+<p align="center">
+  <img src=".github/assets/atm-logo.svg" alt="atm logo: a board with three columns of cards, the last one done" width="96" height="96">
+</p>
+
+<h1 align="center">Agentic Task Manager</h1>
 
 A **Claude Code plugin** that gives any project file-based task management with a live HTML dashboard. Agents decompose requirements into granular tasks, execute them in a loop, and humans watch progress in real time.
 

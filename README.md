@@ -29,7 +29,7 @@ A **Claude Code plugin** that gives any project file-based task management with 
 In Claude Code (terminal or VS Code), add the marketplace and install the `atm` plugin:
 
 ```
-/plugin marketplace add hakanserce/agentic-task-manager
+/plugin marketplace add solo-swe/agentic-task-manager
 /plugin install atm@hakanserce-plugins
 ```
 
@@ -89,7 +89,7 @@ Or loop through everything:
 This repo is its own marketplace (`hakanserce-plugins`) containing the `atm` plugin:
 
 ```
-/plugin marketplace add hakanserce/agentic-task-manager
+/plugin marketplace add solo-swe/agentic-task-manager
 /plugin install atm@hakanserce-plugins
 ```
 
@@ -109,7 +109,7 @@ restarts on the new version by itself (at the next tool call, or the next sessio
 Clone and load directly:
 
 ```bash
-git clone https://github.com/hakanserce/agentic-task-manager.git
+git clone https://github.com/solo-swe/agentic-task-manager.git
 cd your-project
 claude --plugin-dir /path/to/agentic-task-manager/plugin
 ```
@@ -692,7 +692,7 @@ Optional `estimated_minutes` and `actual_minutes` fields with burndown chart in 
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR on [GitHub](https://github.com/hakanserce/agentic-task-manager).
+Contributions welcome! Please open an issue or PR on [GitHub](https://github.com/solo-swe/agentic-task-manager).
 
 ## License
 

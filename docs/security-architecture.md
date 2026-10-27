@@ -173,7 +173,7 @@ tool call. Today `main` has **no branch protection**. Proposal:
 - the owner can bypass in an emergency.
 
 The ruleset is `.github/rulesets/main.json` (the bypass actor 5 is the repository's Admin role). Applied once by the
-owner: `gh api -X POST repos/hakanserce/agentic-task-manager/rulesets --input .github/rulesets/main.json`. A later
+owner: `gh api -X POST repos/solo-swe/agentic-task-manager/rulesets --input .github/rulesets/main.json`. A later
 change to the file is applied with `-X PUT …/rulesets/<id>`.
 
 **Private vulnerability reporting**: turn it on (Settings → Code security), as `SECURITY.md` points to it.

@@ -6,8 +6,8 @@
     "name": "Hakan Serce",
     "email": "hakanserce@gmail.com"
   },
-  "homepage": "https://github.com/hakanserce/agentic-task-manager",
-  "repository": "https://github.com/hakanserce/agentic-task-manager",
+  "homepage": "https://github.com/solo-swe/agentic-task-manager",
+  "repository": "https://github.com/solo-swe/agentic-task-manager",
   "license": "MIT",
   "keywords": [
     "task-management",

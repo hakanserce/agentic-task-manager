@@ -61,7 +61,7 @@
         "name": "Org move and fixes"
       }
     ],
-    "repository": "https://github.com/hakanserce/agentic-task-manager"
+    "repository": "https://github.com/solo-swe/agentic-task-manager"
   },
   "tasks": [
     {
@@ -10149,7 +10149,7 @@
       "description": "The repository moved to the `solo-swe` org (done by Hakan on GitHub). Replace `hakanserce/agentic-task-manager` with `solo-swe/agentic-task-manager` in:\n- `plugin/.claude-plugin/plugin.json` (`homepage`, `repository`), `.claude-plugin/marketplace.json` (`homepage`);\n- `README.md` (install and clone instructions, the GitHub link), the two `gh api` commands in `CLAUDE.md`, `docs/help.md`, `docs/security-architecture.md`;\n- the unit tests that check the URL (`Footer.component.test.ts`, `plugin-info.test.ts`).\n\nLeave history alone (CHANGELOG entries, old proposals, `docs/v3-requirements.md`) and the author's personal links. Set the task list's address with `atm repository set https://github.com/solo-swe/agentic-task-manager`. The marketplace name is the next task.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "plugin/.claude-plugin/plugin.json",
@@ -10162,9 +10162,11 @@
         "dashboard/tests/unit/plugin-info.test.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T06:47:48Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T06:47:48Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-270",

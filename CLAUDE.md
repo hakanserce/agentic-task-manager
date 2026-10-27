@@ -88,10 +88,10 @@ git merges). CI runs the suite with Python 3.9 and a current version.
   release branch (e.g. `dev/v4`) and reaches `main` through **one combined PR per release branch**.
 - **Linux screenshot baselines:** after a visual change, CI fails until the `-linux.png` baselines are committed, and
   attaches the generated ones as the `linux-screenshot-baselines` artifact. Find its ID with
-  `gh api repos/hakanserce/agentic-task-manager/actions/runs/<run-id>/artifacts`; **check its `workflow_run` is your
+  `gh api repos/solo-swe/agentic-task-manager/actions/runs/<run-id>/artifacts`; **check its `workflow_run` is your
   branch's run**: `head_branch` your branch, `head_repository_id` this repository's, and `head_sha` a commit on your
   branch (a fork's PR uploads an artifact of the same name). Download it with
-  `gh api repos/hakanserce/agentic-task-manager/actions/artifacts/<id>/zip > <scratch>/baselines.zip` (`gh run download`
+  `gh api repos/solo-swe/agentic-task-manager/actions/artifacts/<id>/zip > <scratch>/baselines.zip` (`gh run download`
   fails on the zip's duplicate entries), extract only the missing `*-linux.png` files into
   `dashboard/tests/e2e/__screenshots__/` (`unzip -n`), look at one to check it shows what you expect, then commit them.
 - **Pinned:** actions by commit SHA, container images by digest, the token read-only (`permissions: contents:

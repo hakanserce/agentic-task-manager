@@ -33,7 +33,7 @@ describe('Footer', () => {
   it('links to the repository in a new tab', () => {
     render(Footer);
     const link = screen.getByRole('link', { name: 'GitHub' });
-    expect(link).toHaveAttribute('href', 'https://github.com/hakanserce/agentic-task-manager');
+    expect(link).toHaveAttribute('href', 'https://github.com/solo-swe/agentic-task-manager');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });

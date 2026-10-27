@@ -43,7 +43,7 @@ describe('readPluginInfo', () => {
       read('../../../plugin/.claude-plugin/plugin.json'),
       read('../../../plugin/CHANGELOG.md'),
     );
-    expect(info.repository).toBe('https://github.com/hakanserce/agentic-task-manager');
+    expect(info.repository).toBe('https://github.com/solo-swe/agentic-task-manager');
     expect(info.year).toMatch(/^\d{4}$/);
   });
 });

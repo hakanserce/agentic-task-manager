@@ -34,6 +34,6 @@ test.describe('Help', () => {
     await page.locator('#footer-help').click();
     const external = page.locator('#help-panel a[target="_blank"]');
     await expect(external).toHaveCount(1);
-    await expect(external).toHaveAttribute('href', /^https:\/\/github\.com\/hakanserce\/agentic-task-manager/);
+    await expect(external).toHaveAttribute('href', /^https:\/\/github\.com\/solo-swe\/agentic-task-manager/);
   });
 });

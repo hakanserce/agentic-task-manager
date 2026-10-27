@@ -9998,18 +9998,29 @@
       "description": "**Bug (reported again):** the Activity popup's heading reads `Activity per {unitLabel}` (`ActivityWidget.svelte`), and `unitLabel` is the bar size, not the chosen period: *All time* says \"per 3 hours\", *Week* says \"per day\". T-144 fixed the same mix-up in the chart headings but never covered this line.\n\n## Change\n- The heading is just *Activity* (with its ⓘ); the period label next to it (\"This week\", \"All time\") already names the period, and the chart headings already say the bar size (\"Tasks completed this week, per day\").\n- Go through **every** place in the popup that names a period or a bar size (heading, chart headings, ⓘ texts, the sparkline tooltip, hover tooltips) and make sure none presents the bar size as the period.\n\n## Tests\nUnit tests where a helper builds the text; the e2e coverage per preset is the next task.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ActivityWidget.svelte",
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T07:19:48Z",
+      "updated_at": "2026-10-27T07:21:14Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:19:48Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "7711fcd25020358185d8be86b3340ef2e2ef5aba",
+      "completed_at": "2026-10-27T07:21:14Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:21:14Z",
+          "kind": "outcome",
+          "text": "Heading is just *Activity* (`#activity-title`); the period label names the period, the chart headings the period and bar size; *Time per task* names the period now. The two e2e checks that pinned `Activity per hour/day` now assert the heading has no *per*.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-264",
@@ -10024,7 +10035,7 @@
       "description": "Why the bug slipped: `widgets.spec.ts` asserts `toContainText('Activity per hour')` on *All time*, which pinned the bar size as if it were right, and nothing checked the headings per period.\n\n## Tests\nIn `dashboard/tests/e2e/widgets.spec.ts`, for each preset (Hour, Day, Week, Month, All, Custom, and one step back with ‹):\n- the heading is *Activity* and the period label names the chosen period;\n- the chart headings name that period and its own bar size (hour → per 5 minutes, day → per hour, week and month → per day, all time → the automatic size).\n\nReplace the `'Activity per hour'` assertion. Update the Activity screenshots (darwin, delete the matching `-linux.png`).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-263"
       ],
@@ -10033,9 +10044,11 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T07:21:15Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:21:15Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-265",

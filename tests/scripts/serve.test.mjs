@@ -24,9 +24,17 @@ import { pageCsp } from '../../dashboard/tests/e2e/csp.mjs';
 const TASKS = { meta: { id: 'abcd1234', project: 'Serve' }, tasks: [] };
 // A different range per run: ports of the previous run can still be in TIME_WAIT, and the server deliberately doesn't
 // use SO_REUSEADDR (on macOS it would let it share a port another server is listening on).
-let nextPort = 20000 + (process.pid % 400) * 50;
+// Below 32768, where Linux starts handing out ports to outgoing connections (32768–60999; macOS from 49152): the
+// suite's own connections, from the files running in parallel, could hold a test's port for a moment, so atm served
+// on the next one and the test's request to the port it asked for was refused (T-276; CI run 40470063094).
+const EPHEMERAL_PORTS = 32768;
+let nextPort = 20000 + (process.pid % 240) * 50;
 /** A block of ports for one test, so tests never collide even if a stop fails. */
-const ports = () => (nextPort += 10) - 10;
+const ports = () => {
+  nextPort += 10;
+  assert.ok(nextPort <= EPHEMERAL_PORTS, `test ports reached ${nextPort}: keep them below ${EPHEMERAL_PORTS} (T-276)`);
+  return nextPort - 10;
+};
 
 const record = (home) => {
   try {

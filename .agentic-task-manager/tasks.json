@@ -10561,7 +10561,7 @@
       "description": "Asked for by Hakan (2026-10-27): Dependabot's first run opened six PRs at once, one per package, and with the `main` ruleset requiring branches to be up to date, each merge sent the others through another update and CI run. **The ruleset stays as it is**; group the updates instead.\n\n## Change\nIn `.github/dependabot.yml`, a `groups` entry for each ecosystem (`github-actions` and `npm` in `/dashboard`) that puts all its updates into one PR a week. Keep the weekly schedule, the comment on SHA pinning and `open-pull-requests-limit`. Major versions may get their own group (`update-types`) so a breaking one (like `typescript` 7) doesn't hold up the rest.\n\n## Docs\n`docs/security-architecture.md` (the Dependabot invariant, I19) if it describes the PRs; `CLAUDE.md`'s CI section, which says Dependabot proposes updates.\n\n## Check\nThe file validates (GitHub shows Dependabot config errors on the repository's Insights → Dependency graph → Dependabot tab); the next weekly run opens at most one PR per ecosystem and group.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         ".github/dependabot.yml",
@@ -10569,11 +10569,22 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-27T08:23:41Z",
-      "updated_at": "2026-10-27T08:31:55Z",
+      "updated_at": "2026-10-27T08:33:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T08:31:55Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "14a8da5857b51f61adfcc0299c7c10a322507eda",
+      "completed_at": "2026-10-27T08:33:00Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T08:33:00Z",
+          "kind": "outcome",
+          "text": "Dependabot groups its updates: one PR a week for all actions (majors too), one for npm minor and patch updates; an npm major still gets its own PR. `ci-workflow.test.ts` checks the groups; CLAUDE.md and the security doc (I19) say so. The ruleset is unchanged.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-276",
@@ -10588,16 +10599,18 @@
       "description": "`serve.test.mjs` › *working, next and last_done* failed on CI (Python 3.9 job, PR #18's run 40470063094) with `TypeError: fetch failed … ECONNREFUSED 127.0.0.1:34730`, and passed on a re-run.\n\n## Likely cause\n`atm serve --port N` uses the next free port when N is taken (`ensure_server` waits for that server's `whoami`, so it is up when the command returns) and prints the URL it actually serves on. The tests take a port from `ports()` and then fetch `http://localhost:${port}`, the port they *asked for*. When test files running in parallel get the same port, the server listens elsewhere and the fetch is refused.\n\n## Change\nConfirm the cause first (e.g. a test that holds port N, runs `atm serve --port N` and checks the printed URL's port). Then make the tests use the port atm reports: a helper in `tests/scripts/helpers.mjs` (or in `serve.test.mjs`) that runs `atm serve` and returns the port from its output (or from `atm serve status --json`), used by every test that starts a server. If the cause turns out to be different, fix that instead and say so in the outcome note.\n\n## Check\n`npm run test:scripts` passes several times in a row locally; no test fetches a port it didn't get from atm.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "tests/scripts/serve.test.mjs",
         "tests/scripts/helpers.mjs"
       ],
       "created_at": "2026-10-27T08:23:41Z",
-      "updated_at": "2026-10-27T08:23:41Z",
+      "updated_at": "2026-10-27T08:38:10Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T08:38:10Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

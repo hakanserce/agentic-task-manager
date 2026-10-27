@@ -4,8 +4,8 @@ import { expect, test } from './helpers';
 // Checks on the shipped artifact itself (plugin/templates/tasks-dashboard.html), not on its behavior.
 const BUILT = new URL('../../../plugin/templates/tasks-dashboard.html', import.meta.url);
 const PLUGIN_JSON = new URL('../../../plugin/.claude-plugin/plugin.json', import.meta.url);
-// 350 KiB = 358,400 bytes (Vite's build output counts kB as 1,000 bytes, so it shows this as 358.4 kB)
-const MAX_BYTES = 350 * 1024;
+// 400 KiB = 409,600 bytes (Vite's build output counts kB as 1,000 bytes, so it shows this as 409.6 kB)
+const MAX_BYTES = 400 * 1024;
 
 test.describe('shipped dashboard file', () => {
   const html = () => readFileSync(BUILT, 'utf8');

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The project selector next to the title (docs/multi-project-dashboard-proposal.md 3.4): All projects, then each
+  // The project selector next to the title (docs/multi-project-dashboard-proposal.md 3.4): Projects Overview, then each
   // registered project with its progress and a dot when something needs you. A filter field with a listbox (the
   // WAI-ARIA combobox pattern): typing filters, the arrows, Home and End move, Enter opens, Escape closes.
   import { tick } from 'svelte';
@@ -25,9 +25,9 @@
     dashboard.projects.filter((p) => p.id !== current && !p.missing).reduce((n, p) => n + needsYou(p), 0),
   );
   const shown = $derived(dashboard.projects.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase())));
-  /** The options in order: All projects (unless filtered out), then the projects that match and are there */
+  /** The options in order: Projects Overview (unless filtered out), then the projects that match and are there */
   const options = $derived([
-    ...('all projects'.includes(query.trim().toLowerCase()) ? [OVERVIEW] : []),
+    ...('projects overview'.includes(query.trim().toLowerCase()) ? [OVERVIEW] : []),
     ...shown.filter((p) => !p.missing).map((p) => p.id),
   ]);
   const optionId = (id: string) => (id === OVERVIEW ? 'project-option-overview' : `project-option-${id}`);
@@ -129,7 +129,7 @@
             onkeydown={() => {}}
             onmouseenter={() => (active = OVERVIEW)}
           >
-            <span class="project-option-name">All projects</span>
+            <span class="project-option-name">Projects Overview</span>
           </li>
         {/if}
         {#each shown as project (project.id)}

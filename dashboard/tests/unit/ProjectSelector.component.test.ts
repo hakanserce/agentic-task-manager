@@ -44,12 +44,12 @@ describe('ProjectSelector', () => {
     );
   });
 
-  it('opens a list: All projects, then each project with its progress; a gone one is listed but disabled', async () => {
+  it('opens a list: Projects Overview, then each project with its progress; a gone one is listed but disabled', async () => {
     const { container } = render(ProjectSelector);
     await fireEvent.click(container.querySelector('#project-selector')!);
     const options = [...container.querySelectorAll('[role=option]')];
     expect(options.map((o) => o.textContent?.trim().split('\n')[0])).toEqual([
-      'All projects',
+      'Projects Overview',
       'Alpha',
       'Beta',
       'Gone not found',
@@ -71,9 +71,13 @@ describe('ProjectSelector', () => {
     expect(container.querySelector('#project-menu')).toBeNull();
   });
 
-  it('All projects goes to the overview', async () => {
+  it('Projects Overview goes to the overview; typing its name finds it (T-274)', async () => {
     const { container } = render(ProjectSelector);
     await fireEvent.click(container.querySelector('#project-selector')!);
+    await fireEvent.input(container.querySelector('#project-filter')!, { target: { value: 'overv' } });
+    expect([...container.querySelectorAll('[role=option]')].map((o) => o.getAttribute('data-id'))).toEqual([
+      'overview',
+    ]);
     await fireEvent.click(container.querySelector('[data-id="overview"]')!);
     expect(location.hash).toBe('#overview');
   });

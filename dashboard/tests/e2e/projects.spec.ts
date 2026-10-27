@@ -107,7 +107,7 @@ test.describe('projects', () => {
     await expect(page.locator('#task-search')).toHaveValue('nothing matches this');
   });
 
-  test('the selector lists All projects and the projects, with progress; choosing one opens it', async ({
+  test('the selector lists Projects Overview and the projects, with progress; choosing one opens it', async ({
     page,
     tasksServer,
   }) => {
@@ -117,7 +117,7 @@ test.describe('projects', () => {
     await page.locator('#project-selector').click();
     await expect(page.locator('#project-filter')).toBeFocused();
     await expect(page.locator('#project-options [role=option]')).toHaveText([
-      'All projects',
+      'Projects Overview',
       'Standard Project',
       'Second Project',
     ]);

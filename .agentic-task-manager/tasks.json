@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 274,
+    "next_id": 275,
     "labels": [
       {
         "id": "dashboard",
@@ -10306,7 +10306,7 @@
       "description": "After a repository moves (here to `solo-swe`), the tasks' recorded PR links (`pr.url`, written by `atm pr`) still name the old address. GitHub redirects them, but the dashboard shows them as recorded. `atm pr` can't fix them: it drops `merged_at` and stamps the task as updated now.\n\n## Change\nWhen `atm repository set <new>` replaces an address (`meta.repository` had one), it also rewrites every `pr.url` that starts with the old address to start with the new one, in `tasks.json` and `tasks-archive.json`, under the lock. Nothing else changes: not `merged_at`, `updated_at`, `updated_by` or anything the activity history reads. It prints how many links it moved (`--json`: `moved_links`). Links to another address are left alone.\n\n## Docs and tests\n- `docs/v4/atm-cli.md` (the `repository` command) and the skill or README text that mentions `atm repository set`.\n- A scenario in `tests/scripts/scenarios/`: links on the old address move, others don't, `merged_at` and `updated_at` stay; the archive too.\n\n## Then\nRun `atm repository set https://github.com/solo-swe/agentic-task-manager` in this repository (the address was already set by T-269 from `hakanserce/…`, so set the old one first only if needed) and commit the moved links.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/cli.py",
@@ -10314,10 +10314,46 @@
         "tests/scripts/scenarios/repository.json"
       ],
       "created_at": "2026-10-27T07:01:35Z",
-      "updated_at": "2026-10-27T07:01:36Z",
+      "updated_at": "2026-10-27T07:06:37Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:01:36Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "b334b3555fb280e3dcbee98000f9965cb5939765",
+      "completed_at": "2026-10-27T07:06:37Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:06:37Z",
+          "kind": "outcome",
+          "text": "`atm repository set URL [--from OLD]` moves recorded PR links (`pr.url`) from the old address, in tasks.json and the archive, keeping `merged_at`, timestamps and actors. Ran it here: 163 links moved from `hakanserce/…` to `solo-swe/…`.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-274",
+      "name": "Project selector: the All projects option is called Projects Overview",
+      "phase": 22,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "overview",
+        "dashboard"
+      ],
+      "description": "The project selector's first option (`ProjectSelector.svelte`) reads *Projects Overview*, matching the page's title (T-271), instead of *All projects*. Its filtering by typed text matches the new name. Update the unit and e2e tests that list the options, and the selector screenshots.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/ProjectSelector.svelte"
+      ],
+      "created_at": "2026-10-27T07:06:50Z",
+      "updated_at": "2026-10-27T07:06:51Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:06:51Z",
       "started_by": "claude:e5ea9db0"
     }
   ]

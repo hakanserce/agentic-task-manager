@@ -16,7 +16,7 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   `/plugin marketplace add solo-swe/agentic-task-manager`, `/plugin install atm@solo-swe-plugins`, `/reload-plugins`.
 - **Titles:** the All projects page is titled *Projects Overview*; a project's page by its name alone, without
   *— Task Dashboard* (the title bar and the browser tab). *Task Dashboard* stays while loading and for a project
-  without a name.
+  without a name. The project selector's first option is *Projects Overview* too (typing its name finds it).
 - **`atm repository set URL [--from OLD]`** also moves the tasks' recorded PR links (`pr.url`) from the old address
   (`--from`, else the one it replaces) to the new one, in `tasks.json` and the archive, without touching
   `merged_at`, timestamps or actors; `--json` adds `moved_links`.

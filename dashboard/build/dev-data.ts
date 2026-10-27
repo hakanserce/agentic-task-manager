@@ -34,6 +34,43 @@ async function devProjects(dirs: string[]): Promise<DevProject[]> {
   );
 }
 
+/** atm serve's api/search (server.py api_search, T-258): per project, the tasks in which every word of the query
+ * appears, in the ID, name, description, type, labels, notes or the project's name */
+async function search(projects: DevProject[], query: string): Promise<Record<string, string[]>> {
+  const terms = query.slice(0, 200).toLowerCase().split(/\s+/).filter(Boolean);
+  const results: Record<string, string[]> = {};
+  if (!terms.length) return results;
+  for (const p of projects) {
+    let tasks: Record<string, unknown>[];
+    try {
+      tasks = JSON.parse(await readFile(path.join(p.dir, 'tasks.json'), 'utf8')).tasks ?? [];
+    } catch {
+      continue;
+    }
+    const strings = (t: Record<string, unknown>) => [
+      p.name,
+      t.id,
+      t.name,
+      t.description,
+      t.type,
+      ...(Array.isArray(t.labels) ? t.labels : []),
+      ...(Array.isArray(t.notes) ? t.notes.map((n: { text?: unknown }) => n?.text) : []),
+    ];
+    const ids = tasks
+      .filter((t) => typeof t.id === 'string')
+      .filter((t) => {
+        const text = strings(t)
+          .filter((s) => typeof s === 'string')
+          .join(' ')
+          .toLowerCase();
+        return terms.every((term) => text.includes(term));
+      })
+      .map((t) => t.id as string);
+    if (ids.length) results[p.id] = ids.slice(0, 200);
+  }
+  return results;
+}
+
 export function devData(defaultDir: string): Plugin {
   const dirs = (process.env.ATM_DEV_DATA || defaultDir).split(path.delimiter).filter(Boolean);
   return {
@@ -61,6 +98,13 @@ export function devData(defaultDir: string): Plugin {
             })),
           );
           json(200, { generated_at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'), projects: listed });
+          return;
+        }
+        if (url === '/api/search') {
+          json(
+            200,
+            await search(await devProjects(dirs), new URL(req.url ?? '', 'http://x').searchParams.get('q') ?? ''),
+          );
           return;
         }
         const match = /^\/p\/([^/]+)\/([^/]+)$/.exec(url);

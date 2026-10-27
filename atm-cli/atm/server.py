@@ -16,7 +16,7 @@ import sys
 import threading
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from .core import (
     PLUGIN_ROOT,
@@ -423,6 +423,50 @@ def api_projects(registry, summaries):
     return body, etag
 
 
+SEARCH_QUERY_CAP = 200  # characters of the query that count
+SEARCH_RESULTS_CAP = 200  # task IDs per project
+
+
+def search_text(task):
+    """What a task is found by: its ID, name, description, type, labels and notes (T-258)."""
+    strings = [task.get(f) for f in ("id", "name", "description", "type")]
+    strings += task.get("labels") if isinstance(task.get("labels"), list) else []
+    strings += [n.get("text") for n in task.get("notes") or [] if isinstance(n, dict)]
+    return " ".join(s for s in strings if isinstance(s, str)).lower()
+
+
+def api_search(registry, query):
+    """The body of /api/search?q=: per project, the IDs of the tasks.json tasks (not the archive) in which every word of
+    the query appears, case-insensitively, as the dashboard's own search finds them; the project's name counts as part
+    of every task's text. Read-only, like every route; `{}` for an empty query."""
+    terms = query[:SEARCH_QUERY_CAP].lower().split()
+    results = {}
+    if not terms:
+        return to_json(results).encode("utf-8")
+    for entry in registry.entries():
+
+        def matches(entry=entry):
+            p = served_file(entry, TASKS_FILE)
+            stamp = file_stamp(p) if p else None
+            if stamp is None or stamp[0] > MAX_SERVED_BYTES:
+                return []
+            data = read_json(p)
+            tasks = data.get("tasks") if isinstance(data, dict) else None
+            name = str(entry.get("name") or "").lower()
+            return [
+                t["id"]
+                for t in tasks or []
+                if isinstance(t, dict)
+                and isinstance(t.get("id"), str)
+                and all(term in f"{name} {search_text(t)}" for term in terms)
+            ]
+
+        ids = quietly(matches, [])
+        if ids:
+            results[entry.get("id")] = ids[:SEARCH_RESULTS_CAP]
+    return to_json(results).encode("utf-8")
+
+
 def api_claims(summaries, entry):
     """(body, ETag) of a project's claims.json: the live claims of all its worktrees, from the shared claims store
     (each worktree's own snapshot has only the claims made there). None when there is no store yet."""
@@ -545,6 +589,9 @@ def cmd_serve_child(args):
             elif path == "/api/projects":
                 body, etag = api_projects(registry, summaries)
                 self.send_conditional(body, etag)
+            elif path == "/api/search":
+                query = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
+                self.send(200, api_search(registry, query))
             else:
                 self.serve_project_file(path)
 

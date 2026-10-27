@@ -23,6 +23,7 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
 |---|---|---|
 | `GET /` | the dashboard (`text/html`), from the plugin, held in memory since the server started | no |
 | `GET /api/projects` | the registered projects with their summaries (§3) | yes |
+| `GET /api/search?q=<text>` | the tasks matching a search, in every project (§2.4) | no |
 | `GET /p/<id>/tasks.json` | that project's `.agentic-task-manager/tasks.json`, as stored | yes |
 | `GET /p/<id>/claims.json` | that project's live claims, from every worktree (§2.1) | yes |
 | `GET /p/<id>/tasks-archive.json` | that project's archive, as stored | yes |
@@ -38,7 +39,7 @@ parallel. The e2e `tasksServer` fixture and the dev server (`dashboard/build/dev
   `{"error": "not found"}`. The dashboard treats a missing archive, claims or worktrees as empty.
 - A missing project (§3.1 `missing: true`) answers `404` for its files.
 - The ETag of a project file is its size and nanosecond mtime, as today's `json_etag` (`"<size hex>-<mtime_ns hex>"`).
-- Query strings are ignored.
+- Query strings are ignored, except `q` on `api/search`.
 
 ### 2.1 `claims.json`: claims from every worktree
 
@@ -90,6 +91,17 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
   (the ETag is the file's size and mtime). It also has `Content-Security-Policy: default-src 'none';
   style-src 'unsafe-inline'; sandbox` and `X-Content-Type-Options: nosniff`, so an SVG opened on its own never runs a
   script.
+
+### 2.4 `api/search`: tasks across projects
+
+For the All projects board's search box (T-258): `{ "<project id>": ["T-001", ...] }`, the IDs (in file order) of
+each project's `tasks.json` tasks, not the archive's, in which every word of `q` appears, case-insensitively, as the
+dashboard's own search finds them: in the ID, name, description, type, labels or note texts, or the project's name
+(so a project's name finds all its tasks). Projects without a match are left out; an empty `q` gives `{}`.
+
+Only the first 200 characters of `q` count, and at most 200 IDs come back per project. Like every route it is
+read-only and answers only on loopback with a matching Host (§1); other parameters are ignored. The Vite dev server
+answers the same.
 
 ## 3. `GET /api/projects`
 

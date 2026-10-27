@@ -720,6 +720,52 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
+  test('api/search: every word, in any field or the project name, case-insensitive, read-only, capped (T-258)', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id, extra = {}) => ({ id, name: `Task ${id}`, phase: 0, type: 'feature', status: 'todo', ...extra });
+    const shop = project({
+      meta: { id: 'aaaa1111', project: 'Shop' },
+      tasks: [
+        task('T-1', { name: 'Checkout page' }),
+        task('T-2', { description: 'Pay with a CARD' }),
+        task('T-3', { type: 'bugfix', labels: ['payments'] }),
+        task('T-4', { notes: [{ at: '2026-01-01T00:00:00Z', kind: 'note', text: 'Ask about refunds' }] }),
+      ],
+    });
+    const blog = project({
+      meta: { id: 'bbbb2222', project: 'Blog' },
+      tasks: Array.from({ length: 205 }, (_, i) => task(`B-${i + 1}`, { name: 'Write a post' })),
+    });
+    for (const p of [shop, blog]) assert.equal(atm(['projects', 'add'], p).code, 0);
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], shop).code, 0);
+    const search = async (q, extra = '') =>
+      (await fetch(`http://localhost:${port}/api/search?q=${encodeURIComponent(q)}${extra}`)).json();
+
+    assert.deepEqual(await search('checkout'), { aaaa1111: ['T-1'] });
+    assert.deepEqual(await search('card'), { aaaa1111: ['T-2'] });
+    assert.deepEqual(await search('BUGFIX payments'), { aaaa1111: ['T-3'] });
+    assert.deepEqual(await search('refunds'), { aaaa1111: ['T-4'] });
+    assert.deepEqual(await search('t-1'), { aaaa1111: ['T-1'] });
+    // Every word must appear; the project's name counts for all its tasks
+    assert.deepEqual(await search('checkout refunds'), {});
+    assert.deepEqual(await search('shop card'), { aaaa1111: ['T-2'] });
+    assert.deepEqual((await search('shop')).aaaa1111, ['T-1', 'T-2', 'T-3', 'T-4']);
+    // At most 200 per project; an empty query finds nothing; other parameters are ignored
+    assert.equal((await search('post')).bbbb2222.length, 200);
+    assert.deepEqual(await search('  '), {});
+    assert.deepEqual(await search('checkout', '&x=1&project=bbbb2222'), { aaaa1111: ['T-1'] });
+    // Only the first 200 characters of the query count
+    assert.deepEqual(await search('checkout' + ' '.repeat(192) + 'nothing-like-this'), { aaaa1111: ['T-1'] });
+
+    // The same checks as every route: another Host is refused, and nothing but GET and HEAD
+    const refused = await rawGet(port, '/api/search?q=checkout', `evil.example:${port}`);
+    assert.equal(refused.status, 403);
+    assert.equal((await fetch(`http://localhost:${port}/api/search?q=x`, { method: 'POST' })).status, 405);
+    atm(['serve', 'stop'], shop);
+  });
+
   test('a busy port moves the server to the next free one', async () => {
     const atm = atmIn(home());
     const root = project();

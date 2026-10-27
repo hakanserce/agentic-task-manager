@@ -9549,7 +9549,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3.1 and §5 (approved).\n\nAdd `board` to each project's summary in `atm-cli/atm/query.py` (and the Vite dev server's `build/dev-data.ts`):\n- `todo`: the tasks **ready to start** (to do, dependencies done, not claimed) in the first unfinished phase, in the loop's order, at most 10;\n- `active`, `review`, `blocked`: **all**, at most 30 each;\n- `done`: finished in the **last 24 hours**, at most 30, newest first;\n- with the full counts, so the dashboard can say *+ N more*.\n\nEach card has exactly what a project's Kanban card shows: `id`, `name` (capped like today's summaries), `type`, `phase`, `priority`, `labels`; `by` for active; `since` for review and blocked; `waiting_on` and the question count for blocked; `completed_at` for done.\n\n## Verify\n\nScenarios / server tests for each list's rule and cap; `docs/multi-project-api.md` updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/query.py",
@@ -9558,11 +9558,22 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T00:42:11Z",
+      "updated_at": "2026-10-27T00:47:10Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:42:11Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "9c32ec3613ecf292e19d983c92c8195fd1272fd2",
+      "completed_at": "2026-10-27T00:47:10Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:47:10Z",
+          "kind": "outcome",
+          "text": "`board` in each project summary (`query.py`): todo (ready in the first unfinished phase, 10), active/review/blocked (30 each, in the agreed orders), done (last 24 h, 30), each `{count, cards}` with the Kanban card fields. Documented in `multi-project-api.md` §3.3 and B4 of the security doc. The Vite dev server sends no summaries at all, so nothing was added there.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-258",
@@ -9578,7 +9589,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3 (approved).\n\n`GET api/search?q=<text>` searches every registered project's `tasks.json` (archive not included) for tasks whose ID, name, description, type, labels or notes contain the text (case-insensitive, like the dashboard's search), and returns `{\"<project id>\": [\"T-001\", ...]}`. Also matches the project's name (all its tasks). Read-only; the same loopback and Host checks as every route; the query capped at 200 characters; results capped per project.\n\nThe Vite dev server serves the same route. Add the route to `docs/multi-project-api.md` and to the threat model's entry points (`docs/security-review.md` §2.3, or `docs/security-architecture.md` once it exists).\n\n## Verify\n\nServer tests: matches by each field, case-insensitivity, the caps, an unknown query parameter, a bad Host is refused.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/server.py",
@@ -9587,9 +9598,11 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-27T00:47:11Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:47:11Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-259",

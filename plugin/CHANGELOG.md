@@ -4,6 +4,63 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.20.0] - 2026-10-27
+
+**Security hardening (phase 20) and progress and insights (phase 21).** Phase 20 implements the security review
+(`docs/security-review.md`, `docs/security-architecture.md`); phase 21 the reviews of the Progress tab, the Activity
+popup, project stats and the All projects Kanban.
+
+### Security
+- **Skills:** task text, notes and CI logs are data, not commands (`plugin/CLAUDE.md`, every skill); agent text is
+  quoted in commands; skills pre-approve only the `atm` subcommands they need, never `atm run`.
+- **atm-cli:** task IDs and the base branch are validated; `atm commit --file` takes exactly one literal file per
+  flag; no reads or writes through symlinks in the task folder; robust against hostile task files (deep nesting,
+  huge values, wrong types); `atm pr` accepts only http(s) URLs.
+- **Server:** binds to loopback only, with Host checks, a Content-Security-Policy, `nosniff` and CORP headers, request
+  limits; one broken project can't break `api/projects`.
+- **Dashboard:** every link goes through one `safeUrl` check.
+- **CI:** read-only token, no persisted credentials, actions pinned by SHA, Dependabot.
+- **Verification:** a hostile-repository test suite; the agent sandbox (`tests/sandbox/run.mjs`) runs red-team tasks
+  against the skills in a container; a verification schedule (every PR, every release, every quarter); `SECURITY.md`.
+- **Loop:** `/atm:loop-tasks` confirms `--push` in the direct workflow and stops when a hook rejects a commit.
+
+### Added
+- **All projects: Projects and Board tabs** (remembered; `#overview&view=board` links to the board). The board shows
+  To Do (ready), In progress, In review, Blocked and Done (last 24 h) across projects, from a new `board` summary
+  field (`docs/multi-project-api.md` §3.3), sorted per column, 30 cards per column with *+ N more in <project>*, a
+  project chip on each card; *Group by project* lanes; a search box over every project's tasks.
+- **`GET api/search?q=`**: the task IDs per project matching every word (ID, name, description, type, labels, notes,
+  project name); read-only, capped (§2.4).
+- **Project tab** (last tab): Information (repository, workflow, people, agents, vocabulary) and Stats (started,
+  duration, tasks, phases, commits, PRs, agent time alone and with you, parallelism, a time-per-task histogram with
+  the slowest tasks).
+- **Shared time use** (`timeuse.ts`): agents working, waiting on you, idle; the *Where the time went* bar on the
+  Activity popup and the Progress tab.
+- **atm records block and review intervals** (`blocks`, `reviews` on a task), merged by the merge driver, so waiting
+  time can be measured.
+- **Project summary `stats`**: started, tasks and agent minutes, archived tasks included; the overview cards show one
+  line (*started 12 Aug · 236 tasks · 74 h agent time*).
+
+### Changed
+- **Tab order:** Kanban, List, Graph | Progress, Agents, Project; the Kanban is the default.
+- **Activity popup:** three KPI cards (tasks done; time per task, agents alone and with you; where the time went);
+  the agents chart stacked by kind with a waiting-on-you band; the time-per-task chart capped at the 90th percentile
+  with outliers on the top edge and interactive tasks hollow with their own median; ⓘ notes on the heading and every
+  chart. The sparkline draws the unfinished last bucket lighter and its tooltip explains the line. The buckets lose
+  the unused `cumulativeDone`, `scope` and `wip`.
+- **Progress tab:** agent time, waiting on you and idle replace utilisation; a filter banner (status and stage
+  filters don't apply); the burndown has a title with ⓘ, a time range and what's waiting on people; the phase table
+  shows finished phases in one row.
+- **Header Progress popover:** finished phases as chips, types as one stacked bar, a Go to section.
+- **About dialog:** statuses, phases and types only, with a *Project details* link to the Project tab.
+- **Board cards** in progress carry `since` (`started_at`).
+- The dashboard's size budget is 400 KiB.
+
+### Fixed
+- **Kanban:** no page scrollbar; each column scrolls on its own, with *▲ N more* / *▼ N more* hints instead of a
+  scrollbar (the wheel and trackpad still scroll).
+- **Back to the overview** no longer leaves a task's detail panel open over it.
+
 ## [0.19.0] - 2026-10-26
 
 **Insights reviewed, a security review, and dashboard polish.** Phase 19 reviewed the Progress tab, the Activity

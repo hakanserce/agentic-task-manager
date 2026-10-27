@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 273,
+    "next_id": 274,
     "labels": [
       {
         "id": "dashboard",
@@ -2746,7 +2746,7 @@
       "completed_at": "2026-10-24T22:01:01Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -2789,7 +2789,7 @@
       "completed_at": "2026-10-24T22:46:37Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -2824,7 +2824,7 @@
       "completed_at": "2026-10-24T22:49:08Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -2862,7 +2862,7 @@
       "completed_at": "2026-10-24T23:02:36Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -2903,7 +2903,7 @@
       "completed_at": "2026-10-24T22:11:15Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -2943,7 +2943,7 @@
       "completed_at": "2026-10-24T22:17:37Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -2981,7 +2981,7 @@
       "completed_at": "2026-10-24T22:23:32Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3017,7 +3017,7 @@
       "completed_at": "2026-10-24T22:25:27Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3087,7 +3087,7 @@
       "completed_at": "2026-10-24T22:37:02Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3150,7 +3150,7 @@
       "completed_at": "2026-10-24T22:50:03Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3187,7 +3187,7 @@
       "completed_at": "2026-10-24T23:03:48Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3234,7 +3234,7 @@
       "completed_at": "2026-10-25T01:26:26Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3274,7 +3274,7 @@
       "completed_at": "2026-10-25T01:40:33Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z"
@@ -3308,7 +3308,7 @@
       "completed_at": "2026-10-24T22:42:03Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3347,7 +3347,7 @@
       "completed_at": "2026-10-24T23:00:27Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3383,7 +3383,7 @@
       "completed_at": "2026-10-24T23:05:48Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3423,7 +3423,7 @@
       "completed_at": "2026-10-24T23:10:21Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3463,7 +3463,7 @@
       "completed_at": "2026-10-24T23:14:39Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3498,7 +3498,7 @@
       "completed_at": "2026-10-24T23:18:44Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3535,7 +3535,7 @@
       "completed_at": "2026-10-24T23:22:12Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3578,7 +3578,7 @@
       "completed_at": "2026-10-24T23:27:41Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3616,7 +3616,7 @@
       "completed_at": "2026-10-24T23:35:51Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3653,7 +3653,7 @@
       "completed_at": "2026-10-24T23:39:42Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3689,7 +3689,7 @@
       "completed_at": "2026-10-24T23:41:51Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3728,7 +3728,7 @@
       "completed_at": "2026-10-24T23:45:04Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3764,7 +3764,7 @@
       "completed_at": "2026-10-25T00:11:37Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3800,7 +3800,7 @@
       "completed_at": "2026-10-25T00:29:30Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3838,7 +3838,7 @@
       "completed_at": "2026-10-25T00:35:10Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3876,7 +3876,7 @@
       "completed_at": "2026-10-25T00:36:41Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3916,7 +3916,7 @@
       "completed_at": "2026-10-25T00:37:55Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3951,7 +3951,7 @@
       "completed_at": "2026-10-25T00:41:56Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -3986,7 +3986,7 @@
       "completed_at": "2026-10-25T00:44:01Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4020,7 +4020,7 @@
       "completed_at": "2026-10-25T00:46:19Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4057,7 +4057,7 @@
       "completed_at": "2026-10-25T00:46:58Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4089,7 +4089,7 @@
       "completed_at": "2026-10-25T00:47:46Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z"
@@ -4119,7 +4119,7 @@
       "completed_at": "2026-10-25T00:49:05Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4155,7 +4155,7 @@
       "completed_at": "2026-10-25T00:53:38Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4191,7 +4191,7 @@
       "completed_at": "2026-10-25T00:57:38Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4226,7 +4226,7 @@
       "completed_at": "2026-10-25T00:59:13Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4265,7 +4265,7 @@
       "completed_at": "2026-10-25T01:02:40Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4304,7 +4304,7 @@
       "completed_at": "2026-10-25T01:05:48Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4337,7 +4337,7 @@
       "completed_at": "2026-10-25T01:09:34Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4376,7 +4376,7 @@
       "completed_at": "2026-10-25T01:22:10Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4415,7 +4415,7 @@
       "completed_at": "2026-10-25T01:29:54Z",
       "pr": {
         "number": 7,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/7"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
       },
       "updated_by": "claude:e5ea9db0",
       "merged_at": "2026-10-25T05:19:44Z",
@@ -4469,7 +4469,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z",
       "labels": [
@@ -4511,7 +4511,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z",
       "labels": [
@@ -4581,7 +4581,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4625,7 +4625,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4672,7 +4672,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4713,7 +4713,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4764,7 +4764,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4809,7 +4809,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4927,7 +4927,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -4988,7 +4988,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 8,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/8"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/8"
       },
       "merged_at": "2026-10-25T06:11:27Z"
     },
@@ -5031,7 +5031,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -5075,7 +5075,7 @@
       ],
       "pr": {
         "number": 9,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/9"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
       },
       "merged_at": "2026-10-25T07:37:43Z"
     },
@@ -5118,7 +5118,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5163,7 +5163,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5212,7 +5212,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5255,7 +5255,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5301,7 +5301,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5345,7 +5345,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5405,7 +5405,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5450,7 +5450,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5493,7 +5493,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -5536,7 +5536,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5584,7 +5584,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5632,7 +5632,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5679,7 +5679,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5724,7 +5724,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5772,7 +5772,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5824,7 +5824,7 @@
       "commit": "376a1d46be1fd22b80708b09fa178927a1e0e631",
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5872,7 +5872,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5918,7 +5918,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -5963,7 +5963,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6009,7 +6009,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6054,7 +6054,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6107,7 +6107,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6154,7 +6154,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6207,7 +6207,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -6256,7 +6256,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6305,7 +6305,7 @@
       ],
       "pr": {
         "number": 11,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/11"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
       },
       "merged_at": "2026-10-26T00:22:47Z"
     },
@@ -6347,7 +6347,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -6390,7 +6390,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -6437,7 +6437,7 @@
       ],
       "pr": {
         "number": 12,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/12"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
       },
       "merged_at": "2026-10-26T04:55:19Z"
     },
@@ -6479,7 +6479,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6523,7 +6523,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6568,7 +6568,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6611,7 +6611,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6657,7 +6657,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6700,7 +6700,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6747,7 +6747,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6793,7 +6793,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6840,7 +6840,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6890,7 +6890,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -6958,7 +6958,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7002,7 +7002,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7050,7 +7050,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7096,7 +7096,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7140,7 +7140,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7190,7 +7190,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7236,7 +7236,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7282,7 +7282,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7330,7 +7330,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7378,7 +7378,7 @@
       ],
       "pr": {
         "number": 13,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/13"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
       },
       "merged_at": "2026-10-26T08:28:47Z"
     },
@@ -7424,7 +7424,7 @@
       ],
       "pr": {
         "number": 14,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/14"
       },
       "merged_at": "2026-10-26T09:11:52Z"
     },
@@ -7471,7 +7471,7 @@
       ],
       "pr": {
         "number": 14,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/14"
       },
       "merged_at": "2026-10-26T09:11:52Z"
     },
@@ -7517,7 +7517,7 @@
       ],
       "pr": {
         "number": 14,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/14"
       },
       "merged_at": "2026-10-26T09:11:52Z"
     },
@@ -7564,7 +7564,7 @@
       ],
       "pr": {
         "number": 14,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/14"
       },
       "merged_at": "2026-10-26T09:11:52Z"
     },
@@ -7617,7 +7617,7 @@
       ],
       "pr": {
         "number": 14,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/14"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/14"
       },
       "merged_at": "2026-10-26T09:11:52Z"
     },
@@ -7660,7 +7660,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7706,7 +7706,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7749,7 +7749,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7794,7 +7794,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7836,7 +7836,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7879,7 +7879,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7920,7 +7920,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -7962,7 +7962,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -8006,7 +8006,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -8049,7 +8049,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -8094,7 +8094,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8138,7 +8138,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8183,7 +8183,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8224,7 +8224,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8269,7 +8269,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8314,7 +8314,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8357,7 +8357,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8400,7 +8400,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8446,7 +8446,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8487,7 +8487,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8529,7 +8529,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8588,7 +8588,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8641,7 +8641,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8695,7 +8695,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8738,7 +8738,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8781,7 +8781,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8838,7 +8838,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8879,7 +8879,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -8922,7 +8922,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -8966,7 +8966,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9012,7 +9012,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9055,7 +9055,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9099,7 +9099,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9142,7 +9142,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9185,7 +9185,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9230,7 +9230,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9275,7 +9275,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9319,7 +9319,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9362,7 +9362,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9406,7 +9406,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9449,7 +9449,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -9492,7 +9492,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9536,7 +9536,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9581,7 +9581,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9624,7 +9624,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9668,7 +9668,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9710,7 +9710,7 @@
       ],
       "pr": {
         "number": 15,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
       },
       "merged_at": "2026-10-26T22:07:25Z"
     },
@@ -9755,7 +9755,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9799,7 +9799,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9850,7 +9850,7 @@
       "completed_by": "claude:e5ea9db0",
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9893,7 +9893,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9939,7 +9939,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -9982,7 +9982,7 @@
       ],
       "pr": {
         "number": 16,
-        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
       }
     },
     {
@@ -10267,7 +10267,7 @@
       "description": "The README's title uses a 🔄 emoji and GitHub shows its generated preview card; use the atm logo (the board, `dashboard/src/assets/atm-logo.svg`) instead.\n\n## Change\n- `.github/assets/atm-logo.svg`: the same drawing in the accent blue (`#2f81f7`, the favicon's colour) instead of `currentColor`, so it shows on GitHub's light and dark themes.\n- `README.md`: a centered header with the logo above the title; the emoji goes.\n- `.github/assets/social-preview.png` (1280×640): the logo, the name and the one-line description, from `.github/assets/social-preview.html`. GitHub has no API for it: Hakan uploads it in Settings → General → Social preview (and may use the logo for the org's avatar).\n\n## Tests\nA unit test that the README's logo has the same shapes as `atm-logo.svg`, so they can't drift apart, and that the README references it.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         ".github/assets/atm-logo.svg",
@@ -10276,10 +10276,48 @@
         "README.md"
       ],
       "created_at": "2026-10-27T06:59:00Z",
-      "updated_at": "2026-10-27T06:59:07Z",
+      "updated_at": "2026-10-27T07:01:20Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:59:07Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "0101053758309d4ecb27a6cc6a1357df1c332885",
+      "completed_at": "2026-10-27T07:01:20Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:01:20Z",
+          "kind": "outcome",
+          "text": "README headed by the logo (`.github/assets/atm-logo.svg`, blue, same shapes as the dashboard’s, checked by `readme-logo.test.ts`). `.github/assets/social-preview.png` is ready: Hakan uploads it in Settings → General → Social preview.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-273",
+      "name": "atm repository set: move recorded PR links to the new address",
+      "phase": 22,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "org-move",
+        "atm-cli"
+      ],
+      "description": "After a repository moves (here to `solo-swe`), the tasks' recorded PR links (`pr.url`, written by `atm pr`) still name the old address. GitHub redirects them, but the dashboard shows them as recorded. `atm pr` can't fix them: it drops `merged_at` and stamps the task as updated now.\n\n## Change\nWhen `atm repository set <new>` replaces an address (`meta.repository` had one), it also rewrites every `pr.url` that starts with the old address to start with the new one, in `tasks.json` and `tasks-archive.json`, under the lock. Nothing else changes: not `merged_at`, `updated_at`, `updated_by` or anything the activity history reads. It prints how many links it moved (`--json`: `moved_links`). Links to another address are left alone.\n\n## Docs and tests\n- `docs/v4/atm-cli.md` (the `repository` command) and the skill or README text that mentions `atm repository set`.\n- A scenario in `tests/scripts/scenarios/`: links on the old address move, others don't, `merged_at` and `updated_at` stay; the archive too.\n\n## Then\nRun `atm repository set https://github.com/solo-swe/agentic-task-manager` in this repository (the address was already set by T-269 from `hakanserce/…`, so set the old one first only if needed) and commit the moved links.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/cli.py",
+        "docs/v4/atm-cli.md",
+        "tests/scripts/scenarios/repository.json"
+      ],
+      "created_at": "2026-10-27T07:01:35Z",
+      "updated_at": "2026-10-27T07:01:36Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:01:36Z",
       "started_by": "claude:e5ea9db0"
     }
   ]

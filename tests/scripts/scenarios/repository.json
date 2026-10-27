@@ -25,19 +25,19 @@
     "name": "repository set turns an scp-style git remote into the web address",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
     "args": ["repository", "set", "git@github.com:acme/demo.git", "--json"],
-    "expect": { "json": { "repository": "https://github.com/acme/demo" } }
+    "expect": { "json": { "repository": "https://github.com/acme/demo", "moved_links": 0 } }
   },
   {
     "name": "repository set turns an ssh:// remote (with a port and user) into the web address",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
     "args": ["repository", "set", "ssh://git@gitlab.example.com:2222/team/app.git", "--json"],
-    "expect": { "json": { "repository": "https://gitlab.example.com/team/app" } }
+    "expect": { "json": { "repository": "https://gitlab.example.com/team/app", "moved_links": 0 } }
   },
   {
     "name": "repository set drops credentials from an https remote",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
     "args": ["repository", "set", "https://token@github.com/acme/demo.git", "--json"],
-    "expect": { "json": { "repository": "https://github.com/acme/demo" } }
+    "expect": { "json": { "repository": "https://github.com/acme/demo", "moved_links": 0 } }
   },
   {
     "name": "repository set refuses something that isn't an address, and nothing changes",
@@ -47,6 +47,84 @@
       "exit": 2,
       "stderrIncludes": ["is not a repository address"],
       "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } }
+    }
+  },
+  {
+    "name": "repository set moves recorded PR links from the replaced address, in tasks.json and the archive; nothing else changes (T-273)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "repository": "https://github.com/old/demo" },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "updated_at": "2026-01-01T00:00:00Z",
+              "merged_at": "2026-01-02T00:00:00Z",
+              "pr": { "number": 3, "url": "https://github.com/old/demo/pull/3" }
+            },
+            { "id": "T-2", "status": "done", "pr": { "number": 9, "url": "https://github.com/other/thing/pull/9" } },
+            { "id": "T-3", "status": "done", "pr": { "number": 4, "url": "https://github.com/old/demo-two/pull/4" } }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": {},
+          "tasks": [
+            { "id": "T-0", "status": "done", "pr": { "number": 1, "url": "https://github.com/old/demo/pull/1" } }
+          ]
+        }
+      }
+    },
+    "args": ["repository", "set", "git@github.com:new-org/demo.git"],
+    "expect": {
+      "stdout": "Repository address set: https://github.com/new-org/demo (2 PR links moved from https://github.com/old/demo)\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "repository": "https://github.com/new-org/demo" },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "updated_at": "2026-01-01T00:00:00Z",
+              "merged_at": "2026-01-02T00:00:00Z",
+              "pr": { "number": 3, "url": "https://github.com/new-org/demo/pull/3" }
+            },
+            { "id": "T-2", "status": "done", "pr": { "number": 9, "url": "https://github.com/other/thing/pull/9" } },
+            { "id": "T-3", "status": "done", "pr": { "number": 4, "url": "https://github.com/old/demo-two/pull/4" } }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": {},
+          "tasks": [
+            { "id": "T-0", "status": "done", "pr": { "number": 1, "url": "https://github.com/new-org/demo/pull/1" } }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "repository set --from moves links from an address set before (the repository moved earlier)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "repository": "https://github.com/new-org/demo" },
+          "tasks": [
+            { "id": "T-1", "status": "done", "pr": { "number": 3, "url": "https://github.com/old/demo/pull/3" } }
+          ]
+        }
+      }
+    },
+    "args": ["repository", "set", "https://github.com/new-org/demo", "--from", "https://github.com/old/demo", "--json"],
+    "expect": {
+      "json": { "repository": "https://github.com/new-org/demo", "moved_links": 1 },
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "repository": "https://github.com/new-org/demo" },
+          "tasks": [
+            { "id": "T-1", "status": "done", "pr": { "number": 3, "url": "https://github.com/new-org/demo/pull/3" } }
+          ]
+        }
+      }
     }
   },
   {

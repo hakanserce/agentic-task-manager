@@ -599,7 +599,7 @@ plugin's `bin/atm` on its Bash tool's PATH; in your own terminal, use the full p
 | `atm init` | Register the `tasks.json` merge driver (the skills do this automatically) |
 | `atm serve [start\|stop\|status] [--open] [--all]` | The dashboard server, one for all your projects |
 | `atm projects [add [PATH] \| remove <id\|PATH> \| prune]` | The projects the dashboard lists |
-| `atm repository [set URL]` | The repository's web address, for commit and PR links (`atm init` takes it from `origin`) |
+| `atm repository [set URL [--from OLD]]` | The repository's web address, for commit and PR links (`atm init` takes it from `origin`); after a move, setting the new one also moves the tasks' recorded PR links from the old address |
 
 The design is in [docs/v4/atm-cli.md](docs/v4/atm-cli.md).
 

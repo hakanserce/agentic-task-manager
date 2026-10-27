@@ -9741,7 +9741,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3 (approved).\n\nA search box on the board, like a project's search: debounced, it calls `api/search?q=…` and shows only the board's cards among the results (ID, name, description, type, labels, notes, project name); the columns say *N of M* while searching; clearing it shows everything. Remembered with the board's view.\n\n## Verify\n\ne2e with the tasks server playing the route: a match by description narrows the board, clearing restores it; the request is made once per pause in typing.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-258",
         "T-259"
@@ -9752,11 +9752,22 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T05:06:27Z",
+      "updated_at": "2026-10-27T05:10:53Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T05:06:27Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "3318726c77f5da396b36fa16dbf8bcf1c5d9c143",
+      "completed_at": "2026-10-27T05:10:53Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T05:10:53Z",
+          "kind": "outcome",
+          "text": "A search box on the Board tab (remembered per browser): asks `api/search` once per pause in typing (300 ms), and again only when the board's cards change; the board keeps its cards among the results, the columns say *N of M*, no *+ N more* while searching; clearing restores it. The e2e tasks server plays `api/search`.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-262",

@@ -46,6 +46,16 @@
     {/each}
   </div>
   <div class="projects-toolbar">
+    {#if tab === 'board'}
+      <label class="projects-active-only"
+        ><input
+          type="checkbox"
+          id="board-group-by-project"
+          checked={dashboard.boardGroupByProject}
+          onchange={(e) => dashboard.setBoardGroupByProject(e.currentTarget.checked)}
+        /> Group by project</label
+      >
+    {/if}
     <label
       class="projects-active-only"
       title="Hide projects with no open tasks and no activity in the last {ACTIVE_DAYS} days"

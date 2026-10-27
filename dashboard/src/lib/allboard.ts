@@ -64,10 +64,12 @@ function sortCards(id: BoardColumnId, cards: AllBoardCard[]): AllBoardCard[] {
   }
 }
 
+const hasBoard = (p: ProjectEntry) => !p.missing && !!p.summary?.board;
+
 /** The board of `projects` (those the page shows): projects without a board summary (a missing one, an older
  * server) add nothing. */
 export function allBoard(projects: readonly ProjectEntry[], cap = BOARD_CAP): AllBoardColumn[] {
-  const withBoard = projects.filter((p) => !p.missing && p.summary?.board);
+  const withBoard = projects.filter(hasBoard);
   return BOARD_COLUMNS.map(({ id, label, empty }) => {
     const all = sortCards(
       id,
@@ -82,4 +84,19 @@ export function allBoard(projects: readonly ProjectEntry[], cap = BOARD_CAP): Al
       .filter((m) => m.count > 0);
     return { id, label, cards, more, empty };
   });
+}
+
+export interface AllBoardLane {
+  project: ProjectEntry;
+  columns: AllBoardColumn[];
+}
+
+/** Grouped by project (T-260, §2): a lane per project with the five columns, the most recently active first; a
+ * project with nothing on the board gets no lane. */
+export function allBoardLanes(projects: readonly ProjectEntry[], cap = BOARD_CAP): AllBoardLane[] {
+  return projects
+    .filter(hasBoard)
+    .sort((a, b) => recent(b.summary?.last_activity) - recent(a.summary?.last_activity) || 0)
+    .map((project) => ({ project, columns: allBoard([project], cap) }))
+    .filter((lane) => lane.columns.some((c) => c.cards.length || c.more.length));
 }

@@ -9492,7 +9492,7 @@
       "description": "`docs/project-stats-proposal.md` §1 (approved).\n\n- **About dialog**: the project section keeps a short vocabulary (phases, types, statuses, one line each) and gets a *Project details* link that opens the Project tab.\n- **All projects cards**: one line, *started 12 Aug · 236 tasks · 74 h agent time*; agent time added to the project summary in `atm-cli/atm/query.py` (and the dev server's).\n\n## Verify\n\nUnit test for the About section; atm-cli scenario for the summary field; e2e for the link and the card line; screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-253"
       ],
@@ -9502,11 +9502,22 @@
         "atm-cli/atm/query.py"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T04:54:23Z",
+      "updated_at": "2026-10-27T05:03:52Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T04:54:23Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "4ff78333a210f8bb52f1c75453819ef307ad2262",
+      "completed_at": "2026-10-27T05:03:52Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T05:03:52Z",
+          "kind": "outcome",
+          "text": "About: statuses, phases and types only, and a *Project details* link that opens the Project tab. Overview cards: one line, *started 12 Aug · 236 tasks · 74 h agent time*, from a new `stats` summary field (`query.py`: archive included, agent time as the Project tab counts it). The dev server sends no summaries, so nothing to add there.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-256",
@@ -9691,7 +9702,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §2 (approved).\n\nA *Group by project* toggle (remembered) shows one swimlane per project with the five columns, like *Group by phase* on a project's Kanban; a project with no card on the board gets **no lane**. Lanes ordered by the most recently active project.\n\n## Verify\n\ne2e: lanes, no lane for an empty project, the toggle remembered; screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-259"
       ],
@@ -9699,9 +9710,11 @@
         "dashboard/src/components/AllProjectsBoard.svelte"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-27T05:03:52Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T05:03:52Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-261",

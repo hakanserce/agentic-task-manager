@@ -428,6 +428,9 @@ for (const mode of ['dark', 'light'] as const) {
     await openDashboard(page, tasksServer, 'standard');
     await page.locator('#overview-tab-board').click();
     await expect(page.locator('#projects-overview')).toHaveScreenshot(`all-projects-board-${mode}.png`);
+    // Grouped by project (T-260): a lane each, no chips on the cards
+    await page.locator('#board-group-by-project').check();
+    await expect(page.locator('#projects-overview')).toHaveScreenshot(`all-projects-board-grouped-${mode}.png`);
   });
 }
 

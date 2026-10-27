@@ -145,6 +145,35 @@ test.describe('All projects board', () => {
     await expect(page.locator('#projects-grid')).toBeVisible();
   });
 
+  test('group by project: a lane per project, the most recently active first, none for an empty one; remembered (T-260)', async ({
+    page,
+    tasksServer,
+  }) => {
+    tasksServer.addProject(
+      'quiet',
+      'minimal',
+      'Quiet',
+      summary({ last_activity: '2026-03-01T11:59:00Z', board: board({}) }),
+    );
+    await openBoard(page, tasksServer);
+    await page.locator('#board-group-by-project').check();
+    const lanes = page.locator('#all-board .board-lane');
+    await expect(lanes).toHaveCount(2);
+    await expect(lanes.locator('.board-lane-name')).toHaveText(['Blog', 'Shop']);
+    // In a lane, the cards don't repeat the project; "+ N more" doesn't either
+    await expect(lanes.first().locator('.board-project-chip')).toHaveCount(0);
+    await expect(page.locator('.board-lane[data-project="shop"] .board-more')).toHaveText(['+ 10 more']);
+    await expect(page.locator('.board-lane[data-project="blog"] [data-status="todo"] .kanban-card-id')).toHaveText([
+      'B-1',
+    ]);
+
+    await page.reload();
+    await expect(page.locator('#board-group-by-project')).toBeChecked();
+    await expect(lanes).toHaveCount(2);
+    await page.locator('.board-lane[data-project="shop"] .board-lane-name').click();
+    await expect(page).toHaveURL(/project=shop/);
+  });
+
   test('Active only applies to the board too', async ({ page, tasksServer }) => {
     await page.clock.setFixedTime(NOW);
     const idle = summary({

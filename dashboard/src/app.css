@@ -3586,6 +3586,23 @@ svg.graph-minimap.hidden {
 .board-project-chip:hover {
   border-color: var(--accent);
 }
+/* Grouped by project (T-260): the lane's project, opening it */
+.board-lane-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.board-lane-name:hover {
+  color: var(--accent);
+}
 .board-project-name {
   overflow: hidden;
   text-overflow: ellipsis;

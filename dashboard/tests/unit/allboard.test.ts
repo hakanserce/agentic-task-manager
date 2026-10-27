@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allBoard, BOARD_COLUMNS } from '../../src/lib/allboard';
+import { allBoard, allBoardLanes, BOARD_COLUMNS } from '../../src/lib/allboard';
 import type { BoardCard, BoardColumnId, ProjectBoard, ProjectEntry, ProjectSummary } from '../../src/lib/load';
 
 const card = (id: string, fields: Partial<BoardCard> = {}): BoardCard => ({
@@ -92,6 +92,17 @@ describe('allBoard', () => {
       ['a', 10],
       ['b', 1],
     ]);
+  });
+
+  it('grouped by project: a lane each, the most recently active first; no lane without cards (T-260)', () => {
+    const a = project('a', '2026-03-01T10:00:00Z', { todo: [card('A-1')] });
+    const b = project('b', '2026-03-01T11:00:00Z', { done: [card('B-1')] }, { done: 3 });
+    const empty = project('e', '2026-03-01T12:00:00Z', {});
+    const gone = project('g', null, { todo: [card('G-1')] }, {}, { missing: true });
+    const lanes = allBoardLanes([a, b, empty, gone]);
+    expect(lanes.map((l) => l.project.id)).toEqual(['b', 'a']);
+    const done = lanes[0].columns.find((c) => c.id === 'done')!;
+    expect([done.cards.length, done.more.map((m) => m.count)]).toEqual([1, [2]]);
   });
 
   it('projects without a board (gone, or an older server) add nothing', () => {

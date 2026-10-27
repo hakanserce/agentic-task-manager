@@ -19,6 +19,8 @@ export interface Prefs {
   overviewActiveOnly: boolean;
   /** The overview's tab: 'projects' or 'board' (lib/routes.ts) */
   overviewTab: string;
+  /** The All projects board shows a lane per project (lib/allboard.ts) */
+  boardGroupByProject: boolean;
 }
 
 function storage(): Storage | null {

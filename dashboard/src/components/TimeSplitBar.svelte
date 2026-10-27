@@ -16,7 +16,7 @@
       { key: 'idle', label: 'Idle', ms: use.idleMs },
     ].map((p) => ({ ...p, pct: total ? Math.round((p.ms / total) * 100) : 0 })),
   );
-  const duration = (msValue: number) => formatMinutes(msValue / 60_000);
+  const duration = (msValue: number) => (msValue === 0 ? '0 m' : formatMinutes(msValue / 60_000));
 </script>
 
 <div class="time-split" {id}>

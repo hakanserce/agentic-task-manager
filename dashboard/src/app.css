@@ -2992,84 +2992,10 @@ svg.graph-minimap.hidden {
   opacity: 0.2;
 }
 
-/* Progress tab: agent utilisation */
-.utilization {
+/* Progress tab: where the time went, for the burndown's range (T-242) */
+.progress-time-use {
   margin-top: 28px;
-}
-.section-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.util-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.util-card {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: 10px;
-  background: var(--surface2);
-  border-radius: 8px;
-  padding: 12px 14px;
-}
-.util-value {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.util-label {
-  grid-column: 1 / -1;
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-.util-label span {
-  display: block;
-  font-size: 11px;
-}
-.util-card .util-pct {
-  display: none;
-}
-.util-card .util-meter {
-  grid-column: 1 / -1;
-  max-width: none;
-}
-.util-meter {
-  display: inline-block;
-  position: relative;
-  width: 100%;
-  max-width: 240px;
-  height: 8px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--text) 10%, transparent);
-  overflow: hidden;
-  vertical-align: middle;
-}
-.util-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 4px;
-  background: var(--accent);
-}
-/* Over 100% (agents in parallel): full, with stripes */
-.util-fill.over {
-  background: repeating-linear-gradient(-45deg, var(--accent) 0 5px, var(--green) 5px 10px);
-}
-.util-cell {
-  white-space: nowrap;
-}
-.util-cell .util-meter {
-  width: 120px;
-  margin-right: 8px;
-}
-.util-pct {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
+  max-width: 640px;
 }
 
 /* Activity panel: the period picker */

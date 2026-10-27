@@ -8964,7 +8964,7 @@
       "description": "`docs/progress-tab-review.md` §1.6 (approved), coordinated with the Activity popup and project stats decisions (T-213, T-214).\n\nReplace the *Agent utilisation* section with three numbers for the burndown's selected range:\n- **Agent time**: time agents spent working on tasks (parallel agents add up);\n- **Waiting on you**: time tasks spent in review or blocked on the user;\n- **Idle**: time with no agent working.\n\nEach with a tooltip and an ⓘ. Drop the working-day basis and the per-session table (the Agents tab has them). Reuse the computations the Activity popup uses where they exist.\n\n## Verify\n\nUnit tests for the three numbers (including overlaps); e2e; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-240",
         "T-245"
@@ -8974,9 +8974,11 @@
         "dashboard/src/lib/utilization.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T21:28:27Z",
+      "updated_at": "2026-10-27T00:05:45Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:e5ea9db0"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:05:45Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-243",
@@ -9070,7 +9072,7 @@
       "description": "`docs/activity-popup-review.md` §3.1 and §5 (approved). Used by the Activity popup and the Progress tab (T-242).\n\n## Do\n\n- `src/lib/timeuse.ts`: for a period, from the first work on:\n  - **agents working**: time with at least one agent at work (work spans as in `work.ts`), plus total **agent time** (parallel agents add up) and the most agents at once;\n  - **waiting on you**: no agent working while a task is in review or blocked on the user (review intervals, and `blocks` from the atm task; `blocked_at` for a current block);\n  - **idle**: the rest, in stretches of 10 min or more (`MIN_IDLE_MS`).\n  Also per bucket, for the charts.\n- `TimeSplitBar.svelte`: one 100% bar (accent / review-blocked colour / the idle hatching from T-210) with the three durations under it and *14 h of agent time, up to 3 agents at once*; an ⓘ (`InfoTip`).\n\n## Verify\n\nUnit tests with overlapping work, a review wait, a block, and gaps under 10 min; a component test for the bar.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-244"
       ],
@@ -9080,11 +9082,22 @@
         "dashboard/tests/unit/timeuse.test.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:02:48Z",
+      "updated_at": "2026-10-27T00:05:34Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:02:48Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "21de78b5781596b126d2a3b02d8316f0f93f40c5",
+      "completed_at": "2026-10-27T00:05:34Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:05:34Z",
+          "kind": "outcome",
+          "text": "`timeuse.ts` (`timeUse`, `waitingIntervals`, `split` per bucket) and `TimeSplitBar.svelte`, not yet placed (T-242, T-246). Short pauses count as working so the bar adds to 100%. Waiting on you uses the review yellow, idle the same hue hatched: worth a look when it lands in a view.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-246",

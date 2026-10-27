@@ -336,26 +336,32 @@ test.describe('Progress tab: focus a phase', () => {
   });
 });
 
-test.describe('Progress tab: agent utilisation', () => {
-  // fixtures/agents.md: 5 h 30 m of agent work (incl. T-007 running 30 m) between 08:00 and 12:00 on a Wednesday
-  test('work time against calendar and working time, overall and per agent', async ({ page, tasksServer }) => {
+test.describe('Progress tab: where the time went (T-242)', () => {
+  // fixtures/agents.md: work from 08:00 to now (12:00, T-007 running), nobody working 11:00–11:30; 5 h 30 m of agent
+  // work; alice, bob and the unattributed T-004 all at work 09:10–09:20
+  test('agents working, waiting on you and idle over the burndown range, with the agent time', async ({
+    page,
+    tasksServer,
+  }) => {
     await page.clock.setFixedTime(new Date('2026-04-01T12:00:00Z'));
     await openDashboard(page, tasksServer, 'agents', { tab: 'progress' });
-    const section = page.locator('#utilization');
-    await expect(section.locator('.progress-basis')).toContainText('5 h 30 m of agent work over 4 h');
-    // 330 m / 240 m calendar; working time 4 h × 8/24 = 80 m
-    await expect(page.locator('#util-daily .util-value')).toHaveText('138%');
-    await expect(page.locator('#util-workday .util-value')).toHaveText('413%');
-    await expect(page.locator('#util-daily .util-fill')).toHaveClass(/over/);
-    await expect(section.locator('tbody tr')).toHaveText([
-      /claude:alice001\s*3 h\s*75%\s*225%/,
-      /claude:bob00002\s*2 h 10 m\s*54%\s*163%/,
-      /Unattributed\s*20 m\s*8%\s*25%/,
+    await page.locator('#burndown-range [data-range="all"]').click();
+    const section = page.locator('#progress-time-use');
+    await expect(section.locator('.status-legend li')).toHaveText([
+      'Agents working3 h 30 m',
+      'Waiting on you0 m',
+      'Idle30 m',
     ]);
+    await expect(section.locator('.time-split-agents')).toHaveText('5 h 30 m of agent time, up to 3 agents at once');
+    await expect(page.locator('#utilization')).toHaveCount(0);
+
+    // The last 14 days cover all of it too; a range is measured from its start or the first work
+    await page.locator('#burndown-range [data-range="14d"]').click();
+    await expect(section.locator('[data-part="idle"]')).toHaveText('Idle30 m');
   });
 
   test('is left out before any task has started', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'progress' });
-    await expect(page.locator('#utilization')).toHaveCount(0);
+    await expect(page.locator('#progress-time-use')).toHaveCount(0);
   });
 });

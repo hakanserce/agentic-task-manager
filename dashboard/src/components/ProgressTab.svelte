@@ -3,10 +3,11 @@
   import { FILTER_GROUPS } from '../lib/filters';
   import { forecastPhases, withWholePhaseEstimates } from '../lib/forecast';
   import { dashboard } from '../lib/state.svelte';
+  import { timeUse } from '../lib/timeuse';
   import BurndownChart from './BurndownChart.svelte';
   import InfoTip from './InfoTip.svelte';
   import PhaseTable from './PhaseTable.svelte';
-  import UtilizationPanel from './UtilizationPanel.svelte';
+  import TimeSplitBar from './TimeSplitBar.svelte';
 
   // Progress is history: archived tasks count too, so the tab loads the archive once shown (D-5.2). It stays mounted
   // while hidden, so only when it is the selected tab.
@@ -50,6 +51,9 @@
     all: 'All time',
   });
   const chart = $derived(burndown(tasks, forecast, now, focus, dashboard.vocab, from));
+  // Agent time, waiting on you and idle over the burndown's range, for the matching tasks (T-242; shared with the
+  // Activity popup, timeuse.ts)
+  const use = $derived(timeUse(tasks, from === undefined ? null : { start: from, end: now }, now, dashboard.vocab));
 
   const toggle = (phase: number) => (dashboard.progressPhase = focus === phase ? null : phase);
 </script>
@@ -123,6 +127,10 @@
       <BurndownChart data={chart} {now} />
     {/if}
     <PhaseTable {forecast} {now} selected={focus} onselect={toggle} />
-    <UtilizationPanel {now} />
+    {#if use}
+      <section class="progress-time-use" aria-label="Where the time went">
+        <TimeSplitBar {use} id="progress-time-use" />
+      </section>
+    {/if}
   {/if}
 </div>

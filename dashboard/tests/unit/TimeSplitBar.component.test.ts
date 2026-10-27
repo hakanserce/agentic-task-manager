@@ -40,7 +40,7 @@ describe('TimeSplitBar (T-245)', () => {
   it('a part with no time has no segment; one agent at a time says nothing about parallelism', () => {
     const { container } = render(TimeSplitBar, { use: use({ waitingMs: 0, maxAgents: 1 }) });
     expect(container.querySelectorAll('.status-bar span')).toHaveLength(2);
-    expect(container.querySelector('[data-part="waiting"]')).toHaveTextContent('Waiting on you< 1 m');
+    expect(container.querySelector('[data-part="waiting"]')).toHaveTextContent('Waiting on you0 m');
     expect(container.querySelector('.time-split-agents')).toHaveTextContent(/^14 h 20 m of agent time$/);
   });
 

@@ -1,6 +1,6 @@
 // @vitest-environment node
 // The CI workflow keeps its hardening (docs/security-architecture.md I18, I19; T-230): a read-only token, no stored
-// credentials, actions pinned by commit SHA and container images by digest.
+// credentials, actions pinned by commit SHA and container images by digest; and Dependabot's updates come grouped.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -28,5 +28,23 @@ describe('CI workflow hardening (T-230)', () => {
     const images = lines.filter((line) => /^\s*(container|image):/.test(line) && !line.includes('${{'));
     expect(images.length).toBeGreaterThan(0);
     for (const line of images) expect(line).toMatch(/@sha256:[0-9a-f]{64}\s*$/);
+  });
+});
+
+describe('Dependabot (I19, T-275)', () => {
+  const config = readFileSync(new URL('../../../.github/dependabot.yml', import.meta.url), 'utf8');
+  // Each `- package-ecosystem:` entry, as text
+  const ecosystems = config.split(/^ {2}- package-ecosystem: /m).slice(1);
+
+  it('watches the actions and the dashboard npm packages, weekly', () => {
+    expect(ecosystems.map((e) => e.split('\n')[0])).toEqual(['github-actions', 'npm']);
+    for (const e of ecosystems) expect(e).toMatch(/interval: weekly/);
+  });
+
+  it("groups each ecosystem's updates into one PR (npm: minor and patch; a major gets its own)", () => {
+    const [actions, npm] = ecosystems;
+    expect(actions).toMatch(/groups:\n {6}actions:\n {8}patterns: \['\*'\]/);
+    expect(actions).not.toMatch(/update-types/);
+    expect(npm).toMatch(/groups:\n {6}npm:\n {8}patterns: \['\*'\]\n {8}update-types: \[minor, patch\]/);
   });
 });

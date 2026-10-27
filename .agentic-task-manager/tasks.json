@@ -10561,7 +10561,7 @@
       "description": "Asked for by Hakan (2026-10-27): Dependabot's first run opened six PRs at once, one per package, and with the `main` ruleset requiring branches to be up to date, each merge sent the others through another update and CI run. **The ruleset stays as it is**; group the updates instead.\n\n## Change\nIn `.github/dependabot.yml`, a `groups` entry for each ecosystem (`github-actions` and `npm` in `/dashboard`) that puts all its updates into one PR a week. Keep the weekly schedule, the comment on SHA pinning and `open-pull-requests-limit`. Major versions may get their own group (`update-types`) so a breaking one (like `typescript` 7) doesn't hold up the rest.\n\n## Docs\n`docs/security-architecture.md` (the Dependabot invariant, I19) if it describes the PRs; `CLAUDE.md`'s CI section, which says Dependabot proposes updates.\n\n## Check\nThe file validates (GitHub shows Dependabot config errors on the repository's Insights → Dependency graph → Dependabot tab); the next weekly run opens at most one PR per ecosystem and group.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         ".github/dependabot.yml",
@@ -10569,9 +10569,11 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-27T08:23:41Z",
-      "updated_at": "2026-10-27T08:23:41Z",
+      "updated_at": "2026-10-27T08:31:55Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T08:31:55Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-276",

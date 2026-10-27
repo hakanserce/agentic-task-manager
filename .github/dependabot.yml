@@ -1,14 +1,26 @@
 # Updates for what CI and the dashboard build depend on (docs/security-architecture.md I19). The actions in
 # .github/workflows/ci.yml are pinned by commit SHA; Dependabot keeps the SHA and its version comment current. The
 # container images there are pinned by digest and updated by hand (the Playwright image follows @playwright/test).
+# Updates come grouped (T-275), so a week's updates are one PR to merge, not one per package (with `main` requiring
+# up-to-date branches, each merge sent every other open PR through another update and CI run).
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    # All of them, majors too: one PR a week
+    groups:
+      actions:
+        patterns: ['*']
   - package-ecosystem: npm
     directory: /dashboard
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Minor and patch updates in one PR a week; a major one gets its own, so a breaking one (like typescript 7)
+    # doesn't hold up the rest
+    groups:
+      npm:
+        patterns: ['*']
+        update-types: [minor, patch]

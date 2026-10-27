@@ -1,6 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import type { ProjectEntry, ProjectSummary } from '../../src/lib/load';
-import { idHash, isActive, monogram, needsYou, openTasks, orderProjects } from '../../src/lib/projects';
+import { idHash, isActive, monogram, needsYou, openTasks, orderProjects, statsLine } from '../../src/lib/projects';
+
+describe('statsLine (T-255)', () => {
+  const now = new Date(2026, 9, 26, 12).getTime();
+  const local = (y: number, m: number, d: number) => new Date(y, m, d, 12).toISOString();
+
+  it('started, tasks and agent time in whole hours; the year only when it is another', () => {
+    const day = (iso: string, year?: 'numeric') =>
+      new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year });
+    const aug = local(2026, 7, 12);
+    expect(statsLine({ started: aug, tasks: 236, agent_minutes: 4440 }, now)).toBe(
+      `started ${day(aug)} · 236 tasks · 74 h agent time`,
+    );
+    const old = local(2025, 1, 3);
+    expect(statsLine({ started: old, tasks: 1, agent_minutes: 45 }, now)).toBe(
+      `started ${day(old, 'numeric')} · 1 task · 45 m agent time`,
+    );
+  });
+
+  it('leaves out what is not known: no start, no agent time', () => {
+    expect(statsLine({ started: null, tasks: 3, agent_minutes: 0 }, now)).toBe('3 tasks');
+    expect(statsLine({ started: 'garbage', tasks: 0, agent_minutes: 0 }, now)).toBe('0 tasks');
+  });
+});
 
 describe('monogram and idHash', () => {
   it('initials of the first two words, else the first two letters, upper case', () => {

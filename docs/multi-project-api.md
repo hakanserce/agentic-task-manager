@@ -141,7 +141,8 @@ answers the same.
           "review": { "count": 1, "cards": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "type": "bugfix", "phase": 17, "priority": "P2", "labels": [], "since": "2026-10-25T21:40:02Z" }] },
           "blocked": { "count": 0, "cards": [] },
           "done": { "count": 28, "cards": ["… 28 cards, each with completed_at"] }
-        }
+        },
+        "stats": { "started": "2026-08-12T09:30:00Z", "tasks": 236, "agent_minutes": 4440 }
       },
       "worktrees": [{ "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true }],
       "logo": "p/1f3a9c2e/logo"
@@ -167,7 +168,7 @@ change (the server combines their size/mtime stamps and the worktree lists). Pro
 
 ### 3.2 Summary fields
 
-Counted from `tasks.json` only (not the archive), by status **kind** (the project's vocabulary), with atm-cli's own
+Counted from `tasks.json` only (not the archive; `stats` excepted), by status **kind** (the project's vocabulary), with atm-cli's own
 logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_tasks` are capped at 80 characters
 (the 80th is "…"), so the response stays small with many projects.
 
@@ -192,6 +193,7 @@ logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_
 | `last_activity` | the newest of all tasks' `updated_at`, `started_at`, `completed_at`, `review_requested_at`, `blocked_at` and `skipped_at`, and of note times; `null` without any |
 | `completions_14d` | 14 integers, oldest first, ending with today: done-kind tasks by the UTC day of `completed_at` (tasks without `completed_at` aren't counted) |
 | `board` | the cards for the All projects board (§3.3) |
+| `stats` | the overview card's line (T-255), archived tasks included (a task in both files counted once, from `tasks.json`; an unreadable archive left out): `started`, the earliest `created_at` (else `meta.created`, else `null`); `tasks`, how many; `agent_minutes`, the agent time as the Project tab counts it: the work (`started_at` until the review request or completion, until now while active) of tasks an agent (`claude:…`) or nobody recorded started, each agent's spans merged, added up. Computed when the summary is (a change to `tasks.json` or the claims), so a running task's time grows between changes only then |
 
 ### 3.3 The board
 

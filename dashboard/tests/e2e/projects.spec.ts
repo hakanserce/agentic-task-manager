@@ -490,6 +490,28 @@ test.describe('projects', () => {
     await expect(page.locator('#active-projects-only')).not.toBeChecked();
   });
 
+  test('overview cards: one line of stats; About links to the Project tab (T-255)', async ({ page, tasksServer }) => {
+    await page.clock.setFixedTime(new Date('2026-10-26T12:00:00Z'));
+    const stats = { started: '2026-08-12T12:00:00Z', tasks: 236, agent_minutes: 4440 };
+    tasksServer
+      .addProject('busy', 'minimal', 'Busy', summary({ stats }))
+      .addProject('old', 'minimal', 'Old', summary());
+    await openDashboard(page, tasksServer, 'standard');
+    await expect(page.locator('.project-card[data-id="busy"] .project-card-stats')).toHaveText(
+      // The date in the browser's locale
+      /^started (12 Aug|Aug 12) · 236 tasks · 74 h agent time$/,
+    );
+    // An older server sends no stats: no line
+    await expect(page.locator('.project-card[data-id="old"] .project-card-stats')).toHaveCount(0);
+
+    await page.locator('.project-card[data-id="busy"] .project-card-open').click();
+    await page.locator('#footer-about').click();
+    await page.locator('#about-project-details').click();
+    await expect(page.locator('#about-overlay.open')).toHaveCount(0);
+    await expect(page.locator('#tab-project')).toHaveAttribute('aria-selected', 'true');
+    await expect(page).toHaveURL(/view=project/);
+  });
+
   test('a project whose folder is gone says how to remove it', async ({ page, tasksServer }) => {
     tasksServer.addProject('open', 'minimal', 'Open', summary()).goneProject('old1234', 'Old Project');
     await openDashboard(page, tasksServer, 'standard');

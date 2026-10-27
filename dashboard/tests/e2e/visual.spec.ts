@@ -344,6 +344,7 @@ for (const mode of ['dark', 'light'] as const) {
           ],
           last_activity: '2026-01-01T11:48:00Z',
           last_done: { id: 'T-13', name: 'Status bar pinned to the bottom', completed_at: '2026-01-01T11:48:00Z' },
+          stats: { started: '2025-11-12T09:00:00Z', tasks: 20, agent_minutes: 4440 },
           git: { branch: 'dev/polish', pr: { number: 12, url: 'https://github.com/acme/busy/pull/12', state: 'open' } },
         }),
       )

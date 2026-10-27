@@ -9,7 +9,7 @@ import os
 import re
 
 from .claims import next_task, read_store, ready_in_order
-from .core import now, out, parse_iso, to_json
+from .core import AtmError, now, out, parse_iso, to_json
 from .model import (
     archive_hint,
     archive_path,
@@ -356,6 +356,71 @@ def board(data, store, tasks, kinds, open_phases, vocab, current, live):
     }
 
 
+def work_span(vocab, task, current):
+    """A task's work as (start, end) timestamps, as the dashboard counts it (work.ts): from started_at until it asked
+    for a review or was done, or until now while active; None for a task that holds none."""
+    start = parse_time(task.get("started_at"))
+    if not start:
+        return None
+    kind = kind_of(vocab, task.get("status"))
+    if kind == "active":
+        end = max(current, start)
+    elif kind in ("done", "review"):
+        end = (
+            parse_time(task.get("review_requested_at"))
+            or parse_time(task.get("completed_at") if kind == "done" else task.get("updated_at"))
+            or start
+        )
+    else:
+        return None
+    return (start.timestamp(), max(end, start).timestamp())
+
+
+def agent_minutes(vocab, tasks, current):
+    """Agent time (docs/project-stats-proposal.md, T-255): the work of tasks an agent started, or nobody recorded
+    (before v4), each agent's spans merged so an agent on two tasks counts once; parallel agents add up. As the
+    dashboard's Project tab counts it (projectstats.ts)."""
+    spans = {}
+    for i, t in enumerate(tasks):
+        starter = started_by(t)
+        if starter and not str(starter).startswith("claude:"):
+            continue
+        span = work_span(vocab, t, current)
+        if span:
+            spans.setdefault(starter or i, []).append(span)  # unattributed spans are each their own
+    total = 0.0
+    for agent_spans in spans.values():
+        end = None
+        for s, e in sorted(agent_spans):
+            if end is None or s > end:
+                total += e - s
+                end = e
+            elif e > end:
+                total += e - end
+                end = e
+    return round(total / 60)
+
+
+def project_stats(paths, data, vocab, tasks, current):
+    """The overview card's line (T-255): when the project started (its first task's created_at, else meta.created),
+    how many tasks it has, and the agent time, archived tasks included; an unreadable archive is left out. (A task
+    folder with a symlinked file never gets here: find_paths refuses it, docs/security-review.md F8.)"""
+    try:
+        archived = [t for t in load_archive(paths)["tasks"] if isinstance(t, dict)]
+    except AtmError:
+        archived = []
+    ids = {t.get("id") for t in tasks}
+    every = tasks + [t for t in archived if t.get("id") not in ids]
+    created = [parse_time(t.get("created_at")) for t in every]
+    created = [c for c in created if c] or [parse_time((data.get("meta") or {}).get("created"))]
+    started = min((c for c in created if c), default=None)
+    return {
+        "started": started.strftime("%Y-%m-%dT%H:%M:%SZ") if started else None,
+        "tasks": len(every),
+        "agent_minutes": agent_minutes(vocab, every, current),
+    }
+
+
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
     status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
@@ -454,6 +519,7 @@ def project_summary(paths):
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
         "board": board(data, store, tasks, kinds, open_phases, vocab, current, live),
+        "stats": project_stats(paths, data, vocab, tasks, current),
     }
 
 

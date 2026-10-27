@@ -1,6 +1,7 @@
 // The overview of all projects (docs/multi-project-dashboard-proposal.md 3.5): which projects it shows, and in what
 // order. The numbers come from the server's summaries (api/projects), so the browser never loads every task file.
-import type { ProjectEntry } from './load';
+import { formatMinutes } from './format';
+import type { ProjectEntry, ProjectSummary } from './load';
 
 /** A project without open work counts as active for this long after its last activity */
 export const ACTIVE_DAYS = 14;
@@ -43,6 +44,26 @@ export function idHash(id: string): number {
   let h = 0;
   for (const c of id) h = (h * 31 + (c.codePointAt(0) ?? 0)) >>> 0;
   return h;
+}
+
+/**
+ * The card's stats line (docs/project-stats-proposal.md §1, T-255): "started 12 Aug · 236 tasks · 74 h agent time".
+ * The year only when it isn't this one; agent time in whole hours from an hour on; no agent time, no part for it.
+ */
+export function statsLine(stats: NonNullable<ProjectSummary['stats']>, now: number): string {
+  const parts: string[] = [];
+  const started = stats.started ? new Date(stats.started) : null;
+  if (started && !Number.isNaN(started.getTime())) {
+    const year = started.getFullYear() === new Date(now).getFullYear() ? undefined : 'numeric';
+    parts.push(`started ${started.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year })}`);
+  }
+  parts.push(`${stats.tasks} task${stats.tasks === 1 ? '' : 's'}`);
+  if (stats.agent_minutes > 0) {
+    const time =
+      stats.agent_minutes >= 60 ? `${Math.round(stats.agent_minutes / 60)} h` : formatMinutes(stats.agent_minutes);
+    parts.push(`${time} agent time`);
+  }
+  return parts.join(' · ');
 }
 
 /** Projects that need the user first, then the most recently active, then by name; gone ones last. */

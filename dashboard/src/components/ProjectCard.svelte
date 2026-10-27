@@ -2,7 +2,7 @@
   // One project on the overview (docs/multi-project-dashboard-proposal.md 3.5), from its server summary
   import { formatAgo } from '../lib/claims';
   import type { ProjectEntry } from '../lib/load';
-  import { needsYou } from '../lib/projects';
+  import { needsYou, statsLine } from '../lib/projects';
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor } from '../lib/theme';
   import { safeUrl } from '../lib/url';
@@ -135,6 +135,11 @@
           Every phase is finished
         {/if}
       </p>
+    {/if}
+
+    {#if s.stats}
+      <!-- One line of stats (T-255), archived tasks included; the Project tab has the rest -->
+      <p class="project-card-stats">{statsLine(s.stats, dashboard.loadedAt)}</p>
     {/if}
 
     {#if byName}

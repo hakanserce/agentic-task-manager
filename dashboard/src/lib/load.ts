@@ -40,6 +40,8 @@ export interface ProjectSummary {
   completions_14d: number[];
   /** The project's cards for the All projects board (absent before 0.20; lib/allboard.ts) */
   board?: ProjectBoard;
+  /** The overview card's line, archived tasks included (absent before 0.20; lib/projects.ts statsLine) */
+  stats?: { started: string | null; tasks: number; agent_minutes: number };
 }
 
 /** A card on the All projects board: what a project's Kanban card shows, plus its column's fields */

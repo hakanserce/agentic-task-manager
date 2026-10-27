@@ -223,6 +223,8 @@ describe('serve', () => {
         },
         done: { count: 1, cards: [{ ...card('T-1', 1), completed_at: '2026-03-15T10:00:00Z' }] },
       },
+      // The card's line (T-255): no creation times, no work recorded
+      stats: { started: null, tasks: 8, agent_minutes: 0 },
     });
     assert.deepEqual(
       [
@@ -278,6 +280,71 @@ describe('serve', () => {
     assert.equal(summary.next[0].name.length, 80);
     assert.ok(summary.next[0].name.endsWith('…'));
     assert.deepEqual(summary.last_done, { id: 'T-6', name: 'T-6', completed_at: '2026-03-02T10:00:00Z' });
+    atm(['serve', 'stop'], root);
+  });
+
+  test("stats: started, tasks and agent time, archived tasks included; a symlinked archive isn't read (T-255)", async () => {
+    const atmHome = home();
+    const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
+    const atm = (args, cwd) => runAtm(args, cwd, env);
+    const task = (id, status, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status, ...extra });
+    const tasks = [
+      // claude:x on two tasks at once, 10:00–11:00 (until the review request) and 10:30–11:30: 90 minutes
+      task('A', 'done', {
+        created_at: '2026-03-01T09:00:00Z',
+        started_by: 'claude:x',
+        started_at: '2026-03-10T10:00:00Z',
+        review_requested_at: '2026-03-10T11:00:00Z',
+        completed_at: '2026-03-10T12:00:00Z',
+      }),
+      task('B', 'done', {
+        started_by: 'claude:x',
+        started_at: '2026-03-10T10:30:00Z',
+        completed_at: '2026-03-10T11:30:00Z',
+      }),
+      // A person's work isn't agent time
+      task('C', 'done', {
+        started_by: 'Hakan',
+        started_at: '2026-03-10T08:00:00Z',
+        completed_at: '2026-03-10T09:00:00Z',
+      }),
+      // Nobody recorded (before v4), still at work: 11:00 until now, 60 minutes
+      task('D', 'in_progress', { started_at: '2026-03-15T11:00:00Z' }),
+    ];
+    const archive = {
+      meta: {},
+      tasks: [
+        // 30 minutes, and the project's first task
+        task('E', 'done', {
+          created_at: '2026-02-20T08:00:00Z',
+          started_by: 'claude:y',
+          started_at: '2026-02-20T10:00:00Z',
+          completed_at: '2026-02-20T10:30:00Z',
+        }),
+        // Also in tasks.json: counted once, from there
+        task('A', 'done', {
+          started_by: 'claude:z',
+          started_at: '2026-01-01T00:00:00Z',
+          completed_at: '2026-01-02T00:00:00Z',
+        }),
+      ],
+    };
+    const root = project(
+      { meta: { id: 'abcd1234', project: 'Stats' }, tasks },
+      { '.agentic-task-manager/tasks-archive.json': archive },
+    );
+    const linked = project({ meta: { id: 'eeee5555', project: 'Linked' }, tasks: [task('L', 'todo')] });
+    assert.equal(atm(['projects', 'add'], linked).code, 0);
+    const elsewhere = path.join(atmHome, 'archive.json');
+    fs.writeFileSync(elsewhere, JSON.stringify(archive));
+    fs.symlinkSync(elsewhere, path.join(linked, '.agentic-task-manager/tasks-archive.json'));
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const stats = (id) => api.projects.find((p) => p.id === id).summary.stats;
+    assert.deepEqual(stats('abcd1234'), { started: '2026-02-20T08:00:00Z', tasks: 5, agent_minutes: 180 });
+    // A task folder with a linked file is refused whole: listed without a summary, nothing read through the link
+    assert.equal(api.projects.find((p) => p.id === 'eeee5555').summary, null);
     atm(['serve', 'stop'], root);
   });
 

@@ -1,5 +1,6 @@
 // Numbers behind the Progress and Activity widgets in the top bar: completion shares (overall, per phase, per type)
 // and activity over time (completions, cumulative done vs scope, cycle time, work in progress).
+import { isAgent } from './actors';
 import { INTERACTIVE_LABEL } from './forecast';
 import { completions, type Completion } from './timeline';
 import type { Task } from './types';
@@ -105,6 +106,8 @@ export interface ActivityBucket {
   wip: number;
   /** How much of the bucket each agent spent working on tasks, 0–1 per agent (agent "" = unattributed) */
   agentBusy: Record<string, number>;
+  /** agentBusy summed by kind (T-247): Claude sessions and unattributed work are agents, anyone else people */
+  byKind: { agents: number; people: number };
 }
 
 export interface CycleTime {
@@ -365,12 +368,17 @@ export function activitySeries(
       const overlap = Math.min(end, w.end) - Math.max(start, w.start);
       if (overlap > 0) agentBusy[w.agent] = (agentBusy[w.agent] ?? 0) + overlap / bucketMs;
     }
-    // An agent on two tasks at once is still one agent at work (Unattributed stands for many: not capped)
-    for (const a of Object.keys(agentBusy)) if (a) agentBusy[a] = Math.min(1, agentBusy[a]);
+    // An agent on two tasks at once is still one agent at work; unattributed work counts as one agent too (T-247)
+    const byKind = { agents: 0, people: 0 };
+    for (const a of Object.keys(agentBusy)) {
+      agentBusy[a] = Math.min(1, agentBusy[a]);
+      byKind[a && !isAgent(a) ? 'people' : 'agents'] += agentBusy[a];
+    }
     buckets.push({
       start,
       end,
       agentBusy,
+      byKind,
       completed,
       byType,
       average: recent.reduce((a, b) => a + b, 0) / recent.length,

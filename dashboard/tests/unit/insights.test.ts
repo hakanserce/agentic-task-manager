@@ -359,4 +359,22 @@ describe('idle stretches', () => {
     expect(s.agents).toEqual(['x', 'y']);
     expect(s.buckets[0].agentBusy.x).toBeLessThanOrEqual(1);
   });
+
+  it('per bucket by kind: Claude sessions and unattributed work are agents, anyone else people, each capped (T-247)', () => {
+    const s = activitySeries(
+      [
+        worked('a', 0, 1, { agent: 'claude:a1' }),
+        worked('b', 0, 0.5, { agent: 'Hakan' }),
+        worked('c', 0, 1),
+        worked('d', 0, 1),
+      ],
+      null,
+      T0 + H,
+    )!;
+    // Two unattributed tasks over the same hour are one agent, like a session on two tasks
+    expect(s.buckets[0].agentBusy['']).toBe(1);
+    expect(s.buckets[0].byKind.agents).toBeCloseTo(s.buckets[0].agentBusy['claude:a1'] + 1);
+    expect(s.buckets[0].byKind.people).toBeCloseTo(s.buckets[0].agentBusy.Hakan);
+    expect(s.buckets[0].byKind.people).toBeGreaterThan(0);
+  });
 });

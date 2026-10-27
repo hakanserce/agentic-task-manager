@@ -9123,7 +9123,7 @@
       "description": "`docs/activity-popup-review.md` §3 and §3.1 (approved).\n\n- Replace the KPI row with three cards: **Tasks done**; **Time per task** with two medians, *agents alone* (no `interactive` label) and *with you* (`interactive`), each with its count (*–* when none); **Where the time went** (`TimeSplitBar`).\n- Drop *completion rate* and *agents busy on average*; *N working now* only when the period includes now, from the claims.\n- An ⓘ on each card; cards stack on narrow screens.\n\n## Verify\n\ne2e for the cards and the two medians; the T-210 one-line test still holds; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-245",
         "T-240"
@@ -9134,11 +9134,22 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:08:28Z",
+      "updated_at": "2026-10-27T00:13:32Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:08:28Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "b17e10f7ce48385811d9238d07a23b300d130140",
+      "completed_at": "2026-10-27T00:13:32Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:13:32Z",
+          "kind": "outcome",
+          "text": "Three cards: tasks done; time per task as two medians (agents alone, with you = `interactive`); Where the time went (`TimeSplitBar`) with \"N working now\" from the claims for a period up to now. Completion rate and agents busy on average dropped. All time now runs to now in `timeUse`, like the charts.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-247",
@@ -9153,7 +9164,7 @@
       "description": "`docs/activity-popup-review.md` §4.2 (approved).\n\n- Stack per bucket by **kind** (agents, people; as the Agents tab tells them apart), not per session; cap Unattributed like the rest.\n- A **waiting on you** band per bucket in the review/blocked colour, so the chart reads working / waiting on you / idle (hatched) over time, matching the bar.\n- Per-session detail stays in the hover tooltip; an ⓘ on the title; empty state as today.\n\n## Verify\n\nUnit tests for the per-bucket split; e2e for the legend and tooltip; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-245",
         "T-240"
@@ -9163,9 +9174,11 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-27T00:13:33Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:13:33Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-248",

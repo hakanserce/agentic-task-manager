@@ -4,7 +4,7 @@
   import { median, type ActivitySeries } from '../lib/insights';
   import { typeStyle } from '../lib/theme';
   import { formatDate, formatDateTime } from '../lib/timeline';
-  import type { TimeUse } from '../lib/timeuse';
+  import type { TimeUseWithSplit } from '../lib/timeuse';
   import InfoTip from './InfoTip.svelte';
   import TimeSplitBar from './TimeSplitBar.svelte';
 
@@ -17,7 +17,7 @@
     period,
     use = null,
     workingNow = null,
-  }: { series: ActivitySeries; period: string; use?: TimeUse | null; workingNow?: number | null } = $props();
+  }: { series: ActivitySeries; period: string; use?: TimeUseWithSplit | null; workingNow?: number | null } = $props();
 
   const W = 640;
   const PAD_L = 34;
@@ -41,7 +41,15 @@
 
   const maxDone = $derived(Math.max(1, ...b.map((x) => x.completed.length)));
   const yDone = $derived(scale(maxDone));
-  const busyTotal = (x: (typeof b)[number]) => Object.values(x.agentBusy).reduce((s, v) => s + v, 0);
+  // Who was working, by kind (T-247): agents in the accent, people in a lighter shade of it; per session in the tooltip
+  const KINDS = [
+    { key: 'agents', label: 'Agents', color: 'var(--accent)' },
+    { key: 'people', label: 'People', color: 'color-mix(in srgb, var(--accent) 45%, var(--surface))' },
+  ] as const;
+  const kinds = $derived(KINDS.filter((k) => b.some((x) => x.byKind[k.key] > 0)));
+  const busyTotal = (x: (typeof b)[number]) => x.byKind.agents + x.byKind.people;
+  // Idle and waiting on you as the Where the time went bar has them (timeuse.ts); idle alone without it
+  const idle = $derived(use?.idle ?? series.idle);
   const maxBusy = $derived(Math.max(1, Math.ceil(Math.max(0, ...b.map(busyTotal)))));
   const yBusy = $derived(scale(maxBusy));
   const maxCycle = $derived(Math.max(1, ...series.cycleTimes.map((c) => c.minutes)));
@@ -120,7 +128,7 @@
 
 <!-- Stretches with no agent at work, hatched behind the marks of every chart -->
 {#snippet idleBands(labelled: boolean)}
-  {#each series.idle as g (g.start)}
+  {#each idle as g (g.start)}
     {@const x0 = Math.max(PAD_L, xt(g.start))}
     {@const x1 = Math.min(W - PAD_R, xt(g.end))}
     {#if x1 > x0}
@@ -174,35 +182,66 @@
 
   <section class="dive-chart" id="dive-agents">
     <header>
-      <h4>Agents working {period} <span>(1 = one agent busy the whole {series.unitLabel})</span></h4>
+      <h4>
+        Who was working {period} <span>(1 = one busy the whole {series.unitLabel})</span>
+        <InfoTip label="who was working">
+          <p>
+            Per {series.unitLabel}, how many were at work on tasks: <strong>agents</strong> (Claude Code sessions, and
+            work recorded before atm kept who started a task) and <strong>people</strong>. One on two tasks at once
+            counts once. Hover for each session.
+          </p>
+          <p>
+            <strong>Waiting on you</strong>: nobody working while a task waited for your review or answer.
+            <strong>Idle</strong> (hatched): nobody working and nothing waiting, for 10 minutes or more, nights included.
+          </p>
+        </InfoTip>
+      </h4>
       <div class="type-legend">
-        {#each series.agents as a (a)}
-          <span class="type-chip"
-            ><span class="legend-swatch" style="background:{agentColor(a)}"></span>{agentName(a)}</span
+        {#each kinds as k (k.key)}
+          <span class="type-chip" data-kind={k.key}
+            ><span class="legend-swatch" style="background:{k.color}"></span>{k.label}</span
           >
         {:else}
           <span class="chart-empty">No task has a start time in this period</span>
         {/each}
+        {#if use?.waitingMs}
+          <span class="type-chip" data-kind="waiting"
+            ><span class="legend-swatch time-split-waiting"></span>Waiting on you</span
+          >
+        {/if}
+        {#if idle.length}
+          <span class="type-chip" data-kind="idle"><span class="legend-swatch time-split-idle"></span>Idle</span>
+        {/if}
       </div>
     </header>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <svg viewBox="0 0 {W} {H + 2}" width="100%" onpointermove={onMove} onpointerleave={() => (hover = null)}>
       {@render frame(String(maxBusy))}
       {@render idleBands(true)}
+      {#each use?.waiting ?? [] as g (g.start)}
+        {@const x0 = Math.max(PAD_L, xt(g.start))}
+        {@const x1 = Math.min(W - PAD_R, xt(g.end))}
+        {#if x1 > x0}
+          <rect x={x0} y="4" width={x1 - x0} height={H - 6} class="waiting-band"
+            ><title>Waiting on you {formatMinutes((g.end - g.start) / 60_000)}: {when(g.start)} – {when(g.end)}</title
+            ></rect
+          >
+        {/if}
+      {/each}
       {#each Array.from({ length: maxBusy - 1 }, (_, k) => k + 1) as level (level)}
         <line x1={PAD_L} x2={W - PAD_R} y1={yBusy(level)} y2={yBusy(level)} class="chart-grid" />
       {/each}
       {#each b as bucket, i (bucket.start)}
-        {@const segments = series.agents.filter((a) => bucket.agentBusy[a])}
-        {#each segments as a, j (a)}
-          {@const below = segments.slice(0, j).reduce((sum, x) => sum + bucket.agentBusy[x], 0)}
+        {@const segments = kinds.filter((k) => bucket.byKind[k.key])}
+        {#each segments as k, j (k.key)}
+          {@const below = segments.slice(0, j).reduce((sum, x) => sum + bucket.byKind[x.key], 0)}
           <rect
             x={PAD_L + i * slot + 1}
-            y={yBusy(below + bucket.agentBusy[a])}
+            y={yBusy(below + bucket.byKind[k.key])}
             width={Math.max(1, slot - 2)}
-            height={Math.max(0.5, yBusy(below) - yBusy(below + bucket.agentBusy[a]) - (j > 0 ? 1 : 0))}
+            height={Math.max(0.5, yBusy(below) - yBusy(below + bucket.byKind[k.key]) - (j > 0 ? 1 : 0))}
             rx="1.5"
-            fill={agentColor(a)}
+            fill={k.color}
           />
         {/each}
       {/each}
@@ -272,6 +311,15 @@
             <strong>{pct(hb.agentBusy[a])}</strong>
           </div>
         {/each}
+      {/if}
+      {#if use}
+        {@const split = use.split(hb.start, hb.end)}
+        {#if split.waitingMs}
+          <div class="tooltip-type" id="tooltip-waiting">
+            <span class="legend-dot time-split-waiting"></span>Waiting on you
+            <strong>{formatMinutes(split.waitingMs / 60_000)}</strong>
+          </div>
+        {/if}
       {/if}
       {#each hb.completed.slice(0, 5) as c (c.id)}<div class="tooltip-task">{c.id} {c.name}</div>{/each}
       {#if hb.completed.length > 5}<div class="tooltip-task">+{hb.completed.length - 5} more</div>{/if}

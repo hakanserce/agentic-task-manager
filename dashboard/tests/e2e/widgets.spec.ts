@@ -117,17 +117,14 @@ test.describe('Activity widget', () => {
       'infra1',
       'test1',
     ]);
-    await expect(panel.locator('#dive-agents .type-chip')).toHaveText([
-      'claude:alice001',
-      'claude:bob00002',
-      'Unattributed',
-    ]);
+    // By kind, not per session (T-247): all agents here (unattributed work counts as an agent), and idle hatched
+    await expect(panel.locator('#dive-agents .type-chip')).toHaveText(['Agents', 'Idle']);
     await expect(panel.locator('#dive-cycle circle')).toHaveCount(6);
     await expect(panel.locator('#dive-agents .idle-label')).toHaveText(['idle 30 m']);
     await expect(panel.locator('.idle-band')).toHaveCount(3); // the same stretch in all three charts
 
     // Hovering a period reads it across the charts: 09:00–10:00
-    const chart = (await panel.locator('#dive-agents svg').boundingBox())!;
+    const chart = (await panel.locator('#dive-agents > svg').boundingBox())!;
     const plot = { x: chart.x + (34 / 640) * chart.width, w: ((640 - 42) / 640) * chart.width };
     await page.mouse.move(plot.x + plot.w * 0.375, chart.y + chart.height / 2);
     const tooltip = panel.locator('.deep-dive-tooltip');
@@ -141,6 +138,38 @@ test.describe('Activity widget', () => {
       'T-004 Old task',
       'T-003 Login tests',
     ]);
+  });
+
+  test('who was working: agents and people, and waiting on you instead of idle (T-247)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // T-005 (09:10–10:30) was a person's; T-006 (10:00–11:00) then waited for your review until 11:30, when nobody
+    // worked: no idle stretch is left
+    const data = loadFixture('agents');
+    for (const t of data.tasks) {
+      if (t.id === 'T-005') t.started_by = 'Hakan';
+      if (t.id === 'T-006') {
+        t.review_requested_at = '2026-04-01T11:00:00Z';
+        t.completed_at = '2026-04-01T11:30:00Z';
+        t.reviews = [{ from: '2026-04-01T11:00:00Z', to: '2026-04-01T11:30:00Z' }];
+      }
+    }
+    tasksServer.use(data);
+    await page.reload();
+    await activityPill(page).click();
+    const panel = page.locator('#activity-panel');
+    await expect(panel.locator('#dive-agents .type-chip')).toHaveText(['Agents', 'People', 'Waiting on you']);
+    await expect(panel.locator('#dive-agents .waiting-band')).toHaveCount(1);
+    await expect(panel.locator('#dive-agents .idle-band')).toHaveCount(0);
+
+    // The 11:00 hour: alice from 11:30, and the half hour waiting on you
+    const chart = (await panel.locator('#dive-agents > svg').boundingBox())!;
+    const plot = { x: chart.x + (34 / 640) * chart.width, w: ((640 - 42) / 640) * chart.width };
+    await page.mouse.move(plot.x + plot.w * 0.875, chart.y + chart.height / 2);
+    await expect(panel.locator('#tooltip-waiting')).toHaveText('Waiting on you 30 m');
+    await page.locator('#dive-agents h4 .infotip-button').click();
+    await expect(panel.locator('#dive-agents .infotip-popover')).toContainText('Claude Code sessions');
   });
 
   test('the period: a unit and ‹ › to step back and forth, remembered', async ({ page }) => {
@@ -170,7 +199,7 @@ test.describe('Activity widget', () => {
     await expect(page.locator('#dive-completed h4')).toHaveText('Tasks completed this week, per day, by type');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last week');
-    await expect(page.locator('#dive-agents h4')).toContainText('Agents working last week');
+    await expect(page.locator('#dive-agents h4')).toContainText('Who was working last week');
     await page.locator('[data-range="month"]').click();
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last month');

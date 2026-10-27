@@ -34,6 +34,9 @@ export interface TimeUse extends TimeSplit {
   idle: Interval[];
 }
 
+/** A period's time use, with the same split for any part of it (a chart's bucket) */
+export type TimeUseWithSplit = TimeUse & { split: (from: number, to: number) => TimeSplit };
+
 /** The union of `intervals`: sorted, disjoint, touching ones joined. */
 export function mergeIntervals(intervals: Interval[]): Interval[] {
   const out: Interval[] = [];
@@ -100,7 +103,7 @@ export function timeUse(
   period: Interval | null,
   now: number,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
-): (TimeUse & { split: (from: number, to: number) => TimeSplit }) | null {
+): TimeUseWithSplit | null {
   const work = tasks.flatMap((t) => {
     const span = workSpan(t, now, vocab);
     return span && span.end > span.start ? [{ agent: startedBy(t) ?? '', start: span.start, end: span.end }] : [];

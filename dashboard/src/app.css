@@ -3183,6 +3183,10 @@ svg.graph-minimap.hidden {
   stroke: color-mix(in srgb, var(--yellow) 45%, transparent);
   stroke-dasharray: 3 3;
 }
+/* Activity: nobody working while a task waited on you (T-247), the bar's waiting colour */
+.waiting-band {
+  fill: color-mix(in srgb, var(--yellow) 30%, transparent);
+}
 .idle-label {
   font-size: 10px;
   fill: var(--text-muted);

@@ -9030,7 +9030,7 @@
       "description": "`docs/activity-popup-review.md` §5 (approved).\n\n`atm block` sets `blocked_at` and `atm unblock` clears it (`atm-cli/atm/model.py`), so a past block's start is lost; the answer notes only give its end.\n\n## Do\n\n- Keep the intervals: on unblock (and when a blocked task is completed, skipped or released), append `{\"from\": <blocked_at>, \"to\": <now>, \"on\": <waiting_on>}` to a new task field `blocks` (a list). Review intervals are already known (`review_requested_at` → completion or rejection: check rejections keep enough too, else record them the same way as `reviews`).\n- The merge driver merges `blocks` like notes (union by `from`).\n- Document the field in the tasks.json format doc and `dashboard/src/lib/types.ts`.\n\n## Verify\n\nScenarios: block → unblock → block → done leaves two intervals; merge of two branches keeps both.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -9039,11 +9039,22 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-26T23:55:14Z",
+      "updated_at": "2026-10-27T00:02:45Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:55:14Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "df2d822448b9ce4ce4ae744c0e4bb4f23552682f",
+      "completed_at": "2026-10-27T00:02:45Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:02:45Z",
+          "kind": "outcome",
+          "text": "Leaving a blocked status appends `{from, to, on}` to `blocks`; leaving review (done or reject) appends `{from, to}` to `reviews`. The merge driver unions both by `from`. Documented in `docs/v4/data-model.md` and `types.ts`.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-245",
@@ -9059,7 +9070,7 @@
       "description": "`docs/activity-popup-review.md` §3.1 and §5 (approved). Used by the Activity popup and the Progress tab (T-242).\n\n## Do\n\n- `src/lib/timeuse.ts`: for a period, from the first work on:\n  - **agents working**: time with at least one agent at work (work spans as in `work.ts`), plus total **agent time** (parallel agents add up) and the most agents at once;\n  - **waiting on you**: no agent working while a task is in review or blocked on the user (review intervals, and `blocks` from the atm task; `blocked_at` for a current block);\n  - **idle**: the rest, in stretches of 10 min or more (`MIN_IDLE_MS`).\n  Also per bucket, for the charts.\n- `TimeSplitBar.svelte`: one 100% bar (accent / review-blocked colour / the idle hatching from T-210) with the three durations under it and *14 h of agent time, up to 3 agents at once*; an ⓘ (`InfoTip`).\n\n## Verify\n\nUnit tests with overlapping work, a review wait, a block, and gaps under 10 min; a component test for the bar.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-244"
       ],
@@ -9069,9 +9080,11 @@
         "dashboard/tests/unit/timeuse.test.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-27T00:02:48Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:02:48Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-246",

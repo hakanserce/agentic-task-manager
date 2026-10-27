@@ -3244,6 +3244,33 @@ svg.graph-minimap.hidden {
   border: 1px dashed color-mix(in srgb, var(--yellow) 45%, transparent);
 }
 
+/* Where the time went (TimeSplitBar): agents working in the accent, waiting on you in the review colour, idle as the
+   charts' idle hatching (.idle-band) */
+.time-split {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.time-split-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.time-split-working {
+  background: var(--accent);
+}
+.time-split-waiting {
+  background: var(--yellow);
+}
+.time-split-idle {
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--yellow) 45%, transparent);
+}
+.time-split-agents {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* A newer dashboard is ready after a plugin update (UpdateNotice.svelte). A toast in the bottom right corner, above
    the footer: in the page flow the sticky title bar covered it, and as a banner it would push the filters down.
    Over the title and footer bars (40), under menus (50) and dialogs (100). */

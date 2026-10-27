@@ -279,6 +279,20 @@ test.describe('All projects board', () => {
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(720);
   });
 
+  test('the tab is called Omniboard; its ⓘ says what it shows and where the details are (T-266)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openBoard(page, tasksServer);
+    await expect(page.locator('#overview-tab-board')).toHaveText('Omniboard');
+    // The link keeps its name
+    await expect(page).toHaveURL(/view=board/);
+    await page.getByRole('button', { name: 'About the Omniboard' }).click();
+    const about = page.getByRole('dialog', { name: 'About the Omniboard' });
+    await expect(about).toContainText('done in the last 24 hours');
+    await expect(about).toContainText("Each project's full details are on its own Kanban board");
+  });
+
   test('Active only applies to the board too', async ({ page, tasksServer }) => {
     await page.clock.setFixedTime(NOW);
     const idle = summary({

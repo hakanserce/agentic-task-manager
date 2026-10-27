@@ -1,12 +1,13 @@
 <script lang="ts">
   // All projects at a glance (docs/multi-project-dashboard-proposal.md 3.5): a card per project, those that need you
-  // first; or, on the Board tab, every project's tasks in one board (T-259). "Active only" hides projects with no open
+  // first; or, on the Omniboard tab, every project's tasks in one board (T-259, T-266). "Active only" hides projects with no open
   // work and nothing done lately, on both tabs.
   import { ACTIVE_DAYS, isActive, orderProjects } from '../lib/projects';
   import { OVERVIEW_TABS, type OverviewTab } from '../lib/routes';
   import { dashboard } from '../lib/state.svelte';
   import AllProjectsBoard from './AllProjectsBoard.svelte';
   import Icon from './Icon.svelte';
+  import InfoTip from './InfoTip.svelte';
   import ProjectCard from './ProjectCard.svelte';
 
   const ordered = $derived(orderProjects(dashboard.projects));
@@ -16,7 +17,8 @@
   const hidden = $derived(ordered.length - shown.length);
   const tab = $derived(dashboard.overviewTab);
 
-  const LABELS: Record<OverviewTab, string> = { projects: 'Projects', board: 'Board' };
+  // The board tab is called Omniboard (T-266); its id stays "board", so #view=board links and the saved tab still work
+  const LABELS: Record<OverviewTab, string> = { projects: 'Projects', board: 'Omniboard' };
   const ICONS = { projects: 'folder', board: 'square-kanban' } as const;
   const buttons: Partial<Record<OverviewTab, HTMLButtonElement>> = {};
 
@@ -31,7 +33,7 @@
 
 <!-- On the board, the page doesn't scroll: the board takes the window's height and its columns scroll (T-265) -->
 <section class="projects-overview" class:on-board={tab === 'board'} id="projects-overview">
-  <div class="view-tabs overview-tabs" role="tablist" aria-label="All projects">
+  <div class="view-tabs overview-tabs" role="tablist" aria-label="Projects Overview">
     {#each OVERVIEW_TABS as id (id)}
       <button
         bind:this={buttons[id]}
@@ -54,8 +56,8 @@
         <input
           type="search"
           id="board-search"
-          placeholder="Search the board"
-          aria-label="Search the board's tasks by ID, name, description, type, label, note or project"
+          placeholder="Search the Omniboard"
+          aria-label="Search the Omniboard's tasks by ID, name, description, type, label, note or project"
           value={dashboard.boardQuery}
           oninput={(e) => dashboard.setBoardQuery(e.currentTarget.value)}
         />
@@ -65,6 +67,19 @@
           >
         {/if}
       </label>
+      <InfoTip label="the Omniboard">
+        <p>
+          What's happening now across your projects: the tasks <strong>ready to start</strong>,
+          <strong>in progress</strong>,
+          <strong>waiting for a review</strong> or <strong>blocked</strong>, and those
+          <strong>done in the last 24 hours</strong>. At most 30 cards per column; <em>+ N more</em> says how many a project
+          has beyond them.
+        </p>
+        <p>
+          Each project's full details are on its own Kanban board: a card opens its task there, the project chip or
+          <em>+ N more</em> opens the project.
+        </p>
+      </InfoTip>
       <label class="projects-active-only"
         ><input
           type="checkbox"

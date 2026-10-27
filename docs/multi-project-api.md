@@ -130,7 +130,7 @@ answers the same.
         "working": [{ "task": "T-188", "name": "One title bar for every page", "agent": "claude:e5ea9db0", "branch": "dev/phase-17" }],
         "next": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line" }],
         "last_done": { "id": "T-189", "name": "Status bar pinned to the bottom on All projects", "completed_at": "2026-10-26T05:53:00Z" },
-        "git": { "branch": "dev/phase-17", "pr": { "number": 12, "url": "https://github.com/hakanserce/agentic-task-manager/pull/12", "state": "merged" } },
+        "git": { "branch": "dev/phase-17", "pr": { "number": 12, "url": "https://github.com/solo-swe/agentic-task-manager/pull/12", "state": "merged" } },
         "needs_you": { "review": 1, "blocked_on_user": 0 },
         "needs_you_tasks": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "reason": "review" }],
         "last_activity": "2026-10-25T21:51:38Z",
@@ -268,7 +268,7 @@ file, then rename) under `ATM_HOME/.lock`, atm's usual lock directory.
   "port": 8765,
   "version": "0.15.0",
   "build": "3f9a1c0d",
-  "plugin_root": "/Users/me/.claude/plugins/cache/hakanserce-plugins/atm/0.15.0",
+  "plugin_root": "/Users/me/.claude/plugins/cache/solo-swe-plugins/atm/0.15.0",
   "started_at": "2026-10-25T21:51:38Z"
 }
 ```

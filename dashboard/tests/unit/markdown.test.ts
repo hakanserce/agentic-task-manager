@@ -144,7 +144,7 @@ describe('docs/help.md', () => {
     expect(links.length).toBeGreaterThan(0);
     for (const href of links) {
       if (href.startsWith('#')) expect(ids).toContain(href.slice(1));
-      else expect(href).toMatch(/^https:\/\/github\.com\/hakanserce\/agentic-task-manager/);
+      else expect(href).toMatch(/^https:\/\/github\.com\/solo-swe\/agentic-task-manager/);
     }
   });
 });

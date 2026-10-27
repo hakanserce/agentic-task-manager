@@ -96,9 +96,10 @@ commands:
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
   claims [--json]
                  list live claims, shared by all worktrees of this clone
-  repository [set URL]
+  repository [set URL [--from OLD]]
                  print or set the repository's web address (meta.repository), for commit and PR links; a git
-                 remote is turned into one; atm init fills it from origin
+                 remote is turned into one; atm init fills it from origin. Setting a new one moves the tasks'
+                 recorded PR links from the old address (--from, else the one it replaces)
   logo [set PATH | unset]
                  print, set or unset the project's logo for the dashboard (meta.logo: an SVG, PNG, WebP or ICO
                  file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
@@ -362,6 +363,12 @@ def build_parser():
     repository = command("repository", cmd_repository, "print or set the repository's web address (meta.repository)")
     repository.add_argument("action", nargs="?", choices=["set"], help="set: change it")
     repository.add_argument("url", nargs="?", help="an http(s) URL or a git remote (git@host:owner/repo.git)")
+    repository.add_argument(
+        "--from",
+        dest="old",
+        metavar="OLD",
+        help="with set: move recorded PR links from this address (default: the address being replaced)",
+    )
     logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
     logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
     logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")

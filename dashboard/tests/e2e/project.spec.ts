@@ -77,13 +77,14 @@ test.describe('Project tab', () => {
     await page.clock.setFixedTime(NOW);
   });
 
-  test('the name, description and Information: repository, workflow, people, agents (T-252)', async ({
+  test('the name, no description line, and Information: repository, workflow, people, agents (T-252, T-267)', async ({
     page,
     tasksServer,
   }) => {
     await openDashboard(page, tasksServer, shop(), { tab: 'project' });
     await expect(page.locator('#project-name')).toHaveText('Shop');
-    await expect(page.locator('#project-description')).toHaveText('An online shop');
+    // meta.description ("An online shop") isn't shown under the name
+    await expect(page.locator('.project-head')).not.toContainText('An online shop');
     await expect(page.locator('#project-repository a')).toHaveAttribute('href', 'https://github.com/acme/shop');
     await expect(page.locator('#project-repository')).toHaveText('github.com/acme/shop');
     await expect(page.locator('#project-workflow > div')).toHaveText([
@@ -177,11 +178,30 @@ test.describe('Project tab', () => {
     await openDashboard(page, tasksServer, data, { tab: 'project' });
     await expect(page.locator('#project-repository')).toHaveText('Not set: atm repository set <url>');
     await expect(page.locator('#project-workflow')).toHaveText('Not set: /atm:push asks the first time');
-    await expect(page.locator('#project-description')).toHaveCount(0);
 
     await page.locator('#task-search').fill('T-1');
     await expect(page.locator('#project-types [data-type="feature"]')).toHaveText('Feature 3');
     await page.locator('#project-info-tip').click();
     await expect(page.locator('.infotip-popover')).toContainText("The search and filters don't apply here");
+  });
+
+  test('Information and Stats end at the same height side by side; stacked, each keeps its own (T-268)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await openDashboard(page, tasksServer, shop(), { tab: 'project' });
+    const info = page.locator('#project-info');
+    const stats = page.locator('#project-stats');
+    const box = async (l: typeof info) => (await l.boundingBox())!;
+    let [a, b] = [await box(info), await box(stats)];
+    expect(Math.abs(a.y - b.y)).toBeLessThan(1);
+    expect(Math.abs(a.height - b.height)).toBeLessThan(1);
+
+    // Narrow: one above the other, each as tall as its content
+    await page.setViewportSize({ width: 640, height: 900 });
+    [a, b] = [await box(info), await box(stats)];
+    expect(b.y).toBeGreaterThan(a.y + a.height - 1);
+    expect(Math.abs(a.height - b.height)).toBeGreaterThan(1);
   });
 });

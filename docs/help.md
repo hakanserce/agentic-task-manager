@@ -133,5 +133,5 @@ Several agents can work on one project at once, in one checkout or in separate g
 task it works on, so no two take the same task, and the Kanban board shows who works on what. The board shows every
 worktree of the project at once: a task is shown as it is on the branch where it got furthest, and a branch chip on
 its card names that branch when it isn't the main worktree's. See
-[Running agents in parallel](https://github.com/hakanserce/agentic-task-manager#running-agents-in-parallel) in the
+[Running agents in parallel](https://github.com/solo-swe/agentic-task-manager#running-agents-in-parallel) in the
 README.

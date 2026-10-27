@@ -9,6 +9,6 @@ const DATA = {
 
 test('serves the dashboard with a routed tasks.json', async ({ page, tasksServer }) => {
   await openDashboard(page, tasksServer, DATA);
-  await expect(page).toHaveTitle('Harness Check — Task Dashboard');
+  await expect(page).toHaveTitle('Harness Check');
   expect(tasksServer.requests).toBe(1);
 });

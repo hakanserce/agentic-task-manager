@@ -1,4 +1,8 @@
-# 🔄 Agentic Task Manager
+<p align="center">
+  <img src=".github/assets/atm-logo.svg" alt="atm logo: a board with three columns of cards, the last one done" width="96" height="96">
+</p>
+
+<h1 align="center">Agentic Task Manager</h1>
 
 A **Claude Code plugin** that gives any project file-based task management with a live HTML dashboard. Agents decompose requirements into granular tasks, execute them in a loop, and humans watch progress in real time.
 
@@ -29,8 +33,8 @@ A **Claude Code plugin** that gives any project file-based task management with 
 In Claude Code (terminal or VS Code), add the marketplace and install the `atm` plugin:
 
 ```
-/plugin marketplace add hakanserce/agentic-task-manager
-/plugin install atm@hakanserce-plugins
+/plugin marketplace add solo-swe/agentic-task-manager
+/plugin install atm@solo-swe-plugins
 ```
 
 Then run `/reload-plugins` so the skills load (no restart needed).
@@ -86,17 +90,17 @@ Or loop through everything:
 
 ### Method 1: Via marketplace (recommended)
 
-This repo is its own marketplace (`hakanserce-plugins`) containing the `atm` plugin:
+This repo is its own marketplace (`solo-swe-plugins`) containing the `atm` plugin:
 
 ```
-/plugin marketplace add hakanserce/agentic-task-manager
-/plugin install atm@hakanserce-plugins
+/plugin marketplace add solo-swe/agentic-task-manager
+/plugin install atm@solo-swe-plugins
 ```
 
 Then run `/reload-plugins` to load the skills. To get a new version later:
 
 ```
-/plugin marketplace update hakanserce-plugins
+/plugin marketplace update solo-swe-plugins
 /reload-plugins
 ```
 
@@ -104,12 +108,22 @@ No restart is needed. The dashboard comes with the plugin, so this updates it to
 restarts on the new version by itself (at the next tool call, or the next session), and the open dashboard offers a
 **Reload**. Its version label opens what's new.
 
+**Installed it before 0.21.0?** The marketplace was called `hakanserce-plugins` and lived at
+`hakanserce/agentic-task-manager`. Remove it and add it again under its new name:
+
+```
+/plugin marketplace remove hakanserce-plugins
+/plugin marketplace add solo-swe/agentic-task-manager
+/plugin install atm@solo-swe-plugins
+/reload-plugins
+```
+
 ### Method 2: Local development
 
 Clone and load directly:
 
 ```bash
-git clone https://github.com/hakanserce/agentic-task-manager.git
+git clone https://github.com/solo-swe/agentic-task-manager.git
 cd your-project
 claude --plugin-dir /path/to/agentic-task-manager/plugin
 ```
@@ -564,7 +578,7 @@ Merge each branch back as usual (or open a PR per branch).
 
 `atm` (atm-cli) is the command the skills run, and you can too: run it from the project. Claude Code puts the
 plugin's `bin/atm` on its Bash tool's PATH; in your own terminal, use the full path
-(`~/.claude/plugins/cache/hakanserce-plugins/atm/<version>/bin/atm`) or an alias. Every command takes `--json`, and
+(`~/.claude/plugins/cache/solo-swe-plugins/atm/<version>/bin/atm`) or an alias. Every command takes `--json`, and
 `atm help` lists them all.
 
 | Command | What it does |
@@ -585,7 +599,7 @@ plugin's `bin/atm` on its Bash tool's PATH; in your own terminal, use the full p
 | `atm init` | Register the `tasks.json` merge driver (the skills do this automatically) |
 | `atm serve [start\|stop\|status] [--open] [--all]` | The dashboard server, one for all your projects |
 | `atm projects [add [PATH] \| remove <id\|PATH> \| prune]` | The projects the dashboard lists |
-| `atm repository [set URL]` | The repository's web address, for commit and PR links (`atm init` takes it from `origin`) |
+| `atm repository [set URL [--from OLD]]` | The repository's web address, for commit and PR links (`atm init` takes it from `origin`); after a move, setting the new one also moves the tasks' recorded PR links from the old address |
 
 The design is in [docs/v4/atm-cli.md](docs/v4/atm-cli.md).
 
@@ -692,7 +706,7 @@ Optional `estimated_minutes` and `actual_minutes` fields with burndown chart in 
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR on [GitHub](https://github.com/hakanserce/agentic-task-manager).
+Contributions welcome! Please open an issue or PR on [GitHub](https://github.com/solo-swe/agentic-task-manager).
 
 ## License
 

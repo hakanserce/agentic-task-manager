@@ -116,7 +116,9 @@ test.describe('Activity widget', () => {
   test('the deep dive: key numbers, and charts by type, by agent and per task', async ({ page }) => {
     await activityPill(page).click();
     const panel = page.locator('#activity-panel');
-    await expect(panel.locator('.activity-heading')).toContainText('Activity per hour');
+    // The heading names no bar size (T-263: "Activity per hour" read as the period); the charts' headings do
+    await expect(panel.locator('#activity-title')).toContainText('Activity');
+    await expect(panel.locator('#activity-title')).not.toContainText('per');
     await expect(panel.locator('#dive-completed h4')).toHaveText('Tasks completed over all time, per hour, by type');
     // 6 done; cycle times 20–80 m, median 55 m, no interactive task; from 08:00 to now (12:00) nobody works 11:00–11:30
     // (see fixtures/agents.md). Three cards (T-246)
@@ -255,10 +257,11 @@ test.describe('Activity widget', () => {
     await expect(label).toHaveText('Today');
 
     await page.locator('[data-range="hour"]').click();
-    await expect(page.locator('.activity-heading')).toContainText('per 5 minutes');
+    await expect(page.locator('#dive-completed h4')).toContainText('per 5 minutes');
     await page.locator('[data-range="week"]').click();
-    // A week reads per day, and the headings say which week (it used to say "per 6 hours")
-    await expect(page.locator('.activity-heading')).toContainText('Activity per day');
+    // A week reads per day, and the headings say which week (it used to say "per 6 hours"); the popup's own heading
+    // names neither (T-263)
+    await expect(page.locator('#activity-title')).not.toContainText('per');
     await expect(page.locator('#dive-completed h4')).toHaveText('Tasks completed this week, per day, by type');
     await page.locator('#activity-prev').click();
     await expect(label).toHaveText('Last week');
@@ -272,6 +275,49 @@ test.describe('Activity widget', () => {
     await page.reload();
     await activityPill(page).click();
     await expect(label).toHaveText('February 2026');
+  });
+
+  // T-264: every period, its headings. The popup's heading is just "Activity"; the period label names the chosen
+  // period; each chart names that period and its own bar size. (An earlier test pinned "Activity per hour", the bar
+  // size, as if it were the period, and nothing checked the other presets: that bug came back twice.)
+  test('every period: the heading, the period label and the charts name the period and its own bar size', async ({
+    page,
+  }) => {
+    await activityPill(page).click();
+    const panel = page.locator('#activity-panel');
+    const expectHeadings = async (label: string, phrase: string, bar: string | RegExp) => {
+      await expect(panel.locator('#activity-period')).toHaveText(label);
+      await expect(panel.locator('#activity-title')).toContainText('Activity');
+      await expect(panel.locator('#activity-title')).not.toContainText(/\bper\b/);
+      const per = typeof bar === 'string' ? bar : bar.source;
+      await expect(panel.locator('#dive-completed h4')).toHaveText(
+        // (the ⓘ button leaves trailing space, which a pattern, unlike a string, doesn't trim)
+        new RegExp(`^Tasks completed ${phrase}, per ${per}, by type\\s*$`),
+      );
+      await expect(panel.locator('#dive-agents h4')).toContainText(
+        new RegExp(`^Who was working ${phrase} \\(1 = one busy the whole ${per}\\)`),
+      );
+      await expect(panel.locator('#dive-cycle h4')).toContainText(`Time per task ${phrase} (`);
+    };
+    const presets = [
+      { range: 'hour', label: 'Last hour', phrase: 'in the last hour', bar: '5 minutes' },
+      { range: 'day', label: 'Today', phrase: 'today', bar: 'hour' },
+      { range: 'week', label: 'This week', phrase: 'this week', bar: 'day' },
+      { range: 'month', label: 'This month', phrase: 'this month', bar: 'day' },
+      // All time: the automatic size, an hour for this fixture's four hours of work
+      { range: 'all', label: 'All time', phrase: 'over all time', bar: 'hour' },
+    ];
+    for (const p of presets) {
+      await panel.locator(`[data-range="${p.range}"]`).click();
+      await expectHeadings(p.label, p.phrase, p.bar);
+    }
+    // One step back keeps the preset's bar size and names the earlier period
+    await panel.locator('[data-range="week"]').click();
+    await panel.locator('#activity-prev').click();
+    await expectHeadings('Last week', 'last week', 'day');
+    // Custom: the automatic size for the range chosen
+    await panel.locator('[data-range="custom"]').click();
+    await expectHeadings('Custom', 'in the chosen period', /(?:\d+ minutes|hour|\d+ hours|day)/);
   });
 
   test('a custom period', async ({ page }) => {

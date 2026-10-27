@@ -43,7 +43,7 @@ the project), and says so in its ⓘ.
 │ A Claude Code plugin for agent task loops                                                          │
 │                                                                                                    │
 │ ┌ Information ───────────────────────────┐  ┌ Stats ⓘ ──────────────────────────────────────────┐  │
-│ │ Repository  github.com/hakanserce/…  ↗ │  │  12 Aug 2026      75 days        236     21       │  │
+│ │ Repository  github.com/solo-swe/…    ↗ │  │  12 Aug 2026      75 days        236     21       │  │
 │ │ Workflow    pull-request → main        │  │  started          duration       tasks   phases   │  │
 │ │             verify before push         │  │                                                    │  │
 │ │             feat({id}): {name}         │  │  212 task         15 PRs         74 h    3         │  │

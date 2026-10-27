@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke="#2f81f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- The ATM logo for GitHub (README, social preview): dashboard/src/assets/atm-logo.svg in the accent blue, since an
+       image there can't take the page's text colour. The shapes must stay the same (tests/unit/readme-logo.test.ts) -->
+  <rect x="3" y="4" width="26" height="24" rx="5" />
+  <path d="M10 10v12M16 10v6M22 10v3" />
+  <path d="M19.5 20.5l2 2 4-4.5" />
+</svg>

@@ -4,6 +4,39 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.21.0] - 2026-10-27
+
+**The repository moved to the `solo-swe` organisation.**
+
+### Fixed
+- **Activity popup heading:** it said *Activity per 3 hours* on *All time* and *per day* on *Week*: the bar size,
+  which read as the period. It is now just *Activity*; the period label beside it names the period, and every chart
+  heading names the period and its bar size (*Time per task* now names the period too). T-144 had fixed the chart
+  headings only, and an e2e test pinned the wrong heading.
+- **All projects board (Omniboard):** the page no longer scrolls on it: the board takes the window's height and each
+  column scrolls on its own with *▲ N more* / *▼ N more* hints, like a project's Kanban (T-262). Grouped by project,
+  the lanes scroll as one.
+
+### Changed
+- **Omniboard:** the All projects page's *Board* tab is called *Omniboard* (`#view=board` links and the remembered
+  tab still work), with an ⓘ on what it shows and that each project's details are on its own Kanban.
+- **Project tab:** the header is the logo and the name, without `meta.description` under it; side by side, the
+  *Information* and *Stats* panels end at the same height.
+- **Repository:** `github.com/solo-swe/agentic-task-manager` (GitHub redirects the old address). `plugin.json`'s
+  `homepage` and `repository`, the dashboard's GitHub and Source links, the README and the docs point there.
+- **Marketplace renamed** from `hakanserce-plugins` to `solo-swe-plugins`: the plugin installs as
+  `atm@solo-swe-plugins`. An existing install doesn't follow the rename: `/plugin marketplace remove hakanserce-plugins`,
+  `/plugin marketplace add solo-swe/agentic-task-manager`, `/plugin install atm@solo-swe-plugins`, `/reload-plugins`.
+- **Titles:** the All projects page is titled *Projects Overview*; a project's page by its name alone, without
+  *— Task Dashboard* (the title bar and the browser tab). *Task Dashboard* stays while loading and for a project
+  without a name. The project selector's first option is *Projects Overview* too (typing its name finds it).
+- **`atm repository set URL [--from OLD]`** also moves the tasks' recorded PR links (`pr.url`) from the old address
+  (`--from`, else the one it replaces) to the new one, in `tasks.json` and the archive, without touching
+  `merged_at`, timestamps or actors; `--json` adds `moved_links`.
+- **The atm logo on GitHub:** the README is headed by the logo (`.github/assets/atm-logo.svg`, the dashboard's in the
+  accent blue) instead of an emoji, and `.github/assets/social-preview.png` is the repository's preview card.
+  `.github/assets/atm-logo.png` (512×512) is the logo as a PNG, for avatars.
+
 ## [0.20.0] - 2026-10-27
 
 **Security hardening (phase 20) and progress and insights (phase 21).** Phase 20 implements the security review

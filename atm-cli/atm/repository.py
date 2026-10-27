@@ -6,7 +6,7 @@ import re
 
 from .core import AtmError, git, out, to_json, write_json_atomic
 from .lock import locked
-from .model import load_tasks
+from .model import archive_path, load_archive, load_tasks
 from .paths import find_paths
 
 SCP_REMOTE = re.compile(r"^(?:[\w.-]+@)?([\w.-]+):(?!//)(.+)$")  # git@github.com:o/r.git
@@ -55,11 +55,24 @@ def ensure_repository(paths):
     return url
 
 
+def move_pr_links(tasks, old, new):
+    """Point the tasks' recorded PR links (pr.url) on the `old` address at the `new` one, after the repository moved.
+    Only the link changes: no timestamps or actors, so the history stays as it was. Returns how many moved."""
+    moved = 0
+    for task in tasks:
+        pr = task.get("pr") if isinstance(task, dict) else None
+        link = pr.get("url") if isinstance(pr, dict) else None
+        if isinstance(link, str) and (link == old or link.startswith(old + "/")):
+            pr["url"] = new + link[len(old) :]
+            moved += 1
+    return moved
+
+
 def cmd_repository(args):
     paths = find_paths(os.getcwd())
     if args.action is None:
-        if args.url is not None:
-            raise AtmError(f"unexpected argument '{args.url}' (atm repository set URL)", 2)
+        if args.url is not None or args.old is not None:
+            raise AtmError(f"unexpected argument '{args.url or args.old}' (atm repository set URL)", 2)
         current = load_tasks(paths).get("meta", {}).get("repository")
         if args.json:
             out(to_json({"repository": current or None}))
@@ -71,8 +84,28 @@ def cmd_repository(args):
     url = repository_url(args.url)
     if not url:
         raise AtmError(f"{args.url!r} is not a repository address: give an http(s) URL or a git remote", 2)
+    old = None
+    if args.old is not None:
+        old = repository_url(args.old)
+        if not old:
+            raise AtmError(f"--from {args.old!r} is not a repository address: give an http(s) URL or a git remote", 2)
     with locked(paths["dir"]):
         data = load_tasks(paths)
-        data.setdefault("meta", {})["repository"] = url
+        meta = data.setdefault("meta", {})
+        old = old or repository_url(meta.get("repository") or "")
+        meta["repository"] = url
+        moved = 0
+        if old and old != url:
+            # The repository moved: its PR links too, in tasks.json and the archive (T-273)
+            moved = move_pr_links(data.get("tasks") or [], old, url)
+            archive = load_archive(paths) if os.path.isfile(archive_path(paths)) else None
+            archived = move_pr_links(archive["tasks"], old, url) if archive else 0
+            if archived:
+                write_json_atomic(archive_path(paths), archive)
+            moved += archived
         write_json_atomic(paths["tasks"], data)
-    out(to_json({"repository": url}) if args.json else f"Repository address set: {url}")
+    if args.json:
+        out(to_json({"repository": url, "moved_links": moved}))
+    else:
+        links = f" ({moved} PR link{'' if moved == 1 else 's'} moved from {old})" if moved else ""
+        out(f"Repository address set: {url}{links}")

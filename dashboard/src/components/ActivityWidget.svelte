@@ -131,8 +131,10 @@
     {#if open}
       <div class="insights-panel wide" id="activity-panel" role="dialog" aria-label="Activity details">
         <div class="panel-heading activity-heading">
-          <span
-            >Activity <span>per {detail?.unitLabel ?? series.unitLabel}</span>
+          <!-- Just "Activity" (T-263): the period label beside it names the period, and each chart heading its bar
+               size; "per {unitLabel}" here read as the period ("per 3 hours" on All time) -->
+          <span id="activity-title"
+            >Activity
             <InfoTip label="activity">
               <p>
                 The whole project, archived tasks included: the search and filters don't apply here. All times are for

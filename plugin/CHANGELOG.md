@@ -54,6 +54,8 @@ popup, project stats and the All projects Kanban.
 - **Header Progress popover:** finished phases as chips, types as one stacked bar, a Go to section.
 - **About dialog:** statuses, phases and types only, with a *Project details* link to the Project tab.
 - **Board cards** in progress carry `since` (`started_at`).
+- **Detail panel:** a linked commit says *The link works once the commit is pushed*, unless its task is in a PR or
+  merged (the dashboard doesn't know what was pushed).
 - The dashboard's size budget is 400 KiB.
 
 ### Fixed

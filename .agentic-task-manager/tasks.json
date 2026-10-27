@@ -10151,7 +10151,7 @@
       "description": "Drop the line under the project's name next to the logo in the Project tab's header (`#project-description`, `meta.description` in `ProjectTab.svelte`): it adds nothing there. The header keeps the logo, the name and its ⓘ. Remove its CSS and update the tests and screenshots that expect it.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProjectTab.svelte",
@@ -10159,11 +10159,22 @@
         "dashboard/tests/e2e/project.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T07:26:25Z",
+      "updated_at": "2026-10-27T07:27:32Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:26:25Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "b481499ef6290e0238b411483a142f6fa28db0b9",
+      "completed_at": "2026-10-27T07:27:32Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:27:32Z",
+          "kind": "outcome",
+          "text": "The Project tab’s header is the logo and the name with its ⓘ; the `meta.description` line under it and its CSS are gone. Tests and the screenshot updated.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-268",
@@ -10178,7 +10189,7 @@
       "description": "Side by side, the Project tab's *Information* and *Stats* panels (`.project-columns`, `#project-info`, `#project-stats`) end at different heights. Make them stretch to the taller one (grid/flex `align-items: stretch`); stacked on narrow screens, each keeps its own height.\n\n## Tests\ne2e: at a wide window both panels have the same height (bounding boxes); screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-267"
       ],
@@ -10187,9 +10198,11 @@
         "dashboard/tests/e2e/project.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T07:27:33Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:27:33Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-269",

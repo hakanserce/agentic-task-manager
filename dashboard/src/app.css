@@ -3152,11 +3152,12 @@ svg.graph-minimap.hidden {
 .project-view .muted {
   color: var(--text-muted);
 }
+/* Side by side, the two panels end at the same height (T-268); stacked, each row is as tall as its panel */
 .project-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 .project-card {
   background: var(--surface2);

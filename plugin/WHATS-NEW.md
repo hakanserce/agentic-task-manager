@@ -7,6 +7,7 @@ The short version, for people using atm. The full list of changes, for developer
 - atm moved to github.com/solo-swe/agentic-task-manager. Installed it before? Remove the old marketplace and add the new one, as the README explains.
 - Shorter titles: "Projects Overview" for all projects, and just the project's name on each project.
 - The Activity details no longer mix up the period you picked with the size of the bars.
+- A tidier Project tab: no extra line under the name, and its two panels line up.
 - The board of all your projects is now the Omniboard. It fits your window, and long columns scroll on their own, like a project's Kanban.
 
 ## [0.20.0] - 2026-10-27

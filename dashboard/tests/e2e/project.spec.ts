@@ -184,4 +184,24 @@ test.describe('Project tab', () => {
     await page.locator('#project-info-tip').click();
     await expect(page.locator('.infotip-popover')).toContainText("The search and filters don't apply here");
   });
+
+  test('Information and Stats end at the same height side by side; stacked, each keeps its own (T-268)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await openDashboard(page, tasksServer, shop(), { tab: 'project' });
+    const info = page.locator('#project-info');
+    const stats = page.locator('#project-stats');
+    const box = async (l: typeof info) => (await l.boundingBox())!;
+    let [a, b] = [await box(info), await box(stats)];
+    expect(Math.abs(a.y - b.y)).toBeLessThan(1);
+    expect(Math.abs(a.height - b.height)).toBeLessThan(1);
+
+    // Narrow: one above the other, each as tall as its content
+    await page.setViewportSize({ width: 640, height: 900 });
+    [a, b] = [await box(info), await box(stats)];
+    expect(b.y).toBeGreaterThan(a.y + a.height - 1);
+    expect(Math.abs(a.height - b.height)).toBeGreaterThan(1);
+  });
 });

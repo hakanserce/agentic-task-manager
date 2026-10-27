@@ -174,6 +174,7 @@ describe('serve', () => {
         task('T-8', 3, 'blocked', { waiting_on: 'agent', questions: ['?'] }),
       ],
     });
+    const card = (id, phase) => ({ id, name: id, type: 'feature', phase, priority: 'P2', labels: [] });
     const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
     const gone = project({ meta: { id: 'ffff6666', project: 'Gone' }, tasks: [] });
     const port = ports();
@@ -207,6 +208,21 @@ describe('serve', () => {
       description: null,
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+      // The All projects board (T-257): nothing ready in phase 2 (the first unfinished); T-5 waits for a review; T-6
+      // blocked on the user before T-8 on an agent; T-1 the only one finished in the last 24 hours
+      board: {
+        todo: { count: 0, cards: [] },
+        active: { count: 0, cards: [] },
+        review: { count: 1, cards: [{ ...card('T-5', 2), since: '2026-03-15T09:00:00Z' }] },
+        blocked: {
+          count: 2,
+          cards: [
+            { ...card('T-6', 2), since: '2026-03-15T11:00:00Z', waiting_on: 'user', questions: 1 },
+            { ...card('T-8', 3), since: null, waiting_on: 'agent', questions: 1 },
+          ],
+        },
+        done: { count: 1, cards: [{ ...card('T-1', 1), completed_at: '2026-03-15T10:00:00Z' }] },
+      },
     });
     assert.deepEqual(
       [
@@ -262,6 +278,50 @@ describe('serve', () => {
     assert.equal(summary.next[0].name.length, 80);
     assert.ok(summary.next[0].name.endsWith('…'));
     assert.deepEqual(summary.last_done, { id: 'T-6', name: 'T-6', completed_at: '2026-03-02T10:00:00Z' });
+    atm(['serve', 'stop'], root);
+  });
+
+  test('board: ready tasks of the first open phase (10 at most), the longest running first, 30 done today at most (T-257)', async () => {
+    const atmHome = home();
+    const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
+    const atm = (args, cwd) => runAtm(args, cwd, env);
+    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const ready = Array.from({ length: 12 }, (_, i) => task(`T-${String(i + 1).padStart(2, '0')}`, 0, 'todo'));
+    const done = Array.from({ length: 31 }, (_, i) =>
+      task(`D-${String(i + 1).padStart(2, '0')}`, 0, 'done', {
+        completed_at: `2026-03-15T${String(Math.floor(i / 3)).padStart(2, '0')}:${String((i % 3) * 10).padStart(2, '0')}:00Z`,
+      }),
+    );
+    const root = project({
+      meta: { id: 'bbbb2222', project: 'Board' },
+      tasks: [
+        ...ready,
+        // Phase 1 is not the first unfinished phase: not on the board
+        task('T-20', 1, 'todo'),
+        task('A', 0, 'in_progress', { started_by: 'claude:x', started_at: '2026-03-15T10:00:00Z' }),
+        task('B', 0, 'in_progress', { started_by: 'claude:y', started_at: '2026-03-15T09:00:00Z', labels: ['ux'] }),
+        // Finished yesterday morning: more than 24 hours ago
+        task('OLD', 0, 'done', { completed_at: '2026-03-14T11:00:00Z' }),
+        ...done,
+      ],
+    });
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const { board } = api.projects.find((p) => p.id === 'bbbb2222').summary;
+    assert.equal(board.todo.count, 12);
+    assert.deepEqual(
+      board.todo.cards.map((c) => c.id),
+      ['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'T-06', 'T-07', 'T-08', 'T-09', 'T-10'],
+    );
+    assert.deepEqual(board.active.cards, [
+      { id: 'B', name: 'B', type: 'feature', phase: 0, priority: 'P2', labels: ['ux'], by: 'claude:y' },
+      { id: 'A', name: 'A', type: 'feature', phase: 0, priority: 'P2', labels: [], by: 'claude:x' },
+    ]);
+    assert.equal(board.done.count, 31);
+    assert.equal(board.done.cards.length, 30);
+    assert.equal(board.done.cards[0].id, 'D-31');
+    assert.ok(!board.done.cards.some((c) => c.id === 'OLD'));
     atm(['serve', 'stop'], root);
   });
 

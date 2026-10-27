@@ -9440,7 +9440,7 @@
       "description": "`docs/project-stats-proposal.md` §4.1 (approved).\n\n- A histogram of all timed tasks, bins 0–5 m, 5–10 m, 10–20 m, 20–30 m, 30–45 m, 45 m–1 h, 1–1.5 h, 1.5–2 h, 2–3 h, 3–4 h, 4 h+; each bar stacked *agents alone* (solid) and *with you* (hatched, `interactive`), the same colours as the Activity popup (T-246).\n- A median marker per kind on the axis; min, max and average in the ⓘ and tooltip; a bar's tooltip lists its range, counts and first five tasks.\n- Under it, the 5 slowest tasks, each opening the task.\n- Caveats in the ⓘ: tasks without a start, restarts after an expired lease, reopened tasks.\n\n## Verify\n\nUnit tests for the binning and medians; e2e for the bars, tooltip and links; screenshots. Follow the `dataviz` guidance for marks and colours.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-253"
       ],
@@ -9449,11 +9449,22 @@
         "dashboard/src/lib/projectstats.ts"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T00:38:45Z",
+      "updated_at": "2026-10-27T00:42:10Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:38:45Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "8000d1d582ef380f9fac51de8b5b8375f50eb2a9",
+      "completed_at": "2026-10-27T00:42:10Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:42:10Z",
+          "kind": "outcome",
+          "text": "Histogram in the Stats card (`TaskTimeHistogram.svelte`, `timeHistogram` in `projectstats.ts`): 11 widening bins, agents alone solid under with-you hatched (one hue), median ▲/△ under the axis, a tooltip per bin with its first five tasks, the five slowest as links; caveats and min/max/average in the ⓘ.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-255",
@@ -9538,7 +9549,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3.1 and §5 (approved).\n\nAdd `board` to each project's summary in `atm-cli/atm/query.py` (and the Vite dev server's `build/dev-data.ts`):\n- `todo`: the tasks **ready to start** (to do, dependencies done, not claimed) in the first unfinished phase, in the loop's order, at most 10;\n- `active`, `review`, `blocked`: **all**, at most 30 each;\n- `done`: finished in the **last 24 hours**, at most 30, newest first;\n- with the full counts, so the dashboard can say *+ N more*.\n\nEach card has exactly what a project's Kanban card shows: `id`, `name` (capped like today's summaries), `type`, `phase`, `priority`, `labels`; `by` for active; `since` for review and blocked; `waiting_on` and the question count for blocked; `completed_at` for done.\n\n## Verify\n\nScenarios / server tests for each list's rule and cap; `docs/multi-project-api.md` updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/query.py",
@@ -9547,9 +9558,11 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-27T00:42:11Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:42:11Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-258",

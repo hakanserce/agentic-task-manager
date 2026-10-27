@@ -122,7 +122,14 @@ Without a store yet, the server falls back to the task folder's own snapshot (`c
         "needs_you": { "review": 1, "blocked_on_user": 0 },
         "needs_you_tasks": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "reason": "review" }],
         "last_activity": "2026-10-25T21:51:38Z",
-        "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28]
+        "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28],
+        "board": {
+          "todo": { "count": 1, "cards": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line", "type": "polish", "phase": 17, "priority": "P2", "labels": ["overview"] }] },
+          "active": { "count": 1, "cards": [{ "id": "T-188", "name": "One title bar for every page", "type": "feature", "phase": 17, "priority": "P1", "labels": [], "by": "claude:e5ea9db0" }] },
+          "review": { "count": 1, "cards": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "type": "bugfix", "phase": 17, "priority": "P2", "labels": [], "since": "2026-10-25T21:40:02Z" }] },
+          "blocked": { "count": 0, "cards": [] },
+          "done": { "count": 28, "cards": ["… 28 cards, each with completed_at"] }
+        }
       },
       "worktrees": [{ "path": "/Users/me/workplace/agentic-task-manager", "branch": "main", "main": true }],
       "logo": "p/1f3a9c2e/logo"
@@ -172,6 +179,25 @@ logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_
 | `needs_you_tasks` | those same tasks, in file order: `{ id, name, reason }`, `reason` being `"review"` or `"blocked"` (on a question for the user). The card's "needs you" chip opens them |
 | `last_activity` | the newest of all tasks' `updated_at`, `started_at`, `completed_at`, `review_requested_at`, `blocked_at` and `skipped_at`, and of note times; `null` without any |
 | `completions_14d` | 14 integers, oldest first, ending with today: done-kind tasks by the UTC day of `completed_at` (tasks without `completed_at` aren't counted) |
+| `board` | the cards for the All projects board (§3.3) |
+
+### 3.3 The board
+
+`board` has one column per kind (docs/all-projects-kanban-proposal.md §3.1), each `{ count, cards }`: `count` is how
+many tasks follow the column's rule, `cards` the first of them (so the dashboard can say *+ N more*).
+
+| Column | Rule | Order | At most |
+|---|---|---|---|
+| `todo` | ready to start (the tasks `next` takes from: to do, dependencies done, not claimed) in the first unfinished phase | the loop's | 10 |
+| `active` | every active-kind task | longest running first (`started_at`) | 30 |
+| `review` | every review-kind task | longest waiting first | 30 |
+| `blocked` | every blocked-kind task | blocked on the user first, then longest waiting | 30 |
+| `done` | done-kind tasks with `completed_at` in the last 24 hours | newest first | 30 |
+
+A card is what a project's Kanban card shows: `{ id, name, type, phase, priority, labels }` (the name capped as
+above, the priority the project's default when a task has none), plus `by` (the claim's agent, else `started_by`) on
+`active`; `since` (`review_requested_at` or `blocked_at`, else `updated_at`, else `null`) on `review` and `blocked`;
+`waiting_on` and `questions` (how many) on `blocked`; `completed_at` on `done`.
 
 ## 4. `GET /__atm/whoami`
 

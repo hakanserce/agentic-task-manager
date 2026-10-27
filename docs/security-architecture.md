@@ -35,7 +35,7 @@ this document is what changes with the code.
 | B1 | task text → agent | names, descriptions, notes, questions, answers, reasons, `meta.workflow` |
 | B2 | repository files → atm-cli | `tasks.json`, the archive, `.gitattributes`, paths, symlinks under `.agentic-task-manager/` |
 | B3 | browser → dashboard server | every HTTP request, from any page |
-| B4 | task data → dashboard rendering | names, Markdown, links, logos |
+| B4 | task data → dashboard rendering | names, Markdown, links, logos; every project's card fields in `api/projects` (`board`: names, types, labels, agents, T-257), rendered as text like a project's own cards (I15) |
 | B5 | local machine → atm's runtime files | `ATM_HOME`, the server's port |
 | B6 | contributors and CI → repository → users | workflows, artifacts, dependencies, the build artifacts users run |
 

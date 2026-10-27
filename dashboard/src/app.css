@@ -3534,6 +3534,41 @@ svg.graph-minimap.hidden {
   color: var(--text);
   cursor: pointer;
 }
+/* Projects | Board (T-259): a project's tabs, on a line instead of a panel */
+.overview-tabs {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.overview-tabs .view-tab[aria-selected='true'] {
+  background: var(--bg);
+}
+/* The All projects board (AllProjectsBoard.svelte): columns as long as their cards */
+.all-board .kanban-column {
+  max-height: none;
+}
+.board-project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 120px;
+  padding: 1px 6px 1px 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.board-project-chip:hover {
+  border-color: var(--accent);
+}
+.board-project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

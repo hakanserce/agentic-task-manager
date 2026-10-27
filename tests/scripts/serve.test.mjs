@@ -315,8 +315,26 @@ describe('serve', () => {
       ['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'T-06', 'T-07', 'T-08', 'T-09', 'T-10'],
     );
     assert.deepEqual(board.active.cards, [
-      { id: 'B', name: 'B', type: 'feature', phase: 0, priority: 'P2', labels: ['ux'], by: 'claude:y' },
-      { id: 'A', name: 'A', type: 'feature', phase: 0, priority: 'P2', labels: [], by: 'claude:x' },
+      {
+        id: 'B',
+        name: 'B',
+        type: 'feature',
+        phase: 0,
+        priority: 'P2',
+        labels: ['ux'],
+        by: 'claude:y',
+        since: '2026-03-15T09:00:00Z',
+      },
+      {
+        id: 'A',
+        name: 'A',
+        type: 'feature',
+        phase: 0,
+        priority: 'P2',
+        labels: [],
+        by: 'claude:x',
+        since: '2026-03-15T10:00:00Z',
+      },
     ]);
     assert.equal(board.done.count, 31);
     assert.equal(board.done.cards.length, 30);

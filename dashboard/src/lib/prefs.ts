@@ -17,6 +17,8 @@ export interface Prefs {
   theme: string;
   /** The overview shows only active projects (lib/projects.ts) */
   overviewActiveOnly: boolean;
+  /** The overview's tab: 'projects' or 'board' (lib/routes.ts) */
+  overviewTab: string;
 }
 
 function storage(): Storage | null {

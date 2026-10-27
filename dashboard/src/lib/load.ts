@@ -38,7 +38,32 @@ export interface ProjectSummary {
   needs_you_tasks?: NeedsYouItem[];
   last_activity: string | null;
   completions_14d: number[];
+  /** The project's cards for the All projects board (absent before 0.20; lib/allboard.ts) */
+  board?: ProjectBoard;
 }
+
+/** A card on the All projects board: what a project's Kanban card shows, plus its column's fields */
+export interface BoardCard {
+  id: string;
+  name: string;
+  type: string;
+  phase: number | null;
+  priority: string | null;
+  labels: string[];
+  /** In progress: who works on it */
+  by?: string | null;
+  /** In progress, review, blocked: since when */
+  since?: string | null;
+  /** Blocked: who decides, and how many questions */
+  waiting_on?: string | null;
+  questions?: number;
+  /** Done: when */
+  completed_at?: string | null;
+}
+
+export type BoardColumnId = 'todo' | 'active' | 'review' | 'blocked' | 'done';
+/** A project's column: its first cards, and how many there are in all */
+export type ProjectBoard = Record<BoardColumnId, { count: number; cards: BoardCard[] }>;
 
 /** A registered project, as api/projects lists it */
 export interface ProjectEntry {

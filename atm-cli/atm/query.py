@@ -334,7 +334,10 @@ def board(data, store, tasks, kinds, open_phases, vocab, current, live):
     return {
         "todo": board_column([board_card(vocab, t) for t in ready], BOARD_READY_CAP),
         "active": board_column(
-            [board_card(vocab, t, by=claimed_by.get(t.get("id")) or started_by(t)) for t in active]
+            [
+                board_card(vocab, t, by=claimed_by.get(t.get("id")) or started_by(t), since=since(t, "started_at"))
+                for t in active
+            ]
         ),
         "review": board_column([board_card(vocab, t, since=since(t, "review_requested_at")) for t in review]),
         "blocked": board_column(

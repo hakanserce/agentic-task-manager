@@ -137,7 +137,7 @@ answers the same.
         "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28],
         "board": {
           "todo": { "count": 1, "cards": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line", "type": "polish", "phase": 17, "priority": "P2", "labels": ["overview"] }] },
-          "active": { "count": 1, "cards": [{ "id": "T-188", "name": "One title bar for every page", "type": "feature", "phase": 17, "priority": "P1", "labels": [], "by": "claude:e5ea9db0" }] },
+          "active": { "count": 1, "cards": [{ "id": "T-188", "name": "One title bar for every page", "type": "feature", "phase": 17, "priority": "P1", "labels": [], "by": "claude:e5ea9db0", "since": "2026-10-20T09:12:00Z" }] },
           "review": { "count": 1, "cards": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "type": "bugfix", "phase": 17, "priority": "P2", "labels": [], "since": "2026-10-25T21:40:02Z" }] },
           "blocked": { "count": 0, "cards": [] },
           "done": { "count": 28, "cards": ["… 28 cards, each with completed_at"] }
@@ -208,7 +208,8 @@ many tasks follow the column's rule, `cards` the first of them (so the dashboard
 
 A card is what a project's Kanban card shows: `{ id, name, type, phase, priority, labels }` (the name capped as
 above, the priority the project's default when a task has none), plus `by` (the claim's agent, else `started_by`) on
-`active`; `since` (`review_requested_at` or `blocked_at`, else `updated_at`, else `null`) on `review` and `blocked`;
+`active`; `since` (`started_at`, `review_requested_at` or `blocked_at`, else `updated_at`, else `null`) on `active`,
+`review` and `blocked`;
 `waiting_on` and `questions` (how many) on `blocked`; `completed_at` on `done`.
 
 ## 4. `GET /__atm/whoami`

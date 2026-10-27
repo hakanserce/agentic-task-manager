@@ -39,6 +39,27 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
   };
 }
 
+/** A board card as a project's summary gives it (docs/multi-project-api.md 3.3) */
+export function boardCard(id: string, name: string, fields: Record<string, unknown> = {}): Record<string, unknown> {
+  return { id, name, type: 'feature', phase: 1, priority: 'P2', labels: [], ...fields };
+}
+
+type BoardColumnId = 'todo' | 'active' | 'review' | 'blocked' | 'done';
+
+/** A project summary's board: the given columns' cards, the rest empty; `counts` says how many a column has in all
+ * (more than its cards: "+ N more"), else as many as its cards */
+export function board(
+  columns: Partial<Record<BoardColumnId, unknown[]>>,
+  counts: Partial<Record<BoardColumnId, number>> = {},
+): Record<string, unknown> {
+  return Object.fromEntries(
+    (['todo', 'active', 'review', 'blocked', 'done'] as const).map((id) => {
+      const cards = columns[id] ?? [];
+      return [id, { count: counts[id] ?? cards.length, cards }];
+    }),
+  );
+}
+
 export function loadFixture(name: string): TasksData {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), 'utf8'));
 }

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { expect, openDashboard, summary, test } from './helpers';
+import { board, boardCard, expect, openDashboard, summary, test } from './helpers';
 
 /**
  * Screenshot of the view under the title bar (#graph-section). The section is scrolled into view first, and the
@@ -376,6 +376,57 @@ for (const mode of ['dark', 'light'] as const) {
     await expect(page.locator('#landing')).toHaveScreenshot(`projects-overview-narrow-${mode}.png`, {
       mask: [page.locator('#version-chip')],
     });
+  });
+}
+
+// The All projects board (T-259): cards from two projects with their chips, each column's line, an empty column and
+// "+ N more"
+for (const mode of ['dark', 'light'] as const) {
+  test(`visual: all projects board (${mode})`, async ({ page, tasksServer }) => {
+    await page.emulateMedia({ colorScheme: mode });
+    await page.clock.setFixedTime(new Date('2026-03-01T12:00:00Z'));
+    tasksServer
+      .addProject(
+        'shop',
+        'minimal',
+        'Shop',
+        summary({
+          last_activity: '2026-03-01T11:00:00Z',
+          board: board(
+            {
+              todo: [boardCard('T-008', 'Password reset', { labels: ['api'] }), boardCard('T-009', 'Email templates')],
+              active: [boardCard('T-007', 'Checkout flow', { by: 'claude:e5ea9db0', since: '2026-03-01T10:00:00Z' })],
+              blocked: [
+                boardCard('T-005', 'Choose the email provider', {
+                  since: '2026-03-01T06:00:00Z',
+                  waiting_on: 'agent',
+                  questions: 1,
+                }),
+              ],
+              done: [boardCard('T-003', 'Product page', { type: 'bugfix', completed_at: '2026-03-01T11:30:00Z' })],
+            },
+            { todo: 12 },
+          ),
+        }),
+      )
+      .addProject(
+        'blog',
+        'minimal',
+        'Blog',
+        summary({
+          last_activity: '2026-03-01T11:50:00Z',
+          board: board({
+            todo: [boardCard('B-1', 'RSS feed', { priority: 'P1', phase: 3, labels: ['ux', 'api', 'seo'] })],
+            blocked: [
+              boardCard('B-2', 'Pick a theme', { since: '2026-03-01T11:00:00Z', waiting_on: 'user', questions: 2 }),
+            ],
+            done: [boardCard('B-4', 'Drafts', { type: 'docs', completed_at: '2026-03-01T11:55:00Z' })],
+          }),
+        }),
+      );
+    await openDashboard(page, tasksServer, 'standard');
+    await page.locator('#overview-tab-board').click();
+    await expect(page.locator('#projects-overview')).toHaveScreenshot(`all-projects-board-${mode}.png`);
   });
 }
 

@@ -9629,7 +9629,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3, §3.1 and §4 (approved).\n\n- Two tabs on the All projects page, styled like a project's tabs: **Projects** (today's cards, default) and **Board**; remembered; `#view=board` links to it.\n- The board: To Do · In progress · In review · Blocked · Done from each project's `board` summary; each card like a project's Kanban card plus a **project chip** (logo or monogram, short name); a card click opens the task in its project, the chip opens the project.\n- Sorting per §4; *+ N more* links; empty columns say why (*Nothing ready to start*, *Nothing finished in the last 24 hours*).\n- *Active only* is shared with the Projects tab.\n\n## Verify\n\ne2e with two or three projects (`addProject`): columns, chips, sorting, links, empty states, the tab remembered; screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-257"
       ],
@@ -9639,9 +9639,19 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-27T04:25:22Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:57:28Z",
+          "kind": "handoff",
+          "text": "Not started: the dashboard is at 355.2 KB of the 358.4 KB (350 KiB) budget, and this board will go over. Waiting for Hakan: raise the budget or trim first.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "started_at": "2026-10-27T04:25:22Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-260",
@@ -9711,7 +9721,7 @@
       "description": "Bug report (Hakan): on the Kanban, a long column gets its own vertical scrollbar while the whole page scrolls too, so there are **two vertical scrollbars**.\n\n## Change\n\n- On the Kanban tab the page doesn't scroll as a whole: the board fills the window between the top bar and the status bar, and each column scrolls on its own.\n- Columns show **no traditional scrollbar** (hidden, `scrollbar-width: none` and the WebKit equivalent). Instead, an indication at the column's **top** and **bottom** says there is more above or below: a fade over the edge with a small *more* hint (e.g. `▲ 3 more` / `▼ 12 more`), shown only while there is something hidden that way.\n- Mouse-wheel and trackpad scrolling still work in a column; clicking a hint scrolls that way by a page.\n- The same column component serves the All projects board (T-259), so it gets the same behaviour.\n\n## Tests\n\ne2e (`tests/e2e/kanban.spec.ts`): with a long column (the `kanban` fixture's Done with *Show all*), `document.documentElement.scrollHeight` equals the window height on the Kanban tab; the column scrolls with the wheel; the bottom hint shows at the top and the top hint after scrolling, each gone at its end; a short column shows neither. Screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/KanbanBoard.svelte",
@@ -9720,11 +9730,22 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-27T00:52:28Z",
-      "updated_at": "2026-10-27T00:52:32Z",
+      "updated_at": "2026-10-27T00:57:17Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:52:32Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "c584b9cad4670bc9f230569241bead86711792a1",
+      "completed_at": "2026-10-27T00:57:17Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:57:17Z",
+          "kind": "outcome",
+          "text": "The Kanban fills the panel with a flex chain (like the graph) instead of a measured height, so the page never scrolls; each column scrolls inside with its scrollbar hidden and \"▲/▼ N more\" hints over a fade (`KanbanScroll.svelte`), a click on a hint scrolls a page. Grouped by phase, the lanes area scrolls as one. e2e checks the page height at 1600 and 720 px.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

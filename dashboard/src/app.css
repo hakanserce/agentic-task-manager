@@ -1755,11 +1755,106 @@ button.repo-ref {
   overflow-y: auto;
   position: relative;
 }
+/* T-280: a task's details (not the dialogs sharing .detail-panel): the title and badges stay; below, the section
+   rail and the sections, scrolling without a scrollbar */
+#detail-panel {
+  padding: 18px 20px;
+  max-width: 680px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.detail-main {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.detail-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 4px;
+  border-right: 1px solid var(--border);
+}
+.detail-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.detail-rail-item:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+.detail-rail-item.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+/* Bottom to top: vertical writing, turned half a circle; the icon below it stays upright */
+.detail-rail-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+.detail-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.detail-body {
+  position: relative;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: none;
+}
+.detail-body::-webkit-scrollbar {
+  display: none;
+}
+/* "▲ N more" / "▼ N more", the Kanban columns' hints; the panel's bottom corners aren't the hint's. The top one is
+   28px tall: a rail click puts its group just below it (HINT_HEIGHT in DetailPanel.svelte) */
+.detail-scroll .kanban-more {
+  box-sizing: border-box;
+  height: 28px;
+}
+.detail-scroll .kanban-more.bottom {
+  border-radius: 0;
+}
 
 .detail-panel h3 {
   font-size: 20px;
   margin-bottom: 16px;
   padding-right: 30px;
+}
+/* The title and the close button on one line; a long title wraps beside it */
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.detail-head h3 {
+  flex: 1 1 auto;
+  margin-bottom: 0;
+  padding-right: 0;
+  line-height: 1.3;
+}
+
+.detail-head .detail-close {
+  position: static;
+  flex: none;
+  padding: 0;
 }
 
 .detail-close {
@@ -1816,6 +1911,18 @@ button.repo-ref {
 }
 .detail-dep-arrow {
   color: var(--accent);
+}
+/* One line per dependency: the ID and the status stay whole, a long name ends in "…" (the full name is the title) */
+.detail-dep-item > :not(.detail-dep-name) {
+  flex: none;
+  white-space: nowrap;
+}
+.detail-dep-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .detail-files {

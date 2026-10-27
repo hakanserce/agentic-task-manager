@@ -9702,7 +9702,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §2 (approved).\n\nA *Group by project* toggle (remembered) shows one swimlane per project with the five columns, like *Group by phase* on a project's Kanban; a project with no card on the board gets **no lane**. Lanes ordered by the most recently active project.\n\n## Verify\n\ne2e: lanes, no lane for an empty project, the toggle remembered; screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-259"
       ],
@@ -9710,11 +9710,22 @@
         "dashboard/src/components/AllProjectsBoard.svelte"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T05:03:52Z",
+      "updated_at": "2026-10-27T05:06:27Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T05:03:52Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "b61224f3813ce7cd398632f35a206980f70b71dd",
+      "completed_at": "2026-10-27T05:06:27Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T05:06:27Z",
+          "kind": "outcome",
+          "text": "*Group by project* on the Board tab (remembered per browser): a lane per project with the five columns, the most recently active first; a project with nothing on the board gets no lane; the lane's name opens the project; cards in a lane drop the project chip.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-261",
@@ -9730,7 +9741,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3 (approved).\n\nA search box on the board, like a project's search: debounced, it calls `api/search?q=…` and shows only the board's cards among the results (ID, name, description, type, labels, notes, project name); the columns say *N of M* while searching; clearing it shows everything. Remembered with the board's view.\n\n## Verify\n\ne2e with the tasks server playing the route: a match by description narrows the board, clearing restores it; the request is made once per pause in typing.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-258",
         "T-259"
@@ -9741,9 +9752,11 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-26T21:57:05Z",
+      "updated_at": "2026-10-27T05:06:27Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T05:06:27Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-262",

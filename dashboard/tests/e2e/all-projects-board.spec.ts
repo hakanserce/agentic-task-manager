@@ -174,6 +174,35 @@ test.describe('All projects board', () => {
     await expect(page).toHaveURL(/project=shop/);
   });
 
+  test('search: a match in a description narrows the board, asked once per pause; clearing restores it (T-261)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openBoard(page, tasksServer);
+    const search = page.locator('#board-search');
+    // T-005's description: "Pick a provider for transactional email." (the card itself has no description)
+    await search.pressSequentially('transactional', { delay: 20 });
+    await expect(page.locator('#all-board .board-card')).toHaveCount(1);
+    await expect(page.locator('#all-board .board-card[data-project="shop"][data-id="T-005"]')).toHaveCount(1);
+    await expect(column(page, 'blocked').locator('.kanban-count')).toHaveText('1 of 2');
+    await expect(column(page, 'todo').locator('.kanban-count')).toHaveText('0 of 13');
+    await expect(column(page, 'todo').locator('.kanban-empty')).toHaveText('No match');
+    // No "+ N more" while searching: the search looks at the board's cards
+    await expect(page.locator('#all-board .board-more')).toHaveCount(0);
+    expect(tasksServer.searches).toEqual(['transactional']);
+
+    // A project's name finds its tasks (Shop's cards are its v4 tasks; Blog's are made up); remembered across a reload
+    await search.fill('shop');
+    await expect(page.locator('#all-board .board-card')).toHaveCount(5);
+    await page.reload();
+    await expect(page.locator('#board-search')).toHaveValue('shop');
+    await expect(page.locator('#all-board .board-card')).toHaveCount(5);
+
+    await page.locator('.board-search .search-clear').click();
+    await expect(page.locator('#all-board .board-card')).toHaveCount(9);
+    await expect(column(page, 'todo').locator('.kanban-count')).toHaveText('13');
+  });
+
   test('Active only applies to the board too', async ({ page, tasksServer }) => {
     await page.clock.setFixedTime(NOW);
     const idle = summary({

@@ -105,6 +105,23 @@ describe('allBoard', () => {
     expect([done.cards.length, done.more.map((m) => m.count)]).toEqual([1, [2]]);
   });
 
+  it('a search keeps the matching cards, counts the whole column, and drops "+ N more" (T-261)', () => {
+    const a = project('a', '2026-03-01T11:00:00Z', { todo: [card('A-1'), card('A-2')] }, { todo: 12 });
+    const b = project('b', '2026-03-01T10:00:00Z', { todo: [card('B-1')], done: [card('B-2')] });
+    const match = new Map([
+      ['a', new Set(['A-2', 'A-9'])],
+      ['b', new Set(['B-2'])],
+    ]);
+    const [todo, , , , done] = allBoard([a, b], undefined, match);
+    expect(todo.cards.map((c) => c.card.id)).toEqual(['A-2']);
+    expect([todo.total, todo.more, todo.empty]).toEqual([13, [], 'No match']);
+    expect(done.cards.map((c) => c.card.id)).toEqual(['B-2']);
+    // Grouped: a project without a matching card gets no lane
+    expect(allBoardLanes([a, b], undefined, new Map([['b', new Set(['B-2'])]])).map((l) => l.project.id)).toEqual([
+      'b',
+    ]);
+  });
+
   it('projects without a board (gone, or an older server) add nothing', () => {
     const gone = project('g', null, { todo: [card('G-1')] }, {}, { missing: true });
     const older = { ...project('o', null, {}), summary: { last_activity: null } as ProjectSummary };

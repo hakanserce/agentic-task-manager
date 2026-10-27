@@ -21,6 +21,8 @@ export interface Prefs {
   overviewTab: string;
   /** The All projects board shows a lane per project (lib/allboard.ts) */
   boardGroupByProject: boolean;
+  /** The All projects board's search (T-261) */
+  boardQuery: string;
 }
 
 function storage(): Storage | null {

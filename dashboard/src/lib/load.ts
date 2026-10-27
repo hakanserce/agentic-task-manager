@@ -181,6 +181,23 @@ export async function loadProjects(fetchFn: typeof fetch = fetch, since?: Valida
   return { unchanged: false, projects, validators: file.validators };
 }
 
+export const SEARCH_URL = 'api/search';
+
+/**
+ * The tasks matching `query` in every project (api/search, T-258): their IDs per project id. Anything unexpected in
+ * the answer is left out; a failed request throws.
+ */
+export async function searchProjects(query: string, fetchFn: typeof fetch = fetch): Promise<Map<string, Set<string>>> {
+  const res = await fetchFn(`${SEARCH_URL}?q=${encodeURIComponent(query)}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`${SEARCH_URL}: HTTP ${res.status}`);
+  const data: unknown = await res.json();
+  const found = new Map<string, Set<string>>();
+  if (data && typeof data === 'object' && !Array.isArray(data))
+    for (const [project, ids] of Object.entries(data))
+      if (Array.isArray(ids)) found.set(project, new Set(ids.filter((id): id is string => typeof id === 'string')));
+  return found;
+}
+
 export const WHOAMI_URL = '__atm/whoami';
 
 /**

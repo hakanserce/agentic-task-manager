@@ -47,6 +47,23 @@
   </div>
   <div class="projects-toolbar">
     {#if tab === 'board'}
+      <!-- Over every project's tasks (T-261): ID, name, description, type, labels, notes and the project's name -->
+      <label class="task-search board-search">
+        <Icon name="search" size={14} />
+        <input
+          type="search"
+          id="board-search"
+          placeholder="Search the board"
+          aria-label="Search the board's tasks by ID, name, description, type, label, note or project"
+          value={dashboard.boardQuery}
+          oninput={(e) => dashboard.setBoardQuery(e.currentTarget.value)}
+        />
+        {#if dashboard.boardQuery}
+          <button class="search-clear" aria-label="Clear search" onclick={() => dashboard.setBoardQuery('')}
+            ><Icon name="x" size={12} /></button
+          >
+        {/if}
+      </label>
       <label class="projects-active-only"
         ><input
           type="checkbox"

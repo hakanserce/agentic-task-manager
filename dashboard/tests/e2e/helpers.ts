@@ -15,6 +15,7 @@ const CLAIMS_JSON = /\/p\/([^/]+)\/claims\.json(\?.*)?$/;
 const ARCHIVE_JSON = /\/p\/([^/]+)\/tasks-archive\.json(\?.*)?$/;
 const WORKTREES_JSON = /\/p\/([^/]+)\/worktrees\.json(\?.*)?$/;
 const LOGO = /\/p\/([^/]+)\/logo(\?.*)?$/;
+const SEARCH = /\/api\/search(\?.*)?$/;
 /** The id of the project the fixture serves by default */
 export const FIXTURE_PROJECT = 'fixture';
 
@@ -91,6 +92,8 @@ export class TasksServer {
   requests = 0;
   /** How many requests were answered 304 Not Modified */
   notModified = 0;
+  /** The queries api/search was asked, in order */
+  searches: string[] = [];
 
   constructor(private page: Page) {}
 
@@ -164,12 +167,42 @@ export class TasksServer {
         ? route.fulfill({ status: 404, body: 'not found' })
         : route.fulfill({ status: 200, contentType: 'application/json', body: this.worktreesBody }),
     );
+    await this.page.route(SEARCH, (route) => {
+      const q = new URL(route.request().url()).searchParams.get('q') ?? '';
+      this.searches.push(q);
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(this.search(q)) });
+    });
     await this.page.route(LOGO, (route) => {
       const svg = this.logos.get(decodeURIComponent(LOGO.exec(route.request().url())![1]));
       return svg
         ? route.fulfill({ status: 200, contentType: 'image/svg+xml', body: svg })
         : route.fulfill({ status: 404, contentType: 'application/json', body: '{"error": "no logo"}' });
     });
+  }
+
+  /** api/search's answer (docs/multi-project-api.md 2.4): per project, the IDs of the tasks in which every word of
+   * `q` appears in the ID, name, description, type, labels or notes, or the project's name */
+  private search(q: string): Record<string, string[]> {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return {};
+    const projects = [
+      { id: this.projectId, name: String(this.meta.project ?? this.projectId), body: this.body ?? '{"tasks":[]}' },
+      ...[...this.others].map(([id, p]) => ({ id, name: p.name, body: p.body })),
+    ];
+    const found: Record<string, string[]> = {};
+    for (const p of projects) {
+      const ids = (JSON.parse(p.body) as TasksData).tasks
+        .filter((t) => {
+          const notes = Array.isArray(t.notes) ? t.notes.map((n) => (n as { text?: string }).text) : [];
+          const text = [p.name, t.id, t.name, t.description, t.type, ...((t.labels as string[]) ?? []), ...notes]
+            .join(' ')
+            .toLowerCase();
+          return words.every((w) => text.includes(w));
+        })
+        .map((t) => String(t.id));
+      if (ids.length) found[p.id] = ids;
+    }
+    return found;
   }
 
   /** Give a project a logo, an SVG served at p/<id>/logo; null lists a logo that fails to load (a 404) */

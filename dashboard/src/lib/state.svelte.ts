@@ -68,6 +68,8 @@ export class DashboardState {
   overviewTab = $state<OverviewTab>(parseOverviewTab(location.hash) ?? savedOverviewTab());
   /** The All projects board in a lane per project (T-260); remembered per browser */
   boardGroupByProject = $state(getPref('boardGroupByProject', false));
+  /** The All projects board's search (T-261), over every project's tasks through api/search; remembered per browser */
+  boardQuery = $state(getPref('boardQuery', ''));
   tasks = $state.raw<Task[]>([]);
   // Never mutated, only replaced on (re)load, so a plain Map in $state.raw is reactive enough
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -406,6 +408,11 @@ export class DashboardState {
   setBoardGroupByProject(on: boolean) {
     this.boardGroupByProject = on;
     setPref('boardGroupByProject', on);
+  }
+
+  setBoardQuery(query: string) {
+    this.boardQuery = query;
+    setPref('boardQuery', query);
   }
 
   setOverviewActiveOnly(on: boolean) {

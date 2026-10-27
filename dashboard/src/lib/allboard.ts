@@ -18,6 +18,8 @@ export interface AllBoardColumn {
   more: { project: ProjectEntry; count: number }[];
   /** What an empty column says */
   empty: string;
+  /** The column's cards in all, shown or not, whatever a search leaves ("N of M") */
+  total: number;
 }
 
 export const BOARD_COLUMNS: { id: BoardColumnId; label: string; empty: string }[] = [
@@ -66,15 +68,30 @@ function sortCards(id: BoardColumnId, cards: AllBoardCard[]): AllBoardCard[] {
 
 const hasBoard = (p: ProjectEntry) => !p.missing && !!p.summary?.board;
 
-/** The board of `projects` (those the page shows): projects without a board summary (a missing one, an older
- * server) add nothing. */
-export function allBoard(projects: readonly ProjectEntry[], cap = BOARD_CAP): AllBoardColumn[] {
+/** A search's matches (api/search, T-261): task IDs per project id; null while not searching */
+export type BoardMatch = ReadonlyMap<string, ReadonlySet<string>> | null;
+
+/**
+ * The board of `projects` (those the page shows): projects without a board summary (a missing one, an older
+ * server) add nothing. With `match`, only the board's cards among the search's results, and no "+ N more" (the
+ * search looks at the board's cards only); `total` still counts the whole column, for "N of M".
+ */
+export function allBoard(
+  projects: readonly ProjectEntry[],
+  cap = BOARD_CAP,
+  match: BoardMatch = null,
+): AllBoardColumn[] {
   const withBoard = projects.filter(hasBoard);
   return BOARD_COLUMNS.map(({ id, label, empty }) => {
     const all = sortCards(
       id,
       withBoard.flatMap((project) => project.summary!.board![id].cards.map((card) => ({ project, card }))),
     );
+    const total = withBoard.reduce((n, project) => n + project.summary!.board![id].count, 0);
+    if (match) {
+      const cards = all.filter((c) => match.get(c.project.id)?.has(c.card.id)).slice(0, cap);
+      return { id, label, cards, more: [], empty: 'No match', total };
+    }
     const cards = all.slice(0, cap);
     const more = withBoard
       .map((project) => ({
@@ -82,7 +99,7 @@ export function allBoard(projects: readonly ProjectEntry[], cap = BOARD_CAP): Al
         count: project.summary!.board![id].count - cards.filter((c) => c.project === project).length,
       }))
       .filter((m) => m.count > 0);
-    return { id, label, cards, more, empty };
+    return { id, label, cards, more, empty, total };
   });
 }
 
@@ -92,11 +109,15 @@ export interface AllBoardLane {
 }
 
 /** Grouped by project (T-260, §2): a lane per project with the five columns, the most recently active first; a
- * project with nothing on the board gets no lane. */
-export function allBoardLanes(projects: readonly ProjectEntry[], cap = BOARD_CAP): AllBoardLane[] {
+ * project with nothing on the board (or, searching, nothing matching) gets no lane. */
+export function allBoardLanes(
+  projects: readonly ProjectEntry[],
+  cap = BOARD_CAP,
+  match: BoardMatch = null,
+): AllBoardLane[] {
   return projects
     .filter(hasBoard)
     .sort((a, b) => recent(b.summary?.last_activity) - recent(a.summary?.last_activity) || 0)
-    .map((project) => ({ project, columns: allBoard([project], cap) }))
+    .map((project) => ({ project, columns: allBoard([project], cap, match) }))
     .filter((lane) => lane.columns.some((c) => c.cards.length || c.more.length));
 }

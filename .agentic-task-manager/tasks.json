@@ -10728,7 +10728,7 @@
       "description": "Hakan finds the task detail panel's vertical scrollbar (when a task's details don't fit) out of place in the dashboard's look. Done live with him: try, look, adjust.\n\n## Change\n- **No scrollbar**: the sections scroll like the Kanban columns (`KanbanScroll.svelte`, T-262): hidden scrollbar, the wheel and trackpad scroll as usual, \"▲ N more\" / \"▼ N more\" hints (sections cut off) that scroll a page.\n- **The title and badges stay** at the top, the × on the title's line; less padding around the panel.\n- **A section rail on the left**: one entry per group, written bottom to top, with an icon; a click brings the group to the top (just below the \"▲\" hint), adding empty space below the last section when the content is too short; scrolling by hand never adds any, and scrolling back up takes it away. The entry of the group in view is highlighted. Groups (only those the task has):\n  - *Info*: in review / blocked, description;\n  - *Dependencies*: Depends on, Required by (one line each; a long name ends in \"…\");\n  - *Notes*;\n  - *Activity*: claimed by, who, timestamps, commit;\n  - *Ref*: use cases, requirements, files.\n- Only the task panel (`#detail-panel`): Help, About, the Activity popup and What's new share `.detail-panel` and keep their layout.\n\n## Tests\nComponent tests for the rail's groups and order, e2e tests for where a rail click lands and the active entry on a short task, the detail specs on the new scroller (`#detail-body`), refreshed detail screenshot baselines.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/DetailPanel.svelte",
@@ -10738,11 +10738,22 @@
         "dashboard/tests/e2e/detail.spec.ts"
       ],
       "created_at": "2026-10-27T21:17:37Z",
-      "updated_at": "2026-10-27T21:56:05Z",
+      "updated_at": "2026-10-27T22:04:02Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T21:17:42Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "55a0c7891e307ba2fc8efb8d6be9550faa85f228",
+      "completed_at": "2026-10-27T22:04:02Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T22:04:02Z",
+          "kind": "outcome",
+          "text": "Detail panel: pinned title with the × on its line, a section rail (Info, Dependencies, Notes, Activity, Ref; bottom-to-top labels with icons) that brings a group to the top, sections scrolling without a scrollbar with Kanban-style ▲/▼ hints; one-line dependencies. Built live with Hakan.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     }
   ]
 }

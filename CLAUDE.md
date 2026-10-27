@@ -95,7 +95,8 @@ git merges). CI runs the suite with Python 3.9 and a current version.
   fails on the zip's duplicate entries), extract only the missing `*-linux.png` files into
   `dashboard/tests/e2e/__screenshots__/` (`unzip -n`), look at one to check it shows what you expect, then commit them.
 - **Pinned:** actions by commit SHA, container images by digest, the token read-only (`permissions: contents:
-  read`), checkouts without stored credentials. Dependabot proposes action and npm updates; bump an image digest by
+  read`), checkouts without stored credentials. Dependabot proposes action and npm updates, grouped: one PR a week
+  for the actions, one for npm's minor and patch updates, and one per npm major (T-275); bump an image digest by
   hand (`docker buildx imagetools inspect <image>`), the Playwright image together with `@playwright/test`.
 - **Performance budgets:** the e2e interaction budget is 200 ms locally and twice that in CI
   (`tests/e2e/performance.spec.ts`), and CI runners are about 3× slower than a developer Mac. A failure only in CI

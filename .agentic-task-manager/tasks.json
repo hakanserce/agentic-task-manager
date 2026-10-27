@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 275,
+    "next_id": 277,
     "labels": [
       {
         "id": "dashboard",
@@ -59,6 +59,10 @@
       {
         "id": 22,
         "name": "Org move and fixes"
+      },
+      {
+        "id": 23,
+        "name": "Maintenance"
       }
     ],
     "repository": "https://github.com/solo-swe/agentic-task-manager"
@@ -10045,7 +10049,7 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:19:48Z",
@@ -10064,7 +10068,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-264",
@@ -10088,7 +10093,7 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:21:15Z",
@@ -10107,7 +10112,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-265",
@@ -10132,7 +10138,7 @@
         "dashboard/tests/e2e/all-projects-board.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:22:24Z",
@@ -10151,7 +10157,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-266",
@@ -10173,7 +10180,7 @@
         "dashboard/tests/e2e/all-projects-board.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:25:00Z",
@@ -10192,7 +10199,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-267",
@@ -10215,7 +10223,7 @@
         "dashboard/tests/e2e/project.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:26:25Z",
@@ -10234,7 +10242,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-268",
@@ -10258,7 +10267,7 @@
         "dashboard/tests/e2e/project.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:27:33Z",
@@ -10277,7 +10286,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-269",
@@ -10304,7 +10314,7 @@
         "dashboard/tests/unit/plugin-info.test.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:47:48Z",
@@ -10323,7 +10333,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-270",
@@ -10348,7 +10359,7 @@
         "plugin/WHATS-NEW.md"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:49:51Z",
@@ -10367,7 +10378,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-271",
@@ -10388,7 +10400,7 @@
         "dashboard/src/components/Header.svelte"
       ],
       "created_at": "2026-10-27T06:56:17Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:56:23Z",
@@ -10407,7 +10419,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-272",
@@ -10430,7 +10443,7 @@
         "README.md"
       ],
       "created_at": "2026-10-27T06:59:00Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:59:07Z",
@@ -10449,7 +10462,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-273",
@@ -10472,7 +10486,7 @@
         "tests/scripts/scenarios/repository.json"
       ],
       "created_at": "2026-10-27T07:01:35Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:01:36Z",
@@ -10491,7 +10505,8 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
-      }
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
     },
     {
       "id": "T-274",
@@ -10512,7 +10527,7 @@
         "dashboard/src/components/ProjectSelector.svelte"
       ],
       "created_at": "2026-10-27T07:06:50Z",
-      "updated_at": "2026-10-27T08:19:18Z",
+      "updated_at": "2026-10-27T08:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:06:51Z",
@@ -10531,6 +10546,89 @@
       "pr": {
         "number": 24,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
+      },
+      "merged_at": "2026-10-27T08:27:23Z"
+    },
+    {
+      "id": "T-275",
+      "name": "Dependabot: one grouped PR per ecosystem a week",
+      "phase": 23,
+      "type": "infra",
+      "priority": "P2",
+      "labels": [
+        "ci"
+      ],
+      "description": "Asked for by Hakan (2026-10-27): Dependabot's first run opened six PRs at once, one per package, and with the `main` ruleset requiring branches to be up to date, each merge sent the others through another update and CI run. **The ruleset stays as it is**; group the updates instead.\n\n## Change\nIn `.github/dependabot.yml`, a `groups` entry for each ecosystem (`github-actions` and `npm` in `/dashboard`) that puts all its updates into one PR a week. Keep the weekly schedule, the comment on SHA pinning and `open-pull-requests-limit`. Major versions may get their own group (`update-types`) so a breaking one (like `typescript` 7) doesn't hold up the rest.\n\n## Docs\n`docs/security-architecture.md` (the Dependabot invariant, I19) if it describes the PRs; `CLAUDE.md`'s CI section, which says Dependabot proposes updates.\n\n## Check\nThe file validates (GitHub shows Dependabot config errors on the repository's Insights → Dependency graph → Dependabot tab); the next weekly run opens at most one PR per ecosystem and group.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        ".github/dependabot.yml",
+        "CLAUDE.md",
+        "docs/security-architecture.md"
+      ],
+      "created_at": "2026-10-27T08:23:41Z",
+      "updated_at": "2026-10-27T08:54:04Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T08:31:55Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "14a8da5857b51f61adfcc0299c7c10a322507eda",
+      "completed_at": "2026-10-27T08:33:00Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T08:33:00Z",
+          "kind": "outcome",
+          "text": "Dependabot groups its updates: one PR a week for all actions (majors too), one for npm minor and patch updates; an npm major still gets its own PR. `ci-workflow.test.ts` checks the groups; CLAUDE.md and the security doc (I19) say so. The ruleset is unchanged.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 25,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/25"
+      }
+    },
+    {
+      "id": "T-276",
+      "name": "Fix the flaky server test: use the port atm serve reports",
+      "phase": 23,
+      "type": "bugfix",
+      "priority": "P2",
+      "labels": [
+        "server",
+        "atm-cli"
+      ],
+      "description": "`serve.test.mjs` › *working, next and last_done* failed on CI (Python 3.9 job, PR #18's run 40470063094) with `TypeError: fetch failed … ECONNREFUSED 127.0.0.1:34730`, and passed on a re-run.\n\n## Likely cause\n`atm serve --port N` uses the next free port when N is taken (`ensure_server` waits for that server's `whoami`, so it is up when the command returns) and prints the URL it actually serves on. The tests take a port from `ports()` and then fetch `http://localhost:${port}`, the port they *asked for*. When test files running in parallel get the same port, the server listens elsewhere and the fetch is refused.\n\n## Change\nConfirm the cause first (e.g. a test that holds port N, runs `atm serve --port N` and checks the printed URL's port). Then make the tests use the port atm reports: a helper in `tests/scripts/helpers.mjs` (or in `serve.test.mjs`) that runs `atm serve` and returns the port from its output (or from `atm serve status --json`), used by every test that starts a server. If the cause turns out to be different, fix that instead and say so in the outcome note.\n\n## Check\n`npm run test:scripts` passes several times in a row locally; no test fetches a port it didn't get from atm.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "done",
+      "dependencies": [],
+      "files": [
+        "tests/scripts/serve.test.mjs",
+        "tests/scripts/helpers.mjs"
+      ],
+      "created_at": "2026-10-27T08:23:41Z",
+      "updated_at": "2026-10-27T08:54:04Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T08:38:10Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "cede4dc6b3ed7ed64b5aca7280d95674ed83f70f",
+      "completed_at": "2026-10-27T08:49:24Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T08:49:24Z",
+          "kind": "outcome",
+          "text": "Cause differs from the task’s guess: the test ports reached ~40300, inside Linux’s range for outgoing connections (32768+), so a connection of the suite could hold a test’s port and atm served on the next one. Fixed at the root: test ports stay below 32768 (an assert keeps them there). Server tests pass alone twice in a row; full suite 348/348.",
+          "by": "claude:e5ea9db0"
+        }
+      ],
+      "pr": {
+        "number": 25,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/25"
       }
     }
   ]

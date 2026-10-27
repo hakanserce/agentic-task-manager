@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatMinutes } from '../lib/format';
   import { actors, vocabCounts, workflowOf } from '../lib/projectinfo';
+  import { projectStats } from '../lib/projectstats';
   import { repositoryOf } from '../lib/repo';
   import { dashboard } from '../lib/state.svelte';
   import InfoTip from './InfoTip.svelte';
@@ -35,6 +36,73 @@
   const finished = $derived(counts.phases.filter((p) => p.state === 'done'));
   const phases = $derived(showFinished ? counts.phases : counts.phases.filter((p) => p.state !== 'done'));
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+  // Stats (T-253): archived tasks not loaded yet count from meta.archived
+  const stats = $derived(
+    projectStats(tasks, dashboard.meta, now, vocab, dashboard.archiveLoaded ? 0 : dashboard.archivedCount),
+  );
+  const hours = (msValue: number) => (msValue ? formatMinutes(msValue / 60_000) : '0 m');
+  const day = (t: number) =>
+    new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const span = (msValue: number) => {
+    const days = Math.round(msValue / 86_400_000);
+    return days >= 1 ? plural(days, 'day') : hours(msValue);
+  };
+  const numbers = $derived([
+    {
+      key: 'started',
+      value: stats.started === null ? '–' : day(stats.started),
+      label: 'started',
+      title: 'When the first task was created',
+    },
+    {
+      key: 'duration',
+      value: stats.duration ? span(stats.duration.to - stats.duration.from) : '–',
+      label: stats.duration?.ongoing ? 'so far' : 'duration',
+      title: stats.duration
+        ? `From the first task started (${day(stats.duration.from)}) to ${stats.duration.ongoing ? 'now: tasks are still open' : `the last one done (${day(stats.duration.to)})`}`
+        : 'No task has been started yet',
+    },
+    {
+      key: 'tasks',
+      value: String(stats.tasks.total),
+      label: 'tasks',
+      title: `${stats.tasks.done} done, ${stats.tasks.open} open, ${stats.tasks.skipped} skipped (archived tasks count as done)`,
+    },
+    {
+      key: 'phases',
+      value: String(stats.phases.total),
+      label: `phases · ${stats.phases.finished} finished`,
+      title: 'Phases with tasks, and how many of them are finished',
+    },
+    {
+      key: 'commits',
+      value: String(stats.taskCommits),
+      label: 'task commits',
+      title: 'One per task: the commit atm made when finishing it. Fix-ups and other commits are not counted',
+    },
+    {
+      key: 'prs',
+      value: stats.pullRequests === null ? '–' : String(stats.pullRequests),
+      label: 'pull requests',
+      title:
+        stats.pullRequests === null
+          ? 'This project pushes straight to its branch'
+          : 'Pull requests recorded on tasks (atm pr)',
+    },
+    {
+      key: 'agent-time',
+      value: hours(stats.agentMs),
+      label: 'agent time',
+      title: `Parallel agents add up: ${hours(stats.aloneMs)} on tasks agents did alone, ${hours(stats.withYouMs)} on interactive tasks with you`,
+    },
+    {
+      key: 'most',
+      value: String(stats.maxAgents),
+      label: 'most at once',
+      title: 'The most agents working at the same moment',
+    },
+  ]);
 </script>
 
 <div class="project-view" id="project">
@@ -149,6 +217,36 @@
           {/each}
         </dd>
       </dl>
+    </section>
+
+    <section class="project-card" id="project-stats" aria-labelledby="project-stats-title">
+      <h3 class="menu-label project-card-title">
+        <span id="project-stats-title">Stats</span>
+        <InfoTip label="the stats">
+          <p>
+            The whole project, archived tasks included. <strong>Agent time</strong> is the work time of every task, from its
+            start until it asked for a review or was done; agents working in parallel add up. Hover a number for how it is
+            counted.
+          </p>
+          <p>
+            <strong>Task commits</strong> and <strong>pull requests</strong> are those atm recorded on tasks: atm doesn't
+            read git history here.
+          </p>
+        </InfoTip>
+      </h3>
+      <div class="project-numbers">
+        {#each numbers as n (n.key)}
+          <div class="project-number" data-stat={n.key} title={n.title}>
+            <span class="kpi-value">{n.value}</span>
+            <span class="kpi-label">{n.label}</span>
+          </div>
+        {/each}
+      </div>
+      {#if stats.parallelism !== null}
+        <p class="project-parallelism" id="project-parallelism">
+          {stats.parallelism.toFixed(1)} agents working on average while any works
+        </p>
+      {/if}
     </section>
   </div>
 </div>

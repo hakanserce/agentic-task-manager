@@ -37,12 +37,15 @@ function shop(): TasksData {
       // Ana created three; two sessions did phase 0 (s2's until it asked for a review, which Ana approved)
       task('T-1', {
         created_by: 'Ana',
+        created_at: '2026-04-28T09:00:00Z',
         started_by: 'claude:s1',
         started_at: at('08:00'),
         completed_by: 'claude:s1',
         completed_at: at('08:30'),
         status: 'done',
         labels: ['ux'],
+        commit: 'abc1234',
+        pr: { number: 7 },
       }),
       task('T-2', {
         created_by: 'Ana',
@@ -119,6 +122,25 @@ test.describe('Project tab', () => {
       'P2 Medium (default) 3',
       'P3 Low 0',
     ]);
+  });
+
+  test('the stats: when, how much, and agent time (T-253)', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, shop(), { tab: 'project' });
+    const stat = (key: string) => page.locator(`#project-stats [data-stat="${key}"]`);
+    await expect(stat('started')).toHaveText('Apr 28, 2026 started');
+    // From the first start (08:00) to now, tasks still open
+    await expect(stat('duration')).toHaveText('2 h so far');
+    await expect(stat('tasks')).toHaveText('4 tasks');
+    await expect(stat('tasks')).toHaveAttribute('title', /^2 done, 2 open, 0 skipped/);
+    await expect(stat('phases')).toHaveText('2 phases · 1 finished');
+    await expect(stat('commits')).toHaveText('1 task commits');
+    await expect(stat('prs')).toHaveText('1 pull requests');
+    // s1 08:00–08:30 and s2 08:10–08:40 (to its review); Bo's own work isn't agent time
+    await expect(stat('agent-time')).toHaveText('1 h agent time');
+    await expect(stat('agent-time')).toHaveAttribute('title', /1 h on tasks agents did alone, 0 m on interactive/);
+    await expect(stat('most')).toHaveText('2 most at once');
+    // 60 m of agent time over 40 m with an agent at work
+    await expect(page.locator('#project-parallelism')).toHaveText('1.5 agents working on average while any works');
   });
 
   test('says how to set a repository and a workflow when there are none; ignores the filters', async ({

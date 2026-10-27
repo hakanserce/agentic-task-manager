@@ -3079,6 +3079,27 @@ svg.graph-minimap.hidden {
 .project-card h4 {
   margin-top: 16px;
 }
+.project-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Stats (T-253): the numbers in a grid, each with its label under it */
+.project-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 14px 16px;
+  margin-top: 12px;
+}
+.project-number {
+  display: flex;
+  flex-direction: column;
+}
+.project-parallelism {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
 .project-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

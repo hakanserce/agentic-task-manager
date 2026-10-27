@@ -57,6 +57,18 @@ async function openBoard(page: Page, tasksServer: TasksServer) {
   await expect(page.locator('#all-board')).toBeVisible();
 }
 
+/** Three busy projects: ten ready tasks each (the server's cap per project), a long To Do column */
+async function openBusyBoard(page: Page, tasksServer: TasksServer) {
+  await page.clock.setFixedTime(NOW);
+  for (const name of ['Alpha', 'Beta', 'Gamma']) {
+    const todo = Array.from({ length: 10 }, (_, i) => boardCard(`${name[0]}-${i + 1}`, `${name} task ${i + 1}`));
+    tasksServer.addProject(name.toLowerCase(), 'minimal', name, summary({ board: board({ todo }) }));
+  }
+  await openDashboard(page, tasksServer, 'standard');
+  await page.locator('#overview-tab-board').click();
+  await expect(page.locator('#all-board .board-card')).toHaveCount(30);
+}
+
 const column = (page: Page, id: string) => page.locator(`#all-board .kanban-column[data-status="${id}"]`);
 const ids = (page: Page, id: string) => column(page, id).locator('.board-card .kanban-card-id');
 
@@ -201,6 +213,70 @@ test.describe('All projects board', () => {
     await page.locator('.board-search .search-clear').click();
     await expect(page.locator('#all-board .board-card')).toHaveCount(9);
     await expect(column(page, 'todo').locator('.kanban-count')).toHaveText('13');
+  });
+
+  test('the page never scrolls on the board: columns reach the status bar and scroll inside (T-265)', async ({
+    page,
+    tasksServer,
+  }) => {
+    for (const height of [1600, 720]) {
+      await page.setViewportSize({ width: 1280, height });
+      await openBusyBoard(page, tasksServer);
+      // One scrollbar at most: the page is exactly the window's height
+      expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(height);
+      const todo = column(page, 'todo');
+      const footer = (await page.locator('footer').boundingBox())!;
+      const box = (await todo.boundingBox())!;
+      expect(footer.y - (box.y + box.height)).toBeGreaterThanOrEqual(0);
+      // (the overview page's own 24 px bottom padding, and the status bar's margin)
+      expect(footer.y - (box.y + box.height)).toBeLessThanOrEqual(48);
+      expect(await todo.locator('.kanban-cards').evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    }
+  });
+
+  test('a long column says how many cards are below and above; the wheel scrolls it, not the page (T-265)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openBusyBoard(page, tasksServer);
+    const todo = column(page, 'todo');
+    const cards = todo.locator('.kanban-cards');
+    // No scrollbar takes room
+    expect(await cards.evaluate((el) => (el as HTMLElement).offsetWidth - el.clientWidth)).toBe(0);
+    await expect(todo.locator('.kanban-more.top')).toHaveCount(0);
+    await expect(todo.locator('.kanban-more.bottom')).toHaveText(/^▼ \d+ more$/);
+    const box = (await cards.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 400);
+    await expect.poll(() => cards.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await expect(todo.locator('.kanban-more.top')).toHaveText(/^▲ \d+ more$/);
+    // A short column shows neither
+    await expect(column(page, 'done').locator('.kanban-more')).toHaveCount(0);
+  });
+
+  test('grouped by project, the lanes scroll as one and the page still does not (T-265)', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openBusyBoard(page, tasksServer);
+    await page.locator('#board-group-by-project').check();
+    await expect(page.locator('#all-board .board-lane')).toHaveCount(3);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(720);
+    const lanes = page.locator('#all-board');
+    expect(await lanes.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    // Columns are as long as their cards: nothing is cut off inside a lane
+    await expect(page.locator('.kanban-more')).toHaveCount(0);
+  });
+
+  test('the Projects tab still scrolls as a page', async ({ page, tasksServer }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    for (let i = 0; i < 12; i++) tasksServer.addProject(`p${i}`, 'minimal', `Project ${i}`, summary());
+    await page.clock.setFixedTime(NOW);
+    await openDashboard(page, tasksServer, 'standard');
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(720);
   });
 
   test('Active only applies to the board too', async ({ page, tasksServer }) => {

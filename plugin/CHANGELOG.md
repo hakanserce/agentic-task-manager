@@ -13,6 +13,9 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   which read as the period. It is now just *Activity*; the period label beside it names the period, and every chart
   heading names the period and its bar size (*Time per task* now names the period too). T-144 had fixed the chart
   headings only, and an e2e test pinned the wrong heading.
+- **All projects board:** the page no longer scrolls on the Board tab: the board takes the window's height and each
+  column scrolls on its own with *▲ N more* / *▼ N more* hints, like a project's Kanban (T-262). Grouped by project,
+  the lanes scroll as one.
 
 ### Changed
 - **Repository:** `github.com/solo-swe/agentic-task-manager` (GitHub redirects the old address). `plugin.json`'s

@@ -10035,7 +10035,7 @@
       "description": "Why the bug slipped: `widgets.spec.ts` asserts `toContainText('Activity per hour')` on *All time*, which pinned the bar size as if it were right, and nothing checked the headings per period.\n\n## Tests\nIn `dashboard/tests/e2e/widgets.spec.ts`, for each preset (Hour, Day, Week, Month, All, Custom, and one step back with ‹):\n- the heading is *Activity* and the period label names the chosen period;\n- the chart headings name that period and its own bar size (hour → per 5 minutes, day → per hour, week and month → per day, all time → the automatic size).\n\nReplace the `'Activity per hour'` assertion. Update the Activity screenshots (darwin, delete the matching `-linux.png`).",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-263"
       ],
@@ -10044,11 +10044,22 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T07:21:15Z",
+      "updated_at": "2026-10-27T07:22:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:21:15Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "b0ce3cc0eeb61800e16440ee9229dbf14b9c5309",
+      "completed_at": "2026-10-27T07:22:23Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:22:23Z",
+          "kind": "outcome",
+          "text": "One e2e test walks every preset (Hour, Day, Week, Month, All), a step back and Custom: the heading is *Activity* with no *per*, the period label names the period, and all three charts name the period and its own bar size. The screenshots were updated with T-263.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-265",
@@ -10064,7 +10075,7 @@
       "description": "Apply the project Kanban's scroll fix (T-262) to the All projects board (`AllProjectsBoard.svelte`): the page doesn't scroll on the Board tab; the board takes the height down to the status bar (the same flex chain as `.kanban`), each column scrolls on its own with `KanbanScroll`'s *▲ N more* / *▼ N more* hints instead of a scrollbar, and the wheel and trackpad still scroll. Grouped by project, the lanes scroll as one area, like *Group by phase*. Today `.all-board .kanban-column { max-height: none }` lets the page grow.\n\n## Tests\ne2e like `kanban.spec.ts`'s T-262 checks: the page is exactly the window's height at 1600 and 720 px with many cards; a long column shows the hints; grouped mode doesn't scroll the page. Screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/AllProjectsBoard.svelte",
@@ -10073,9 +10084,11 @@
         "dashboard/tests/e2e/all-projects-board.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T07:22:24Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:22:24Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-266",

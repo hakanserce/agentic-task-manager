@@ -29,7 +29,8 @@
   }
 </script>
 
-<section class="projects-overview" id="projects-overview">
+<!-- On the board, the page doesn't scroll: the board takes the window's height and its columns scroll (T-265) -->
+<section class="projects-overview" class:on-board={tab === 'board'} id="projects-overview">
   <div class="view-tabs overview-tabs" role="tablist" aria-label="All projects">
     {#each OVERVIEW_TABS as id (id)}
       <button

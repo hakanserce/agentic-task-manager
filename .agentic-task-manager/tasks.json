@@ -7638,7 +7638,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:22:10Z",
@@ -7657,7 +7657,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-211",
@@ -7678,7 +7679,7 @@
         "docs/security-review.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "commit": "571b233d2113cd55d5f62fef45d2937e220541e9",
@@ -7702,7 +7703,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-212",
@@ -7725,7 +7727,7 @@
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T20:45:08Z",
@@ -7744,7 +7746,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-213",
@@ -7769,7 +7772,7 @@
         "dashboard/src/components/ActivityDeepDive.svelte"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:09:27Z",
@@ -7788,7 +7791,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-214",
@@ -7810,7 +7814,7 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:38Z",
@@ -7829,7 +7833,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-215",
@@ -7852,7 +7857,7 @@
         "docs/all-projects-kanban-proposal.md"
       ],
       "created_at": "2026-10-26T16:07:30Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:41:59Z",
@@ -7871,7 +7876,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-216",
@@ -7893,7 +7899,7 @@
         "docs/project-stats-proposal.md"
       ],
       "created_at": "2026-10-26T19:13:32Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:28:43Z",
@@ -7911,7 +7917,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-217",
@@ -7933,7 +7940,7 @@
         "dashboard/tests/unit/AboutDialog.component.test.ts"
       ],
       "created_at": "2026-10-26T19:14:58Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:26:23Z",
@@ -7952,7 +7959,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-218",
@@ -7976,7 +7984,7 @@
         "plugin/skills/loop-tasks/SKILL.md"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:32:06Z",
@@ -7995,7 +8003,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-219",
@@ -8018,7 +8027,7 @@
         "dashboard/tests/unit/markdown.test.ts"
       ],
       "created_at": "2026-10-26T19:19:57Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T19:29:06Z",
@@ -8037,7 +8046,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-220",
@@ -8062,7 +8072,7 @@
         "plugin/skills/serve/SKILL.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:11:42Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:10:03Z",
@@ -8077,7 +8087,11 @@
           "text": "Each skill pre-approves only the `atm` subcommands it uses (`Bash(atm <cmd>:*)`), never `atm run`; do-task and loop-tasks say `atm run` gets the command's own permission check. `tests/unit/skills.test.ts` enforces it. The manual check (a prompt for `atm run -- touch`) needs the released plugin.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-221",
@@ -8102,7 +8116,7 @@
         "plugin/CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:12:59Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:11:43Z",
@@ -8117,7 +8131,11 @@
           "text": "Task text is data: rule in do-task (Step 5), loop-tasks (rule 7) and `plugin/CLAUDE.md`; create-tasks treats sources as data and shows the drafted tasks; push treats logs as evidence. `skills.test.ts` guards the wording. The red-team run is for the agent sandbox (T-235).",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-222",
@@ -8143,7 +8161,7 @@
         "plugin/skills/push/SKILL.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:17:30Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:12:59Z",
@@ -8158,7 +8176,11 @@
           "text": "Skill templates single-quote agent text (`--note`, `--question`, `--answer`, `--reason`, `--title`, `--agent`), with a note on apostrophes; `skills.test.ts` forbids double quotes there. atm refuses task IDs and `meta.workflow.base` with shell characters (load, `atm check`, `atm workflow set`); `scenarios/security.json`.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-223",
@@ -8180,7 +8202,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:20:30Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:17:31Z",
@@ -8195,7 +8217,11 @@
           "text": "Every git call in `atm commit` that takes paths runs with `--literal-pathspecs`: `--file *.env` is refused (no such file) and stages nothing; `src/[id]/page.ts` commits as named. Test in `git.test.mjs`.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-224",
@@ -8221,7 +8247,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:23:57Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:20:31Z",
@@ -8236,7 +8262,11 @@
           "text": "atm refuses a task folder that is a symlink or leads outside the project, and symlinked `tasks.json`, `tasks-archive.json`, `.gitignore` or `.gitattributes` (`paths.check_task_folder`, so every command). The server serves only regular, unlinked files from the task folder (`served_file`). Tests: `symlinks.test.mjs`, `serve.test.mjs`.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-225",
@@ -8262,7 +8292,7 @@
         "atm-cli/atm/query.py"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:28:23Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:23:57Z",
@@ -8277,7 +8307,11 @@
           "text": "One `safeUrl()` (`src/lib/url.ts`, http(s) only) for every link from task data: PR links in Kanban sections, on project cards, recorded PRs and the repository address. `atm pr --url` refuses anything but http(s); the summary drops such URLs. Unit, component and scenario tests. The manual check of whether `javascript:` runs in a new tab is moot now.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-226",
@@ -8301,7 +8335,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:38:44Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:28:23Z",
@@ -8316,7 +8350,11 @@
           "text": "atm serve sends a hash-based CSP with the page (`page_csp`: own inline scripts only, `connect-src self`, `frame-ancestors none`) and `nosniff` + CORP on every response. The e2e server sends the same (`tests/e2e/csp.mjs`), and a `cspGuard` fixture fails any test with a CSP violation: the whole suite passes under it. The dev server sends a matching policy.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-227",
@@ -8340,7 +8378,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:46:14Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:39:41Z",
@@ -8355,7 +8393,11 @@
           "text": "F10 confirmed (curl, urllib and Chromium all reach a `[::1]` listener first). Instead of changing the origin, the server listens on `[::1]` too, and moves on when that is taken, so saved views keep working. Also: unreadable JSON is unreadable, not a crash; one bad project is listed as missing; 500 instead of a dead handler; 30 s timeout; 100 MB cap; unique, valid project ids; `ATM_HOME` created 0700.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-228",
@@ -8382,7 +8424,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:56:22Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:46:15Z",
@@ -8397,7 +8439,11 @@
           "text": "Hostile task files get clean errors: shape checks on load, a catch-all in `main`, iterative `find_cycle` (3000-task chain), a linear `split_id` instead of the backtracking ID regex, the lock broken by rename-then-check, and a committed legacy `.server.json` deleted without contacting its port or pid. `hostile.test.mjs`; the lock race itself has no test (it needs three processes timed to the millisecond).",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-229",
@@ -8419,7 +8465,7 @@
         "plugin/skills/push/SKILL.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:57:45Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:56:58Z",
@@ -8434,7 +8480,11 @@
           "text": "loop-tasks asks once before pushing in a `direct` project (the commits waiting, push / no push / stop; `--yes` skips it), and stops the loop when a git hook rejects a commit, never bypassing it. push lists the commits a direct push sends. Wording guarded in `skills.test.ts`.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-230",
@@ -8457,7 +8507,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:59:55Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:57:46Z",
@@ -8472,7 +8522,11 @@
           "text": "CI: `permissions: contents: read`, `persist-credentials: false`, actions pinned by commit SHA and images by digest, the baselines artifact holds only `*-linux.png`; Dependabot for actions and npm; `CLAUDE.md` says check the run before using its baselines and `npm ci`. Guarded by `ci-workflow.test.ts`. CI itself runs with the phase push.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-231",
@@ -8494,7 +8548,7 @@
         "SECURITY.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-27T00:38:00Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8527,7 +8581,11 @@
       "started_at": "2026-10-27T00:37:59Z",
       "started_by": "claude:e5ea9db0",
       "completed_at": "2026-10-27T00:38:00Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-232",
@@ -8549,7 +8607,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:52:09Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8576,7 +8634,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "867504e5c7e3c05e47f8565ff2a7e3e065ec0338",
       "completed_at": "2026-10-26T22:52:09Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-233",
@@ -8599,7 +8661,7 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T22:58:23Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8626,7 +8688,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "68857e080a0808f35c14955d9c2cc6a90ad3deef",
       "completed_at": "2026-10-26T22:58:23Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-234",
@@ -8650,7 +8716,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:00:52Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T22:59:56Z",
@@ -8665,7 +8731,11 @@
           "text": "Level 1 is the existing `tests/scripts` suites (symlinks, hostile, security scenarios, git, serve), each project built in a temp folder with its own `ATM_HOME`. Added `security-invariants.test.ts`: static checks for I5 (no shell/eval in atm-cli) and I15 (`{@html}` only in Icon and Logo), and that every test the invariants table names exists. No separate helper: the suites already isolate each case.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-235",
@@ -8689,7 +8759,7 @@
         "tests/sandbox/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:04:29Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:01:37Z",
@@ -8704,7 +8774,11 @@
           "text": "Agent sandbox in `tests/sandbox/`: a Docker image with this checkouts plugin, a seeded project with six red-team tasks and canary secrets, network only to the model API through a logging proxy; `run.mjs` runs `/atm:loop-tasks` and judges each task. The verdict is tested (`sandbox-verdict.test.mjs`); the full run needs Docker and an API key and has not been run yet.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-236",
@@ -8730,7 +8804,7 @@
         ".github/workflows/"
       ],
       "created_at": "2026-10-26T20:44:53Z",
-      "updated_at": "2026-10-26T23:12:33Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -8757,7 +8831,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "3e7c8c4447fec078248cd10aa27cd574c54e085f",
       "completed_at": "2026-10-26T23:12:33Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-237",
@@ -8779,7 +8857,7 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-26T20:46:34Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:05:29Z",
@@ -8798,7 +8876,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-238",
@@ -8821,7 +8900,7 @@
         "dashboard/src/components/UtilizationPanel.svelte"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:08:27Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:05:28Z",
@@ -8836,7 +8915,11 @@
           "text": "The header Progress widget counts archived tasks as done: from `meta.archived` without loading the archive (a skipped one among them counts until the archive loads), exactly once the popover loads it; tooltip says *(N archived, done)*. Utilisation uses the history like the burndown. Unit and e2e tests for the widget; the utilisation change has no test of its own (it only swaps its inputs).",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-239",
@@ -8861,7 +8944,7 @@
         "dashboard/src/lib/forecast.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:12:15Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:08:28Z",
@@ -8876,7 +8959,11 @@
           "text": "Progress tab: a banner whenever search or filters pick a slice (*Showing N of M tasks: …*, Clear filters); the status and stage filters dont apply here and the banner says so; the slice keeps its counts and lines but each phases *Finished by* is the whole phases (`withWholePhaseEstimates`), with a tooltip. Unit and e2e tests; two older tests updated to the approved behaviour.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-240",
@@ -8903,7 +8990,7 @@
         "dashboard/src/lib/forecast.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:18:48Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:13:03Z",
@@ -8918,7 +9005,11 @@
           "text": "Burndown: *Burndown · all phases* title with an ⓘ (`InfoTip`, new) explaining scope, remaining, the forecast and its one-agent assumption; a time range (since the first unfinished or focused phase started by default, 14 days, all time; saved); the forecasts end says what waits on people; an empty state without times. The pace leaves out `interactive` tasks; its basis is one line. Unit and e2e tests; Progress screenshots updated.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-241",
@@ -8942,7 +9033,7 @@
         "dashboard/src/components/ProgressTab.svelte"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:22:01Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:18:49Z",
@@ -8957,7 +9048,11 @@
           "text": "Phase table: finished phases fold into one row (*✓ Phases 0, 3 · 5 tasks · last finished …*) when there are two or more, and open on a click; no State column, not-started rows muted; *Finished by* shows the calendar time first, then the agent work (*including earlier phases* after the first); phase names; an ⓘ and a click hint. The tabs *Active phases only* is gone; the header popover keeps its own until T-243.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-242",
@@ -8982,7 +9077,7 @@
         "dashboard/src/lib/utilization.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-27T00:08:26Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:05:45Z",
@@ -8997,7 +9092,11 @@
           "text": "The Progress tab shows the Where the time went bar (`TimeSplitBar`, `timeuse.ts`) for the burndown range; the utilisation panel, `utilization.ts` and the per-session table are gone. The three numbers are unit-tested in `timeuse.test.ts` (T-245).",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-243",
@@ -9021,7 +9120,7 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:50:34Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:22:02Z",
@@ -9036,7 +9135,11 @@
           "text": "Popover: rings for unfinished phases, finished phases as merged chips that open the Progress tab, types as one stacked bar, a Go to section and clickable statuses; Active phases only removed. Unused CSS dropped to stay under the 320 KiB budget (160 bytes left).",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-244",
@@ -9060,7 +9163,7 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:02:45Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:55:14Z",
@@ -9075,7 +9178,11 @@
           "text": "Leaving a blocked status appends `{from, to, on}` to `blocks`; leaving review (done or reject) appends `{from, to}` to `reviews`. The merge driver unions both by `from`. Documented in `docs/v4/data-model.md` and `types.ts`.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-245",
@@ -9101,7 +9208,7 @@
         "dashboard/tests/unit/timeuse.test.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:05:34Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:02:48Z",
@@ -9116,7 +9223,11 @@
           "text": "`timeuse.ts` (`timeUse`, `waitingIntervals`, `split` per bucket) and `TimeSplitBar.svelte`, not yet placed (T-242, T-246). Short pauses count as working so the bar adds to 100%. Waiting on you uses the review yellow, idle the same hue hatched: worth a look when it lands in a view.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-246",
@@ -9142,7 +9253,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:13:32Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:08:28Z",
@@ -9157,7 +9268,11 @@
           "text": "Three cards: tasks done; time per task as two medians (agents alone, with you = `interactive`); Where the time went (`TimeSplitBar`) with \"N working now\" from the claims for a period up to now. Completion rate and agents busy on average dropped. All time now runs to now in `timeUse`, like the charts.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-247",
@@ -9182,7 +9297,7 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:16:56Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:13:33Z",
@@ -9197,7 +9312,11 @@
           "text": "The chart is \"Who was working\": agents and people per bucket (`byKind`, unattributed capped and counted as agents), waiting-on-you bands and idle hatching from `timeUse` so it matches the bar, per-session detail and the waiting time in the tooltip, an ⓘ on the title.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-248",
@@ -9221,7 +9340,7 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:19:33Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:16:57Z",
@@ -9236,7 +9355,11 @@
           "text": "Scale capped at the nearest-rank 90th percentile (`cycleScaleMax`; with under 10 tasks that is the slowest, so no outliers); slower tasks are triangles on the top edge; `interactive` tasks hollow with a dashed with-you median beside the solid agents-alone one; a click or Enter opens the task; ⓘ on the title.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-249",
@@ -9261,7 +9384,7 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T04:54:20Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T04:49:35Z",
@@ -9276,7 +9399,11 @@
           "text": "Sparkline: the current, unfinished bucket drawn lighter; the tooltip says what the line is and what the current bucket has so far (`sparklineTitle`). An ⓘ on the popup heading (filters don't apply; the shared definitions) and on *Tasks completed, by type*. Dropped `cumulativeDone`, `scope` and `wip` from the buckets.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-250",
@@ -9300,7 +9427,7 @@
         "dashboard/tests/e2e/filters.spec.ts"
       ],
       "created_at": "2026-10-26T21:31:20Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:31:26Z",
@@ -9319,7 +9446,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-251",
@@ -9342,7 +9470,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T00:25:33Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:19:34Z",
@@ -9357,7 +9485,11 @@
           "text": "Tabs: Kanban, List, Graph | Progress, Agents with a divider; the Kanban is the default (`DEFAULT_VIEW`, `defaultView()`); saved views and `#view=graph` still open the graph. Graph specs pass the tab explicitly; 50 darwin baselines regenerated, their Linux ones removed (CI will regenerate). The 3 List baselines that failed only on this Mac now match.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-252",
@@ -9382,7 +9514,7 @@
         "dashboard/src/App.svelte"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T00:32:01Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:25:34Z",
@@ -9397,7 +9529,11 @@
           "text": "Project tab (last, after the divider): name, logo, description, and Information: repository, workflow, people, agents in one line, and the vocabulary with counts (`projectinfo.ts`). From the history, filters ignored. Finished tasks without `completed_by` (before v4) count as their agent's. The Stats column comes with T-253.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-253",
@@ -9423,7 +9559,7 @@
         "dashboard/tests/unit/projectstats.test.ts"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T00:38:44Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:32:02Z",
@@ -9438,7 +9574,11 @@
           "text": "Stats card (`projectstats.ts`): started, duration (so far while open), tasks (archived counted as done), phases, task commits, pull requests (– for direct), agent time with alone/with-you tooltip, most at once, average parallelism. Agent time counts agent-started tasks only, matching the Agents line.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-254",
@@ -9462,7 +9602,7 @@
         "dashboard/src/lib/projectstats.ts"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T00:42:10Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:38:45Z",
@@ -9477,7 +9617,11 @@
           "text": "Histogram in the Stats card (`TaskTimeHistogram.svelte`, `timeHistogram` in `projectstats.ts`): 11 widening bins, agents alone solid under with-you hatched (one hue), median ▲/△ under the axis, a tooltip per bin with its first five tasks, the five slowest as links; caveats and min/max/average in the ⓘ.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-255",
@@ -9502,7 +9646,7 @@
         "atm-cli/atm/query.py"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T05:03:52Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T04:54:23Z",
@@ -9517,7 +9661,11 @@
           "text": "About: statuses, phases and types only, and a *Project details* link that opens the Project tab. Overview cards: one line, *started 12 Aug · 236 tasks · 74 h agent time*, from a new `stats` summary field (`query.py`: archive included, agent time as the Project tab counts it). The dev server sends no summaries, so nothing to add there.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-256",
@@ -9540,7 +9688,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:48:16Z",
-      "updated_at": "2026-10-26T21:58:11Z",
+      "updated_at": "2026-10-27T05:46:00Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T21:48:20Z",
@@ -9559,7 +9707,8 @@
       "pr": {
         "number": 15,
         "url": "https://github.com/hakanserce/agentic-task-manager/pull/15"
-      }
+      },
+      "merged_at": "2026-10-26T22:07:25Z"
     },
     {
       "id": "T-257",
@@ -9584,7 +9733,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T00:47:10Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:42:11Z",
@@ -9599,7 +9748,11 @@
           "text": "`board` in each project summary (`query.py`): todo (ready in the first unfinished phase, 10), active/review/blocked (30 each, in the agreed orders), done (last 24 h, 30), each `{count, cards}` with the Kanban card fields. Documented in `multi-project-api.md` §3.3 and B4 of the security doc. The Vite dev server sends no summaries at all, so nothing was added there.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-258",
@@ -9624,7 +9777,7 @@
         "tests/scripts/"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T00:52:07Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:47:11Z",
@@ -9639,7 +9792,11 @@
           "text": "`GET api/search?q=` (`server.py` `api_search`, and the Vite dev server): per project the task IDs where every word appears in ID, name, description, type, labels, notes or the project name; query capped at 200 characters, 200 IDs a project; read-only with the usual Host check. Documented in `multi-project-api.md` §2.4 and I11.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-259",
@@ -9665,7 +9822,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T04:49:32Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -9686,7 +9843,11 @@
       "started_by": "claude:e5ea9db0",
       "commit": "3a1cf38b5b9ebab30b13681fbbc6d24c3d22eba6",
       "completed_at": "2026-10-27T04:49:32Z",
-      "completed_by": "claude:e5ea9db0"
+      "completed_by": "claude:e5ea9db0",
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-260",
@@ -9710,7 +9871,7 @@
         "dashboard/src/components/AllProjectsBoard.svelte"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T05:06:27Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T05:03:52Z",
@@ -9725,7 +9886,11 @@
           "text": "*Group by project* on the Board tab (remembered per browser): a lane per project with the five columns, the most recently active first; a project with nothing on the board gets no lane; the lane's name opens the project; cards in a lane drop the project chip.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-261",
@@ -9752,7 +9917,7 @@
         "dashboard/tests/e2e/helpers.ts"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T05:10:53Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T05:06:27Z",
@@ -9767,7 +9932,11 @@
           "text": "A search box on the Board tab (remembered per browser): asks `api/search` once per pause in typing (300 ms), and again only when the board's cards change; the board keeps its cards among the results, the columns say *N of M*, no *+ N more* while searching; clearing restores it. The e2e tasks server plays `api/search`.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     },
     {
       "id": "T-262",
@@ -9791,7 +9960,7 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-27T00:52:28Z",
-      "updated_at": "2026-10-27T00:57:17Z",
+      "updated_at": "2026-10-27T05:45:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:52:32Z",
@@ -9806,7 +9975,11 @@
           "text": "The Kanban fills the panel with a flex chain (like the graph) instead of a measured height, so the page never scrolls; each column scrolls inside with its scrollbar hidden and \"▲/▼ N more\" hints over a fade (`KanbanScroll.svelte`), a click on a hint scrolls a page. Grouped by phase, the lanes area scrolls as one. e2e checks the page height at 1600 and 720 px.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 16,
+        "url": "https://github.com/hakanserce/agentic-task-manager/pull/16"
+      }
     }
   ]
 }

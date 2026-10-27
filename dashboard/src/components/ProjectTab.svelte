@@ -27,7 +27,6 @@
     name: dashboard.projectName,
     logo: dashboard.projects.find((p) => p.id === dashboard.projectId)?.logo,
   });
-  const description = $derived(typeof dashboard.meta?.description === 'string' ? dashboard.meta.description : '');
   const repository = $derived(repositoryOf(dashboard.meta));
   const workflow = $derived(workflowOf(dashboard.meta));
   const who = $derived(actors(tasks, now, vocab));
@@ -107,20 +106,18 @@
 </script>
 
 <div class="project-view" id="project">
+  <!-- The logo and the name; no description line under it (T-267) -->
   <header class="project-head">
     <ProjectLogo {project} size={40} />
-    <div>
-      <h2 class="project-title">
-        <span id="project-name">{project.name}</span>
-        <InfoTip label="the Project tab" id="project-info-tip">
-          <p>
-            The whole project: every task, archived ones too. The search and filters don't apply here, as they do on the
-            other tabs.
-          </p>
-        </InfoTip>
-      </h2>
-      {#if description}<p class="project-description" id="project-description">{description}</p>{/if}
-    </div>
+    <h2 class="project-title">
+      <span id="project-name">{project.name}</span>
+      <InfoTip label="the Project tab" id="project-info-tip">
+        <p>
+          The whole project: every task, archived ones too. The search and filters don't apply here, as they do on the
+          other tabs.
+        </p>
+      </InfoTip>
+    </h2>
   </header>
 
   <div class="project-columns">

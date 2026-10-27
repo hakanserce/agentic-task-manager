@@ -10114,18 +10114,29 @@
       "description": "The All projects page's *Board* tab becomes **Omniboard** (the label only; the `#view=board` link and the saved preference stay). Add an ⓘ (`InfoTip`) by the board's toolbar saying what it shows (what is ready, at work, waiting and done lately, across projects) and that each project's full details are on its own Kanban board (a card or *+ N more* opens it).\n\n## Tests\nUpdate `all-projects-board.spec.ts` and the screenshots; e2e for the ⓘ text.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProjectsOverview.svelte",
         "dashboard/tests/e2e/all-projects-board.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T07:25:00Z",
+      "updated_at": "2026-10-27T07:26:24Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:25:00Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "09886cf13140a89f51ae788eced0fdc8d2432872",
+      "completed_at": "2026-10-27T07:26:24Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:26:24Z",
+          "kind": "outcome",
+          "text": "The tab reads *Omniboard* (id `board`, so links and the saved tab still work); an ⓘ by the search says what it shows and that each project’s details are on its own Kanban. e2e for the label and the ⓘ; screenshots updated.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-267",
@@ -10140,7 +10151,7 @@
       "description": "Drop the line under the project's name next to the logo in the Project tab's header (`#project-description`, `meta.description` in `ProjectTab.svelte`): it adds nothing there. The header keeps the logo, the name and its ⓘ. Remove its CSS and update the tests and screenshots that expect it.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/components/ProjectTab.svelte",
@@ -10148,9 +10159,11 @@
         "dashboard/tests/e2e/project.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T07:26:25Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T07:26:25Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-268",

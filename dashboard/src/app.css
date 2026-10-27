@@ -3133,7 +3133,7 @@ svg.graph-minimap.hidden {
   max-width: 640px;
 }
 
-/* Project tab (T-252): the name and description, then Information and Stats side by side, stacked when narrow */
+/* Project tab (T-252): the logo and name, then Information and Stats side by side, stacked when narrow */
 .project-view {
   padding: 4px 4px 12px;
 }
@@ -3149,7 +3149,6 @@ svg.graph-minimap.hidden {
   gap: 8px;
   font-size: 20px;
 }
-.project-description,
 .project-view .muted {
   color: var(--text-muted);
 }

@@ -20,6 +20,7 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
 ### Changed
 - **Omniboard:** the All projects page's *Board* tab is called *Omniboard* (`#view=board` links and the remembered
   tab still work), with an ⓘ on what it shows and that each project's details are on its own Kanban.
+- **Project tab:** the header is the logo and the name, without `meta.description` under it.
 - **Repository:** `github.com/solo-swe/agentic-task-manager` (GitHub redirects the old address). `plugin.json`'s
   `homepage` and `repository`, the dashboard's GitHub and Source links, the README and the docs point there.
 - **Marketplace renamed** from `hakanserce-plugins` to `solo-swe-plugins`: the plugin installs as

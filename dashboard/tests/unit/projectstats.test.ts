@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { projectStats } from '../../src/lib/projectstats';
+import { projectStats, timeHistogram } from '../../src/lib/projectstats';
 import type { Task } from '../../src/lib/types';
 
 // Times in minutes from T0
@@ -82,5 +82,66 @@ describe('projectStats (T-253)', () => {
   it('nothing started: no duration, no agent time, no parallelism', () => {
     const s3 = projectStats([task('X', {})], undefined, NOW);
     expect([s3.started, s3.duration, s3.agentMs, s3.maxAgents, s3.parallelism]).toEqual([null, null, 0, 0, null]);
+  });
+});
+
+describe('timeHistogram (T-254)', () => {
+  // Done tasks of 3, 7, 12, 50 m and 5 h alone, 90 m and 25 m with you (90 m until its review); an open and an
+  // unstarted task are left out
+  const done = (id: string, minutes: number, fields: Partial<Task> = {}) =>
+    task(id, { started_at: at(0), completed_at: at(minutes), status: 'done', ...fields });
+  const h = timeHistogram([
+    done('a', 3),
+    done('b', 7),
+    done('c', 12),
+    done('d', 50),
+    done('e', 300),
+    done('f', 120, { review_requested_at: at(90), labels: ['interactive'] }),
+    done('g', 25, { labels: ['interactive'] }),
+    task('open', { started_at: at(0) }),
+    task('nostart', { status: 'done', completed_at: at(5) }),
+  ]);
+  const ids = (list: { id: string }[]) => list.map((t) => t.id);
+
+  it('bins that widen with time, the last open-ended', () => {
+    expect(h.bins.map((b) => b.label)).toEqual([
+      '0 m–5 m',
+      '5 m–10 m',
+      '10 m–20 m',
+      '20 m–30 m',
+      '30 m–45 m',
+      '45 m–1 h',
+      '1 h–1.5 h',
+      '1.5 h–2 h',
+      '2 h–3 h',
+      '3 h–4 h',
+      '4 h+',
+    ]);
+    expect(h.bins.map((b) => [ids(b.alone), ids(b.withYou)])).toEqual([
+      [['a'], []],
+      [['b'], []],
+      [['c'], []],
+      [[], ['g']],
+      [[], []],
+      [['d'], []],
+      [[], []],
+      // 90 m exactly: the bin it starts
+      [[], ['f']],
+      [[], []],
+      [[], []],
+      [['e'], []],
+    ]);
+  });
+
+  it('a median per kind, min, max and average, and the five slowest', () => {
+    expect([h.medianAlone, h.medianWithYou]).toEqual([12, 57.5]);
+    expect([h.min, h.max, h.average]).toEqual([3, 300, (3 + 7 + 12 + 50 + 300 + 90 + 25) / 7]);
+    expect(ids(h.slowest)).toEqual(['e', 'f', 'd', 'g', 'c']);
+  });
+
+  it('no timed tasks: empty bins and no numbers', () => {
+    const empty = timeHistogram([task('x', {})]);
+    expect(empty.bins.every((b) => !b.alone.length && !b.withYou.length)).toBe(true);
+    expect([empty.medianAlone, empty.min, empty.average, empty.slowest]).toEqual([null, null, null, []]);
   });
 });

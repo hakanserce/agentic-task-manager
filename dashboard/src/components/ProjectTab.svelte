@@ -1,11 +1,12 @@
 <script lang="ts">
   import { formatMinutes } from '../lib/format';
   import { actors, vocabCounts, workflowOf } from '../lib/projectinfo';
-  import { projectStats } from '../lib/projectstats';
+  import { projectStats, timeHistogram } from '../lib/projectstats';
   import { repositoryOf } from '../lib/repo';
   import { dashboard } from '../lib/state.svelte';
   import InfoTip from './InfoTip.svelte';
   import ProjectLogo from './ProjectLogo.svelte';
+  import TaskTimeHistogram from './TaskTimeHistogram.svelte';
 
   // The project as a whole (docs/project-stats-proposal.md, T-252): who worked on it, how it pushes, and its
   // vocabularies, Information on the left; Stats on the right (T-253). From the history, archived tasks too, and
@@ -247,6 +248,7 @@
           {stats.parallelism.toFixed(1)} agents working on average while any works
         </p>
       {/if}
+      <TaskTimeHistogram histogram={timeHistogram(tasks, vocab)} />
     </section>
   </div>
 </div>

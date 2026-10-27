@@ -3100,6 +3100,55 @@ svg.graph-minimap.hidden {
   font-size: 13px;
   color: var(--text-muted);
 }
+/* Time per task (T-254): one hue, agents alone solid, with you hatched like the bars */
+.time-histogram {
+  margin-top: 18px;
+}
+.time-histogram-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 6px;
+}
+.time-histogram-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.hist-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  border-radius: 2px;
+}
+.hist-swatch.alone {
+  background: var(--accent);
+}
+.hist-swatch.with-you {
+  border: 1px solid var(--accent);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent) 0 2px,
+    color-mix(in srgb, var(--accent) 18%, transparent) 2px 4px
+  );
+}
+.hist-bin:hover rect:first-of-type {
+  fill: color-mix(in srgb, var(--text) 6%, transparent);
+}
+.time-histogram-slowest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-size: 12px;
+}
 .project-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

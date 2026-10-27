@@ -143,6 +143,29 @@ test.describe('Project tab', () => {
     await expect(page.locator('#project-parallelism')).toHaveText('1.5 agents working on average while any works');
   });
 
+  test('time per task: stacked bars, a tooltip per bin, the slowest tasks open (T-254)', async ({
+    page,
+    tasksServer,
+  }) => {
+    // T-1 30 m alone and T-2 30 m with you (until its review): both in the 30–45 m bin
+    const data = shop();
+    data.tasks[1].labels = ['interactive'];
+    await openDashboard(page, tasksServer, data, { tab: 'project' });
+    const chart = page.locator('#time-histogram');
+    await expect(chart.locator('.hist-bar.alone')).toHaveCount(1);
+    await expect(chart.locator('.hist-bar.with-you')).toHaveCount(1);
+    await expect(chart.locator('.hist-bin[data-from="30"] title')).toHaveText(
+      '30 m–45 m: 1 alone, 1 with you\nT-1 Task T-1 (30 m)\nT-2 Task T-2 (30 m)',
+    );
+    await expect(chart.locator('.hist-median')).toHaveCount(2);
+    await expect(chart.locator('.time-histogram-legend')).toContainText('agents alone · median 30 m');
+
+    await expect(page.locator('#time-histogram-slowest button')).toHaveText(['T-1 30 m', 'T-2 30 m']);
+    await page.locator('#time-histogram-slowest button[data-id="T-2"]').click();
+    await expect(page.locator('#detail-overlay')).toHaveClass(/open/);
+    await expect(page.locator('#detail-overlay')).toContainText('T-2');
+  });
+
   test('says how to set a repository and a workflow when there are none; ignores the filters', async ({
     page,
     tasksServer,

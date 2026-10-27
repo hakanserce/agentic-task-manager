@@ -9399,7 +9399,7 @@
       "description": "`docs/project-stats-proposal.md` §4 (approved).\n\n`src/lib/projectstats.ts` on the history, reusing `timeuse.ts` (T-245) and `work.ts`, and the Stats block with an ⓘ:\n- **Started** (earliest `created_at` or `meta.created`), **duration** (earliest start → latest completion, *ongoing* while tasks are open), **tasks** (done / open / skipped in the tooltip, `meta.archived` counted), **phases** (*N finished*);\n- **Task commits** (tasks with a `commit`; tooltip: one per task, the commit atm made when finishing it), **pull requests** (distinct `pr.number`; *–* for direct-workflow projects);\n- **Agent time** (parallel agents add up; tooltip splits alone / with you), **most at once**, **average parallelism** (agent time ÷ time with at least one agent working).\n\n## Verify\n\nUnit tests per stat, including missing timestamps and archived tasks; e2e for the block.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-252",
         "T-245"
@@ -9410,11 +9410,22 @@
         "dashboard/tests/unit/projectstats.test.ts"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-27T00:32:02Z",
+      "updated_at": "2026-10-27T00:38:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:32:02Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "acf1c16ab25183efe58e83a3393b550c733259bd",
+      "completed_at": "2026-10-27T00:38:44Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:38:44Z",
+          "kind": "outcome",
+          "text": "Stats card (`projectstats.ts`): started, duration (so far while open), tasks (archived counted as done), phases, task commits, pull requests (– for direct), agent time with alone/with-you tooltip, most at once, average parallelism. Agent time counts agent-started tasks only, matching the Agents line.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-254",
@@ -9429,7 +9440,7 @@
       "description": "`docs/project-stats-proposal.md` §4.1 (approved).\n\n- A histogram of all timed tasks, bins 0–5 m, 5–10 m, 10–20 m, 20–30 m, 30–45 m, 45 m–1 h, 1–1.5 h, 1.5–2 h, 2–3 h, 3–4 h, 4 h+; each bar stacked *agents alone* (solid) and *with you* (hatched, `interactive`), the same colours as the Activity popup (T-246).\n- A median marker per kind on the axis; min, max and average in the ⓘ and tooltip; a bar's tooltip lists its range, counts and first five tasks.\n- Under it, the 5 slowest tasks, each opening the task.\n- Caveats in the ⓘ: tasks without a start, restarts after an expired lease, reopened tasks.\n\n## Verify\n\nUnit tests for the binning and medians; e2e for the bars, tooltip and links; screenshots. Follow the `dataviz` guidance for marks and colours.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-253"
       ],
@@ -9438,9 +9449,11 @@
         "dashboard/src/lib/projectstats.ts"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-27T00:38:45Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:38:45Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-255",

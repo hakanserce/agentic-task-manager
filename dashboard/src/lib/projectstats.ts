@@ -1,6 +1,7 @@
 // The Project tab's Stats (docs/project-stats-proposal.md §4, T-253): the project's numbers over its whole history.
 // Work time as everywhere else (work.ts, timeuse.ts); no git calls: commits and PRs are what atm recorded on tasks.
 import { INTERACTIVE_LABEL } from './forecast';
+import { median } from './insights';
 import { completions } from './timeline';
 import { mergeIntervals, timeUse } from './timeuse';
 import type { Task } from './types';
@@ -98,5 +99,78 @@ export function projectStats(
     withYouMs: timeUse(withYou, null, now, vocab)?.agentMs ?? 0,
     maxAgents: use?.maxAgents ?? 0,
     parallelism: use && working > 0 ? use.agentMs / working : null,
+  };
+}
+
+// ---- time per task: a histogram (§4.1, T-254) ----
+
+export interface TimedTask {
+  id: string;
+  name: string;
+  minutes: number;
+  /** An `interactive` task: its time includes working with you */
+  withYou: boolean;
+}
+
+export interface TimeBin {
+  /** Lower bound in minutes; the last bin has no upper bound */
+  from: number;
+  to: number;
+  label: string;
+  alone: TimedTask[];
+  withYou: TimedTask[];
+}
+
+export interface TimeHistogram {
+  bins: TimeBin[];
+  /** Median minutes of each kind, null without tasks of that kind */
+  medianAlone: number | null;
+  medianWithYou: number | null;
+  /** Over all timed tasks; null without any */
+  min: number | null;
+  max: number | null;
+  average: number | null;
+  /** The five slowest, slowest first */
+  slowest: TimedTask[];
+}
+
+/** Bins that widen with time, so short and long tasks both read: 0–5 m … 3–4 h, 4 h+ */
+export const TIME_BINS = [0, 5, 10, 20, 30, 45, 60, 90, 120, 180, 240];
+
+const binLabel = (m: number) => (m < 60 ? `${m} m` : `${m / 60} h`);
+
+/**
+ * Every done task's work time (start until it asked for a review, or was done), binned. Tasks without a start are left
+ * out; a task restarted after an expired lease, or reopened, counts its latest attempt.
+ */
+export function timeHistogram(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): TimeHistogram {
+  const timed: TimedTask[] = tasks.flatMap((t) => {
+    if (kindOf(vocab, t.status) !== 'done') return [];
+    const start = ms(t.started_at);
+    const end = ms(t.review_requested_at) ?? ms(t.completed_at);
+    return start === null || end === null || end < start
+      ? []
+      : [{ id: t.id, name: t.name, minutes: (end - start) / 60_000, withYou: !!t.labels?.includes(INTERACTIVE_LABEL) }];
+  });
+  const bins: TimeBin[] = TIME_BINS.map((from, i) => {
+    const to = TIME_BINS[i + 1] ?? Infinity;
+    const inBin = timed.filter((t) => t.minutes >= from && t.minutes < to);
+    return {
+      from,
+      to,
+      label: to === Infinity ? `${binLabel(from)}+` : `${binLabel(from)}–${binLabel(to)}`,
+      alone: inBin.filter((t) => !t.withYou),
+      withYou: inBin.filter((t) => t.withYou),
+    };
+  });
+  const minutes = timed.map((t) => t.minutes);
+  return {
+    bins,
+    medianAlone: median(timed.filter((t) => !t.withYou).map((t) => t.minutes)),
+    medianWithYou: median(timed.filter((t) => t.withYou).map((t) => t.minutes)),
+    min: minutes.length ? Math.min(...minutes) : null,
+    max: minutes.length ? Math.max(...minutes) : null,
+    average: minutes.length ? minutes.reduce((a, b) => a + b, 0) / minutes.length : null,
+    slowest: [...timed].sort((a, b) => b.minutes - a.minutes).slice(0, 5),
   };
 }

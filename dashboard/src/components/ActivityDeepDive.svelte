@@ -149,7 +149,16 @@
 <div class="deep-dive">
   <section class="dive-chart" id="dive-completed">
     <header>
-      <h4>Tasks completed {period}, per {series.unitLabel}, by type</h4>
+      <h4>
+        Tasks completed {period}, per {series.unitLabel}, by type
+        <InfoTip label="tasks completed">
+          <p>
+            Per {series.unitLabel}, the tasks done in it (not skipped), stacked by type, in the dashboard's type
+            colours. A task counts when it was done, so one that waited for a review counts at the review's end.
+          </p>
+          <p>Idle stretches (nobody working, nothing waiting on you) are hatched behind the bars.</p>
+        </InfoTip>
+      </h4>
       <div class="type-legend">
         {#each series.types as t (t.type)}
           <span class="type-chip"

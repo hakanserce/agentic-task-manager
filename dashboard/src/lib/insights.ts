@@ -1,5 +1,5 @@
 // Numbers behind the Progress and Activity widgets in the top bar: completion shares (overall, per phase, per type)
-// and activity over time (completions, cumulative done vs scope, cycle time, work in progress).
+// and activity over time (completions, who was working, time per task).
 import { isAgent } from './actors';
 import { INTERACTIVE_LABEL } from './forecast';
 import { completions, type Completion } from './timeline';
@@ -98,12 +98,6 @@ export interface ActivityBucket {
   byType: Record<string, number>;
   /** Mean completions per bucket over this and the two before it */
   average: number;
-  /** Tasks done by the end of the bucket */
-  cumulativeDone: number;
-  /** Tasks that existed by the end of the bucket (created_at, else always) */
-  scope: number;
-  /** Tasks in progress at the end of the bucket (from started_at to completed_at) */
-  wip: number;
   /** How much of the bucket each agent spent working on tasks, 0–1 per agent (agent "" = unattributed) */
   agentBusy: Record<string, number>;
   /** agentBusy summed by kind (T-247): Claude sessions and unattributed work are agents, anyone else people */
@@ -329,6 +323,28 @@ export function periodPhrase(range: ActivityRange, now: number): string {
   }
 }
 
+/** Whether a bucket's period isn't over yet at `now`: the sparkline draws it lighter, as it is still filling up */
+export const ongoing = (bucket: ActivityBucket, now: number) => bucket.end > now;
+
+/**
+ * The Activity sparkline's tooltip (docs/activity-popup-review.md §1): what the bars and the line are, and what the
+ * current bucket has so far: "Tasks completed per day, all time: 236 · the line is the average of the last 3 days ·
+ * this day so far: 12 · click for details".
+ */
+export function sparklineTitle(series: ActivitySeries, now: number): string {
+  const unit = series.unitLabel;
+  // "day" → "days", "30 days" → "periods of 30 days"
+  const counted = /^\d/.test(unit);
+  const parts = [
+    `Tasks completed per ${unit}, all time: ${series.totalCompleted}`,
+    `the line is the average of the last 3 ${counted ? `periods of ${unit}` : `${unit}s`}`,
+  ];
+  const last = series.buckets.at(-1);
+  if (last && ongoing(last, now))
+    parts.push(`${counted ? `the current ${unit}` : `this ${unit}`} so far: ${last.completed.length}`);
+  return [...parts, 'click for details'].join(' · ');
+}
+
 /**
  * Activity bucketed by `bucketMs` (one of the sizes above; a preset's own, PRESET_BUCKET_MS) or else by the smallest
  * of a few natural lengths that fits the time span; null without completions. With `period`, only that period is
@@ -392,13 +408,6 @@ export function activitySeries(
       completed,
       byType,
       average: recent.reduce((a, b) => a + b, 0) / recent.length,
-      cumulativeDone: all.filter((c) => c.time < end).length,
-      scope: tasks.filter((t) => (ms(t.created_at) ?? -Infinity) < end).length,
-      // Agent work in progress at the bucket's end (a task waiting for review isn't)
-      wip: tasks.filter((t) => {
-        const span = workSpan(t, now, vocab);
-        return !!span && span.start < end && (span.live || span.end >= end);
-      }).length,
     });
   }
 

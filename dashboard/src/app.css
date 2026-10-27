@@ -511,6 +511,10 @@ h1 {
 .sparkline {
   display: block;
 }
+/* The current period, not over yet (T-249) */
+.sparkline rect.ongoing {
+  opacity: 0.45;
+}
 
 .insights-panel {
   position: absolute;

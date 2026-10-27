@@ -9251,7 +9251,7 @@
       "description": "`docs/activity-popup-review.md` §1, §2, §4.1 and §6 (approved).\n\n- Sparkline (all time, as today): the last bar lighter (its period isn't over); the tooltip says what the line is (average of the last 3 buckets) and what the current bucket has so far.\n- An ⓘ on the popup heading: the shared definitions, and that filters don't apply here (whole project, archived tasks too). An ⓘ on *Tasks completed, by type*.\n- Drop `cumulativeDone`, `scope` and `wip` from `activitySeries`' buckets (unused).\n\n## Verify\n\nUnit tests updated; e2e for the tooltip; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-240"
       ],
@@ -9261,9 +9261,11 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-27T04:49:35Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T04:49:35Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-250",
@@ -9629,7 +9631,7 @@
       "description": "`docs/all-projects-kanban-proposal.md` §3, §3.1 and §4 (approved).\n\n- Two tabs on the All projects page, styled like a project's tabs: **Projects** (today's cards, default) and **Board**; remembered; `#view=board` links to it.\n- The board: To Do · In progress · In review · Blocked · Done from each project's `board` summary; each card like a project's Kanban card plus a **project chip** (logo or monogram, short name); a card click opens the task in its project, the chip opens the project.\n- Sorting per §4; *+ N more* links; empty columns say why (*Nothing ready to start*, *Nothing finished in the last 24 hours*).\n- *Active only* is shared with the Projects tab.\n\n## Verify\n\ne2e with two or three projects (`addProject`): columns, chips, sorting, links, empty states, the tab remembered; screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-257"
       ],
@@ -9639,7 +9641,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:57:05Z",
-      "updated_at": "2026-10-27T04:25:22Z",
+      "updated_at": "2026-10-27T04:49:32Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "notes": [
@@ -9648,10 +9650,19 @@
           "kind": "handoff",
           "text": "Not started: the dashboard is at 355.2 KB of the 358.4 KB (350 KiB) budget, and this board will go over. Waiting for Hakan: raise the budget or trim first.",
           "by": "claude:e5ea9db0"
+        },
+        {
+          "at": "2026-10-27T04:49:32Z",
+          "kind": "outcome",
+          "text": "All projects page: **Projects** and **Board** tabs (remembered; `#view=board`). The board merges each project's `board` summary into five columns sorted per §4, 30 cards per column with *+ N more in <project>* (opens its Kanban); cards carry a project chip; empty columns say why; *Active only* applies. Server: in-progress cards now carry `since` (`started_at`). Also fixed: Back to the overview left a task's detail panel open.",
+          "by": "claude:e5ea9db0"
         }
       ],
       "started_at": "2026-10-27T04:25:22Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "3a1cf38b5b9ebab30b13681fbbc6d24c3d22eba6",
+      "completed_at": "2026-10-27T04:49:32Z",
+      "completed_by": "claude:e5ea9db0"
     },
     {
       "id": "T-260",

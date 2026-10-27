@@ -10,6 +10,7 @@ import {
   PRESET_BUCKET_MS,
   rangeLabel,
   rangeWindow,
+  sparklineTitle,
 } from '../../src/lib/insights';
 import type { Task } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
@@ -144,7 +145,7 @@ describe('progressBreakdown', () => {
 });
 
 describe('activitySeries', () => {
-  it('measures time per task and agent work until the review was requested; reviews are not work in progress', () => {
+  it('measures time per task and agent work until the review was requested', () => {
     const s = activitySeries(
       [
         worked('a', 0, 4, { agent: 'alice', review_requested_at: iso(T0 + H) }),
@@ -158,8 +159,6 @@ describe('activitySeries', () => {
     const busyHours = (agent: string) => s.buckets.reduce((sum, b) => sum + (b.agentBusy[agent] ?? 0), 0);
     expect(busyHours('alice')).toBeCloseTo(1);
     expect(busyHours('bob')).toBeCloseTo(1);
-    // At 09:00 alice works, at 10:00 bob; after that both tasks only wait for their reviews
-    expect(s.buckets.map((b) => b.wip)).toEqual([1, 1, 0, 0, 0]);
   });
 
   it("follows a project's statuses by kind", () => {
@@ -173,7 +172,8 @@ describe('activitySeries', () => {
     const tasks = [worked('a', 0, 1, { status: 'shipped' }), worked('b', 1, undefined, { status: 'doing' })];
     expect(activitySeries(tasks, null, T0 + 2 * H)).toBeNull();
     const s = activitySeries(tasks, null, T0 + 2 * H, vocab)!;
-    expect([s.totalCompleted, s.buckets.at(-1)!.wip]).toEqual([1, 1]);
+    // b, in the project's active status, is still at work in the last bucket
+    expect([s.totalCompleted, s.buckets.at(-1)!.byKind.agents]).toEqual([1, 1]);
   });
 
   it('is null without completions', () => {
@@ -198,12 +198,6 @@ describe('activitySeries', () => {
     expect(s.buckets[0].byType).toEqual({ feature: 1, test: 1 });
     // Mean of this bucket and up to two before it
     expect(s.buckets.map((b) => b.average)).toEqual([2, 1, 1, 2 / 3]);
-    expect(s.buckets.map((b) => b.cumulativeDone)).toEqual([2, 2, 3, 4]);
-    // Buckets are whole clock hours (08:00–09:00, …), so they end at T0 + 0.83 h, 1.83 h, … f is created in the third
-    // hour
-    expect(s.buckets.map((b) => b.scope)).toEqual([5, 5, 6, 6]);
-    // In progress at each bucket's end: c (1–2.5), d (2–3.2), e (3–)
-    expect(s.buckets.map((b) => b.wip)).toEqual([0, 1, 1, 1]);
     expect(s.types).toEqual([
       { type: 'feature', count: 3 },
       { type: 'test', count: 1 },
@@ -253,6 +247,24 @@ describe('activitySeries', () => {
   });
 });
 
+describe('the sparkline tooltip (T-249)', () => {
+  it('says what the line is, and what the current bucket has so far while it is not over', () => {
+    const tasks = [worked('a', 0, 0.5), worked('b', 0.2, 0.6), worked('c', 1, 2.5)];
+    // The last bucket is the hour from 10:00; at 10:40 it isn't over
+    const s = activitySeries(tasks, null, T0 + 2.5 * H)!;
+    expect(sparklineTitle(s, T0 + 2.5 * H)).toBe(
+      'Tasks completed per hour, all time: 3 · the line is the average of the last 3 hours · this hour so far: 1 · ' +
+        'click for details',
+    );
+    // Later, the last bucket is over: nothing "so far"
+    expect(sparklineTitle(s, T0 + 5 * H)).toBe(
+      'Tasks completed per hour, all time: 3 · the line is the average of the last 3 hours · click for details',
+    );
+    const months = activitySeries([worked('a', 0, 1), worked('b', 0, 24 * 365 * 5)])!;
+    expect(sparklineTitle(months, Date.parse('2040-01-01'))).toContain('the average of the last 3 periods of 30 days');
+  });
+});
+
 describe('rangeWindow and activity in a period', () => {
   const now = new Date(2026, 3, 1, 15, 30).getTime(); // Wednesday 1 April, 15:30 local
 
@@ -291,13 +303,12 @@ describe('rangeWindow and activity in a period', () => {
     expect(rangeLabel({ preset: 'all' }, now)).toBe('All time');
   });
 
-  it('a period limits the buckets and counts, but the cumulative total includes earlier work', () => {
+  it('a period limits the buckets and counts', () => {
     const tasks = [worked('a', 0, 0.5), worked('b', 1, 2.5), worked('c', 2, 2.7)];
     const s = activitySeries(tasks, { start: T0 + 2 * H, end: T0 + 3 * H })!;
     expect(s.unitLabel).toBe('5 minutes');
     expect(s.totalCompleted).toBe(2);
     expect(s.cycleTimes.map((c) => c.id)).toEqual(['b', 'c']);
-    expect(s.buckets.at(-1)!.cumulativeDone).toBe(3);
   });
 
   it('each stepped period has its natural bucket: an hour per 5 minutes, a day per hour, a week or month per day', () => {

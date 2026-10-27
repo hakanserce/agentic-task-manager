@@ -86,6 +86,31 @@ test.describe('Activity widget', () => {
     await expect(activityPill(page)).toHaveAccessibleName('Activity: 6 tasks completed');
     await expect(activityPill(page).locator('svg.sparkline rect')).toHaveCount(4); // 08:00, 09:00, 10:00, 11:00
     await expect(activityPill(page).locator('svg.sparkline path')).toHaveCount(1);
+    // At 12:00 the last hour is over: nothing "so far", no lighter bar
+    await expect(activityPill(page)).toHaveAttribute(
+      'title',
+      'Tasks completed per hour, all time: 6 · the line is the average of the last 3 hours · click for details',
+    );
+    await expect(activityPill(page).locator('svg.sparkline rect.ongoing')).toHaveCount(0);
+  });
+
+  test('the sparkline: the current hour, not over yet, lighter and counted "so far" (T-249)', async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2026-04-01T11:30:00Z'));
+    await page.reload();
+    await expect(activityPill(page)).toHaveAttribute('title', /· this hour so far: \d+ · click for details$/);
+    await expect(activityPill(page).locator('svg.sparkline rect').last()).toHaveClass(/ongoing/);
+  });
+
+  test('the popup and the completed chart explain themselves (T-249)', async ({ page }) => {
+    await activityPill(page).click();
+    const panel = page.locator('#activity-panel');
+    await panel.locator('.activity-heading .infotip-button').click();
+    const about = page.getByRole('dialog', { name: 'About activity' });
+    await expect(about).toContainText("the search and filters don't apply here");
+    await panel.locator('.activity-heading .infotip-button').click();
+    await expect(about).toHaveCount(0);
+    await panel.locator('#dive-completed .infotip-button').click();
+    await expect(page.getByRole('dialog', { name: 'About tasks completed' })).toContainText('stacked by type');
   });
 
   test('the deep dive: key numbers, and charts by type, by agent and per task', async ({ page }) => {

@@ -3,6 +3,8 @@ import { layoutGraph } from '../../src/lib/graph/layout';
 import type { Task } from '../../src/lib/types';
 import { expect, filterButton, loadFixture, openDashboard, openFilters, test } from './helpers';
 
+// The Kanban is the default tab (T-251): these open on the graph
+const GRAPH = { tab: 'graph' } as const;
 const svg = (page: Page) => page.locator('#dep-graph');
 const zoomLabel = (page: Page) => page.locator('#graph-zoom-level');
 const minimap = (page: Page) => page.locator('#graph-minimap');
@@ -41,7 +43,7 @@ async function center(page: Page, locator = svg(page)) {
 
 test.describe('graph sizing', () => {
   test('a large graph opens at 60%, centered on the task in progress', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await expect(zoomLabel(page)).toHaveText('60%');
     const nodeCenter = await center(page, node(page, 'T-041'));
     const svgCenter = await center(page);
@@ -50,7 +52,7 @@ test.describe('graph sizing', () => {
   });
 
   test('the graph fills the window between the top bar and the footer', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', GRAPH);
     const box = (await page.locator('#graph-container').boundingBox())!;
     const footer = (await page.locator('#site-footer').boundingBox())!;
     const viewport = page.viewportSize()!;
@@ -63,7 +65,7 @@ test.describe('graph sizing', () => {
   });
 
   test('a small graph opens at 100%, centered, without a minimap', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'cycle');
+    await openDashboard(page, tasksServer, 'cycle', GRAPH);
     await expect(zoomLabel(page)).toHaveText('100%');
     const v = await view(page);
     const { w } = contentSize('cycle');
@@ -73,7 +75,7 @@ test.describe('graph sizing', () => {
   });
 
   test('a medium graph is scaled down to fit entirely', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', GRAPH);
     const v = await view(page);
     const { w, h } = contentSize('standard');
     expect(v.k).toBeLessThan(1);
@@ -87,7 +89,7 @@ test.describe('graph sizing', () => {
 
 test.describe('pan and zoom', () => {
   test.beforeEach(async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await expect(zoomLabel(page)).toHaveText('60%');
   });
 
@@ -185,7 +187,7 @@ test.describe('pan and zoom', () => {
 
 test.describe('view persistence', () => {
   test('a reload keeps a moved view', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await expect(zoomLabel(page)).toHaveText('60%');
     await page.locator('#graph-container').focus();
     await page.keyboard.press('+');
@@ -196,7 +198,7 @@ test.describe('view persistence', () => {
   });
 
   test('filtering keeps a zoom level the user chose', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await page.locator('#graph-container').focus();
     await page.keyboard.press('+');
     await expect(zoomLabel(page)).toHaveText('75%');
@@ -209,7 +211,7 @@ test.describe('view persistence', () => {
 
   test('filtering keeps the automatic zoom level too', async ({ page, tasksServer }) => {
     // standard fits at 74%; its phase 2 alone would fit at 100%, but the zoom must not jump
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', GRAPH);
     const initial = await zoomLabel(page).textContent();
     expect(initial).not.toBe('100%');
     await openFilters(page);
@@ -220,7 +222,7 @@ test.describe('view persistence', () => {
   });
 
   test('pans, at the same zoom, when no task would be visible', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await page.locator('#graph-container').focus();
     for (let i = 0; i < 4; i++) await page.keyboard.press('+');
     const zoom = await zoomLabel(page).textContent();
@@ -236,7 +238,7 @@ test.describe('view persistence', () => {
   });
 
   test('switching tabs keeps the view', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await expect(zoomLabel(page)).toHaveText('60%');
     await page.locator('#tab-list').click();
     await page.locator('#tab-graph').click();
@@ -245,7 +247,7 @@ test.describe('view persistence', () => {
   });
 
   test('no minimap or controls state for an empty filter result', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', GRAPH);
     await openFilters(page);
     await filterButton(page, 'status', 'blocked').click();
     await filterButton(page, 'type', 'docs').click();
@@ -256,7 +258,7 @@ test.describe('view persistence', () => {
 
 test.describe('graph position is remembered per project (FR-5.7)', () => {
   test('zoom and pan come back after a reload', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await expect(zoomLabel(page)).toHaveText('60%');
     await button(page, /zoom in/i).click();
     const c = await center(page);
@@ -280,7 +282,7 @@ test.describe('graph position is remembered per project (FR-5.7)', () => {
         JSON.stringify({ graph: { k: 1, x: 99999, y: 99999 } }),
       ),
     );
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', GRAPH);
     await expect(zoomLabel(page)).toHaveText('60%');
     expect(await visibleNodes(page)).toBeGreaterThan(0);
   });

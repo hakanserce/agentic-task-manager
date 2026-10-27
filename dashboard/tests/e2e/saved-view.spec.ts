@@ -16,16 +16,17 @@ test.describe('saved view', () => {
     await filterButton(page, 'phase', '1').click();
     await filterButton(page, 'type', 'feature').click();
     await page.locator('#task-search').fill('user');
-    await page.locator('#tab-kanban').click();
     await page.locator('#kanban-group-by-phase').check();
     await page.locator('#kanban-show-skipped').check();
+    await page.locator('#tab-graph').click();
 
-    await page.goto('tasks-dashboard.html'); // no #view=: the saved tab applies
+    await page.goto('tasks-dashboard.html'); // no #view=: the saved tab applies, the graph (not the default Kanban)
     await expect(page.locator('.filter-chip')).toHaveText(['Phase: 1', 'Type: Feature']);
     await expect(page.locator('#task-search')).toHaveValue('user');
     await expect(matchCount(page)).toHaveText('1 of 12 tasks');
-    await expect(page.locator('#tab-kanban')).toHaveAttribute('aria-selected', 'true');
-    await expect(page).toHaveURL(/#view=kanban$/);
+    await expect(page.locator('#tab-graph')).toHaveAttribute('aria-selected', 'true');
+    await expect(page).toHaveURL(/#view=graph$/);
+    await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban-group-by-phase')).toBeChecked();
     await expect(page.locator('#kanban-show-skipped')).toBeChecked();
     await openFilters(page);
@@ -44,7 +45,7 @@ test.describe('saved view', () => {
   });
 
   test('greying out filtered tasks in the graph is remembered', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, project('p1'));
+    await openDashboard(page, tasksServer, project('p1'), { tab: 'graph' });
     await page.locator('#task-search').fill('editor');
     await page.locator('#graph-filtered [data-mode="dim"]').click();
     await page.reload();
@@ -103,11 +104,11 @@ test.describe('saved view', () => {
     await openFilters(page);
     await filterButton(page, 'status', 'todo').click();
     await page.locator('#task-search').fill('editor');
-    await page.locator('#tab-kanban').click();
+    await page.locator('#tab-progress').click();
     await page.locator('#reset-view').click();
     await expect(page.locator('.filter-btn.active')).toHaveCount(4);
     await expect(page.locator('#task-search')).toHaveValue('');
-    await expect(page.locator('#tab-graph')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#tab-kanban')).toHaveAttribute('aria-selected', 'true');
     await page.goto('tasks-dashboard.html');
     await expect(matchCount(page)).toHaveText('12 of 12 tasks');
   });

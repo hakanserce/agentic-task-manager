@@ -8,12 +8,13 @@ describe('parseViewHash', () => {
     expect(parseViewHash('#foo=1&view=kanban')).toBe('kanban');
   });
 
-  it('falls back to the dependency graph', () => {
-    expect(DEFAULT_VIEW).toBe('graph');
-    expect(parseViewHash('')).toBe('graph');
-    expect(parseViewHash('#')).toBe('graph');
-    expect(parseViewHash('#view=nope')).toBe('graph');
-    expect(parseViewHash('#something-else')).toBe('graph');
+  it('falls back to the Kanban (T-251)', () => {
+    expect(DEFAULT_VIEW).toBe('kanban');
+    expect(parseViewHash('')).toBe('kanban');
+    expect(parseViewHash('#')).toBe('kanban');
+    expect(parseViewHash('#view=nope')).toBe('kanban');
+    expect(parseViewHash('#something-else')).toBe('kanban');
+    expect(parseViewHash('#view=graph')).toBe('graph');
   });
 });
 
@@ -30,9 +31,10 @@ describe('withViewHash', () => {
 });
 
 describe('adjacentView', () => {
-  it('moves left/right and wraps', () => {
-    expect(adjacentView('graph', 1)).toBe('kanban');
-    expect(adjacentView('progress', 1)).toBe('graph');
-    expect(adjacentView('graph', -1)).toBe('progress');
+  it('moves left/right and wraps, in the tab order: Kanban, List, Graph, Progress, Agents', () => {
+    expect(VIEWS).toEqual(['kanban', 'list', 'graph', 'progress', 'agents']);
+    expect(adjacentView('graph', 1)).toBe('progress');
+    expect(adjacentView('agents', 1)).toBe('kanban');
+    expect(adjacentView('kanban', -1)).toBe('agents');
   });
 });

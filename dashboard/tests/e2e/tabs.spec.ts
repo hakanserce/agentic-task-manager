@@ -17,27 +17,37 @@ async function expectSelected(page: Page, id: string) {
 }
 
 test.describe('view tabs', () => {
-  test('a tablist with the dependency graph selected by default', async ({ page, tasksServer }) => {
+  test('a tablist: the task views, a divider, the project views; the Kanban selected by default (T-251)', async ({
+    page,
+    tasksServer,
+  }) => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.getByRole('tablist')).toBeVisible();
     await expect(page.getByRole('tab')).toHaveText([
-      'Dependency Graph',
       'Kanban Board',
       'Task List',
-      'Agents',
+      'Dependency Graph',
       'Progress',
+      'Agents',
     ]);
+    // The divider sits between the graph and Progress
+    await expect(page.locator('#tab-graph + .view-tab-divider + #tab-progress')).toHaveCount(1);
+    await expectSelected(page, 'kanban');
+    await expect(panel(page, 'kanban')).toHaveAttribute('role', 'tabpanel');
+    await expect(panel(page, 'kanban')).toHaveAttribute('aria-labelledby', 'tab-kanban');
+  });
+
+  test('#view=graph still opens the graph', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     await expectSelected(page, 'graph');
-    await expect(panel(page, 'graph')).toHaveAttribute('role', 'tabpanel');
-    await expect(panel(page, 'graph')).toHaveAttribute('aria-labelledby', 'tab-graph');
     await expect(page.locator('#dep-graph')).toBeVisible();
   });
 
   test('clicking a tab switches views and writes the URL hash', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    await tab(page, 'kanban').click();
-    await expectSelected(page, 'kanban');
-    expect(new URL(page.url()).hash).toBe('#view=kanban');
+    await tab(page, 'graph').click();
+    await expectSelected(page, 'graph');
+    expect(new URL(page.url()).hash).toBe('#view=graph');
     await tab(page, 'progress').click();
     await expectSelected(page, 'progress');
     expect(new URL(page.url()).hash).toBe('#view=progress');
@@ -45,14 +55,14 @@ test.describe('view tabs', () => {
 
   test('arrow keys move between tabs and wrap', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    await tab(page, 'graph').focus();
+    await tab(page, 'kanban').focus();
     await page.keyboard.press('ArrowRight');
-    await expectSelected(page, 'kanban');
-    await expect(tab(page, 'kanban')).toBeFocused();
+    await expectSelected(page, 'list');
+    await expect(tab(page, 'list')).toBeFocused();
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
-    await expectSelected(page, 'progress');
-    await expect(tab(page, 'progress')).toBeFocused();
+    await expectSelected(page, 'agents');
+    await expect(tab(page, 'agents')).toBeFocused();
   });
 
   test('a deep link opens that view, and it survives a reload', async ({ page, tasksServer }) => {
@@ -74,7 +84,7 @@ test.describe('view tabs', () => {
   });
 
   test('the graph keeps its zoom across a tab round trip', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', { tab: 'graph' });
     await page.locator('#graph-container').focus();
     await page.keyboard.press('+');
     await expect(zoomLabel(page)).toHaveText('75%');

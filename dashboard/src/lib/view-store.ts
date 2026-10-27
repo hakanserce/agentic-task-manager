@@ -6,7 +6,7 @@ import { BURNDOWN_RANGES, type BurndownRange } from './burndown';
 import type { FilterGroup, ListSort } from './filters';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
-import { VIEWS, type ViewId } from './tabs';
+import { DEFAULT_VIEW, VIEWS, type ViewId } from './tabs';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, labelsOf, priorityOf, type Vocabulary } from './vocab';
@@ -57,7 +57,7 @@ export function defaultView(): SavedView {
   return {
     filters: { phase: [], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
     query: '',
-    tab: 'graph',
+    tab: DEFAULT_VIEW,
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',

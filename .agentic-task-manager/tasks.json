@@ -9204,7 +9204,7 @@
       "description": "`docs/activity-popup-review.md` §4.3 (approved).\n\n- Cap the y-scale at the 90th percentile; slower tasks are triangles on the top edge, with the real time in their tooltip.\n- `interactive` tasks as hollow dots with their own dashed median (*with you*), next to the solid one (*agents alone*).\n- Clicking a dot opens the task's details; an ⓘ on the title.\n\n## Verify\n\nUnit test for the scale cap; e2e for an outlier triangle, hollow dots and the click; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-240"
       ],
@@ -9213,11 +9213,22 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-27T00:16:57Z",
+      "updated_at": "2026-10-27T00:19:33Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T00:16:57Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "e3bd570df84030f8c001163f927ac783c2e7794c",
+      "completed_at": "2026-10-27T00:19:33Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T00:19:33Z",
+          "kind": "outcome",
+          "text": "Scale capped at the nearest-rank 90th percentile (`cycleScaleMax`; with under 10 tasks that is the slowest, so no outliers); slower tasks are triangles on the top edge; `interactive` tasks hollow with a dashed with-you median beside the solid agents-alone one; a click or Enter opens the task; ⓘ on the title.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-249",
@@ -9302,7 +9313,7 @@
       "description": "`docs/project-stats-proposal.md` §1.1 (approved).\n\n- Order the tabs *Kanban Board · Task List · Dependency Graph* | *Progress · Agents* (and *Project* once it exists), with a thin divider between the two groups.\n- **Kanban** is the default tab for a project without a saved view (`defaultView()` in `view-store.ts`); saved views and `#view=` links keep working.\n\n## Verify\n\ne2e: tab order; a fresh project opens on the Kanban; a saved `graph` tab and `#view=graph` still open the graph. Many e2e specs may assume the graph is the default: give them `{ tab: 'graph' }` explicitly. Screenshots updated (remove the matching `-linux.png`).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/src/App.svelte",
@@ -9310,9 +9321,11 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-26T21:41:48Z",
-      "updated_at": "2026-10-26T21:41:48Z",
+      "updated_at": "2026-10-27T00:19:34Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T00:19:34Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-252",

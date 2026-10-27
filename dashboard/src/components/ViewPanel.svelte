@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { adjacentView, parseViewHash, VIEW_ICONS, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
+  import { adjacentView, GROUP_END, parseViewHash, VIEW_ICONS, VIEW_LABELS, VIEWS, type ViewId } from '../lib/tabs';
   import { dashboard } from '../lib/state.svelte';
   import AgentsTab from './AgentsTab.svelte';
   import DepGraph from './DepGraph.svelte';
@@ -42,6 +42,7 @@
           onclick={() => select(id)}
           onkeydown={onTabKeydown}><Icon name={VIEW_ICONS[id]} size={15} />{VIEW_LABELS[id]}</button
         >
+        {#if id === GROUP_END}<span class="view-tab-divider" aria-hidden="true"></span>{/if}
       {/each}
     </div>
   </div>

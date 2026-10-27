@@ -65,7 +65,7 @@ describe('reading and writing', () => {
 
   it('projects are kept apart', () => {
     writeView(key, { ...defaultView(), tab: 'progress' });
-    expect(readView(projectKey({ id: 'p2' })).tab).toBe('graph');
+    expect(readView(projectKey({ id: 'p2' })).tab).toBe('kanban');
   });
 
   it('nothing stored, or junk, gives the defaults', () => {
@@ -97,10 +97,10 @@ describe('reading and writing', () => {
   });
 
   it('clearView forgets the project', () => {
-    writeView(key, { ...defaultView(), tab: 'kanban' });
+    writeView(key, { ...defaultView(), tab: 'graph' });
     clearView(key);
     expect(localStorage.getItem(key)).toBeNull();
-    expect(readView(key).tab).toBe('graph');
+    expect(readView(key).tab).toBe('kanban');
   });
 
   it('the old per-browser "group by phase" choice seeds projects that have no saved view yet', () => {

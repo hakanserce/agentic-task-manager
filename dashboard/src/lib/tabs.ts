@@ -2,9 +2,12 @@
 // Other hash parameters are preserved.
 import { formatHash, hashParams } from './hash';
 
-export const VIEWS = ['graph', 'kanban', 'list', 'agents', 'progress'] as const;
+// The task views first, then the views about the project (docs/project-stats-proposal.md §1.1, T-251); a divider
+// sits between the groups, after GROUP_END
+export const VIEWS = ['kanban', 'list', 'graph', 'progress', 'agents'] as const;
 export type ViewId = (typeof VIEWS)[number];
-export const DEFAULT_VIEW: ViewId = 'graph';
+export const DEFAULT_VIEW: ViewId = 'kanban';
+export const GROUP_END: ViewId = 'graph';
 
 export const VIEW_LABELS: Record<ViewId, string> = {
   graph: 'Dependency Graph',

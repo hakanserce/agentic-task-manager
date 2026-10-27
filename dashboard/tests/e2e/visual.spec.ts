@@ -35,7 +35,8 @@ async function sectionScreenshot(page: Page, name: string) {
 for (const fixture of ['standard', 'large-90', 'empty', 'edge-cases']) {
   test.describe(`visual: ${fixture}`, () => {
     test.beforeEach(async ({ page, tasksServer }) => {
-      await openDashboard(page, tasksServer, fixture);
+      // On the graph (the default is the Kanban since T-251)
+      await openDashboard(page, tasksServer, fixture, { tab: 'graph' });
       await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
     });
 
@@ -122,7 +123,7 @@ test.describe('visual: light mode', () => {
   test.use({ colorScheme: 'light' });
 
   test('full page', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
     await expect(page).toHaveScreenshot('light-standard-page.png', {
       fullPage: true,
@@ -132,7 +133,7 @@ test.describe('visual: light mode', () => {
   });
 
   test('dependency graph', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'large-90');
+    await openDashboard(page, tasksServer, 'large-90', { tab: 'graph' });
     await sectionScreenshot(page, 'light-large-90-graph.png');
   });
 

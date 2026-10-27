@@ -1812,6 +1812,14 @@ button.repo-ref {
   gap: 2px;
   padding-left: 8px;
 }
+/* Between the task views and the project views (T-251) */
+.view-tab-divider {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  margin: 0 8px;
+  background: var(--border);
+}
 .view-tab {
   display: inline-flex;
   align-items: center;

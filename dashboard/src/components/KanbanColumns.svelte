@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle } from '../lib/theme';
   import KanbanCard from './KanbanCard.svelte';
+  import KanbanScroll from './KanbanScroll.svelte';
 
   const DONE_LIMIT = 20;
 
@@ -16,37 +17,11 @@
   const columnColor = (column: KanbanColumn) => (column.kind ? kindStyle(column.kind).color : 'var(--text-muted)');
   // In a pull-request project the Done column is split by stage: In PR (per PR), Done, Merged (D-4.2)
   const sectioned = $derived(workflowType(dashboard.meta) === 'pull-request');
-
-  // Columns reach down to the window's bottom (T-237): their height is the space below the board's top on the page,
-  // so a tall window shows more cards. A board that starts too far down for that (a lane further down when grouped
-  // by phase) gets nearly a window's height, to fill the screen once scrolled to.
-  const MIN_HEIGHT = 360;
-  const BOTTOM_GAP = 24;
-  let board: HTMLElement;
-  let viewport = $state(0);
-  let height = $state<number>();
-  function measure() {
-    if (!board || !viewport) return;
-    const below = viewport - (board.getBoundingClientRect().top + window.scrollY) - BOTTOM_GAP;
-    height = below >= MIN_HEIGHT ? below : Math.max(MIN_HEIGHT, viewport - 4 * BOTTOM_GAP);
-  }
-  $effect(() => {
-    void viewport;
-    void columns;
-    measure();
-  });
-  // What's above the board can change its top without a resize of the window (the filter panel, the toolbar)
-  $effect(() => {
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.body);
-    return () => observer.disconnect();
-  });
+  // The board takes the panel's height and each column scrolls inside it (T-262, app.css), so the page itself never
+  // scrolls on the Kanban
 </script>
 
-<svelte:window bind:innerHeight={viewport} />
-
-<div class="kanban-board" bind:this={board} style:--kanban-height={height === undefined ? undefined : `${height}px`}>
+<div class="kanban-board">
   {#each columns as column (column.id)}
     {@const isDone = column.kind === 'done'}
     {@const limited = isDone && !showAllDone && column.cards.length > DONE_LIMIT}
@@ -55,7 +30,7 @@
         <span class="kanban-column-title" style:color={columnColor(column)}>{column.label}</span>
         <span class="kanban-count">{column.cards.length}</span>
       </header>
-      <div class="kanban-cards">
+      <KanbanScroll>
         {#if isDone && sectioned && column.cards.length}
           {#each doneSections(column.cards, dashboard.vocab) as section (section.id)}
             {@const cut = section.stage === 'merged' && !showAllDone && section.cards.length > DONE_LIMIT}
@@ -96,7 +71,7 @@
             >
           {/if}
         {/if}
-      </div>
+      </KanbanScroll>
     </section>
   {/each}
 </div>

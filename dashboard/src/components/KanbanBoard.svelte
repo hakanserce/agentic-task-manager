@@ -22,7 +22,7 @@
   );
 </script>
 
-<div class="kanban" id="kanban">
+<div class="kanban" class:grouped={groupByPhase} id="kanban">
   <div class="kanban-toolbar">
     <div class="kanban-completion" id="kanban-completion" title={shownTitle}>
       <Ring ratio={shown.ratio} color="var(--green)" size={20} stroke={3} label="Tasks shown" bare />

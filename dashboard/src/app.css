@@ -2076,6 +2076,27 @@ svg.graph-minimap.hidden {
   color: var(--text-muted);
   cursor: pointer;
 }
+/* The Kanban fills the panel and never makes the page longer (T-262): the board takes the height left under the
+   toolbar (basis 0, like the graph), and each column scrolls inside it. Grouped by phase, the lanes scroll as one
+   and the columns are as long as their cards. */
+.kanban {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.kanban > .kanban-board {
+  flex: 1 1 0;
+  min-height: 320px;
+}
+.kanban.grouped {
+  flex: 1 1 0;
+  /* The toolbar and the ungrouped board's minimum */
+  min-height: 360px;
+  overflow-y: auto;
+}
+.kanban.grouped .kanban-column {
+  max-height: none;
+}
 .kanban-board {
   display: flex;
   gap: 12px;
@@ -2086,13 +2107,46 @@ svg.graph-minimap.hidden {
 .kanban-column {
   flex: 1 1 200px;
   min-width: 200px;
-  /* Set by KanbanColumns.svelte from the space below the board */
-  max-height: var(--kanban-height, 640px);
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+/* A column's cards (KanbanScroll.svelte): no scrollbar; "▲ N more" / "▼ N more" over a fade at the cut-off edge */
+.kanban-scroll {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.kanban-more {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding: 10px 0 4px;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.kanban-more:hover {
+  color: var(--text);
+}
+.kanban-more.top {
+  top: 0;
+  padding: 4px 0 10px;
+  border-radius: 0;
+  background: linear-gradient(var(--surface) 55%, transparent);
+}
+.kanban-more.bottom {
+  bottom: 0;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(transparent, var(--surface) 45%);
 }
 .kanban-column-header {
   display: flex;
@@ -2116,11 +2170,17 @@ svg.graph-minimap.hidden {
   font-variant-numeric: tabular-nums;
 }
 .kanban-cards {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 10px;
   overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: none;
+}
+.kanban-cards::-webkit-scrollbar {
+  display: none;
 }
 .kanban-card {
   background: var(--surface2);

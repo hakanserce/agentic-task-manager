@@ -4,6 +4,19 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.22.0] - 2026-10-27
+
+### Changed
+- **Task details** (T-280): the title, with the × on its line, and the badges stay at the top; the sections scroll
+  below them without a scrollbar, like the Kanban columns, with *▲ N more* / *▼ N more* hints (sections cut off) that
+  scroll a page. Less padding around the panel.
+- **Section rail:** on the left of the sections, one entry per group the task has: *Info* (in review or blocked, the
+  description), *Dependencies*, *Notes*, *Activity* (claimed by, who, timestamps, commit) and *Ref* (use cases,
+  requirements, files), written bottom to top with an icon. A click brings the group to the top, adding room below
+  the last section when the content is too short; scrolling by hand never adds any. The entry of the group in view
+  is highlighted. The sections are in that order now (the Activity group was spread over the panel before).
+- **Dependencies** in the details take one line each: a long name ends in "…" and shows in full on hover.
+
 ## [0.21.0] - 2026-10-27
 
 **The repository moved to the `solo-swe` organisation.**

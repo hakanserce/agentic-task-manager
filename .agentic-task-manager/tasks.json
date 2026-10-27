@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 281,
+    "next_id": 282,
     "labels": [
       {
         "id": "dashboard",
@@ -10754,6 +10754,29 @@
           "by": "claude:e5ea9db0"
         }
       ]
+    },
+    {
+      "id": "T-281",
+      "name": "Make the List-tab screenshot tests pass locally again",
+      "phase": 24,
+      "type": "test",
+      "priority": "P1",
+      "labels": [
+        "ci"
+      ],
+      "description": "Three screenshot tests fail on a developer Mac with the committed `-darwin.png` baselines: `visual: list tab` (`standard-list`), `visual: v4 (dark|light) › list: labels, priorities, stages` (`v4-dark-list`, `v4-light-list`). About 600 pixels differ (ratio 0.01); earlier the cause looked like a native `<select>` in the List tab rendering a few pixels wider than when the baselines were taken. They have been refreshed by hand before pushes and come back, so the suite is never green locally. Hakan doesn't want failing tests carried forward.\n\n## Change\n- Find what differs: compare the diff images (`test-results/…/*-diff.png`) and confirm the element (the select, a font, sub-pixel layout) and why it varies between runs or machines.\n- Fix the cause so the shot is deterministic: e.g. style the select so its width doesn't depend on the platform's native rendering, or fix its width, or mask it in these shots if its look isn't what the test is about. Never raise the screenshot tolerance or skip the tests.\n- Refresh the three `-darwin.png` baselines only if the fix changes the picture; if it does, delete the matching `-linux.png` and commit the ones CI generates.\n\n## Check\n`npx playwright test visual` passes locally several runs in a row, and `npm run verify` is fully green.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/src/app.css"
+      ],
+      "created_at": "2026-10-27T22:13:42Z",
+      "updated_at": "2026-10-27T22:13:42Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

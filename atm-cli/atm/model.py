@@ -417,6 +417,14 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         task.pop("commit", None)
 
 
+def add_interval(task, field, start, end, on=None):
+    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+    interval = {"from": start, "to": end}
+    if on:
+        interval["on"] = on
+    task.setdefault(field, []).append(interval)
+
+
 def answer_note(questions, answers):
     """One note for an unblocked task: each question with its answer."""
     pairs = []
@@ -472,6 +480,12 @@ def change_status(
     if answered is not None:
         check_note(answered)
     stamp = now_iso()
+    # A block's or a review's start goes when the task moves on: keep each interval, so waiting time can be measured
+    old_kind = kind_of(vocab, current)
+    if old_kind == "blocked" and task.get("blocked_at"):
+        add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
+    elif old_kind == "review" and task.get("review_requested_at"):
+        add_interval(task, "reviews", task["review_requested_at"], stamp)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))

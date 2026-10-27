@@ -82,6 +82,13 @@ def merge_notes(ours, theirs):
     return sorted(merged, key=lambda n: str(n.get("at", "")) if isinstance(n, dict) else "")
 
 
+def merge_intervals(ours, theirs):
+    """Past blocks and reviews only grow: both sides', one per start, oldest first."""
+    starts = {i.get("from") for i in ours if isinstance(i, dict)}
+    merged = list(ours) + [i for i in theirs if isinstance(i, dict) and i.get("from") not in starts]
+    return sorted(merged, key=lambda i: str(i.get("from", "")) if isinstance(i, dict) else "")
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -98,6 +105,8 @@ def merge_task(base, ours, theirs, vocab):
             value = progress.get(key, MISSING)
         elif key == "notes":
             value = merge_notes(ours.get(key, []), theirs.get(key, []))
+        elif key in ("blocks", "reviews"):
+            value = merge_intervals(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict:

@@ -8991,7 +8991,7 @@
       "description": "`docs/progress-tab-review.md` §2.2 (approved).\n\n- **By phase**: rings only for unfinished phases; finished phases as one line of small chips with ranges merged (`✓ 0–12` `✓ 14–17`), each with a tooltip (phases, when finished); a chip click opens the Progress tab focused on that phase. Remove *Active phases only* from the popover.\n- **By type**: one stacked bar (done / remaining per type, in the type colours) with a legend, instead of rings.\n- A **Go to** section at the bottom: *Progress tab*, *In review (n)*, *Blocked (n)*, *In progress (n)* (the Kanban with that status filter); the status legend's items link there too.\n\n## Verify\n\ne2e for the chips (ranges, click), the stacked bar and the links; screenshots updated.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-238"
       ],
@@ -9000,11 +9000,22 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-26T21:09:17Z",
-      "updated_at": "2026-10-26T23:22:02Z",
+      "updated_at": "2026-10-26T23:50:34Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-26T23:22:02Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "a8e67f0a4c0f5105c2f4b2bb69db7a1736c6fcf4",
+      "completed_at": "2026-10-26T23:50:34Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-26T23:50:34Z",
+          "kind": "outcome",
+          "text": "Popover: rings for unfinished phases, finished phases as merged chips that open the Progress tab, types as one stacked bar, a Go to section and clickable statuses; Active phases only removed. Unused CSS dropped to stay under the 320 KiB budget (160 bytes left).",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-244",
@@ -9019,7 +9030,7 @@
       "description": "`docs/activity-popup-review.md` §5 (approved).\n\n`atm block` sets `blocked_at` and `atm unblock` clears it (`atm-cli/atm/model.py`), so a past block's start is lost; the answer notes only give its end.\n\n## Do\n\n- Keep the intervals: on unblock (and when a blocked task is completed, skipped or released), append `{\"from\": <blocked_at>, \"to\": <now>, \"on\": <waiting_on>}` to a new task field `blocks` (a list). Review intervals are already known (`review_requested_at` → completion or rejection: check rejections keep enough too, else record them the same way as `reviews`).\n- The merge driver merges `blocks` like notes (union by `from`).\n- Document the field in the tasks.json format doc and `dashboard/src/lib/types.ts`.\n\n## Verify\n\nScenarios: block → unblock → block → done leaves two intervals; merge of two branches keeps both.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -9028,9 +9039,11 @@
         "tests/scripts/scenarios/"
       ],
       "created_at": "2026-10-26T21:28:23Z",
-      "updated_at": "2026-10-26T21:28:23Z",
+      "updated_at": "2026-10-26T23:55:14Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-26T23:55:14Z",
+      "started_by": "claude:e5ea9db0"
     },
     {
       "id": "T-245",

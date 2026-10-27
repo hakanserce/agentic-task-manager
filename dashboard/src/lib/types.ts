@@ -51,6 +51,10 @@ export interface Task {
   questions?: string[];
   /** ISO 8601 UTC; when it was blocked */
   blocked_at?: string;
+  /** Past blocks, oldest first: recorded when the task leaves the blocked state, with who it waited on (T-244) */
+  blocks?: { from: string; to: string; on?: string }[];
+  /** Past reviews, oldest first: recorded when a review ends, with done or a rejection */
+  reviews?: { from: string; to: string }[];
   /** Handoffs, outcomes, review requests, answers, rejections (docs/v4/data-model.md §4) */
   notes?: Note[];
   /** Before v4: the last failed attempt (now a `failure` note; still read, see notes.ts) */

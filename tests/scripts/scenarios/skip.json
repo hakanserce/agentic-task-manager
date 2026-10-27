@@ -25,7 +25,7 @@
     }
   },
   {
-    "name": "skip a blocked task: its open questions go",
+    "name": "skip a blocked task: its open questions go, the block is kept as an interval",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -53,6 +53,7 @@
               "updated_at": "2026-05-01T12:00:00Z",
               "updated_by": "bob",
               "skipped_at": "2026-05-01T12:00:00Z",
+              "blocks": [{ "from": "2026-05-01T09:00:00Z", "to": "2026-05-01T12:00:00Z", "on": "user" }],
               "notes": [{ "at": "2026-05-01T12:00:00Z", "by": "bob", "kind": "note", "text": "Skipped: Not needed" }]
             }
           ]

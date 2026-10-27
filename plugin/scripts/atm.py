@@ -1123,6 +1123,14 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         task.pop("commit", None)
 
 
+def add_interval(task, field, start, end, on=None):
+    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+    interval = {"from": start, "to": end}
+    if on:
+        interval["on"] = on
+    task.setdefault(field, []).append(interval)
+
+
 def answer_note(questions, answers):
     """One note for an unblocked task: each question with its answer."""
     pairs = []
@@ -1178,6 +1186,12 @@ def change_status(
     if answered is not None:
         check_note(answered)
     stamp = now_iso()
+    # A block's or a review's start goes when the task moves on: keep each interval, so waiting time can be measured
+    old_kind = kind_of(vocab, current)
+    if old_kind == "blocked" and task.get("blocked_at"):
+        add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
+    elif old_kind == "review" and task.get("review_requested_at"):
+        add_interval(task, "reviews", task["review_requested_at"], stamp)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
@@ -3025,6 +3039,13 @@ def merge_notes(ours, theirs):
     return sorted(merged, key=lambda n: str(n.get("at", "")) if isinstance(n, dict) else "")
 
 
+def merge_intervals(ours, theirs):
+    """Past blocks and reviews only grow: both sides', one per start, oldest first."""
+    starts = {i.get("from") for i in ours if isinstance(i, dict)}
+    merged = list(ours) + [i for i in theirs if isinstance(i, dict) and i.get("from") not in starts]
+    return sorted(merged, key=lambda i: str(i.get("from", "")) if isinstance(i, dict) else "")
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -3041,6 +3062,8 @@ def merge_task(base, ours, theirs, vocab):
             value = progress.get(key, MISSING)
         elif key == "notes":
             value = merge_notes(ours.get(key, []), theirs.get(key, []))
+        elif key in ("blocks", "reviews"):
+            value = merge_intervals(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict:

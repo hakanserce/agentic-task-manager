@@ -10738,7 +10738,7 @@
         "dashboard/tests/e2e/detail.spec.ts"
       ],
       "created_at": "2026-10-27T21:17:37Z",
-      "updated_at": "2026-10-27T22:04:02Z",
+      "updated_at": "2026-10-27T22:15:24Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T21:17:42Z",
@@ -10753,7 +10753,11 @@
           "text": "Detail panel: pinned title with the × on its line, a section rail (Info, Dependencies, Notes, Activity, Ref; bottom-to-top labels with icons) that brings a group to the top, sections scrolling without a scrollbar with Kanban-style ▲/▼ hints; one-line dependencies. Built live with Hakan.",
           "by": "claude:e5ea9db0"
         }
-      ]
+      ],
+      "pr": {
+        "number": 27,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
+      }
     },
     {
       "id": "T-281",

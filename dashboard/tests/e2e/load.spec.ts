@@ -3,8 +3,8 @@ import { expect, openDashboard, test } from './helpers';
 test.describe('loading tasks.json', () => {
   test('uses meta.project for the page and heading titles', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    await expect(page).toHaveTitle('Standard Project — Task Dashboard');
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page).toHaveTitle('Standard Project');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
   });
 
   test('subtitle counts tasks and phases', async ({ page, tasksServer }) => {
@@ -19,8 +19,8 @@ test.describe('loading tasks.json', () => {
 
   test('falls back to "Task Dashboard" without meta', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'no-meta');
-    await expect(page).toHaveTitle('Task Dashboard — Task Dashboard');
-    await expect(page.locator('#dashboard-title')).toHaveText('Task Dashboard — Task Dashboard');
+    await expect(page).toHaveTitle('Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Task Dashboard');
   });
 
   test('fetches tasks.json without a cache-buster, then asks whether it changed (If-None-Match)', async ({

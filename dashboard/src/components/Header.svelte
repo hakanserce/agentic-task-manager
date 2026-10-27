@@ -10,13 +10,14 @@
   import TitleBar from './TitleBar.svelte';
 
   const onProject = $derived(dashboard.route.page === 'project');
+  // A project's page is titled by its name alone (T-271); while loading, and without a name, "Task Dashboard"
   const title = $derived(
     onProject
       ? dashboard.loaded
-        ? dashboard.projectName + ' — Task Dashboard'
+        ? dashboard.projectName
         : 'Task Dashboard'
       : dashboard.route.page === 'overview'
-        ? 'All projects — Task Dashboard'
+        ? 'Projects Overview'
         : 'Task Dashboard',
   );
   const phaseCount = $derived(new Set(dashboard.tasks.map((t) => t.phase)).size);

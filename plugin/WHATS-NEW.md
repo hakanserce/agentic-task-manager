@@ -5,6 +5,7 @@ The short version, for people using atm. The full list of changes, for developer
 ## [0.21.0] - 2026-10-27
 
 - atm moved to github.com/solo-swe/agentic-task-manager. Installed it before? Remove the old marketplace and add the new one, as the README explains.
+- Shorter titles: "Projects Overview" for all projects, and just the project's name on each project.
 
 ## [0.20.0] - 2026-10-27
 

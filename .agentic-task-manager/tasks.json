@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 271,
+    "next_id": 272,
     "labels": [
       {
         "id": "dashboard",
@@ -10191,7 +10191,7 @@
       "description": "Rename the marketplace from `hakanserce-plugins` to `solo-swe-plugins` (decided by Hakan, its only user).\n\n## Change\n- `name` in `.claude-plugin/marketplace.json`;\n- every `hakanserce-plugins` in `README.md` (`/plugin install atm@…`, `/plugin marketplace update …`, the plugin cache path) and in docs that tell users what to run; history (CHANGELOG entries) stays;\n- a `plugin/CHANGELOG.md` and `plugin/WHATS-NEW.md` note for the release this ships in: the plugin now installs as `atm@solo-swe-plugins`, so remove the old marketplace and add `solo-swe/agentic-task-manager` again.\n\nThe permission rules in `.claude/settings.json` name the plugin cache path (`…/hakanserce-plugins/atm/*/scripts/atm …`): don't edit settings; list the lines that need the new name in the task's outcome note for Hakan to change.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-269"
       ],
@@ -10202,10 +10202,46 @@
         "plugin/WHATS-NEW.md"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:49:51Z",
+      "updated_at": "2026-10-27T06:54:58Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:49:51Z",
+      "started_by": "claude:e5ea9db0",
+      "commit": "601ad9e05876a01c7527d91ad16215cb9110cd11",
+      "completed_at": "2026-10-27T06:54:58Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T06:54:58Z",
+          "kind": "outcome",
+          "text": "Marketplace is `solo-swe-plugins` (README with re-install steps, API doc example); version 0.21.0 opened with CHANGELOG and What’s new entries. For Hakan: `.claude/settings.json` lines 9–19 name `…/cache/hakanserce-plugins/atm/*/scripts/atm …` and need `solo-swe-plugins`.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
+    },
+    {
+      "id": "T-271",
+      "name": "Titles: Projects Overview, and project pages without the Task Dashboard suffix",
+      "phase": 22,
+      "type": "polish",
+      "priority": "P2",
+      "labels": [
+        "overview",
+        "dashboard"
+      ],
+      "description": "The title bar and the browser tab (`Header.svelte`):\n- the All projects page: *Projects Overview* instead of *All projects — Task Dashboard*;\n- a project's page: just the project's name, without *— Task Dashboard*.\n\nWhile loading, and for a project without a name, the title stays *Task Dashboard*. The project selector's *All projects* option is unchanged.\n\n## Tests\nUpdate the e2e and unit tests that expect the old titles, and the screenshots that show them.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "in_progress",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/components/Header.svelte"
+      ],
+      "created_at": "2026-10-27T06:56:17Z",
+      "updated_at": "2026-10-27T06:56:23Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T06:56:23Z",
       "started_by": "claude:e5ea9db0"
     }
   ]

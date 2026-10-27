@@ -10,7 +10,7 @@ test.describe('new version notice', () => {
     await openDashboard(page, tasksServer, 'standard');
     await tasksServer.serverBuild((await pageBuild(page))!);
     await page.locator('#reload-btn').click();
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
     await expect(page.locator('#update-notice')).toHaveCount(0);
 
     await tasksServer.serverBuild('newer-build');
@@ -39,7 +39,7 @@ test.describe('new version notice', () => {
     answer = checked();
     await page.reload();
     await answer;
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
     await expect(page.locator('#update-notice')).toHaveCount(0);
 
     await tasksServer.serverBuild('newest-build');

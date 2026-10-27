@@ -14,6 +14,9 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
 - **Marketplace renamed** from `hakanserce-plugins` to `solo-swe-plugins`: the plugin installs as
   `atm@solo-swe-plugins`. An existing install doesn't follow the rename: `/plugin marketplace remove hakanserce-plugins`,
   `/plugin marketplace add solo-swe/agentic-task-manager`, `/plugin install atm@solo-swe-plugins`, `/reload-plugins`.
+- **Titles:** the All projects page is titled *Projects Overview*; a project's page by its name alone, without
+  *— Task Dashboard* (the title bar and the browser tab). *Task Dashboard* stays while loading and for a project
+  without a name.
 
 ## [0.20.0] - 2026-10-27
 

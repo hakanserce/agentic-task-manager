@@ -10,11 +10,11 @@ test.describe('projects', () => {
     tasksServer.addProject('second', 'minimal', 'Second Project');
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
-    await expect(page).toHaveTitle('All projects — Task Dashboard');
+    await expect(page).toHaveTitle('Projects Overview');
     await expect(page.locator('#projects-grid .project-card')).toHaveCount(2);
     await page.locator('.project-card[data-id="second"] .project-card-open').click();
     await expect(page).toHaveURL(/#project=second$/);
-    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project');
     await page.goBack();
     await expect(page.locator('#landing')).toHaveAttribute('data-page', 'overview');
   });
@@ -52,7 +52,7 @@ test.describe('projects', () => {
     await expect(page.locator('#version-chip')).toBeVisible();
     const onOverview = (await page.locator('.topbar-controls').boundingBox())!;
     await page.locator('.project-card[data-id="second"] .project-card-open').click();
-    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project');
     const onProject = (await page.locator('.topbar-controls').boundingBox())!;
     expect(onOverview.x + onOverview.width).toBeCloseTo(onProject.x + onProject.width, 0);
     expect(onOverview.y).toBeCloseTo(onProject.y, 0);
@@ -69,7 +69,7 @@ test.describe('projects', () => {
     };
     // The project page
     await openDashboard(page, tasksServer, 'minimal');
-    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project');
     await footerAtBottom();
     // The overview, with one project card
     await page.goto('tasks-dashboard.html#overview');
@@ -86,7 +86,7 @@ test.describe('projects', () => {
 
   test('with one project, the dashboard opens it right away', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
     await expect(page.locator('#landing')).toHaveCount(0);
   });
 
@@ -94,16 +94,16 @@ test.describe('projects', () => {
     tasksServer.addProject('second', 'minimal', 'Second Project');
     tasksServer.use('standard');
     await page.goto('tasks-dashboard.html#project=second');
-    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project');
     await page.locator('#task-search').fill('nothing matches this');
     await expect(page.locator('.task-card')).toHaveCount(0);
 
     await page.evaluate((id) => (location.hash = `#project=${id}`), tasksServer.projectId);
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
     await expect(page.locator('#task-search')).toHaveValue('');
 
     await page.evaluate(() => (location.hash = '#project=second'));
-    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Minimal Project');
     await expect(page.locator('#task-search')).toHaveValue('nothing matches this');
   });
 
@@ -124,7 +124,7 @@ test.describe('projects', () => {
     await expect(page.locator('[data-id="second"]')).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('[data-id="second"] .project-option-fill')).toHaveAttribute('style', /width: 75%/);
     await page.locator(`.project-option[data-id="${tasksServer.projectId}"]`).click();
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
     await expect(page.locator('#project-menu')).toHaveCount(0);
   });
 

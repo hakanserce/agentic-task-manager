@@ -22,7 +22,7 @@ test.describe("What's new", () => {
     // First visit: the "new" marker sits inside the chip, after the version
     await expect(chip(page)).toHaveText(new RegExp(`^v${pluginVersion.replace(/\./g, '\\.')}`));
     // The title keeps its exact text; the chip sits next to it
-    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project — Task Dashboard');
+    await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
   });
 
   test('the chip opens release notes, newest first', async ({ page }) => {

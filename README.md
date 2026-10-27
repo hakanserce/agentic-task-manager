@@ -30,7 +30,7 @@ In Claude Code (terminal or VS Code), add the marketplace and install the `atm` 
 
 ```
 /plugin marketplace add solo-swe/agentic-task-manager
-/plugin install atm@hakanserce-plugins
+/plugin install atm@solo-swe-plugins
 ```
 
 Then run `/reload-plugins` so the skills load (no restart needed).
@@ -86,23 +86,33 @@ Or loop through everything:
 
 ### Method 1: Via marketplace (recommended)
 
-This repo is its own marketplace (`hakanserce-plugins`) containing the `atm` plugin:
+This repo is its own marketplace (`solo-swe-plugins`) containing the `atm` plugin:
 
 ```
 /plugin marketplace add solo-swe/agentic-task-manager
-/plugin install atm@hakanserce-plugins
+/plugin install atm@solo-swe-plugins
 ```
 
 Then run `/reload-plugins` to load the skills. To get a new version later:
 
 ```
-/plugin marketplace update hakanserce-plugins
+/plugin marketplace update solo-swe-plugins
 /reload-plugins
 ```
 
 No restart is needed. The dashboard comes with the plugin, so this updates it too: a running dashboard server
 restarts on the new version by itself (at the next tool call, or the next session), and the open dashboard offers a
 **Reload**. Its version label opens what's new.
+
+**Installed it before 0.21.0?** The marketplace was called `hakanserce-plugins` and lived at
+`hakanserce/agentic-task-manager`. Remove it and add it again under its new name:
+
+```
+/plugin marketplace remove hakanserce-plugins
+/plugin marketplace add solo-swe/agentic-task-manager
+/plugin install atm@solo-swe-plugins
+/reload-plugins
+```
 
 ### Method 2: Local development
 
@@ -564,7 +574,7 @@ Merge each branch back as usual (or open a PR per branch).
 
 `atm` (atm-cli) is the command the skills run, and you can too: run it from the project. Claude Code puts the
 plugin's `bin/atm` on its Bash tool's PATH; in your own terminal, use the full path
-(`~/.claude/plugins/cache/hakanserce-plugins/atm/<version>/bin/atm`) or an alias. Every command takes `--json`, and
+(`~/.claude/plugins/cache/solo-swe-plugins/atm/<version>/bin/atm`) or an alias. Every command takes `--json`, and
 `atm help` lists them all.
 
 | Command | What it does |

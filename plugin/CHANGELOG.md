@@ -4,6 +4,17 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.21.0] - 2026-10-27
+
+**The repository moved to the `solo-swe` organisation.**
+
+### Changed
+- **Repository:** `github.com/solo-swe/agentic-task-manager` (GitHub redirects the old address). `plugin.json`'s
+  `homepage` and `repository`, the dashboard's GitHub and Source links, the README and the docs point there.
+- **Marketplace renamed** from `hakanserce-plugins` to `solo-swe-plugins`: the plugin installs as
+  `atm@solo-swe-plugins`. An existing install doesn't follow the rename: `/plugin marketplace remove hakanserce-plugins`,
+  `/plugin marketplace add solo-swe/agentic-task-manager`, `/plugin install atm@solo-swe-plugins`, `/reload-plugins`.
+
 ## [0.20.0] - 2026-10-27
 
 **Security hardening (phase 20) and progress and insights (phase 21).** Phase 20 implements the security review

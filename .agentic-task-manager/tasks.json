@@ -10149,7 +10149,7 @@
       "description": "The repository moved to the `solo-swe` org (done by Hakan on GitHub). Replace `hakanserce/agentic-task-manager` with `solo-swe/agentic-task-manager` in:\n- `plugin/.claude-plugin/plugin.json` (`homepage`, `repository`), `.claude-plugin/marketplace.json` (`homepage`);\n- `README.md` (install and clone instructions, the GitHub link), the two `gh api` commands in `CLAUDE.md`, `docs/help.md`, `docs/security-architecture.md`;\n- the unit tests that check the URL (`Footer.component.test.ts`, `plugin-info.test.ts`).\n\nLeave history alone (CHANGELOG entries, old proposals, `docs/v3-requirements.md`) and the author's personal links. Set the task list's address with `atm repository set https://github.com/solo-swe/agentic-task-manager`. The marketplace name is the next task.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "plugin/.claude-plugin/plugin.json",
@@ -10162,11 +10162,22 @@
         "dashboard/tests/unit/plugin-info.test.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:47:48Z",
+      "updated_at": "2026-10-27T06:49:46Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T06:47:48Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "6031fe685ce0dd1d556a12d4418792d4c110f060",
+      "completed_at": "2026-10-27T06:49:46Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T06:49:46Z",
+          "kind": "outcome",
+          "text": "All `hakanserce/agentic-task-manager` references now point at `solo-swe` (plugin.json, marketplace homepage, README, CLAUDE.md `gh api` commands, help and security docs, four tests incl. two regexes in `markdown.test.ts` and `help.spec.ts`); `meta.repository` set. History and personal links left alone.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-270",
@@ -10180,7 +10191,7 @@
       "description": "Rename the marketplace from `hakanserce-plugins` to `solo-swe-plugins` (decided by Hakan, its only user).\n\n## Change\n- `name` in `.claude-plugin/marketplace.json`;\n- every `hakanserce-plugins` in `README.md` (`/plugin install atm@…`, `/plugin marketplace update …`, the plugin cache path) and in docs that tell users what to run; history (CHANGELOG entries) stays;\n- a `plugin/CHANGELOG.md` and `plugin/WHATS-NEW.md` note for the release this ships in: the plugin now installs as `atm@solo-swe-plugins`, so remove the old marketplace and add `solo-swe/agentic-task-manager` again.\n\nThe permission rules in `.claude/settings.json` name the plugin cache path (`…/hakanserce-plugins/atm/*/scripts/atm …`): don't edit settings; list the lines that need the new name in the task's outcome note for Hakan to change.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-269"
       ],
@@ -10191,9 +10202,11 @@
         "plugin/WHATS-NEW.md"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T06:27:05Z",
+      "updated_at": "2026-10-27T06:49:51Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:e5ea9db0",
+      "started_at": "2026-10-27T06:49:51Z",
+      "started_by": "claude:e5ea9db0"
     }
   ]
 }

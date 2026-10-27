@@ -268,7 +268,7 @@ file, then rename) under `ATM_HOME/.lock`, atm's usual lock directory.
   "port": 8765,
   "version": "0.15.0",
   "build": "3f9a1c0d",
-  "plugin_root": "/Users/me/.claude/plugins/cache/hakanserce-plugins/atm/0.15.0",
+  "plugin_root": "/Users/me/.claude/plugins/cache/solo-swe-plugins/atm/0.15.0",
   "started_at": "2026-10-25T21:51:38Z"
 }
 ```

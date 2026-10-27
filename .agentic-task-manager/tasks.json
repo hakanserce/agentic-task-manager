@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 283,
+    "next_id": 284,
     "labels": [
       {
         "id": "dashboard",
@@ -67,6 +67,10 @@
       {
         "id": 24,
         "name": "Testing together"
+      },
+      {
+        "id": 25,
+        "name": "Themes"
       }
     ],
     "repository": "https://github.com/solo-swe/agentic-task-manager"
@@ -10828,6 +10832,34 @@
         "number": 27,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
       }
+    },
+    {
+      "id": "T-283",
+      "name": "A sticky-note theme: whiteboard or blackboard, cards as sticky notes",
+      "phase": 25,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "interactive",
+        "ux",
+        "theme"
+      ],
+      "description": "Hakan wants to try a playful theme. Done live with him: a few variations first, then the ones he likes.\n\n## Look\n- **The board**: a whiteboard in light mode, a blackboard in dark mode (the mode switch picks it, as for every theme). The board surface (the Kanban and the Omniboard columns, maybe the page around them) looks like the board: e.g. a soft off-white or a slate/chalkboard tone, perhaps a faint texture or frame, chalk-like text on the blackboard.\n- **Task cards as sticky notes**: yellow or pink (or a set), with a slight tilt or shadow, a handwriting-like or rounded font for the name if it stays readable. Statuses, priorities and labels must still read clearly on the note colours (contrast checked like the other themes, `theme-contrast.test.ts`).\n- **Variations** to try together, for example: notes colour by type, by status or by priority; one colour only; tilt on or off; whiteboard with marker-style headings vs. plain.\n\n## How themes work\nA theme is `src/themes/<id>.css` with light and dark variants (`data-theme` / `data-mode` on `<html>`, `lib/appearance.ts`), listed in `src/themes/index.ts` with a swatch for the Appearance menu. The sticky-note look probably needs a few card-level hooks (variables the card styles read) rather than only colour tokens; add them so other themes keep their look.\n\n## Process\n1. Build two or three variations behind the theme, and try them live on the dev server (`npm run dev`) with Hakan.\n2. Keep what he picks; drop the rest.\n3. Tests: the theme is listed and applies (`theme.test.ts`), its contrast passes (`theme-contrast.test.ts`), no hard-coded colours outside the theme (`no-hardcoded-colours.test.ts`), screenshot baselines for the Kanban in both modes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/src/themes/sticky-notes.css",
+        "dashboard/src/themes/index.ts",
+        "dashboard/src/app.css",
+        "dashboard/tests/unit/theme.test.ts",
+        "dashboard/tests/e2e/visual.spec.ts"
+      ],
+      "created_at": "2026-10-27T22:34:40Z",
+      "updated_at": "2026-10-27T22:34:40Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
     }
   ]
 }

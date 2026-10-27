@@ -99,6 +99,13 @@ test('visual: agents tab, zoomed in', async ({ page, tasksServer }) => {
   await sectionScreenshot(page, 'agents-agents-zoomed.png');
 });
 
+test('visual: project tab', async ({ page, tasksServer }) => {
+  await page.clock.setFixedTime(AGENTS_NOW);
+  await openDashboard(page, tasksServer, 'agents', { tab: 'project' });
+  await expect(page.locator('#project-info')).toBeVisible();
+  await sectionScreenshot(page, 'agents-project.png');
+});
+
 test('visual: progress and activity details', async ({ page, tasksServer }) => {
   await page.clock.setFixedTime(AGENTS_NOW);
   await openDashboard(page, tasksServer, 'agents');

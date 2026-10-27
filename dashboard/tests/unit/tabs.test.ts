@@ -31,10 +31,10 @@ describe('withViewHash', () => {
 });
 
 describe('adjacentView', () => {
-  it('moves left/right and wraps, in the tab order: Kanban, List, Graph, Progress, Agents', () => {
-    expect(VIEWS).toEqual(['kanban', 'list', 'graph', 'progress', 'agents']);
+  it('moves left/right and wraps, in the tab order: Kanban, List, Graph, Progress, Agents, Project', () => {
+    expect(VIEWS).toEqual(['kanban', 'list', 'graph', 'progress', 'agents', 'project']);
     expect(adjacentView('graph', 1)).toBe('progress');
-    expect(adjacentView('agents', 1)).toBe('kanban');
-    expect(adjacentView('kanban', -1)).toBe('agents');
+    expect(adjacentView('project', 1)).toBe('kanban');
+    expect(adjacentView('kanban', -1)).toBe('project');
   });
 });

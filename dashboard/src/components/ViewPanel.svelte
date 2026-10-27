@@ -6,6 +6,7 @@
   import Icon from './Icon.svelte';
   import KanbanBoard from './KanbanBoard.svelte';
   import ProgressTab from './ProgressTab.svelte';
+  import ProjectTab from './ProjectTab.svelte';
   import TaskGrid from './TaskGrid.svelte';
 
   const view = $derived(dashboard.tab);
@@ -70,6 +71,16 @@
       hidden={view !== 'progress'}
     >
       <ProgressTab />
+    </div>
+    <div
+      class="view-panel"
+      id="panel-project"
+      role="tabpanel"
+      aria-labelledby="tab-project"
+      hidden={view !== 'project'}
+    >
+      <!-- Mounted only while selected, like the Agents tab: it counts the whole history -->
+      {#if view === 'project'}<ProjectTab />{/if}
     </div>
   </div>
 </div>

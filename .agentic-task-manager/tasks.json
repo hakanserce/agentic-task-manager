@@ -10189,7 +10189,7 @@
       "description": "Side by side, the Project tab's *Information* and *Stats* panels (`.project-columns`, `#project-info`, `#project-stats`) end at different heights. Make them stretch to the taller one (grid/flex `align-items: stretch`); stacked on narrow screens, each keeps its own height.\n\n## Tests\ne2e: at a wide window both panels have the same height (bounding boxes); screenshots.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-267"
       ],
@@ -10198,11 +10198,22 @@
         "dashboard/tests/e2e/project.spec.ts"
       ],
       "created_at": "2026-10-27T06:27:05Z",
-      "updated_at": "2026-10-27T07:27:33Z",
+      "updated_at": "2026-10-27T07:29:12Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T07:27:33Z",
-      "started_by": "claude:e5ea9db0"
+      "started_by": "claude:e5ea9db0",
+      "commit": "3a82b845c441139b0fad175723f59f39e6e76cce",
+      "completed_at": "2026-10-27T07:29:12Z",
+      "completed_by": "claude:e5ea9db0",
+      "notes": [
+        {
+          "at": "2026-10-27T07:29:12Z",
+          "kind": "outcome",
+          "text": "Side by side, *Information* and *Stats* stretch to the taller one (`.project-columns { align-items: stretch }`); stacked, each keeps its own height. e2e checks both widths; screenshot updated.",
+          "by": "claude:e5ea9db0"
+        }
+      ]
     },
     {
       "id": "T-269",

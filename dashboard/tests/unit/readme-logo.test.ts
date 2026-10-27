@@ -21,5 +21,8 @@ describe("the README's logo", () => {
     expect(read('README.md')).toContain('src=".github/assets/atm-logo.svg"');
     expect(read('.github/assets/social-preview.html')).toContain('src="atm-logo.svg"');
     expect(existsSync(file('../../../.github/assets/social-preview.png'))).toBe(true);
+    // The PNG version (GitHub's avatars take only PNG, JPG or GIF) is made from the same SVG
+    expect(read('.github/assets/atm-logo-png.html')).toContain('src="atm-logo.svg"');
+    expect(existsSync(file('../../../.github/assets/atm-logo.png'))).toBe(true);
   });
 });

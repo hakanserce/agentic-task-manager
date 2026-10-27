@@ -35,6 +35,7 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   `merged_at`, timestamps or actors; `--json` adds `moved_links`.
 - **The atm logo on GitHub:** the README is headed by the logo (`.github/assets/atm-logo.svg`, the dashboard's in the
   accent blue) instead of an emoji, and `.github/assets/social-preview.png` is the repository's preview card.
+  `.github/assets/atm-logo.png` (512×512) is the logo as a PNG, for avatars.
 
 ## [0.20.0] - 2026-10-27
 

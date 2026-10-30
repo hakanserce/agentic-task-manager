@@ -46,6 +46,7 @@ Commands (run in `dashboard/`):
 - `npm run check` — svelte-check, ESLint, Prettier
 - `npm run build:cli` — build `plugin/scripts/atm.py` from `atm-cli/` (see below)
 - `npm run test:scripts` — atm-cli's test suite (see below)
+- `npm run branding` — regenerate `branding/` (the logo for the README and GitHub) from `src/assets/atm-logo.svg`
 - `npm run verify` — everything above; run before committing
 
 ## atm-cli (`atm-cli/`, built into `plugin/scripts/`)

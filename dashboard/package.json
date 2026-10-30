@@ -15,6 +15,7 @@
     "test:e2e": "vite build && playwright test",
     "test:scripts": "node ../tests/scripts/run.mjs",
     "bench": "node ../tests/scripts/bench.mjs",
+    "branding": "node ../branding/generate.mjs",
     "lint": "eslint .",
     "format": "prettier --config .prettierrc --write . ../tests/scripts",
     "check": "node scripts/check-versions.mjs && svelte-check --fail-on-warnings && eslint . && prettier --config .prettierrc --check . ../tests/scripts",

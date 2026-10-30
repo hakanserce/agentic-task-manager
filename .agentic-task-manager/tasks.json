@@ -10678,7 +10678,7 @@
       "description": "The logo's files are spread out: `.github/assets/` holds the GitHub copies (made by hand-run screenshot commands written only in HTML comments), and `docs/logo/` holds logo candidates that were **discarded** (from two different agents' attempts; none of them is the logo). The logo's source is `dashboard/src/assets/atm-logo.svg` (drawn in `currentColor`; the dashboard's logo, favicon and About come from it): it stays where it is, as the one drawing.\n\n## Change\n- A top-level `branding/` folder for everything made from the source, with a `README.md`: what each file is, where it's used (README header, GitHub's social preview, the org's avatar), and how to regenerate it.\n- `branding/generate.mjs`, run as `npm run branding` in `dashboard/` (where Playwright is installed): from the source, it writes\n  - `atm-logo.svg`: the source with the accent blue (`#2f81f7`, the favicon's colour, `dashboard/build/favicon.ts`) instead of `currentColor`;\n  - `atm-logo.png`: 512×512, the blue logo on the dark background (`#0d1117`);\n  - `social-preview.png`: 1280×640 (redesigned by the next task; until then, as today).\n  The HTML it renders lives in the script or next to it in `branding/`, so a change is one edit and one command.\n- Move the files out of `.github/assets/` (delete that folder); point the README's header image at `branding/atm-logo.svg`.\n- Delete `docs/logo/` (the discarded candidates and their comparison page; git history keeps them, commit adedba8).\n- Update what names the old paths: `dashboard/tests/unit/readme-logo.test.ts`, the 0.21.0 CHANGELOG lines can stay (history), `CLAUDE.md` gets one line on `npm run branding` under the dashboard commands.\n\n## Tests\n`readme-logo.test.ts`: the committed `branding/atm-logo.svg` is exactly what the script's transform makes from the source (export the transform from `generate.mjs` and call it), the README points at it, and the PNGs exist. The PNGs themselves aren't compared (they differ by platform).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "branding/README.md",
@@ -10692,9 +10692,11 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-27T16:41:57Z",
-      "updated_at": "2026-10-27T16:41:57Z",
+      "updated_at": "2026-10-30T21:05:45Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-30T21:05:45Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-279",

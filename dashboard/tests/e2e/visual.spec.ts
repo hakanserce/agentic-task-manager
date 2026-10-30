@@ -447,6 +447,7 @@ for (const theme of [
   'sublime-material',
   'high-contrast',
   'sticky-notes',
+  'hand-drawn',
 ]) {
   for (const mode of ['dark', 'light']) {
     test(`visual: theme ${theme} (${mode})`, async ({ page, tasksServer }) => {

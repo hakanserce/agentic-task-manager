@@ -31,8 +31,8 @@ function palette(theme: string, mode: 'light' | 'dark'): Tokens {
       ? dark
       : { ...dark, ...tokens('themes/default.css', (s) => s.includes("[data-mode='light']")) };
   }
-  // The page's tokens: the :root rules only. A theme may set tokens inside an element too (the sticky-notes
-  // theme's board and cards, a `.class` in the selector); those are checked below.
+  // The page's tokens: the :root rules only. A theme may set tokens inside an element too (the sticky-notes and
+  // hand-drawn themes' board and cards, a `.class` in the selector); those are checked below.
   return tokens(
     `themes/${theme}.css`,
     (s) => s.includes(`'${theme}'`) && !s.includes('.') && s.includes("[data-mode='light']") === (mode === 'light'),
@@ -139,7 +139,7 @@ for (const { id } of THEMES) {
 
 // Themes that draw the board: on the board (its own --surface), the text, the headings (--board-ink) and the
 // coloured labels read like on the page
-for (const theme of ['sticky-notes']) {
+for (const theme of ['sticky-notes', 'hand-drawn']) {
   for (const mode of ['dark', 'light'] as const) {
     it(`${theme} ${mode}: text, headings and labels on the board`, () => {
       const b = scoped(theme, mode, '.kanban-board');

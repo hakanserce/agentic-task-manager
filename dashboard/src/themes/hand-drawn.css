@@ -1,0 +1,177 @@
+/* Hand-drawn theme: the Kanban sketched on a notebook page. Light mode is cream paper written in pencil and blue
+   ballpoint, dark mode a black notebook written in white gel pen. The page is ruled, with a red margin line and
+   punched binding holes; the columns, the lines under their headings and the cards are drawn by hand (wobbly, a
+   second faint pass, small breaks), and the names are handwritten. The cards are only drawn boxes: the page shows
+   through. Contrast is checked by tests/unit/theme-contrast.test.ts. */
+
+/* The black notebook, white gel pen */
+:root[data-theme='hand-drawn'] {
+  color-scheme: dark;
+  --bg: #141417;
+  --surface: #1e1e22;
+  --surface2: #27272c;
+  --border: #48484f;
+  --text: #ecebe4;
+  --text-muted: #c4c2b8;
+  --accent: #8fb8ff;
+  --green: #9edc98;
+  --yellow: #ecd27a;
+  --red: #ff9a90;
+  --purple: #c8b2f2;
+  --pink: #f2a6cb;
+  --orange: #ffbd85;
+  --cyan: #8ddcdc;
+  --on-accent: #101826;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #2b3a2c;
+  --node-bugfix: #422c2b;
+  --node-test: #332e42;
+  --node-infra: #3e3829;
+  --node-docs: #263a3c;
+  --node-refactor: #3f3a29;
+  --node-polish: #3d2c40;
+  --series-remaining: #8fb8ff;
+  --series-scope: #ffbd85;
+  --board-font: 'Noteworthy', 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', cursive;
+  --board-title-transform: none;
+  --card-font: 'Noteworthy', 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', cursive;
+  --card-font-size: 15px;
+  /* Noteworthy's regular weight is thin: the bold one reads at a glance */
+  --card-font-weight: 700;
+}
+
+/* Cream paper, pencil and blue ballpoint */
+:root[data-theme='hand-drawn'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #e7e1cf;
+  --surface: #fbf7ea;
+  --surface2: #f2ecda;
+  --border: #cfc6ad;
+  --text: #2b2a33;
+  --text-muted: #57534b;
+  --accent: #2c56a8;
+  --green: #2e7034;
+  --yellow: #7a5d00;
+  --red: #b5312b;
+  --purple: #693ea5;
+  --pink: #a52f6a;
+  --orange: #a04e0e;
+  --cyan: #156e78;
+  --on-accent: #ffffff;
+  --overlay: rgba(43, 42, 51, 0.4);
+  --node-feature: #e1ead6;
+  --node-bugfix: #f1dcd6;
+  --node-test: #e6def0;
+  --node-infra: #ece4cf;
+  --node-docs: #d8e6e4;
+  --node-refactor: #eee3cf;
+  --node-polish: #efdbe4;
+  --series-remaining: #2c56a8;
+  --series-scope: #a04e0e;
+}
+
+/* The page: ruling, the margin line and the binding holes (in the colour of the desk behind, --bg) over the paper.
+   The columns start right of the margin; they have no boxes, their headings and lines are drawn. */
+:root[data-theme='hand-drawn'] .kanban-board {
+  --page: #1e1e22;
+  --surface: #1e1e22;
+  --board-surface:
+    radial-gradient(circle at 50% 13px, var(--bg) 0 5px, transparent 5.6px) 6px 0 / 34px 26px repeat-x,
+    linear-gradient(90deg, transparent 40px, rgba(230, 100, 100, 0.4) 40px 41.5px, transparent 41.5px),
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(140, 170, 220, 0.14) 25px 26px) 0 30px / 100% 100%
+      no-repeat,
+    var(--page);
+  --board-frame: none;
+  --board-radius: 3px;
+  --board-padding: 30px 14px 14px 52px;
+  --board-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.35);
+  --board-ink: #ecebe4;
+  --board-align: stretch;
+  --board-gap: 0;
+  --column-bg: transparent;
+  --column-border: none;
+  --column-radius: 0;
+  --column-divider: none;
+  --column-header-line: none;
+  --column-header-overhang: 5px;
+  /* Gel pen: a steady line with a little wobble and the odd skip. Dash patterns are in screen pixels (the strokes
+     don't scale) and have an even number of values, so they don't repeat with dashes and gaps swapped */
+  --column-header-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23ecebe4' stroke-linecap='round'%3E%3Cpath d='M1 4.6 Q 80 2.8 160 4.4 T 320 3.6 T 399 4.2' stroke-width='1.8' stroke-opacity='0.85' stroke-dasharray='170 3 220 4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M30 5.6 Q 150 4.6 260 5.4' stroke-width='0.8' stroke-opacity='0.35' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+  --column-divider-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23ecebe4' stroke-linecap='round'%3E%3Cpath d='M4.4 1 Q 2.8 100 4.4 200 T 3.6 330 T 4.2 399' stroke-width='1.8' stroke-opacity='0.8' stroke-dasharray='190 3 260 4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M5.4 40 Q 4.6 160 5.2 280' stroke-width='0.8' stroke-opacity='0.3' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+  /* A card: a box drawn in four strokes that overshoot at the corners, the top and left gone over twice */
+  /* A card: a box drawn in four strokes that overshoot at the corners, the top and left gone over twice. It is a
+     mask, painted in the colour of the card's column (below) */
+  --card-sketch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M2 3.5 Q 60 2 120 3.2 T 198 2.8' stroke-width='1.9' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M196.8 1 Q 198.2 40 197 70 T 197.5 99' stroke-width='1.9' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M199 97 Q 130 98.6 70 97.2 T 1 97.8' stroke-width='1.9' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M3.2 99.5 Q 1.8 60 3 30 T 2.6 0.5' stroke-width='1.9' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M5 4.8 Q 100 3.6 190 4.4' stroke-width='0.8' stroke-opacity='0.45' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M4.4 8 Q 3.4 50 4.2 92' stroke-width='0.8' stroke-opacity='0.45' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+  --card-bg: transparent;
+  --card-border: transparent;
+  --card-radius: 0;
+  --card-shadow: none;
+}
+:root[data-theme='hand-drawn'][data-mode='light'] .kanban-board {
+  --page: #fbf7ea;
+  --surface: #fbf7ea;
+  --board-surface:
+    radial-gradient(circle at 50% 13px, var(--bg) 0 5px, transparent 5.6px) 6px 0 / 34px 26px repeat-x,
+    linear-gradient(90deg, transparent 40px, rgba(205, 70, 70, 0.55) 40px 41.5px, transparent 41.5px),
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(80, 130, 200, 0.28) 25px 26px) 0 30px / 100% 100%
+      no-repeat,
+    var(--page);
+  --board-shadow: 0 1px 2px rgba(60, 50, 30, 0.25), 0 4px 12px rgba(60, 50, 30, 0.18);
+  --board-ink: #2b2a33;
+  /* Pencil: graphite, gone over twice, with breaks where the pencil lifted */
+  --column-header-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%233c3c44' stroke-linecap='round'%3E%3Cpath d='M1 4.4 Q 70 2.6 140 4.5 T 280 3.4 T 399 4.3' stroke-width='1.8' stroke-opacity='0.8' stroke-dasharray='130 3 100 2 260 3' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M6 5.4 Q 90 4.2 180 5.6 T 394 4.8' stroke-width='0.9' stroke-opacity='0.4' stroke-dasharray='70 8 150 5 100 9 200 6' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+  --column-divider-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%233c3c44' stroke-linecap='round'%3E%3Cpath d='M4.4 1 Q 2.6 90 4.5 180 T 3.4 300 T 4.3 399' stroke-width='1.8' stroke-opacity='0.75' stroke-dasharray='150 3 120 2 260 4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M5.4 6 Q 4.2 120 5.6 220 T 4.8 394' stroke-width='0.9' stroke-opacity='0.35' stroke-dasharray='90 6 130 5 200 8' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Each card's box in its column's colour (the status colours of the Kanban's headings, lib/theme.ts KIND_COLORS) */
+:root[data-theme='hand-drawn'] .kanban-card {
+  position: relative;
+  --card-ink: var(--text-muted);
+}
+:root[data-theme='hand-drawn'] .kanban-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--card-ink);
+  mask: var(--card-sketch) 0 0 / 100% 100% no-repeat;
+}
+:root[data-theme='hand-drawn'] .kanban-card.kind-active {
+  --card-ink: var(--accent);
+}
+:root[data-theme='hand-drawn'] .kanban-card.kind-review {
+  --card-ink: var(--yellow);
+}
+:root[data-theme='hand-drawn'] .kanban-card.kind-blocked {
+  --card-ink: var(--red);
+}
+:root[data-theme='hand-drawn'] .kanban-card.kind-done {
+  --card-ink: var(--green);
+}
+
+/* Next up: circled by hand in the pen's blue, a loop that overshoots where it closes, instead of the straight frame.
+   It reaches a little past the card, into the column's padding */
+:root[data-theme='hand-drawn'] .kanban-card.next-up {
+  border-color: transparent;
+  box-shadow: none;
+}
+:root[data-theme='hand-drawn'] .kanban-card.next-up::after {
+  content: '';
+  position: absolute;
+  inset: -7px -8px;
+  pointer-events: none;
+  background: var(--accent);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath d='M30 4 C 90 1, 168 1, 194 9 C 199 30, 199 72, 193 93 C 140 99, 50 99, 7 94 C 1 72, 1 30, 6 9 C 22 3, 62 2, 112 4' stroke-width='2.2' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M44 3 C 100 1, 160 2, 186 6' stroke-width='1' stroke-opacity='0.45' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E")
+    0 0 / 100% 100% no-repeat;
+}
+
+/* Drawn by hand, the cards don't sit quite straight (they straighten on hover); hovering doesn't add a ruled border */
+:root[data-theme='hand-drawn'] .kanban-card:nth-child(3n + 1) {
+  --card-tilt: -0.5deg;
+}
+:root[data-theme='hand-drawn'] .kanban-card:nth-child(3n + 2) {
+  --card-tilt: 0.4deg;
+}
+:root[data-theme='hand-drawn'] .kanban-card:hover {
+  border-color: transparent;
+}

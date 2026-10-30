@@ -14,6 +14,8 @@ export interface ThemeInfo {
   name: string;
   /** A few colours of the theme's dark variant, to preview it in the menu */
   swatch: string[];
+  /** Themes that change more than colours (the board, the cards) are listed apart, after a separator */
+  group?: 'board';
 }
 
 export { THEMES };

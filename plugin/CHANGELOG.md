@@ -31,6 +31,14 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   `--column-radius`, `--column-divider`, `--column-header-line`, `--column-divider-image`, `--column-header-image`,
   `--column-header-overhang` (`app.css`). Cards carry `data-type` and `data-priority`; a column heading's status
   colour is `--column-color`.
+- **Hand-drawn theme** (T-283, `themes/hand-drawn.css`): the Kanban sketched on a notebook page, cream paper in
+  pencil (light) or a black notebook in white gel pen (dark), ruled, with a red margin line and punched binding
+  holes. The columns, the lines under their headings and the cards' boxes are drawn by hand (the shared
+  `--column-*-image` hooks; the boxes are a mask, `--card-sketch`, painted in the colour of the card's column), the
+  page shows through the cards, and the names are handwritten in bold (`--card-font-weight`, new). *Next up* is
+  circled by hand in the pen's blue instead of the straight frame.
+- **Theme menu:** a separator line sets the themes that draw the board (Sticky notes, Hand-drawn) apart from the
+  colour themes (`group: 'board'` in `themes/index.ts`).
 - **Dependency graph hover:** hovering a task highlights it and every task it waits for, directly or not (a bolder
   border and a glow in the task's colour, the arrows between them bold in the accent colour); the rest fades
   (`dependencyChain` in `lib/graph/layout.ts`). A greyed-out task on the chain lights up too.

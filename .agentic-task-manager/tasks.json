@@ -10876,11 +10876,12 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T22:34:40Z",
-      "updated_at": "2026-10-30T22:04:31Z",
+      "updated_at": "2026-10-30T22:32:38Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-30T22:04:31Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "eef4d5bf890fc88b254dd7fe7fb6922ecf329b8d"
     },
     {
       "id": "T-284",

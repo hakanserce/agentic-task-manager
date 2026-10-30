@@ -60,7 +60,9 @@
           value={current.id}
           onchange={(e) => dashboard.setTheme((e.currentTarget as HTMLSelectElement).value)}
         >
-          {#each THEMES as theme (theme.id)}
+          {#each THEMES as theme, i (theme.id)}
+            <!-- A separator line where the themes that draw the board begin -->
+            {#if i > 0 && theme.group !== THEMES[i - 1].group}<hr />{/if}
             <option value={theme.id}>{theme.name}</option>
           {/each}
         </select>

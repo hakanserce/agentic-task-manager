@@ -85,6 +85,7 @@ test.describe('themes', () => {
       'Sublime Material',
       'High contrast',
       'Sticky notes',
+      'Hand-drawn',
     ]);
     const before = await tokens(page);
     await themeSelect(page).selectOption('nord');
@@ -121,6 +122,19 @@ test.describe('themes', () => {
     await expect(page.locator('.theme-picker .theme-swatch span')).toHaveCount(4);
     const height = (await page.locator('#appearance-menu').boundingBox())!.height;
     expect(height).toBeLessThan(200);
+  });
+
+  test('a separator line sets the themes that draw the board apart, before Sticky notes', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openDashboard(page, tasksServer, 'standard');
+    await menu(page);
+    const entries = await themeSelect(page).evaluate((select) =>
+      [...select.children].map((e) => (e.tagName === 'HR' ? '—' : (e as HTMLOptionElement).value)),
+    );
+    expect(entries.filter((e) => e === '—')).toHaveLength(1);
+    expect(entries.slice(entries.indexOf('—') + 1)).toEqual(['sticky-notes', 'hand-drawn']);
   });
 
   test('the keyboard: Tab reaches the theme, typing a letter picks one', async ({ page, tasksServer }) => {

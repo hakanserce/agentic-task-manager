@@ -2448,6 +2448,7 @@ svg.graph-minimap.hidden {
   margin-top: 6px;
   font-family: var(--card-font, inherit);
   font-size: var(--card-font-size, 13px);
+  font-weight: var(--card-font-weight, normal);
   line-height: 1.4;
 }
 .kanban-readiness {

@@ -2,8 +2,9 @@
 
 Preliminary work for moving atm from **phases** to **sprints and releases**. This document surveys how established
 issue trackers model work, lists the fields atm doesn't have, and proposes which ones to add, with sprints and
-releases in the most detail. It proposes; nothing here is decided. Section 8 has the questions to settle before a
-design.
+releases in the most detail. Sections 1 to 7 propose; section 8 has the questions that had to be settled before a
+design, now answered (*Decided*), with the sprint workflow the answers call for in 8.1. Where an answer overrides a
+proposal (phases are migrated to sprints, not kept beside them), section 8 wins.
 
 Tools surveyed: Jira, GitHub Issues and Projects, Linear, GitLab, Azure Boards, Shortcut and YouTrack (sources in
 section 9).
@@ -390,24 +391,84 @@ From the same tools, ranked by how much they would help atm:
 
 ## 8. Questions to settle
 
+Each with a recommendation, to agree with or override. Settled with Hakan on 2026-10-30: each question's *Decided*
+line is the answer, and 8.1 gathers the sprint workflow those answers call for.
+
 1. **Sprint and release: nested or independent?** Section 6 sketches an optional link (a sprint names its release).
    Fully independent is more flexible; nested is simpler to show and to branch by.
+   *Recommendation*: the optional link. A sprint delivers to at most one release, and a release takes one or more
+   sprints, which fits one PR per release branch. A task's release defaults to its sprint's, and can be set without a
+   sprint for backlog work aimed at a release.
+   *Decided*: the optional link, as recommended.
 2. **What the loop does at the end of a sprint**: stop (a human closes the sprint and starts the next), or go on to
    the next planned sprint? Stopping makes the sprint the review point; going on keeps agents busy.
+   *Recommendation*: stop, and say what the sprint got done and what is left. A sprint with `batch` tasks ends in a
+   `blocker` review anyway. `--continue` lets a loop go on to the next planned sprint.
+   *Decided*: stop and report, as recommended.
 3. **Backlog tasks** (no sprint): may the loop take them when the sprint is done, or never?
+   *Recommendation*: never by default: the backlog is what nobody has planned yet. `--backlog` opts in.
+   *Decided*: the loop gains a sprint option without losing what it does today. It still takes one task by ID, a
+   list of tasks, or all tasks; its phase option becomes the sprint option, which is what it always meant: do a batch
+   of tasks, the batch a sprint now defines. Taking backlog tasks is one of these explicit choices, never a default.
 4. **Do sprints need dates at all?** A sprint with a goal and no end date is a milestone; dates matter for the
    burndown and for "due in N days".
+   *Recommendation*: optional. `start` is set when the sprint becomes active and `end` when it closes, so the burndown
+   always has a range. A planned end date (`due`) is optional, for "due in N days" and the forecast.
+   *Decided*: an optional due date, as recommended, and with it the sprint workflow in 8.1: the backlog, sprint
+   planning, closing a sprint, and moving tasks between sprints and the backlog.
 5. **Release IDs**: the plugin version (`0.23.0`), or a name with a version field? Projects that don't version
    would want names.
+   *Recommendation*: the ID is any string. This repository uses its versions; other projects use names ("Beta").
+   No separate version field until something needs it.
+   *Decided*: any string, as recommended.
 6. **Components**: start with paths only, or with owners and per-component verify commands too?
+   *Recommendation*: paths and the `review` default (5.5) first. Owners and verify commands come later, once routing
+   reviews or partial verifies are actually wanted.
+   *Decided*: paths and the review default, as recommended.
 7. **The "together" half of `interactive`**: a field (`with: user`) the loop respects, or a label it learns to skip?
+   *Recommendation*: a field. atm doesn't read labels, and shouldn't start to give one meaning. With `with: user`,
+   `atm next --claim` skips the task unless the loop is started with the user present (`--with-user`), and
+   `/atm:do-task <id>` always takes it. The dashboard shows it as "needs you".
+   *Decided*: a field, `with: user`, as recommended.
 8. **Phases**: keep them indefinitely beside sprints, or deprecate them once projects move?
+   *Recommendation*: keep reading them indefinitely (DM-6.1), but stop proposing them: `/atm:create-tasks` proposes
+   sprints, and the dashboard shows phases only for tasks that have one. Mark them deprecated in the docs.
+   *Decided* (overrides the recommendation): migrate. A command turns each phase into a sprint (and, where a phase
+   shipped as a version, its release), then phases are removed. The migration's details (which phases become which
+   sprints and releases, archived tasks, what older atm versions do with the file) are for the design.
 9. **`async` and dependents**: do dependents of a task in `async` review wait, as today, or may they start on the
    unreviewed work (and be revisited if the review asks for changes)?
+   *Recommendation*: they wait, as today. Starting on unreviewed work risks rework; work cheap enough to risk it is
+   what `batch` is for.
+   *Decided*: they wait, as recommended.
 10. **A change requested in the end-of-sprint review**: reopen the `batch` task (it stays in the sprint, which can't
     close yet), or add a follow-up task to the next sprint (the sprint closes; the work may already be in the PR)?
+    *Recommendation*: a follow-up task in the next sprint, `related` to the original, which stays done. History stays
+    true, and the sprint can close. Small fixes can still be made during the review session itself, since that task
+    is `blocker` and live.
+    *Decided*: a follow-up task, as recommended.
 11. **Changes requested**: should `atm next` give the task back to the agent that did it when it is still running,
     or to any agent?
+    *Recommendation*: prefer the agent that did it (`started_by`), since it has the context. If that agent doesn't
+    claim the task within its lease time, any agent may.
+    *Decided*: prefer the same agent, as recommended.
+
+### 8.1 The sprint workflow
+
+What the answers to questions 3 and 4 add to the model: a sprint is planned, worked and closed, and tasks move
+between sprints and the backlog at any time.
+
+- **The backlog**: tasks with no sprint. It is where new work lands until it is planned.
+- **Sprint planning**: a discussion with the user. Review the backlog and what the previous sprint left unfinished,
+  decide which tasks go into the sprint, and set its optional due date (and its release, question 1).
+- **Working the sprint**: the loop with its sprint option (question 3) takes the active sprint's tasks and stops when
+  they are done (question 2).
+- **Closing a sprint**: a review of what it got done (the end-of-sprint review of its `batch` tasks, question 10).
+  Its unfinished tasks move to the next sprint: chosen, if more than one is planned; created, if none is.
+- **Moving tasks**, at any time:
+  - from a sprint to the backlog (dropped);
+  - from a sprint to the next one (pushed back);
+  - from the backlog into the active sprint (pulled in).
 
 ## 9. Sources
 

@@ -1147,9 +1147,20 @@ button.menu-trigger:hover,
   align-items: center;
   gap: 8px;
 }
+/* Our own selects (the theme picker, .select-box): drawn by the page, not the platform, whose native control (its
+   font, padding and arrow) differs between macOS and Chromium versions and so between screenshots (T-281). The arrow
+   is a chevron icon over the select */
+.select-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
 .theme-picker select {
   flex: 1;
   min-width: 0;
+}
+.theme-picker select,
+.select-box select {
   appearance: none;
   background: var(--surface);
   color: var(--text);
@@ -1160,14 +1171,23 @@ button.menu-trigger:hover,
   padding: 5px 28px 5px 8px;
   cursor: pointer;
 }
-.theme-picker .select-chevron {
+.select-box select {
+  font-size: 12px;
+  padding: 3px 24px 3px 8px;
+}
+.theme-picker .select-chevron,
+.select-box .select-chevron {
   position: absolute;
   right: 8px;
   display: flex;
   color: var(--text-muted);
   pointer-events: none;
 }
-.theme-picker select:hover {
+.select-box .select-chevron {
+  right: 6px;
+}
+.theme-picker select:hover,
+.select-box select:hover {
   border-color: var(--text-muted);
 }
 .theme-swatch {

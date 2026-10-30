@@ -10,6 +10,9 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
 - **Kanban:** every status column stays on the board whatever the filters; a status filter empties the columns it
   leaves out instead of removing them (`buildBoard` in `lib/kanban.ts`). A skipped-kind column still shows only with
   *Show skipped* or when the status filter names it.
+- **List tab** (T-281): the *Order* dropdown is drawn by the page (`.select-box` in `app.css`, the theme picker's
+  style and chevron) instead of the platform's native control, whose font, padding and arrow changed between macOS
+  and Chromium versions and kept failing the List screenshot tests on developer Macs.
 - **Dependency graph layout:** laid out by dagre (`@dagrejs/dagre`, bundled into the dashboard) instead of columns
   by dependency depth: a task sits close to what it feeds instead of in the first column, a chain runs on one line,
   arrows cross less and follow dagre's route (`layoutGraph` in `lib/graph/layout.ts`; `topologicalLayers` and the

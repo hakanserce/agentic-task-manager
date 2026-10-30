@@ -10793,16 +10793,18 @@
       "description": "Three screenshot tests fail on a developer Mac with the committed `-darwin.png` baselines: `visual: list tab` (`standard-list`), `visual: v4 (dark|light) › list: labels, priorities, stages` (`v4-dark-list`, `v4-light-list`). About 600 pixels differ (ratio 0.01); earlier the cause looked like a native `<select>` in the List tab rendering a few pixels wider than when the baselines were taken. They have been refreshed by hand before pushes and come back, so the suite is never green locally. Hakan doesn't want failing tests carried forward.\n\n## Change\n- Find what differs: compare the diff images (`test-results/…/*-diff.png`) and confirm the element (the select, a font, sub-pixel layout) and why it varies between runs or machines.\n- Fix the cause so the shot is deterministic: e.g. style the select so its width doesn't depend on the platform's native rendering, or fix its width, or mask it in these shots if its look isn't what the test is about. Never raise the screenshot tolerance or skip the tests.\n- Refresh the three `-darwin.png` baselines only if the fix changes the picture; if it does, delete the matching `-linux.png` and commit the ones CI generates.\n\n## Check\n`npx playwright test visual` passes locally several runs in a row, and `npm run verify` is fully green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "dashboard/tests/e2e/visual.spec.ts",
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-27T22:13:42Z",
-      "updated_at": "2026-10-27T22:13:42Z",
+      "updated_at": "2026-10-30T22:46:46Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-30T22:46:46Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-282",
@@ -10866,7 +10868,7 @@
       "description": "Hakan wants to try a playful theme. Done live with him: a few variations first, then the ones he likes.\n\n## Look\n- **The board**: a whiteboard in light mode, a blackboard in dark mode (the mode switch picks it, as for every theme). The board surface (the Kanban and the Omniboard columns, maybe the page around them) looks like the board: e.g. a soft off-white or a slate/chalkboard tone, perhaps a faint texture or frame, chalk-like text on the blackboard.\n- **Task cards as sticky notes**: yellow or pink (or a set), with a slight tilt or shadow, a handwriting-like or rounded font for the name if it stays readable. Statuses, priorities and labels must still read clearly on the note colours (contrast checked like the other themes, `theme-contrast.test.ts`).\n- **Variations** to try together, for example: notes colour by type, by status or by priority; one colour only; tilt on or off; whiteboard with marker-style headings vs. plain.\n\n## How themes work\nA theme is `src/themes/<id>.css` with light and dark variants (`data-theme` / `data-mode` on `<html>`, `lib/appearance.ts`), listed in `src/themes/index.ts` with a swatch for the Appearance menu. The sticky-note look probably needs a few card-level hooks (variables the card styles read) rather than only colour tokens; add them so other themes keep their look.\n\n## Process\n1. Build two or three variations behind the theme, and try them live on the dev server (`npm run dev`) with Hakan.\n2. Keep what he picks; drop the rest.\n3. Tests: the theme is listed and applies (`theme.test.ts`), its contrast passes (`theme-contrast.test.ts`), no hard-coded colours outside the theme (`no-hardcoded-colours.test.ts`), screenshot baselines for the Kanban in both modes.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/themes/sticky-notes.css",
@@ -10876,12 +10878,22 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T22:34:40Z",
-      "updated_at": "2026-10-30T22:32:38Z",
+      "updated_at": "2026-10-30T22:38:13Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-30T22:04:31Z",
       "started_by": "claude:9fec227a",
-      "commit": "eef4d5bf890fc88b254dd7fe7fb6922ecf329b8d"
+      "commit": "3b99226269811789ad4301513e5fa1797609afc9",
+      "completed_at": "2026-10-30T22:38:13Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-30T22:38:13Z",
+          "kind": "outcome",
+          "text": "Sticky notes theme (type colours, chalk/marker drawn columns, board texture) in `eef4d5b`; a second theme, Hand-drawn (notebook page), and the theme-menu separator in `3b99226`",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-284",

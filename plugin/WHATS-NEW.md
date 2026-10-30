@@ -6,6 +6,8 @@ The short version, for people using atm. The full list of changes, for developer
 
 - The Kanban board keeps all its columns when you filter by status, so the board doesn't change shape.
 - Grey out finished tasks in the dependency graph with the new "Dim done" button, to see what's left.
+- The dependency graph is laid out more clearly: chains run in straight lines, with fewer crossing arrows.
+- Hover a task in the dependency graph to light up everything it waits for.
 
 ## [0.22.0] - 2026-10-27
 

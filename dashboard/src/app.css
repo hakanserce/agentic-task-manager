@@ -2093,6 +2093,28 @@ svg.dep-graph text {
 .graph-node.graph-dimmed:hover {
   opacity: 0.55;
 }
+/* Graph: hovering a task highlights it and its dependency chain (bolder border, a glow); the rest fades */
+.graph-node rect,
+.dep-graph path[marker-end] {
+  transition:
+    opacity 0.15s ease,
+    stroke-width 0.15s ease,
+    filter 0.15s ease;
+}
+.dep-graph .graph-faded {
+  opacity: 0.25;
+}
+.dep-graph .graph-chain {
+  opacity: 1;
+}
+.graph-node.graph-chain rect {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color) 70%, transparent));
+}
+.graph-node.graph-hovered rect {
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 9px var(--node-color));
+}
 .graph-filtered {
   display: inline-flex;
   align-items: center;

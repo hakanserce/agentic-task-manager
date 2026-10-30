@@ -11,7 +11,17 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   leaves out instead of removing them (`buildBoard` in `lib/kanban.ts`). A skipped-kind column still shows only with
   *Show skipped* or when the status filter names it.
 
+- **Dependency graph layout:** laid out by dagre (`@dagrejs/dagre`, bundled into the dashboard) instead of columns
+  by dependency depth: a task sits close to what it feeds instead of in the first column, a chain runs on one line,
+  arrows cross less and follow dagre's route (`layoutGraph` in `lib/graph/layout.ts`; `topologicalLayers` and the
+  layout's `layers` are gone). The layout is computed again only when the graph's shape changes (which tasks, their
+  dependencies), so a reload that only changes statuses reuses it. The dashboard file's size limit
+  (`guardrails.spec.ts`) goes from 400 to 450 KiB for dagre (about 48 kB).
+
 ### Added
+- **Dependency graph hover:** hovering a task highlights it and every task it waits for, directly or not (a bolder
+  border and a glow in the task's colour, the arrows between them bold in the accent colour); the rest fades
+  (`dependencyChain` in `lib/graph/layout.ts`). A greyed-out task on the chain lights up too.
 - **Dependency graph:** a *Dim done* button among the graph's controls greys out done tasks and the arrows touching
   them, whatever the filters, alongside *Filtered out: Hide / Dim*. Saved with the project's view (`graphDimDone`).
 

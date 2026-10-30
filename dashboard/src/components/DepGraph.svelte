@@ -29,6 +29,17 @@
   const matching = $derived(new Set(dashboard.filtered.map((t) => t.id)));
   const narrowed = $derived(dashboard.filtered.length < dashboard.base.length);
   const layout = $derived(layoutGraph(shown));
+  // Greyed out: outside the search and filters, or done while "Dim done" is on (whatever the filters)
+  const dimmed = $derived(
+    new Set(
+      layout.nodes
+        .filter(
+          ({ task }) =>
+            !matching.has(task.id) || (dashboard.graphDimDone && kindOf(dashboard.vocab, task.status) === 'done'),
+        )
+        .map(({ task }) => task.id),
+    ),
+  );
   const empty = $derived(shown.length === 0);
   const content = $derived({ w: layout.width, h: layout.height });
   /** The status's kind icon; none for a status no vocabulary defines */
@@ -205,7 +216,7 @@
             stroke="var(--text-muted)"
             stroke-width="1.5"
             marker-end="url(#arrow)"
-            class:graph-dimmed={!matching.has(edge.from) || !matching.has(edge.to)}
+            class:graph-dimmed={dimmed.has(edge.from) || dimmed.has(edge.to)}
           />
         {/each}
         {#each layout.nodes as node (node.task.id)}
@@ -216,7 +227,7 @@
             onclick={() => dashboard.showDetail(t.id)}
             style="cursor:pointer"
             class="graph-node"
-            class:graph-dimmed={!matching.has(t.id)}
+            class:graph-dimmed={dimmed.has(t.id)}
             data-id={t.id}
           >
             <rect

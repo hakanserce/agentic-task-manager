@@ -47,6 +47,7 @@ describe('reading and writing', () => {
       filterFinishedPhases: true,
       progressRange: '14d',
       graphFiltered: 'dim',
+      graphDimDone: true,
       graph: { k: 1.5, x: -120, y: 40 },
       agents: { start: 1000, end: 61_000, followEnd: true },
       agentsLive: true,

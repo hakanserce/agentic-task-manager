@@ -157,6 +157,8 @@ export class DashboardState {
   progressRange = $state<BurndownRange>('phase');
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
+  /** The graph greys out done tasks, whatever the filters (part of the saved view) */
+  graphDimDone = $state(false);
   /** The graph's zoom and position once the user moved it; null while it is the automatic view */
   graphView = $state.raw<{ k: number; x: number; y: number } | null>(null);
   /** The Agents tab's zoomed time range; null shows everything */
@@ -511,6 +513,7 @@ export class DashboardState {
       filterFinishedPhases: this.filterFinishedPhases,
       progressRange: this.progressRange,
       graphFiltered: this.graphFiltered,
+      graphDimDone: this.graphDimDone,
       graph: this.graphView,
       agents: this.agentsWindow,
       agentsLive: this.agentsLive,
@@ -547,6 +550,7 @@ export class DashboardState {
     this.filterFinishedPhases = view.filterFinishedPhases;
     this.progressRange = view.progressRange;
     this.graphFiltered = view.graphFiltered;
+    this.graphDimDone = view.graphDimDone;
     this.graphView = view.graph;
     this.agentsWindow = view.agents;
     this.agentsLive = view.agentsLive;

@@ -93,12 +93,15 @@ describe('buildBoard', () => {
     expect(buildBoard([tasks[2]], tasks, all).map((c) => c.id)).not.toContain('other');
   });
 
-  it('shows only the filtered statuses', () => {
-    const board = buildBoard(standard.tasks as Task[], standard.tasks as Task[], {
-      ...all,
-      statusFilter: new Set(['done', 'skipped']),
-    });
-    expect(board.map((c) => c.id)).toEqual(['done', 'skipped']);
+  it('keeps every column under a status filter, adding Skipped when the filter names it', () => {
+    const tasks = standard.tasks as Task[];
+    const done = tasks.filter((x) => x.status === 'done');
+    const board = buildBoard(done, tasks, { ...all, statusFilter: new Set(['done', 'skipped']) });
+    expect(board.map((c) => c.id)).toEqual(['todo', 'in_progress', 'in_review', 'blocked', 'done', 'skipped']);
+    expect(board.find((c) => c.id === 'in_review')!.cards).toEqual([]);
+    expect(buildBoard(done, tasks, { ...all, statusFilter: new Set(['done']) }).map((c) => c.id)).not.toContain(
+      'skipped',
+    );
   });
 
   it('orders Todo ready-first, then by phase and ID', () => {

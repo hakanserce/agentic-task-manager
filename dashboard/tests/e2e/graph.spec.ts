@@ -84,4 +84,24 @@ test.describe('dependency graph', () => {
     await choice.locator('[data-mode="hide"]').click();
     await expect(nodes(page)).toHaveCount(3);
   });
+
+  test('"Dim done" greys out the done tasks, whatever the filters', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
+    const dimDone = page.locator('#graph-dim-done');
+    await expect(dimDone).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#dep-graph g.graph-dimmed')).toHaveCount(0);
+
+    await dimDone.click();
+    await expect(dimDone).toHaveAttribute('aria-pressed', 'true');
+    const dimmed = page.locator('#dep-graph g.graph-dimmed');
+    await expect(dimmed).toHaveCount(5); // the fixture's done tasks
+    for (const text of await dimmed.allTextContents()) expect(text).toContain('\u{2705}');
+    await expect(page.locator('#dep-graph path.graph-dimmed').first()).toBeAttached();
+
+    // A status filter showing only done tasks keeps them dimmed
+    await openFilters(page);
+    await filterButton(page, 'status', 'done').click();
+    await expect(nodes(page)).toHaveCount(5);
+    await expect(dimmed).toHaveCount(5);
+  });
 });

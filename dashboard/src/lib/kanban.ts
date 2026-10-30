@@ -25,7 +25,7 @@ export interface KanbanColumn {
 
 export interface BoardOptions {
   showSkipped: boolean;
-  /** The dashboard's status filter; empty means all statuses */
+  /** The dashboard's status filter (empty means all statuses): only shows a skipped-kind column it names */
   statusFilter: ReadonlySet<string>;
   /** The project's vocabularies; the defaults when absent */
   vocab?: Vocabulary;
@@ -86,11 +86,11 @@ export function buildBoard(
   const grouped = new Map<ColumnId, Task[]>();
   for (const t of tasks) grouped.set(columnOf(t.status), [...(grouped.get(columnOf(t.status)) ?? []), t]);
 
-  const filtered = statusFilter.size > 0;
+  // The columns stay put whatever the filters (a status filter empties columns, it doesn't remove them); a
+  // skipped-kind column shows behind its toggle, or when the status filter asks for it
   const wanted = (id: ColumnId): boolean => {
     if (id === OTHER_COLUMN) return (grouped.get(OTHER_COLUMN) ?? []).length > 0;
-    if (filtered) return statusFilter.has(id);
-    return known.get(id)!.kind !== 'skipped' || showSkipped;
+    return known.get(id)!.kind !== 'skipped' || showSkipped || statusFilter.has(id);
   };
 
   const ids = columns ?? [...vocab.statuses.map((s) => s.id), OTHER_COLUMN].filter(wanted);

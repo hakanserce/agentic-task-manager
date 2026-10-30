@@ -31,6 +31,8 @@ export interface SavedView {
   progressRange: BurndownRange;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
+  /** The graph greys out done tasks, whatever the filters */
+  graphDimDone: boolean;
   /** The dependency graph's zoom and position, or null for the automatic initial view (FR-5.7) */
   graph: { k: number; x: number; y: number } | null;
   /** The Agents tab's zoomed time range, or null to show everything */
@@ -65,6 +67,7 @@ export function defaultView(): SavedView {
     filterFinishedPhases: false,
     progressRange: 'phase',
     graphFiltered: 'hide',
+    graphDimDone: false,
     graph: null,
     agents: null,
     agentsLive: false,
@@ -131,6 +134,7 @@ export function readView(key: string): SavedView {
       ? (stored.progressRange as BurndownRange)
       : view.progressRange,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
+    graphDimDone: stored.graphDimDone === true,
     graph: graphView(stored.graph),
     agents: agentsWindow(stored.agents),
     agentsLive: stored.agentsLive === true,

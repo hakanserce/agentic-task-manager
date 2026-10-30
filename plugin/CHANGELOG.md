@@ -4,6 +4,17 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.23.0] - 2026-10-30
+
+### Changed
+- **Kanban:** every status column stays on the board whatever the filters; a status filter empties the columns it
+  leaves out instead of removing them (`buildBoard` in `lib/kanban.ts`). A skipped-kind column still shows only with
+  *Show skipped* or when the status filter names it.
+
+### Added
+- **Dependency graph:** a *Dim done* button among the graph's controls greys out done tasks and the arrows touching
+  them, whatever the filters, alongside *Filtered out: Hide / Dim*. Saved with the project's view (`graphDimDone`).
+
 ## [0.22.0] - 2026-10-27
 
 ### Changed

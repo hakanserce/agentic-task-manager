@@ -14,4 +14,13 @@ export const THEMES: ThemeInfo[] = [
   { id: 'noctis', name: 'Noctis', swatch: ['#031e22', '#49ace9', '#49e9a6', '#e66533'] },
   { id: 'sublime-material', name: 'Sublime Material', swatch: ['#1c1c1d', '#80cbc4', '#c3e88d', '#ff5370'] },
   { id: 'high-contrast', name: 'High contrast', swatch: ['#000000', '#66ccff', '#5df07f', '#ff6b6b'] },
+  // Themes that draw the board itself, listed after a separator. Sticky notes: the blackboard, then the note colours
+  {
+    id: 'sticky-notes',
+    name: 'Sticky notes',
+    swatch: ['#1d2924', '#fff1a1', '#ffc8dc', '#dccff4'],
+    group: 'board',
+  },
+  // A notebook page: the black notebook, then its pen and margin
+  { id: 'hand-drawn', name: 'Hand-drawn', swatch: ['#1e1e22', '#ecebe4', '#8fb8ff', '#ff9a90'], group: 'board' },
 ];

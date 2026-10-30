@@ -27,7 +27,7 @@
     {@const limited = isDone && !showAllDone && column.cards.length > DONE_LIMIT}
     <section class="kanban-column" data-status={column.id} aria-label="{column.label} ({column.cards.length})">
       <header class="kanban-column-header">
-        <span class="kanban-column-title" style:color={columnColor(column)}>{column.label}</span>
+        <span class="kanban-column-title" style:--column-color={columnColor(column)}>{column.label}</span>
         <span class="kanban-count">{column.cards.length}</span>
       </header>
       <KanbanScroll>

@@ -1,3 +1,4 @@
+import dagre from '@dagrejs/dagre';
 import type { Task } from '../types';
 
 export const NODE_W = 160;
@@ -21,15 +22,13 @@ export interface GraphNode {
 export interface GraphEdge {
   from: string;
   to: string;
-  /** SVG path data: a horizontal bezier from the right edge of `from` to the left edge of `to` */
+  /** SVG path data: a smooth curve along dagre's route, from the border of `from` to the border of `to` */
   d: string;
 }
 
 export interface GraphLayout {
   width: number;
   height: number;
-  /** Topological columns, left to right */
-  layers: Task[][];
   /** In input order */
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -39,59 +38,83 @@ export function truncate(str: string, max: number): string {
   return str.length > max ? str.substring(0, max - 1) + '…' : str;
 }
 
-/**
- * Columns by dependency depth. Only dependencies on tasks in `tasks` count, so filtered-out
- * tasks don't hold anything back. A cycle puts all remaining tasks into one final column.
- */
-export function topologicalLayers(tasks: Task[]): Task[][] {
-  const visible = new Set(tasks.map((t) => t.id));
-  const placed = new Set<string>();
-  let remaining = [...tasks];
-  const layers: Task[][] = [];
-
-  while (remaining.length > 0) {
-    let layer = remaining.filter((t) =>
-      (t.dependencies ?? []).filter((d) => visible.has(d)).every((d) => placed.has(d)),
-    );
-    if (layer.length === 0) layer = remaining;
-    remaining = remaining.filter((t) => !layer.includes(t));
-    for (const t of layer) placed.add(t.id);
-    layers.push(layer);
-  }
-  return layers;
-}
-
-export function layoutGraph(tasks: Task[]): GraphLayout {
-  if (tasks.length === 0) return { width: 0, height: 0, layers: [], nodes: [], edges: [] };
-
-  const layers = topologicalLayers(tasks);
-  const width = layers.length * (NODE_W + PAD_X) + START_X + 20;
-  const height = Math.max(...layers.map((l) => l.length)) * (NODE_H + PAD_Y) + START_Y * 2;
-
-  const byId = new Map<string, GraphNode>();
-  layers.forEach((layer, li) => {
-    const x = START_X + li * (NODE_W + PAD_X);
-    const offsetY = (height - (layer.length * (NODE_H + PAD_Y) - PAD_Y)) / 2;
-    layer.forEach((task, ti) => {
-      const y = offsetY + ti * (NODE_H + PAD_Y);
-      byId.set(task.id, { task, x, y, cx: x + NODE_W / 2, cy: y + NODE_H / 2, label: truncate(task.name, LABEL_MAX) });
-    });
-  });
-
-  const edges: GraphEdge[] = [];
-  for (const t of tasks) {
-    for (const dep of t.dependencies ?? []) {
-      const from = byId.get(dep);
-      const to = byId.get(t.id);
-      if (!from || !to) continue;
-      const x1 = from.x + NODE_W;
-      const y1 = from.cy;
-      const x2 = to.x;
-      const y2 = to.cy;
-      const mx = (x1 + x2) / 2;
-      edges.push({ from: dep, to: t.id, d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` });
+/** `id` and every task it waits for, directly or through others, following the graph's edges. */
+export function dependencyChain(edges: GraphEdge[], id: string): Set<string> {
+  const deps = new Map<string, string[]>();
+  for (const e of edges) deps.set(e.to, [...(deps.get(e.to) ?? []), e.from]);
+  const seen = new Set([id]);
+  const todo = [id];
+  while (todo.length) {
+    for (const dep of deps.get(todo.pop()!) ?? []) {
+      if (seen.has(dep)) continue;
+      seen.add(dep);
+      todo.push(dep);
     }
   }
+  return seen;
+}
 
-  return { width, height, layers, nodes: tasks.map((t) => byId.get(t.id)!), edges };
+/** A smooth SVG path through dagre's edge points: straight ends, quadratic curves through the bends' midpoints. */
+function smoothPath(points: { x: number; y: number }[]): string {
+  const [first, ...rest] = points;
+  let d = `M${first.x},${first.y}`;
+  for (let i = 0; i < rest.length - 1; i++) {
+    const p = rest[i];
+    const next = rest[i + 1];
+    d += ` Q${p.x},${p.y} ${(p.x + next.x) / 2},${(p.y + next.y) / 2}`;
+  }
+  const last = rest[rest.length - 1];
+  return d + ` L${last.x},${last.y}`;
+}
+
+interface Placement {
+  width: number;
+  height: number;
+  /** Each task's centre */
+  centers: Map<string, { x: number; y: number }>;
+  edges: GraphEdge[];
+}
+
+/** The graph's shape: which tasks, in which order, and the dependencies among them. Nothing else moves a task. */
+function shapeKey(tasks: Task[], visible: Set<string>): string {
+  return tasks.map((t) => t.id + ':' + (t.dependencies ?? []).filter((d) => visible.has(d)).join(',')).join('|');
+}
+
+function place(tasks: Task[], visible: Set<string>): Placement {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: 'LR', nodesep: PAD_Y, ranksep: PAD_X, marginx: START_X, marginy: START_Y });
+  g.setDefaultEdgeLabel(() => ({}));
+  for (const t of tasks) g.setNode(t.id, { width: NODE_W, height: NODE_H });
+  for (const t of tasks)
+    for (const dep of t.dependencies ?? []) if (visible.has(dep) && dep !== t.id) g.setEdge(dep, t.id);
+  dagre.layout(g);
+  const { width = 0, height = 0 } = g.graph();
+  return {
+    width,
+    height,
+    centers: new Map(tasks.map((t) => [t.id, { x: g.node(t.id).x, y: g.node(t.id).y }])),
+    edges: g.edges().map(({ v, w }) => ({ from: v, to: w, d: smoothPath(g.edge(v, w).points ?? []) })),
+  };
+}
+
+// The last placement: a reload that only changes statuses or names (every few seconds while agents work) reuses it,
+// since dagre is the costly part of drawing the graph
+let last: { key: string; placement: Placement } | null = null;
+
+/**
+ * Laid out by dagre, left to right: ranks by dependency (network simplex, so a task sits close to what it feeds),
+ * fewer crossings, each task lined up with its neighbours. Only dependencies on tasks in `tasks` count.
+ */
+export function layoutGraph(tasks: Task[]): GraphLayout {
+  if (tasks.length === 0) return { width: 0, height: 0, nodes: [], edges: [] };
+
+  const visible = new Set(tasks.map((t) => t.id));
+  const key = shapeKey(tasks, visible);
+  if (last?.key !== key) last = { key, placement: place(tasks, visible) };
+  const { width, height, centers, edges } = last.placement;
+  const nodes = tasks.map((task) => {
+    const { x: cx, y: cy } = centers.get(task.id)!;
+    return { task, x: cx - NODE_W / 2, y: cy - NODE_H / 2, cx, cy, label: truncate(task.name, LABEL_MAX) };
+  });
+  return { width, height, nodes, edges };
 }

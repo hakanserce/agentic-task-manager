@@ -4,6 +4,50 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [0.23.0] - 2026-10-30
+
+### Changed
+- **Kanban:** every status column stays on the board whatever the filters; a status filter empties the columns it
+  leaves out instead of removing them (`buildBoard` in `lib/kanban.ts`). A skipped-kind column still shows only with
+  *Show skipped* or when the status filter names it.
+- **List tab** (T-281): the *Order* dropdown is drawn by the page (`.select-box` in `app.css`, the theme picker's
+  style and chevron) instead of the platform's native control, whose font, padding and arrow changed between macOS
+  and Chromium versions and kept failing the List screenshot tests on developer Macs.
+- **Dependency graph layout:** laid out by dagre (`@dagrejs/dagre`, bundled into the dashboard) instead of columns
+  by dependency depth: a task sits close to what it feeds instead of in the first column, a chain runs on one line,
+  arrows cross less and follow dagre's route (`layoutGraph` in `lib/graph/layout.ts`; `topologicalLayers` and the
+  layout's `layers` are gone). The layout is computed again only when the graph's shape changes (which tasks, their
+  dependencies), so a reload that only changes statuses reuses it. The dashboard file's size limit
+  (`guardrails.spec.ts`) goes from 400 to 450 KiB for dagre (about 48 kB).
+
+### Added
+- **Sticky notes theme** (T-283, `themes/sticky-notes.css`): the Kanban on a blackboard (dark) or a whiteboard
+  (light), in a wooden or aluminium frame, with a chalk-dust or satin texture. The columns have no boxes: their
+  headings and the lines under and between them are drawn in chalk or blue marker, by hand (SVG strokes that wobble,
+  double up and break). The cards are paper sticky notes coloured by type (feature yellow, bugfix pink, test purple,
+  infra blue, docs green, refactor and polish orange), tilted a little, with the name handwritten; inside a note the
+  colour tokens are dark inks that read on every note colour in both modes (`theme-contrast.test.ts` checks the
+  board and the notes). Card and board hooks other themes can set, defaulting to the old look: `--card-bg`,
+  `--card-border`, `--card-radius`, `--card-shadow`, `--card-tilt`, `--card-font`, `--card-font-size`,
+  `--board-surface`, `--board-frame`, `--board-radius`, `--board-shadow`, `--board-padding`, `--board-gap`,
+  `--board-align`, `--board-font`, `--board-ink`, `--board-title-transform`, `--column-bg`, `--column-border`,
+  `--column-radius`, `--column-divider`, `--column-header-line`, `--column-divider-image`, `--column-header-image`,
+  `--column-header-overhang` (`app.css`). Cards carry `data-type` and `data-priority`; a column heading's status
+  colour is `--column-color`.
+- **Hand-drawn theme** (T-283, `themes/hand-drawn.css`): the Kanban sketched on a notebook page, cream paper in
+  pencil (light) or a black notebook in white gel pen (dark), ruled, with a red margin line and punched binding
+  holes. The columns, the lines under their headings and the cards' boxes are drawn by hand (the shared
+  `--column-*-image` hooks; the boxes are a mask, `--card-sketch`, painted in the colour of the card's column), the
+  page shows through the cards, and the names are handwritten in bold (`--card-font-weight`, new). *Next up* is
+  circled by hand in the pen's blue instead of the straight frame.
+- **Theme menu:** a separator line sets the themes that draw the board (Sticky notes, Hand-drawn) apart from the
+  colour themes (`group: 'board'` in `themes/index.ts`).
+- **Dependency graph hover:** hovering a task highlights it and every task it waits for, directly or not (a bolder
+  border and a glow in the task's colour, the arrows between them bold in the accent colour); the rest fades
+  (`dependencyChain` in `lib/graph/layout.ts`). A greyed-out task on the chain lights up too.
+- **Dependency graph:** a *Dim done* button among the graph's controls greys out done tasks and the arrows touching
+  them, whatever the filters, alongside *Filtered out: Hide / Dim*. Saved with the project's view (`graphDimDone`).
+
 ## [0.22.0] - 2026-10-27
 
 ### Changed

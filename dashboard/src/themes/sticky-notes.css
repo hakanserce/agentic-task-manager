@@ -1,0 +1,195 @@
+/* Sticky notes theme (T-283): a blackboard in dark mode, a whiteboard in light mode, the Kanban's cards as paper
+   sticky notes coloured by type. The board has a texture and a frame, and its columns are drawn on it: headings and
+   lines in chalk, or in blue marker. The notes are paper in both modes, so inside a card the colour tokens are dark
+   inks that read on every note colour (tests/unit/theme-contrast.test.ts checks both). */
+
+/* The blackboard: slate green, chalk text, coloured chalk */
+:root[data-theme='sticky-notes'] {
+  color-scheme: dark;
+  --bg: #1d2924;
+  --surface: #24332c;
+  --surface2: #2c3d35;
+  --border: #4d6157;
+  --text: #f0f2ea;
+  --text-muted: #c5cec2;
+  --accent: #8fc7ff;
+  --green: #a6e3a1;
+  --yellow: #f2df86;
+  --red: #ff9d92;
+  --purple: #cdb6f5;
+  --pink: #f5abd0;
+  --orange: #ffc08a;
+  --cyan: #8fdfdf;
+  --on-accent: #10202a;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --node-feature: #31473a;
+  --node-bugfix: #4a3634;
+  --node-test: #3a3a4c;
+  --node-infra: #46402f;
+  --node-docs: #2f4447;
+  --node-refactor: #474431;
+  --node-polish: #45354a;
+  --series-remaining: #8fc7ff;
+  --series-scope: #ffc08a;
+  --board-font: 'Chalkboard SE', 'Chalkduster', 'Comic Sans MS', cursive;
+  --board-title-transform: none;
+
+  /* The note paper and inks (both modes) */
+  --note-yellow: #fff1a1;
+  --note-pink: #ffc8dc;
+  --note-green: #cdecb1;
+  --note-blue: #c0e2f6;
+  --note-orange: #ffd5a6;
+  --note-purple: #dccff4;
+  --note-ink: #26241f;
+  --note-ink-muted: #4f4a40;
+  --card-font: 'Chalkboard SE', 'Marker Felt', 'Comic Sans MS', cursive;
+  --card-font-size: 14px;
+  --card-radius: 2px;
+  --card-border: transparent;
+  --card-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* The whiteboard: off-white, marker colours */
+:root[data-theme='sticky-notes'][data-mode='light'] {
+  color-scheme: light;
+  --bg: #e9ebe8;
+  --surface: #fbfcfa;
+  --surface2: #f0f2ef;
+  --border: #cdd2cc;
+  --text: #22262a;
+  --text-muted: #4d545a;
+  --accent: #1d5fc2;
+  --green: #2b7533;
+  --yellow: #85650a;
+  --red: #c12b2b;
+  --purple: #6b40b0;
+  --pink: #ad2a70;
+  --orange: #ab500c;
+  --cyan: #13767c;
+  --on-accent: #ffffff;
+  --overlay: rgba(30, 34, 38, 0.4);
+  --node-feature: #dcebdd;
+  --node-bugfix: #f3dcdc;
+  --node-test: #e6def3;
+  --node-infra: #eee6d4;
+  --node-docs: #d6eaec;
+  --node-refactor: #efe6d6;
+  --node-polish: #f1dbe8;
+  --series-remaining: #1d5fc2;
+  --series-scope: #ab500c;
+  --board-font: 'Marker Felt', 'Chalkboard SE', 'Comic Sans MS', cursive;
+  --card-shadow: 0 5px 9px -4px rgba(40, 40, 30, 0.45), 0 1px 2px rgba(40, 40, 30, 0.25);
+}
+
+/* The board's texture and frame. Blackboard: chalk dust (fractal noise), the smudges and streaks of past erasing,
+   in a wooden frame. Whiteboard: a satin sheen and faint ghosts of old marker, in an aluminium frame. The columns
+   have no boxes: their headings and the lines under and between them are drawn in chalk or blue marker. --surface
+   inside the board is the board's own colour, so the columns' "N more" fades match it. */
+:root[data-theme='sticky-notes'] .kanban-board {
+  --surface: #23302a;
+  --board-base: #23302a;
+  --board-dust: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --board-surface:
+    var(--board-dust), radial-gradient(ellipse 45% 35% at 18% 28%, rgba(255, 255, 255, 0.06), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 78% 72%, rgba(255, 255, 255, 0.05), transparent 70%),
+    radial-gradient(ellipse 30% 25% at 52% 12%, rgba(255, 255, 255, 0.035), transparent 70%),
+    linear-gradient(100deg, transparent 32%, rgba(255, 255, 255, 0.03) 44%, transparent 56%),
+    linear-gradient(80deg, transparent 62%, rgba(255, 255, 255, 0.025) 70%, transparent 78%), var(--board-base);
+  --board-frame: 12px solid #6e4a2c;
+  --board-radius: 6px;
+  --board-padding: 14px;
+  --board-shadow:
+    inset 0 0 0 2px #4f3420, inset 0 2px 14px rgba(0, 0, 0, 0.55), 0 0 0 1px #3d2817, 0 6px 14px rgba(0, 0, 0, 0.4);
+  --board-ink: #eef0e6;
+  --board-align: stretch;
+  --board-gap: 0;
+  --column-bg: transparent;
+  --column-border: none;
+  --column-radius: 0;
+  --column-divider: none;
+  --column-header-line: none;
+  /* Each heading's line reaches 5px into the next column, to meet the line drawn down that column's left edge */
+  --column-header-overhang: 5px;
+  /* The hand-drawn lines: chalk wobbles, doubles up faintly and breaks here and there. The strokes
+     don't scale, so their dash patterns are in screen pixels; each has an even number of values, or it would repeat
+     with dashes and gaps swapped and leave long gaps on a tall board */
+  --column-header-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23eef0e6' stroke-linecap='round'%3E%3Cpath d='M1 4.2 Q 70 2.4 140 4.5 T 280 3.4 T 399 4.4' stroke-width='2.4' stroke-opacity='0.75' stroke-dasharray='118 3 96 2 260 3' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M5 5.4 Q 90 4.2 180 5.6 T 396 4.8' stroke-width='1' stroke-opacity='0.35' stroke-dasharray='60 7 140 4 90 9 200 6' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+  --column-divider-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%23eef0e6' stroke-linecap='round'%3E%3Cpath d='M4.2 1 Q 2.4 90 4.5 180 T 3.4 300 T 4.4 399' stroke-width='2.4' stroke-opacity='0.7' stroke-dasharray='140 3 110 2 260 4' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M5.4 4 Q 4.2 120 5.6 220 T 4.8 396' stroke-width='1' stroke-opacity='0.3' stroke-dasharray='80 6 120 5 200 8' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E");
+}
+:root[data-theme='sticky-notes'][data-mode='light'] .kanban-board {
+  --surface: #fafbf9;
+  --board-base: #fafbf9;
+  --board-dust: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --board-surface:
+    var(--board-dust), linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.9) 32%, transparent 46%),
+    linear-gradient(115deg, transparent 58%, rgba(255, 255, 255, 0.6) 66%, transparent 74%),
+    radial-gradient(ellipse 30% 18% at 70% 30%, rgba(40, 80, 160, 0.035), transparent 70%),
+    radial-gradient(ellipse 35% 20% at 25% 75%, rgba(160, 40, 40, 0.025), transparent 70%),
+    linear-gradient(180deg, #ffffff, var(--board-base) 40%, #eff1ee);
+  --board-frame: 10px solid #b9bfc5;
+  --board-shadow:
+    inset 0 0 0 1px #e6e9ec, inset 0 1px 6px rgba(0, 0, 0, 0.12), 0 0 0 1px #8f969d, 0 4px 10px rgba(0, 0, 0, 0.18);
+  --board-ink: #1f56b8;
+  /* Marker: one firm stroke with a gentle curve, and a skip where the pen lifted */
+  --column-header-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 8' preserveAspectRatio='none'%3E%3Cpath d='M1 4.4 Q 100 2.6 200 4.2 T 399 3.6' fill='none' stroke='%232a62c4' stroke-width='2.6' stroke-linecap='round' stroke-dasharray='250 3 300 4' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --column-divider-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 400' preserveAspectRatio='none'%3E%3Cpath d='M4.2 1 Q 2.6 110 4.3 210 T 3.6 399' fill='none' stroke='%232a62c4' stroke-width='2.6' stroke-linecap='round' stroke-dasharray='300 3 300 4' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+}
+/* Chalk is a little rough at the edges; marker is solid */
+:root[data-theme='sticky-notes'] .kanban-column-title {
+  text-shadow: 0 0 1px currentColor;
+}
+:root[data-theme='sticky-notes'][data-mode='light'] .kanban-column-title {
+  text-shadow: none;
+}
+
+/* Inside a note: dark inks, so text, badges and labels read on the paper in both modes */
+:root[data-theme='sticky-notes'] .kanban-card {
+  --card-bg: var(--note-yellow);
+  --text: var(--note-ink);
+  --text-muted: var(--note-ink-muted);
+  --border: #8c8574;
+  --surface2: #00000014;
+  --accent: #1d5fc2;
+  --green: #2b6b2f;
+  --yellow: #6f5300;
+  --red: #b0262a;
+  --purple: #5f3aa0;
+  --pink: #9c2464;
+  --orange: #974607;
+  --cyan: #0f666b;
+}
+:root[data-theme='sticky-notes'] .kanban-card:hover {
+  --card-shadow: 0 10px 16px -6px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Tilt: a little, alternating, so the column looks hand-placed (straightens on hover) */
+:root[data-theme='sticky-notes'] .kanban-card:nth-child(4n + 1) {
+  --card-tilt: -1.2deg;
+}
+:root[data-theme='sticky-notes'] .kanban-card:nth-child(4n + 2) {
+  --card-tilt: 0.8deg;
+}
+:root[data-theme='sticky-notes'] .kanban-card:nth-child(4n + 3) {
+  --card-tilt: -0.4deg;
+}
+:root[data-theme='sticky-notes'] .kanban-card:nth-child(4n) {
+  --card-tilt: 1.3deg;
+}
+
+/* The note's colour by type: feature (and any other type) yellow */
+:root[data-theme='sticky-notes'] .kanban-card:is([data-type='bugfix'], [data-type='bug']) {
+  --card-bg: var(--note-pink);
+}
+:root[data-theme='sticky-notes'] .kanban-card[data-type='test'] {
+  --card-bg: var(--note-purple);
+}
+:root[data-theme='sticky-notes'] .kanban-card[data-type='infra'] {
+  --card-bg: var(--note-blue);
+}
+:root[data-theme='sticky-notes'] .kanban-card[data-type='docs'] {
+  --card-bg: var(--note-green);
+}
+:root[data-theme='sticky-notes'] .kanban-card:is([data-type='refactor'], [data-type='polish']) {
+  --card-bg: var(--note-orange);
+}

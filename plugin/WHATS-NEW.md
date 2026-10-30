@@ -2,6 +2,15 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.23.0] - 2026-10-30
+
+- The Kanban board keeps all its columns when you filter by status, so the board doesn't change shape.
+- Grey out finished tasks in the dependency graph with the new "Dim done" button, to see what's left.
+- The dependency graph is laid out more clearly: chains run in straight lines, with fewer crossing arrows.
+- Hover a task in the dependency graph to light up everything it waits for.
+- A new Sticky notes theme: your Kanban on a blackboard or a whiteboard, with tasks as colourful sticky notes.
+- A new Hand-drawn theme: your Kanban sketched in pencil on a notebook page, or in white pen on a black one.
+
 ## [0.22.0] - 2026-10-27
 
 - A task's details no longer show a scrollbar: the title stays put, and hints say when there's more above or below.

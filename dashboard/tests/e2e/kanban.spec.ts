@@ -290,7 +290,7 @@ test.describe('Kanban board', () => {
     await expect(page.locator('.label-popover')).toHaveCount(0);
   });
 
-  test('filters apply; a status filter limits the columns', async ({ page, tasksServer }) => {
+  test('filters apply; a status filter empties columns but keeps them', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await openFilters(page);
     await filterButton(page, 'phase', '2').click();
@@ -302,7 +302,8 @@ test.describe('Kanban board', () => {
     const columns = await page
       .locator('.kanban-column')
       .evaluateAll((cols) => cols.map((c) => (c as HTMLElement).dataset.status));
-    expect(columns).toEqual(['blocked', 'done']);
+    expect(columns).toEqual(['todo', 'in_progress', 'in_review', 'blocked', 'done']);
+    await expect(column(page, 'in_review').locator('.kanban-empty')).toHaveText('No tasks');
   });
 
   test('a ring shows the completion of the tasks shown, skipped ones apart', async ({ page, tasksServer }) => {

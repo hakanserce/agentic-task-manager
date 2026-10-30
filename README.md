@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/atm-logo.svg" alt="atm logo: a board with three columns of cards, the last one done" width="96" height="96">
+  <img src="branding/atm-logo.svg" alt="atm logo: a board with three columns of cards, the last one done" width="96" height="96">
 </p>
 
 <h1 align="center">Agentic Task Manager</h1>

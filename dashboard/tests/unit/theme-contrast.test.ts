@@ -31,10 +31,29 @@ function palette(theme: string, mode: 'light' | 'dark'): Tokens {
       ? dark
       : { ...dark, ...tokens('themes/default.css', (s) => s.includes("[data-mode='light']")) };
   }
+  // The page's tokens: the :root rules only. A theme may set tokens inside an element too (the sticky-notes and
+  // hand-drawn themes' board and cards, a `.class` in the selector); those are checked below.
   return tokens(
     `themes/${theme}.css`,
-    (s) => s.includes(`'${theme}'`) && s.includes("[data-mode='light']") === (mode === 'light'),
+    (s) => s.includes(`'${theme}'`) && !s.includes('.') && s.includes("[data-mode='light']") === (mode === 'light'),
   );
+}
+
+/** The tokens a theme sets inside `element` (e.g. `.kanban-board`), over the page's, for one mode. */
+function scoped(theme: string, mode: 'light' | 'dark', element: string): Tokens {
+  const inside = (light: boolean) =>
+    tokens(
+      `themes/${theme}.css`,
+      (s) => s.includes(`'${theme}'`) && s.endsWith(element) && s.includes("[data-mode='light']") === light,
+    );
+  // A light rule adds to the dark one, as in the browser; a token may name another (var(--note-ink))
+  const page = mode === 'light' ? { ...palette(theme, 'dark'), ...palette(theme, 'light') } : palette(theme, 'dark');
+  const t: Tokens = { ...page, ...inside(false), ...(mode === 'light' ? inside(true) : {}) };
+  const resolve = (value: string): string => {
+    const ref = /^var\(--([\w-]+)\)$/.exec(value);
+    return ref ? resolve(t[ref[1]]) : value;
+  };
+  return Object.fromEntries(Object.entries(t).map(([name, value]) => [name, resolve(value)]));
 }
 
 const rgb = (hex: string) => {
@@ -116,4 +135,35 @@ for (const { id } of THEMES) {
       });
     });
   }
+}
+
+// Themes that draw the board: on the board (its own --surface), the text, the headings (--board-ink) and the
+// coloured labels read like on the page
+for (const theme of ['sticky-notes', 'hand-drawn']) {
+  for (const mode of ['dark', 'light'] as const) {
+    it(`${theme} ${mode}: text, headings and labels on the board`, () => {
+      const b = scoped(theme, mode, '.kanban-board');
+      for (const name of ['text', 'text-muted', 'board-ink'])
+        expect(contrast(b[name], b.surface), name).toBeGreaterThanOrEqual(4.5);
+      for (const c of COLOURED) expect(contrast(b[c], b.surface), c).toBeGreaterThanOrEqual(3);
+    });
+  }
+}
+
+// The sticky notes are paper in both modes: inside a card, text reads at 4.5:1 and the coloured labels at 3:1 on
+// every note colour, and on their badge's tint
+const NOTES = ['yellow', 'pink', 'green', 'blue', 'orange', 'purple'];
+for (const mode of ['dark', 'light'] as const) {
+  it(`sticky-notes ${mode}: the inks read on every note`, () => {
+    const card = scoped('sticky-notes', mode, '.kanban-card');
+    for (const note of NOTES) {
+      const paper = card[`note-${note}`];
+      for (const name of ['text', 'text-muted'])
+        expect(contrast(card[name], paper), `${name} on ${note}`).toBeGreaterThanOrEqual(4.5);
+      for (const c of COLOURED) {
+        expect(contrast(card[c], paper), `${c} on ${note}`).toBeGreaterThanOrEqual(3);
+        expect(contrast(card[c], tint(card[c], paper, 0.15)), `${c} badge on ${note}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
 }

@@ -15,6 +15,7 @@
     "test:e2e": "vite build && playwright test",
     "test:scripts": "node ../tests/scripts/run.mjs",
     "bench": "node ../tests/scripts/bench.mjs",
+    "branding": "node ../branding/generate.mjs",
     "lint": "eslint .",
     "format": "prettier --config .prettierrc --write . ../tests/scripts",
     "check": "node scripts/check-versions.mjs && svelte-check --fail-on-warnings && eslint . && prettier --config .prettierrc --check . ../tests/scripts",
@@ -23,6 +24,7 @@
     "test:e2e:linux-snapshots": "docker run --rm -v \"$(cd .. && pwd)\":/repo -w /repo/dashboard mcr.microsoft.com/playwright:v1.64.1-noble sh -c \"npm ci && npm run build && npx playwright test visual --update-snapshots=missing\""
   },
   "devDependencies": {
+    "@dagrejs/dagre": "^3.1.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.64",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

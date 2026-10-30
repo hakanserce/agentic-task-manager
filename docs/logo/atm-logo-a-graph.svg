@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-  <!-- A: a dependency graph. Two tasks lead to a third, which is done -->
-  <circle cx="3.5" cy="4" r="2" />
-  <circle cx="3.5" cy="12" r="2" />
-  <path d="M5.5 4.6 9 7.2M5.5 11.4 9 8.8" />
-  <circle cx="12" cy="8" r="3.2" />
-  <path d="m10.6 8 1 1 1.8-2" />
-</svg>

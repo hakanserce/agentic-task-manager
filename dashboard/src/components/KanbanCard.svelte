@@ -4,7 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
   import { markdownPlainText } from '../lib/markdown';
-  import { kindOf } from '../lib/vocab';
+  import { kindOf, priorityOf } from '../lib/vocab';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import BranchChip from './BranchChip.svelte';
   import LabelChips from './LabelChips.svelte';
@@ -32,6 +32,8 @@
   class="kanban-card status-{task.status} kind-{kind ?? 'none'}"
   class:next-up={card.nextUp}
   data-id={task.id}
+  data-type={task.type}
+  data-priority={priorityOf(dashboard.vocab, task)}
   role="button"
   tabindex="0"
   onclick={() => dashboard.showDetail(task.id)}

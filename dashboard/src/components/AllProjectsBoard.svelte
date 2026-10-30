@@ -89,7 +89,7 @@
     {@const count = match ? `${column.cards.length} of ${column.total}` : String(column.total)}
     <section class="kanban-column" data-status={column.id} aria-label="{column.label} ({count})">
       <header class="kanban-column-header">
-        <span class="kanban-column-title" style:color={kindStyle(KINDS[column.id]).color}>{column.label}</span>
+        <span class="kanban-column-title" style:--column-color={kindStyle(KINDS[column.id]).color}>{column.label}</span>
         <span class="kanban-count">{count}</span>
       </header>
       <KanbanScroll>

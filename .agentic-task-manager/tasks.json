@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 284,
+    "next_id": 287,
     "labels": [
       {
         "id": "dashboard",
@@ -71,6 +71,10 @@
       {
         "id": 25,
         "name": "Themes"
+      },
+      {
+        "id": 26,
+        "name": "Rich Markdown"
       }
     ],
     "repository": "https://github.com/solo-swe/agentic-task-manager"
@@ -10674,7 +10678,7 @@
       "description": "The logo's files are spread out: `.github/assets/` holds the GitHub copies (made by hand-run screenshot commands written only in HTML comments), and `docs/logo/` holds logo candidates that were **discarded** (from two different agents' attempts; none of them is the logo). The logo's source is `dashboard/src/assets/atm-logo.svg` (drawn in `currentColor`; the dashboard's logo, favicon and About come from it): it stays where it is, as the one drawing.\n\n## Change\n- A top-level `branding/` folder for everything made from the source, with a `README.md`: what each file is, where it's used (README header, GitHub's social preview, the org's avatar), and how to regenerate it.\n- `branding/generate.mjs`, run as `npm run branding` in `dashboard/` (where Playwright is installed): from the source, it writes\n  - `atm-logo.svg`: the source with the accent blue (`#2f81f7`, the favicon's colour, `dashboard/build/favicon.ts`) instead of `currentColor`;\n  - `atm-logo.png`: 512×512, the blue logo on the dark background (`#0d1117`);\n  - `social-preview.png`: 1280×640 (redesigned by the next task; until then, as today).\n  The HTML it renders lives in the script or next to it in `branding/`, so a change is one edit and one command.\n- Move the files out of `.github/assets/` (delete that folder); point the README's header image at `branding/atm-logo.svg`.\n- Delete `docs/logo/` (the discarded candidates and their comparison page; git history keeps them, commit adedba8).\n- Update what names the old paths: `dashboard/tests/unit/readme-logo.test.ts`, the 0.21.0 CHANGELOG lines can stay (history), `CLAUDE.md` gets one line on `npm run branding` under the dashboard commands.\n\n## Tests\n`readme-logo.test.ts`: the committed `branding/atm-logo.svg` is exactly what the script's transform makes from the source (export the transform from `generate.mjs` and call it), the README points at it, and the PNGs exist. The PNGs themselves aren't compared (they differ by platform).",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "branding/README.md",
@@ -10688,9 +10692,26 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-27T16:41:57Z",
-      "updated_at": "2026-10-27T16:41:57Z",
+      "updated_at": "2026-10-30T22:54:26Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-30T21:05:45Z",
+      "started_by": "claude:9fec227a",
+      "commit": "a9509a2958265ba98be267388508038af52719c8",
+      "completed_at": "2026-10-30T21:08:20Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-30T21:08:20Z",
+          "kind": "outcome",
+          "text": "Logo files now in `branding/`, made by `npm run branding` (`branding/generate.mjs`); `.github/assets/` and `docs/logo/` removed",
+          "by": "claude:9fec227a"
+        }
+      ],
+      "pr": {
+        "number": 28,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
+      }
     },
     {
       "id": "T-279",
@@ -10742,7 +10763,7 @@
         "dashboard/tests/e2e/detail.spec.ts"
       ],
       "created_at": "2026-10-27T21:17:37Z",
-      "updated_at": "2026-10-27T22:15:24Z",
+      "updated_at": "2026-10-27T23:15:45Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T21:17:42Z",
@@ -10761,7 +10782,8 @@
       "pr": {
         "number": 27,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
-      }
+      },
+      "merged_at": "2026-10-27T23:14:20Z"
     },
     {
       "id": "T-281",
@@ -10775,16 +10797,33 @@
       "description": "Three screenshot tests fail on a developer Mac with the committed `-darwin.png` baselines: `visual: list tab` (`standard-list`), `visual: v4 (dark|light) › list: labels, priorities, stages` (`v4-dark-list`, `v4-light-list`). About 600 pixels differ (ratio 0.01); earlier the cause looked like a native `<select>` in the List tab rendering a few pixels wider than when the baselines were taken. They have been refreshed by hand before pushes and come back, so the suite is never green locally. Hakan doesn't want failing tests carried forward.\n\n## Change\n- Find what differs: compare the diff images (`test-results/…/*-diff.png`) and confirm the element (the select, a font, sub-pixel layout) and why it varies between runs or machines.\n- Fix the cause so the shot is deterministic: e.g. style the select so its width doesn't depend on the platform's native rendering, or fix its width, or mask it in these shots if its look isn't what the test is about. Never raise the screenshot tolerance or skip the tests.\n- Refresh the three `-darwin.png` baselines only if the fix changes the picture; if it does, delete the matching `-linux.png` and commit the ones CI generates.\n\n## Check\n`npx playwright test visual` passes locally several runs in a row, and `npm run verify` is fully green.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/tests/e2e/visual.spec.ts",
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-27T22:13:42Z",
-      "updated_at": "2026-10-27T22:13:42Z",
+      "updated_at": "2026-10-30T22:54:26Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-30T22:46:46Z",
+      "started_by": "claude:9fec227a",
+      "commit": "e42d5a5a31de84bf9582c7fb57b915d09ed84fa5",
+      "completed_at": "2026-10-30T22:52:42Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-30T22:52:42Z",
+          "kind": "outcome",
+          "text": "The List tab’s *Order* dropdown is drawn by the page (`.select-box`), not the platform; screenshot suite passed 3 runs in a row and `npm run verify` is green",
+          "by": "claude:9fec227a"
+        }
+      ],
+      "pr": {
+        "number": 28,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
+      }
     },
     {
       "id": "T-282",
@@ -10812,7 +10851,7 @@
         "dashboard/tests/e2e/whats-new.spec.ts"
       ],
       "created_at": "2026-10-27T22:25:47Z",
-      "updated_at": "2026-10-27T22:34:12Z",
+      "updated_at": "2026-10-27T23:15:45Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:e5ea9db0",
       "started_at": "2026-10-27T22:25:51Z",
@@ -10831,7 +10870,8 @@
       "pr": {
         "number": 27,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
-      }
+      },
+      "merged_at": "2026-10-27T23:14:20Z"
     },
     {
       "id": "T-283",
@@ -10847,7 +10887,7 @@
       "description": "Hakan wants to try a playful theme. Done live with him: a few variations first, then the ones he likes.\n\n## Look\n- **The board**: a whiteboard in light mode, a blackboard in dark mode (the mode switch picks it, as for every theme). The board surface (the Kanban and the Omniboard columns, maybe the page around them) looks like the board: e.g. a soft off-white or a slate/chalkboard tone, perhaps a faint texture or frame, chalk-like text on the blackboard.\n- **Task cards as sticky notes**: yellow or pink (or a set), with a slight tilt or shadow, a handwriting-like or rounded font for the name if it stays readable. Statuses, priorities and labels must still read clearly on the note colours (contrast checked like the other themes, `theme-contrast.test.ts`).\n- **Variations** to try together, for example: notes colour by type, by status or by priority; one colour only; tilt on or off; whiteboard with marker-style headings vs. plain.\n\n## How themes work\nA theme is `src/themes/<id>.css` with light and dark variants (`data-theme` / `data-mode` on `<html>`, `lib/appearance.ts`), listed in `src/themes/index.ts` with a swatch for the Appearance menu. The sticky-note look probably needs a few card-level hooks (variables the card styles read) rather than only colour tokens; add them so other themes keep their look.\n\n## Process\n1. Build two or three variations behind the theme, and try them live on the dev server (`npm run dev`) with Hakan.\n2. Keep what he picks; drop the rest.\n3. Tests: the theme is listed and applies (`theme.test.ts`), its contrast passes (`theme-contrast.test.ts`), no hard-coded colours outside the theme (`no-hardcoded-colours.test.ts`), screenshot baselines for the Kanban in both modes.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "done",
       "dependencies": [],
       "files": [
         "dashboard/src/themes/sticky-notes.css",
@@ -10857,7 +10897,123 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T22:34:40Z",
-      "updated_at": "2026-10-27T22:34:40Z",
+      "updated_at": "2026-10-30T22:54:26Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-30T22:04:31Z",
+      "started_by": "claude:9fec227a",
+      "commit": "3b99226269811789ad4301513e5fa1797609afc9",
+      "completed_at": "2026-10-30T22:38:13Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-30T22:38:13Z",
+          "kind": "outcome",
+          "text": "Sticky notes theme (type colours, chalk/marker drawn columns, board texture) in `eef4d5b`; a second theme, Hand-drawn (notebook page), and the theme-menu separator in `3b99226`",
+          "by": "claude:9fec227a"
+        }
+      ],
+      "pr": {
+        "number": 28,
+        "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
+      }
+    },
+    {
+      "id": "T-284",
+      "name": "Task details: render descriptions and notes with CompMD",
+      "phase": 26,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "compmd"
+      ],
+      "description": "Render a task's description and its notes in the details panel with CompMD ([site](https://compmd.hakanserce.com), [repo](https://github.com/comp-markdown/compmd)) instead of `src/lib/markdown.ts`. CompMD is CommonMark + GFM with components, so tables and the rest of GFM render too.\n\n## Packages\n`@compmd/processor` (WebAssembly; `init()`, `process({ path, files, now })`) and `@compmd/render` (`createPage(element).render(expanded)`), from npm, pinned to exact versions in `dashboard/package.json` and installed with `npm ci`. If they aren't on npm yet when this starts, block the task on the user; don't vendor them from the repository.\n\n## Shipping: separate files, not in the dashboard\nThe processor is about 808 KB gzipped, and the dashboard has a 400 KiB budget (`tests/e2e/guardrails.spec.ts`; 379 KB today). Keep the dashboard one file within that budget and ship CompMD beside it:\n- the build copies the packages' browser files into `plugin/assets/compmd/` (committed build artifacts, like `tasks-dashboard.html`: CI fails when they are stale);\n- `atm serve` serves `plugin/assets/` under a fixed path (e.g. `/assets/...`), read-only, only files under that folder (no `..`, no symlinks out), with correct content types (`application/wasm` for `.wasm`); the Vite dev server and the e2e `tasksServer` fixture serve the same path;\n- the dashboard loads them lazily, the first time a details panel opens, and keeps them loaded.\nThe guardrail test still holds: no request leaves localhost.\n\n## Untrusted text\nTask text comes from anyone who can change `tasks.json` (a collaborator, a merged PR, an agent). Configure CompMD for a document its user doesn't trust:\n- no raw HTML (shown as text, or sanitized with its allowlist; no scripts, styles or event attributes);\n- no remote data: no origin allowed (`from: https://…` fails);\n- no custom code components (JSX, TSX, Svelte, JS), no `host:` data, no inputs that change anything;\n- links only `https:`, `http:`, `mailto:` and `#` (as `safeHref` today), opened as today.\n\n## Scope\n- The details panel's description and notes only. Help, What's new and the card tooltips (`markdownPlainText`) keep `markdown.ts`.\n- The output follows the theme and light/dark mode through the CSS tokens (`no-hardcoded-colours.test.ts` still passes); headings, lists, code, quotes and tables look like today's.\n- While CompMD loads, or if it fails to load, the panel renders with `markdown.ts`, so a description never shows blank.\n- The section rail and its ▲/▼ hints keep working with the new content (T-280).\n\n## Security document\n`docs/security-architecture.md` in the same PR: the new route serving `plugin/assets/`, and CompMD as the renderer of untrusted task text, with the settings above and the checks that prove them.\n\n## Tests\n- atm-cli (`tests/scripts/`): the asset route serves a file with its content type, refuses `..` and paths outside the folder, and 404s a missing file.\n- e2e: a description with a table and a task list renders; raw HTML (`<img onerror>`, `<script>`) shows as text and runs nothing; a `javascript:` link isn't a link; a remote-data component makes no request; the fallback renders when the asset route fails; the details panel's screenshot baselines updated.\n- Unit: the configuration passed to CompMD (untrusted settings).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/package.json",
+        "dashboard/package-lock.json",
+        "dashboard/vite.config.ts",
+        "dashboard/build/dev-data.ts",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/CompMd.svelte",
+        "dashboard/src/lib/compmd.ts",
+        "dashboard/src/app.css",
+        "atm-cli/atm/server.py",
+        "plugin/assets/compmd/",
+        "docs/security-architecture.md",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/e2e/detail.spec.ts",
+        "dashboard/tests/unit/compmd.test.ts",
+        "tests/scripts/"
+      ],
+      "created_at": "2026-10-30T09:03:19Z",
+      "updated_at": "2026-10-30T09:03:19Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-285",
+      "name": "An ambient Mermaid pack: mermaid code blocks render as diagrams in task details",
+      "phase": 26,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "compmd"
+      ],
+      "description": "atm's own ambient CompMD pack (spec §6.3: a pack the processor provides to every document without an import) that renders fenced code blocks with the language `mermaid` as diagrams, in the task details' descriptions and notes (new-1).\n\n## Pack\n- Lives in the dashboard (`src/lib/compmd-packs/`), registered with CompMD's processor as ambient; documents may also import it explicitly (spec §6.3). Name it for atm (e.g. `@atm/mermaid`).\n- Mermaid from npm (`mermaid`, pinned exactly), shipped like CompMD in new-1: copied to `plugin/assets/mermaid/` by the build, served by `atm serve`, and loaded only when a document has a `mermaid` block.\n- Untrusted text: Mermaid's `securityLevel: 'strict'` (no HTML in labels, no click handlers or links that run code), `startOnLoad: false`, no external fonts or images.\n- Theme: the diagram follows light/dark mode and the dashboard theme (Mermaid `themeVariables` from the CSS tokens), and is re-rendered when the mode or theme changes.\n- A diagram that doesn't parse shows as its code block with Mermaid's error message under it, never a blank space.\n- A wide diagram scrolls inside its block or fits the panel width; it doesn't widen the panel.\n\n## Tests\n- e2e: a flowchart renders as SVG; a broken diagram shows the code and the error; a diagram in dark mode uses dark colours; a label with `<script>` or `<img onerror>` runs nothing; nothing loads from outside localhost; Mermaid isn't loaded for a task without a `mermaid` block.\n- A screenshot baseline for a task with a diagram, in light and dark.\n- `docs/security-architecture.md`: Mermaid's settings as part of the untrusted-text renderer.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-284"
+      ],
+      "files": [
+        "dashboard/package.json",
+        "dashboard/package-lock.json",
+        "dashboard/vite.config.ts",
+        "dashboard/src/lib/compmd-packs/mermaid.ts",
+        "dashboard/src/lib/compmd.ts",
+        "plugin/assets/mermaid/",
+        "docs/security-architecture.md",
+        "dashboard/tests/e2e/detail.spec.ts",
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/fixtures/standard.json"
+      ],
+      "created_at": "2026-10-30T09:03:19Z",
+      "updated_at": "2026-10-30T09:03:19Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-286",
+      "name": "Tell agents what task text can use: CompMD and Mermaid diagrams",
+      "phase": 26,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "compmd"
+      ],
+      "description": "Once the details panel renders CompMD with the Mermaid pack (new-1, new-2), the places that tell agents and users what task text may contain are out of date.\n\n## Change\n- `plugin/skills/create-tasks/SKILL.md`: the rule listing what the dashboard renders (\"`#`–`####` headings, paragraphs, …; anything else (tables, HTML) shows as text\") becomes: GFM including tables, and `mermaid` code blocks as diagrams; raw HTML shows as text. Suggest a diagram only where it helps (a flow, a state machine), not by default.\n- `plugin/skills/do-task/SKILL.md` and `plugin/skills/loop-tasks/SKILL.md`, where they describe notes and descriptions as Markdown: the same, briefly.\n- `plugin/CLAUDE.md`: one line on what task text renders.\n- `docs/help.md` (the dashboard's Help): what renders in task details, with a small Mermaid example.\n- `plugin/CHANGELOG.md` and `plugin/WHATS-NEW.md` entries for the release that ships new-1 and new-2.\n\n## Before merging\nA skill changes, so the agent sandbox runs before the PR merges (`CLAUDE.md`, Security): `tests/sandbox/run.mjs` with Docker. Ask the user to run it (it needs their API key).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-285"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/CLAUDE.md",
+        "docs/help.md",
+        "plugin/CHANGELOG.md",
+        "plugin/WHATS-NEW.md"
+      ],
+      "created_at": "2026-10-30T09:03:19Z",
+      "updated_at": "2026-10-30T09:03:19Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

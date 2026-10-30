@@ -32,6 +32,15 @@
       {/each}
     </span>
   {/if}
+  <span class="graph-filtered">
+    <button
+      id="graph-dim-done"
+      class:active={dashboard.graphDimDone}
+      aria-pressed={dashboard.graphDimDone}
+      title="Grey out done tasks, whatever the filters"
+      onclick={() => (dashboard.graphDimDone = !dashboard.graphDimDone)}>Dim done</button
+    >
+  </span>
   <button title="Zoom out (-)" onclick={() => onzoom(1 / 1.25)}>&minus;</button>
   <span class="graph-zoom-level" id="graph-zoom-level">{Math.round(k * 100)}%</span>
   <button title="Zoom in (+)" onclick={() => onzoom(1.25)}>+</button>

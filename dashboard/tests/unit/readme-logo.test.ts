@@ -1,28 +1,27 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { FAVICON_COLOR } from '../../build/favicon';
+import { ACCENT, brandLogo } from '../../../branding/generate.mjs';
 
-// The logo on GitHub (README, social preview, T-272) is the dashboard's, drawn in the accent blue: the same shapes
+// The logo outside the dashboard (README, GitHub's social preview, the org's avatar) is made by branding/generate.mjs
+// from the dashboard's logo, in the accent blue.
 // The path as an argument, never a literal or template string inside `new URL(…, import.meta.url)`: Vite would turn
 // that into an asset import. Paths are relative to the repository root.
 const file = (path: string) => new URL(path, import.meta.url);
 const read = (path: string) => readFileSync(file('../../../' + path), 'utf8');
-const shapes = (svg: string) => svg.match(/<(rect|path)\b[^>]*>/g) ?? [];
 
-describe("the README's logo", () => {
-  it('has the same shapes as the dashboard logo, in the accent blue', () => {
-    const github = read('.github/assets/atm-logo.svg');
-    const dashboard = read('dashboard/src/assets/atm-logo.svg');
-    expect(shapes(github).length).toBeGreaterThan(0);
-    expect(shapes(github)).toEqual(shapes(dashboard));
-    expect(github).toContain('stroke="#2f81f7"');
+describe('the branding files', () => {
+  it('are up to date with the logo source (run `npm run branding` after changing it)', () => {
+    const logo = read('branding/atm-logo.svg');
+    expect(logo).toBe(brandLogo(read('dashboard/src/assets/atm-logo.svg')));
+    expect(logo).toContain(`stroke="${FAVICON_COLOR}"`);
+    expect(ACCENT).toBe(FAVICON_COLOR);
   });
 
-  it('heads the README, and the social preview card uses it', () => {
-    expect(read('README.md')).toContain('src=".github/assets/atm-logo.svg"');
-    expect(read('.github/assets/social-preview.html')).toContain('src="atm-logo.svg"');
-    expect(existsSync(file('../../../.github/assets/social-preview.png'))).toBe(true);
-    // The PNG version (GitHub's avatars take only PNG, JPG or GIF) is made from the same SVG
-    expect(read('.github/assets/atm-logo-png.html')).toContain('src="atm-logo.svg"');
-    expect(existsSync(file('../../../.github/assets/atm-logo.png'))).toBe(true);
+  it('head the README, with the PNGs next to the SVG', () => {
+    expect(read('README.md')).toContain('src="branding/atm-logo.svg"');
+    // The PNGs differ by platform, so only their presence is checked
+    expect(existsSync(file('../../../branding/atm-logo.png'))).toBe(true);
+    expect(existsSync(file('../../../branding/social-preview.png'))).toBe(true);
   });
 });

@@ -10,7 +10,6 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
 - **Kanban:** every status column stays on the board whatever the filters; a status filter empties the columns it
   leaves out instead of removing them (`buildBoard` in `lib/kanban.ts`). A skipped-kind column still shows only with
   *Show skipped* or when the status filter names it.
-
 - **Dependency graph layout:** laid out by dagre (`@dagrejs/dagre`, bundled into the dashboard) instead of columns
   by dependency depth: a task sits close to what it feeds instead of in the first column, a chain runs on one line,
   arrows cross less and follow dagre's route (`layoutGraph` in `lib/graph/layout.ts`; `topologicalLayers` and the
@@ -19,6 +18,19 @@ The dashboard comes with the plugin: updating the plugin updates it everywhere.
   (`guardrails.spec.ts`) goes from 400 to 450 KiB for dagre (about 48 kB).
 
 ### Added
+- **Sticky notes theme** (T-283, `themes/sticky-notes.css`): the Kanban on a blackboard (dark) or a whiteboard
+  (light), in a wooden or aluminium frame, with a chalk-dust or satin texture. The columns have no boxes: their
+  headings and the lines under and between them are drawn in chalk or blue marker, by hand (SVG strokes that wobble,
+  double up and break). The cards are paper sticky notes coloured by type (feature yellow, bugfix pink, test purple,
+  infra blue, docs green, refactor and polish orange), tilted a little, with the name handwritten; inside a note the
+  colour tokens are dark inks that read on every note colour in both modes (`theme-contrast.test.ts` checks the
+  board and the notes). Card and board hooks other themes can set, defaulting to the old look: `--card-bg`,
+  `--card-border`, `--card-radius`, `--card-shadow`, `--card-tilt`, `--card-font`, `--card-font-size`,
+  `--board-surface`, `--board-frame`, `--board-radius`, `--board-shadow`, `--board-padding`, `--board-gap`,
+  `--board-align`, `--board-font`, `--board-ink`, `--board-title-transform`, `--column-bg`, `--column-border`,
+  `--column-radius`, `--column-divider`, `--column-header-line`, `--column-divider-image`, `--column-header-image`,
+  `--column-header-overhang` (`app.css`). Cards carry `data-type` and `data-priority`; a column heading's status
+  colour is `--column-color`.
 - **Dependency graph hover:** hovering a task highlights it and every task it waits for, directly or not (a bolder
   border and a glow in the task's colour, the arrows between them bold in the accent colour); the rest fades
   (`dependencyChain` in `lib/graph/layout.ts`). A greyed-out task on the chain lights up too.

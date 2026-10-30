@@ -11,6 +11,7 @@ import './themes/gruvbox.css';
 import './themes/noctis.css';
 import './themes/sublime-material.css';
 import './themes/high-contrast.css';
+import './themes/sticky-notes.css';
 import App from './App.svelte';
 
 // Mount straight into <body> so the DOM matches the legacy dashboard (no wrapper element).

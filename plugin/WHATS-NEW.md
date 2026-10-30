@@ -8,6 +8,7 @@ The short version, for people using atm. The full list of changes, for developer
 - Grey out finished tasks in the dependency graph with the new "Dim done" button, to see what's left.
 - The dependency graph is laid out more clearly: chains run in straight lines, with fewer crossing arrows.
 - Hover a task in the dependency graph to light up everything it waits for.
+- A new Sticky notes theme: your Kanban on a blackboard or a whiteboard, with tasks as colourful sticky notes.
 
 ## [0.22.0] - 2026-10-27
 

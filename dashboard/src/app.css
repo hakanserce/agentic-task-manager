@@ -2264,12 +2264,23 @@ svg.graph-minimap.hidden {
 .kanban.grouped .kanban-column {
   max-height: none;
 }
+/* Board hooks a theme can set (the sticky-notes theme's blackboard and whiteboard): --board-gap (between columns),
+   --board-surface (a background,
+   texture included), --board-frame (a border), --board-radius, --board-shadow, --board-padding; and for the columns
+   --column-bg, --column-border, --column-radius, --column-divider (the line between two columns), --column-header-line
+   (the line under a heading), their drawn versions --column-divider-image and --column-header-image (below), and
+   --board-ink (the headings' colour, instead of their status colour) */
 .kanban-board {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  gap: var(--board-gap, 12px);
+  /* --board-align: stretch makes every column as tall as the board (lines drawn between them run the full height) */
+  align-items: var(--board-align, flex-start);
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: var(--board-padding, 0 0 4px);
+  background: var(--board-surface, none);
+  border: var(--board-frame, none);
+  border-radius: var(--board-radius, 0);
+  box-shadow: var(--board-shadow, none);
 }
 .kanban-column {
   flex: 1 1 200px;
@@ -2277,9 +2288,16 @@ svg.graph-minimap.hidden {
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--column-bg, var(--surface));
+  border: var(--column-border, 1px solid var(--border));
+  border-radius: var(--column-radius, 8px);
+}
+.kanban-column + .kanban-column {
+  border-left: var(--column-divider, var(--column-border, 1px solid var(--border)));
+  /* --column-divider-image: a drawn line instead of the border (8px wide, at the column's left edge) */
+  background:
+    var(--column-divider-image, none) left top / 8px 100% no-repeat,
+    var(--column-bg, var(--surface));
 }
 /* A scroller without a scrollbar (HintScroll.svelte): "▲ N more" / "▼ N more" over a fade at the cut-off edge */
 .hint-scroll {
@@ -2336,12 +2354,19 @@ svg.graph-minimap.hidden {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--column-header-line, 1px solid var(--border));
+  /* --column-header-image: a drawn line under the heading instead of the border (8px tall); with
+     --column-header-overhang it reaches on into the next column, to meet that column's drawn line */
+  margin-right: calc(-1 * var(--column-header-overhang, 0px));
+  background: var(--column-header-image, none) left bottom / 100% 8px no-repeat;
 }
+/* --board-font: a theme's lettering for the column headings (marker or chalk in the sticky-notes theme) */
 .kanban-column-title {
+  color: var(--board-ink, var(--column-color));
+  font-family: var(--board-font, inherit);
   font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: var(--board-title-transform, uppercase);
   letter-spacing: 0.5px;
 }
 .kanban-count {
@@ -2365,15 +2390,24 @@ svg.graph-minimap.hidden {
 .kanban-cards::-webkit-scrollbar {
   display: none;
 }
+/* Card hooks a theme can set (the sticky-notes theme does): --card-bg, --card-border, --card-radius, --card-shadow,
+   --card-tilt, --card-font, and the colour tokens inside the card (the card takes its text colour from --text) */
 .kanban-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: var(--card-bg, var(--surface2));
+  border: 1px solid var(--card-border, var(--border));
+  border-radius: var(--card-radius, 6px);
+  box-shadow: var(--card-shadow, none);
+  rotate: var(--card-tilt, 0deg);
+  color: var(--text);
   padding: 10px;
   cursor: pointer;
+  transition:
+    rotate 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .kanban-card:hover {
   border-color: var(--accent);
+  rotate: 0deg;
 }
 .kanban-card:focus-visible {
   outline: 2px solid var(--accent);
@@ -2412,7 +2446,8 @@ svg.graph-minimap.hidden {
 }
 .kanban-card-name {
   margin-top: 6px;
-  font-size: 13px;
+  font-family: var(--card-font, inherit);
+  font-size: var(--card-font-size, 13px);
   line-height: 1.4;
 }
 .kanban-readiness {

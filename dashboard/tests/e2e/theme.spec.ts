@@ -84,6 +84,7 @@ test.describe('themes', () => {
       'Noctis',
       'Sublime Material',
       'High contrast',
+      'Sticky notes',
     ]);
     const before = await tokens(page);
     await themeSelect(page).selectOption('nord');

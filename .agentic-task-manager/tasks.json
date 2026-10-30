@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 284,
+    "next_id": 287,
     "labels": [
       {
         "id": "dashboard",
@@ -71,6 +71,10 @@
       {
         "id": 25,
         "name": "Themes"
+      },
+      {
+        "id": 26,
+        "name": "Rich Markdown"
       }
     ],
     "repository": "https://github.com/solo-swe/agentic-task-manager"
@@ -10860,6 +10864,105 @@
       ],
       "created_at": "2026-10-27T22:34:40Z",
       "updated_at": "2026-10-27T22:34:40Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-284",
+      "name": "Task details: render descriptions and notes with CompMD",
+      "phase": 26,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "compmd"
+      ],
+      "description": "Render a task's description and its notes in the details panel with CompMD ([site](https://compmd.hakanserce.com), [repo](https://github.com/comp-markdown/compmd)) instead of `src/lib/markdown.ts`. CompMD is CommonMark + GFM with components, so tables and the rest of GFM render too.\n\n## Packages\n`@compmd/processor` (WebAssembly; `init()`, `process({ path, files, now })`) and `@compmd/render` (`createPage(element).render(expanded)`), from npm, pinned to exact versions in `dashboard/package.json` and installed with `npm ci`. If they aren't on npm yet when this starts, block the task on the user; don't vendor them from the repository.\n\n## Shipping: separate files, not in the dashboard\nThe processor is about 808 KB gzipped, and the dashboard has a 400 KiB budget (`tests/e2e/guardrails.spec.ts`; 379 KB today). Keep the dashboard one file within that budget and ship CompMD beside it:\n- the build copies the packages' browser files into `plugin/assets/compmd/` (committed build artifacts, like `tasks-dashboard.html`: CI fails when they are stale);\n- `atm serve` serves `plugin/assets/` under a fixed path (e.g. `/assets/...`), read-only, only files under that folder (no `..`, no symlinks out), with correct content types (`application/wasm` for `.wasm`); the Vite dev server and the e2e `tasksServer` fixture serve the same path;\n- the dashboard loads them lazily, the first time a details panel opens, and keeps them loaded.\nThe guardrail test still holds: no request leaves localhost.\n\n## Untrusted text\nTask text comes from anyone who can change `tasks.json` (a collaborator, a merged PR, an agent). Configure CompMD for a document its user doesn't trust:\n- no raw HTML (shown as text, or sanitized with its allowlist; no scripts, styles or event attributes);\n- no remote data: no origin allowed (`from: https://…` fails);\n- no custom code components (JSX, TSX, Svelte, JS), no `host:` data, no inputs that change anything;\n- links only `https:`, `http:`, `mailto:` and `#` (as `safeHref` today), opened as today.\n\n## Scope\n- The details panel's description and notes only. Help, What's new and the card tooltips (`markdownPlainText`) keep `markdown.ts`.\n- The output follows the theme and light/dark mode through the CSS tokens (`no-hardcoded-colours.test.ts` still passes); headings, lists, code, quotes and tables look like today's.\n- While CompMD loads, or if it fails to load, the panel renders with `markdown.ts`, so a description never shows blank.\n- The section rail and its ▲/▼ hints keep working with the new content (T-280).\n\n## Security document\n`docs/security-architecture.md` in the same PR: the new route serving `plugin/assets/`, and CompMD as the renderer of untrusted task text, with the settings above and the checks that prove them.\n\n## Tests\n- atm-cli (`tests/scripts/`): the asset route serves a file with its content type, refuses `..` and paths outside the folder, and 404s a missing file.\n- e2e: a description with a table and a task list renders; raw HTML (`<img onerror>`, `<script>`) shows as text and runs nothing; a `javascript:` link isn't a link; a remote-data component makes no request; the fallback renders when the asset route fails; the details panel's screenshot baselines updated.\n- Unit: the configuration passed to CompMD (untrusted settings).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "dashboard/package.json",
+        "dashboard/package-lock.json",
+        "dashboard/vite.config.ts",
+        "dashboard/build/dev-data.ts",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/CompMd.svelte",
+        "dashboard/src/lib/compmd.ts",
+        "dashboard/src/app.css",
+        "atm-cli/atm/server.py",
+        "plugin/assets/compmd/",
+        "docs/security-architecture.md",
+        "dashboard/tests/e2e/helpers.ts",
+        "dashboard/tests/e2e/detail.spec.ts",
+        "dashboard/tests/unit/compmd.test.ts",
+        "tests/scripts/"
+      ],
+      "created_at": "2026-10-30T09:03:19Z",
+      "updated_at": "2026-10-30T09:03:19Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-285",
+      "name": "An ambient Mermaid pack: mermaid code blocks render as diagrams in task details",
+      "phase": 26,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "compmd"
+      ],
+      "description": "atm's own ambient CompMD pack (spec §6.3: a pack the processor provides to every document without an import) that renders fenced code blocks with the language `mermaid` as diagrams, in the task details' descriptions and notes (new-1).\n\n## Pack\n- Lives in the dashboard (`src/lib/compmd-packs/`), registered with CompMD's processor as ambient; documents may also import it explicitly (spec §6.3). Name it for atm (e.g. `@atm/mermaid`).\n- Mermaid from npm (`mermaid`, pinned exactly), shipped like CompMD in new-1: copied to `plugin/assets/mermaid/` by the build, served by `atm serve`, and loaded only when a document has a `mermaid` block.\n- Untrusted text: Mermaid's `securityLevel: 'strict'` (no HTML in labels, no click handlers or links that run code), `startOnLoad: false`, no external fonts or images.\n- Theme: the diagram follows light/dark mode and the dashboard theme (Mermaid `themeVariables` from the CSS tokens), and is re-rendered when the mode or theme changes.\n- A diagram that doesn't parse shows as its code block with Mermaid's error message under it, never a blank space.\n- A wide diagram scrolls inside its block or fits the panel width; it doesn't widen the panel.\n\n## Tests\n- e2e: a flowchart renders as SVG; a broken diagram shows the code and the error; a diagram in dark mode uses dark colours; a label with `<script>` or `<img onerror>` runs nothing; nothing loads from outside localhost; Mermaid isn't loaded for a task without a `mermaid` block.\n- A screenshot baseline for a task with a diagram, in light and dark.\n- `docs/security-architecture.md`: Mermaid's settings as part of the untrusted-text renderer.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-284"
+      ],
+      "files": [
+        "dashboard/package.json",
+        "dashboard/package-lock.json",
+        "dashboard/vite.config.ts",
+        "dashboard/src/lib/compmd-packs/mermaid.ts",
+        "dashboard/src/lib/compmd.ts",
+        "plugin/assets/mermaid/",
+        "docs/security-architecture.md",
+        "dashboard/tests/e2e/detail.spec.ts",
+        "dashboard/tests/e2e/visual.spec.ts",
+        "dashboard/tests/fixtures/standard.json"
+      ],
+      "created_at": "2026-10-30T09:03:19Z",
+      "updated_at": "2026-10-30T09:03:19Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-286",
+      "name": "Tell agents what task text can use: CompMD and Mermaid diagrams",
+      "phase": 26,
+      "type": "docs",
+      "priority": "P2",
+      "labels": [
+        "compmd"
+      ],
+      "description": "Once the details panel renders CompMD with the Mermaid pack (new-1, new-2), the places that tell agents and users what task text may contain are out of date.\n\n## Change\n- `plugin/skills/create-tasks/SKILL.md`: the rule listing what the dashboard renders (\"`#`–`####` headings, paragraphs, …; anything else (tables, HTML) shows as text\") becomes: GFM including tables, and `mermaid` code blocks as diagrams; raw HTML shows as text. Suggest a diagram only where it helps (a flow, a state machine), not by default.\n- `plugin/skills/do-task/SKILL.md` and `plugin/skills/loop-tasks/SKILL.md`, where they describe notes and descriptions as Markdown: the same, briefly.\n- `plugin/CLAUDE.md`: one line on what task text renders.\n- `docs/help.md` (the dashboard's Help): what renders in task details, with a small Mermaid example.\n- `plugin/CHANGELOG.md` and `plugin/WHATS-NEW.md` entries for the release that ships new-1 and new-2.\n\n## Before merging\nA skill changes, so the agent sandbox runs before the PR merges (`CLAUDE.md`, Security): `tests/sandbox/run.mjs` with Docker. Ask the user to run it (it needs their API key).",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-285"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/CLAUDE.md",
+        "docs/help.md",
+        "plugin/CHANGELOG.md",
+        "plugin/WHATS-NEW.md"
+      ],
+      "created_at": "2026-10-30T09:03:19Z",
+      "updated_at": "2026-10-30T09:03:19Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

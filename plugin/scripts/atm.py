@@ -3341,6 +3341,82 @@ def merge_intervals(ours, theirs):
     return sorted(merged, key=lambda i: str(i.get("from", "")) if isinstance(i, dict) else "")
 
 
+def merge_history(ours, theirs):
+    """A task's sprint_history only grows: one entry per start (`from`); an entry ended on either side (`to`) is kept
+    ended, so a sprint change on one branch closes the entry the other branch still has open."""
+    by_start = {}
+    for entry in list(ours) + list(theirs):
+        if not isinstance(entry, dict):
+            continue
+        known = by_start.get(entry.get("from"))
+        if known is None or ("to" in entry and "to" not in known):
+            by_start[entry.get("from")] = entry
+    return sorted(by_start.values(), key=lambda e: str(e.get("from", "")))
+
+
+# meta lists merged item by item, by ID, like tasks (docs/sprints-and-releases-design.md SR-2.4), with how far along
+# each state is: changed on both sides, the further state wins
+META_LISTS = {
+    "sprints": {"planned": 0, "active": 1, "closed": 2},
+    "releases": {"planned": 0, "released": 1, "archived": 2},
+    "components": None,
+}
+# Sprints are named, and two names that differ only in case are the same sprint (SR-2.3)
+item_key = lambda name, item: (
+    item.get("id").casefold() if name == "sprints" and isinstance(item.get("id"), str) else item.get("id")
+)
+
+
+def merge_items(name, base, ours, theirs):
+    """Merge three versions of a meta list of {id, ...} items. Returns (items, conflict descriptions)."""
+    rank = META_LISTS[name]
+    keyed = lambda items: {item_key(name, i): i for i in items if isinstance(i, dict)} if isinstance(items, list) else {}
+    b, o, t = keyed(base), keyed(ours), keyed(theirs)
+    items, conflicts = [], []
+    for key, item in o.items():
+        if key not in b:
+            other = t.get(key)
+            if other is not None and other != item:
+                conflicts.append(f"meta.{name}: {item.get('id')!r} was added on both branches, differently")
+            items.append(item)
+        elif key not in t:
+            if item != b[key]:
+                conflicts.append(f"meta.{name}: {item.get('id')!r} changed on this branch, deleted on the other")
+                items.append(item)
+        else:
+            merged, fields = merge_item(b[key], item, t[key], rank)
+            items.append(merged)
+            if fields:
+                conflicts.append(f"meta.{name}: both branches changed {item.get('id')!r} ({', '.join(fields)})")
+    for key, item in t.items():
+        if key not in o and (key not in b or item != b[key]):
+            if key in b:
+                conflicts.append(f"meta.{name}: {item.get('id')!r} deleted on this branch, changed on the other")
+            items.append(item)
+    return items, conflicts
+
+
+def merge_item(base, ours, theirs, rank):
+    """One sprint, release or component changed on both sides: field by field; where both changed a field and both
+    changed the state, the side further along wins it (a sprint closed on one branch stays closed with its report);
+    otherwise ours, as a conflict. Returns (item, names of conflicting fields)."""
+    winner = None
+    if rank and ours.get("state") != base.get("state") and theirs.get("state") != base.get("state"):
+        ours_rank, theirs_rank = rank.get(ours.get("state"), 0), rank.get(theirs.get("state"), 0)
+        if ours_rank != theirs_rank:
+            winner = ours if ours_rank > theirs_rank else theirs
+    merged, conflicts = {}, []
+    for key in list(ours) + [k for k in theirs if k not in ours] + [k for k in base if k not in ours and k not in theirs]:
+        value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
+        if conflict and winner is not None:
+            value, conflict = winner.get(key, MISSING), False
+        if conflict:
+            conflicts.append(key)
+        if value is not MISSING:
+            merged[key] = value
+    return merged, conflicts
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -3359,8 +3435,13 @@ def merge_task(base, ours, theirs, vocab):
             value = merge_notes(ours.get(key, []), theirs.get(key, []))
         elif key in ("blocks", "reviews"):
             value = merge_intervals(ours.get(key, []), theirs.get(key, []))
+        elif key == "sprint_history":
+            value = merge_history(ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
+            if conflict and key == "phase" and ("sprint" in ours or "sprint" in theirs):
+                # One side has been migrated to sprints (SR-8.5): its sprint stands for the phase
+                value, conflict = MISSING, False
             if conflict:
                 conflicts.append(key)
         if value is not MISSING:
@@ -3431,9 +3512,15 @@ def merge_task_files(base, ours, theirs):
             b, o, t = base.get(key) or {}, ours[key], theirs[key]
             meta = {}
             for k in list(o) + [k for k in t if k not in o]:
-                value, _ = merge_value(b.get(k, MISSING), o.get(k, MISSING), t.get(k, MISSING))
+                if k in META_LISTS:
+                    value, item_conflicts = merge_items(k, b.get(k, []), o.get(k, []), t.get(k, []))
+                    conflicts.extend(item_conflicts)
+                else:
+                    value, _ = merge_value(b.get(k, MISSING), o.get(k, MISSING), t.get(k, MISSING))
                 if value is not MISSING:
                     meta[k] = value
+            if "sprints" in meta:
+                meta.pop("phases", None)  # a project migrated on either side has no phases left (SR-8.5)
             result[key] = meta
         else:
             result[key] = ours.get(key, theirs.get(key))

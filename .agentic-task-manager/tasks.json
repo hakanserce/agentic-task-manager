@@ -11042,7 +11042,7 @@
         "SR-2.6"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -11050,11 +11050,22 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:15:41Z",
+      "updated_at": "2026-10-31T00:21:30Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T00:15:41Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "ddc19f940688c35c44ed9b850fbfe27faeff6424",
+      "completed_at": "2026-10-31T00:21:30Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T00:21:30Z",
+          "kind": "outcome",
+          "text": "Sprints validated with `meta` (one active, unique names, states, due dates); `sprint` + `sprint_history`; effective release and review helpers; `add --sprint`, `edit --sprint`/`--backlog` (brought forward from T-291)",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-288",
@@ -11101,7 +11112,7 @@
         "SR-8.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-287"
       ],
@@ -11110,9 +11121,11 @@
         "tests/scripts/merge.test.mjs"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:21:40Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T00:21:40Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-290",
@@ -11156,7 +11169,7 @@
         "sprints",
         "cli"
       ],
-      "description": "What `atm next` takes becomes a selection (`docs/sprints-and-releases-design.md` §3.2).\n\n## Change\n- `atm next`: default = the active sprint; `--sprint S`, `--tasks T-1,T-5`, `--all` (active sprint, planned ones in order, then the backlog), `--backlog`. Within a selection: priority rank, then ID (no phase). With sprints but none active it selects nothing and says so; without sprints it selects all, as today (SR-3.4).\n- The reason when nothing is ready distinguishes finished, waiting and empty (SR-3.6).\n- `atm list`, `status`, `archive` take `--sprint` (repeatable), `--backlog`, `--release`, `--component`; `atm status` shows the active sprint first (SR-3.2).\n- `atm add` / `edit` take `--sprint`, `--release`, `--component`, `--review`, `--related` (and removals); a task added without `--sprint` goes to the backlog (SR-3.3). (`--with user` comes with its own task.)\n\n## Tests\nScenarios for each selection and the three reasons.",
+      "description": "What `atm next` takes becomes a selection (`docs/sprints-and-releases-design.md` §3.2).\n\n## Change\n- `atm next`: default = the active sprint; `--sprint S`, `--tasks T-1,T-5`, `--all` (active sprint, planned ones in order, then the backlog), `--backlog`. Within a selection: priority rank, then ID (no phase). With sprints but none active it selects nothing and says so; without sprints it selects all, as today (SR-3.4).\n- The reason when nothing is ready distinguishes finished, waiting and empty (SR-3.6).\n- `atm list`, `status`, `archive` take `--sprint` (repeatable), `--backlog`, `--release`, `--component`; `atm status` shows the active sprint first (SR-3.2).\n- `atm add` / `edit` take `--release`, `--component`, `--review`, `--related` (and removals) (SR-3.3). `add --sprint`, `edit --sprint` and `edit --backlog` are already in (T-287); a task added without `--sprint` goes to the backlog. (`--with user` comes with its own task.)\n\n## Tests\nScenarios for each selection and the three reasons.\n",
       "requirements": [
         "SR-3.2",
         "SR-3.3",
@@ -11176,9 +11189,9 @@
         "tests/scripts/scenarios/next.json"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:21:40Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a"
     },
     {
       "id": "T-292",

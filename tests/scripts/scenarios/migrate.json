@@ -66,7 +66,8 @@
         "gitignore_updated": true,
         "merge_driver_updated": true,
         "cleaned_up": null,
-        "finish_times_filled": 0
+        "finish_times_filled": 0,
+        "sprints_from_phases": null
       }
     }
   },
@@ -212,7 +213,11 @@
           "tasks": []
         },
         ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
-        ".agentic-task-manager/.server.json": { "pid": 999999, "port": 1, "folder": "/nowhere" },
+        ".agentic-task-manager/.server.json": {
+          "pid": 999999,
+          "port": 1,
+          "folder": "/nowhere"
+        },
         ".agentic-task-manager/.server.log": "old log\n"
       }
     },
@@ -225,7 +230,8 @@
         "gitignore_updated": false,
         "merge_driver_updated": false,
         "cleaned_up": { "dashboard": false, "server": null },
-        "finish_times_filled": 0
+        "finish_times_filled": 0,
+        "sprints_from_phases": null
       },
       "files": {
         ".agentic-task-manager/.server.json": false,

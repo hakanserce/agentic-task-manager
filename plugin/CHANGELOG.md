@@ -4,6 +4,27 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
+## [Unreleased]
+
+**Before the first run in a shared project, update every agent's plugin:** this version turns the project's phases
+into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks without phases (`atm next` would order by
+priority alone, `--phase` would select nothing; nothing is lost or rewritten).
+
+### Changed
+- **Phases become sprints** (T-292, `docs/sprints-and-releases-design.md` SR-8.1): `atm migrate`, which every skill
+  runs first, converts a project with phases once, in `tasks.json` and `tasks-archive.json`. Each phase with tasks or
+  a name becomes a sprint named after it ("Phase n" when unnamed, " (phase n)" added to a taken name), in phase order;
+  one whose tasks are all finished is `closed` (start, end and a report from its tasks), the others `planned`, none
+  active (it says to plan one with `/atm:plan-sprint`). A task's `phase` becomes `sprint` with a `sprint_history`
+  entry from its `created_at`; `phase` and `meta.phases` are removed. The files are staged, not committed, and
+  `atm migrate --json` lists the new sprints as `sprints_from_phases`. A task with a phase merged into a migrated
+  project joins its phase's sprint at the next `atm migrate`. `atm serve` leaves phases alone for now. Commands keep
+  working on files not yet migrated.
+
+### Fixed
+- `atm unblock` refused to record the answers when the questions and answers together were longer than 500
+  characters; the limit now applies to each question and answer.
+
 ## [0.23.0] - 2026-10-30
 
 ### Changed

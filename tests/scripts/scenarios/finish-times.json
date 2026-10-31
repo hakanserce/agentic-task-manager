@@ -9,7 +9,6 @@
             {
               "id": "T-1",
               "name": "a",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2026-01-01T10:00:00Z"
@@ -17,7 +16,6 @@
             {
               "id": "T-2",
               "name": "b",
-              "phase": 0,
               "type": "feature",
               "status": "skipped",
               "updated_at": "2026-01-02T10:00:00Z"
@@ -25,7 +23,6 @@
             {
               "id": "T-3",
               "name": "c",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2026-01-05T10:00:00Z",
@@ -34,7 +31,6 @@
             {
               "id": "T-4",
               "name": "d",
-              "phase": 0,
               "type": "feature",
               "status": "todo",
               "updated_at": "2026-01-04T10:00:00Z"
@@ -47,7 +43,6 @@
             {
               "id": "T-0",
               "name": "z",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2025-12-01T10:00:00Z"
@@ -65,7 +60,6 @@
             {
               "id": "T-1",
               "name": "a",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2026-01-01T10:00:00Z",
@@ -74,7 +68,6 @@
             {
               "id": "T-2",
               "name": "b",
-              "phase": 0,
               "type": "feature",
               "status": "skipped",
               "updated_at": "2026-01-02T10:00:00Z",
@@ -83,7 +76,6 @@
             {
               "id": "T-3",
               "name": "c",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2026-01-05T10:00:00Z",
@@ -92,7 +84,6 @@
             {
               "id": "T-4",
               "name": "d",
-              "phase": 0,
               "type": "feature",
               "status": "todo",
               "updated_at": "2026-01-04T10:00:00Z"
@@ -105,7 +96,6 @@
             {
               "id": "T-0",
               "name": "z",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2025-12-01T10:00:00Z",
@@ -126,7 +116,6 @@
             {
               "id": "T-1",
               "name": "a",
-              "phase": 0,
               "type": "feature",
               "status": "done",
               "updated_at": "2026-01-01T10:00:00Z"
@@ -144,7 +133,7 @@
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
-          "tasks": [{ "id": "T-1", "name": "a", "phase": 0, "type": "feature", "status": "todo" }]
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "todo" }]
         }
       },
       "commands": [["sh", "-c", "ATM_NOW=2026-01-01T09:00:00Z ATM_AGENT=me \"$ATM\" skip T-1 --reason 'not needed'"]]
@@ -158,14 +147,23 @@
             {
               "id": "T-1",
               "name": "a",
-              "phase": 0,
               "type": "feature",
               "status": "todo",
               "updated_at": "2026-01-02T09:00:00Z",
               "updated_by": "me",
               "notes": [
-                { "at": "2026-01-01T09:00:00Z", "by": "me", "kind": "note", "text": "Skipped: not needed" },
-                { "at": "2026-01-02T09:00:00Z", "by": "me", "kind": "note", "text": "Reopened: needed after all" }
+                {
+                  "at": "2026-01-01T09:00:00Z",
+                  "by": "me",
+                  "kind": "note",
+                  "text": "Skipped: not needed"
+                },
+                {
+                  "at": "2026-01-02T09:00:00Z",
+                  "by": "me",
+                  "kind": "note",
+                  "text": "Reopened: needed after all"
+                }
               ]
             }
           ]
@@ -178,7 +176,7 @@
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
-          "tasks": [{ "id": "T-1", "name": "a", "phase": 0, "type": "feature", "status": "todo" }]
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "todo" }]
         }
       }
     },
@@ -195,7 +193,6 @@
             {
               "id": "T-1",
               "name": "a",
-              "phase": 0,
               "type": "feature",
               "status": "skipped",
               "skipped_at": "2026-01-01T00:00:00Z",

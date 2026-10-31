@@ -11261,7 +11261,7 @@
         "SR-8.6"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-289",
         "T-291"
@@ -11272,7 +11272,7 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:53:37Z",
+      "updated_at": "2026-10-31T00:58:54Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "blocks": [
@@ -11289,7 +11289,9 @@
           "text": "Split the work? (a) T-292 = the phases-to-sprints migration in `atm migrate` (both files, staged), the changelog note and docs; (b) a new task, after T-293 and T-298, removes phases from atm-cli (`--phase`, `atm phases`, the phase in `add`/`list`/`status` and in `atm serve`’s overview summary, which the dashboard’s project cards read today). Removing them now would break the overview until T-298. → Split: T-292 is the migration only (description updated); removing phases from atm-cli becomes a new task after T-293 and T-298.; SR-8.3 says atm refuses to write a file that still has phases. That turns ~230 phase uses in 18 atm-cli scenario files into refusals to rewrite, for a safety net skills rarely need (they run `atm migrate` first). Keep the refusal (and rewrite the scenarios), or let commands keep working on unmigrated files and drop SR-8.3? → Automatic migration in `atm migrate`, no write guard: SR-8.3 is dropped.",
           "by": "claude:9fec227a"
         }
-      ]
+      ],
+      "started_at": "2026-10-31T00:58:54Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-293",
@@ -12121,7 +12123,7 @@
         "sprints",
         "cli"
       ],
-      "description": "Once projects are migrated to sprints (T-292) and the dashboard reads sprints everywhere, including the overview and project cards (T-298), atm-cli drops its phase support (`docs/sprints-and-releases-design.md` SR-8.3, as settled for T-292).\n\n## Change\n- Remove `--phase` from `next`, `list`, `archive`, `add` and `edit`, and the `atm phases` command (and `phases.py`); `atm add` no longer needs a phase.\n- `atm list` drops its phase column; `atm status` drops its phase counts and phase names; `atm show` no longer prints a phase.\n- `atm next` no longer orders by phase (`phase_of` goes from `ready_in_order`).\n- `atm serve`'s overview summary drops `current_phase` and `recent_phases` (the dashboard's cards read sprints since T-298).\n- `atm check` no longer requires a phase or warns about named phases.\n- Help (`atm help`, `docs/help.md`), `plugin/CLAUDE.md` and the v4 docs stop describing phases.\n\n## Tests\natm-cli's scenarios and tests that use phases move to sprints or drop the phase; the full `npm run test:scripts` passes.",
+      "description": "Once projects are migrated to sprints (T-292) and the dashboard reads sprints everywhere, including the overview and project cards (T-298), atm-cli drops its phase support (`docs/sprints-and-releases-design.md` SR-8.3, as settled for T-292).\n\n## Change\n- Remove `--phase` from `next`, `list`, `archive`, `add` and `edit`, and the `atm phases` command (and `phases.py`); `atm add` no longer needs a phase.\n- `atm list` drops its phase column; `atm status` drops its phase counts and phase names; `atm show` no longer prints a phase.\n- `atm next` no longer orders by phase (`phase_of` goes from `ready_in_order`).\n- `atm serve`'s overview summary drops `current_phase` and `recent_phases` (the dashboard's cards read sprints since T-298). Then `atm serve` converts phases too: drop `phases=False` from its `migrate()` call in `server.py` (T-292 left phases alone there because the summary still read them).\n- `atm check` no longer requires a phase or warns about named phases.\n- Help (`atm help`, `docs/help.md`), `plugin/CLAUDE.md` and the v4 docs stop describing phases.\n\n## Tests\natm-cli's scenarios and tests that use phases move to sprints or drop the phase; the full `npm run test:scripts` passes.\n",
       "requirements": [
         "SR-8.3"
       ],
@@ -12142,12 +12144,13 @@
         "tests/scripts/scenarios",
         "plugin/CLAUDE.md",
         "docs/help.md",
-        "docs/v4/atm-cli.md"
+        "docs/v4/atm-cli.md",
+        "atm-cli/atm/server.py"
       ],
       "created_at": "2026-10-31T00:54:44Z",
-      "updated_at": "2026-10-31T00:54:44Z",
+      "updated_at": "2026-10-31T01:12:03Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a"
     }
   ]
 }

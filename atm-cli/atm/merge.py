@@ -168,6 +168,17 @@ def merge_item(base, ours, theirs, rank):
     return merged, conflicts
 
 
+def merge_set(base, ours, theirs):
+    """A list merged as a set (`related`, SR-2.8): what either side added stays, what either side removed goes, in
+    ours' order, then theirs' additions. MISSING when nothing is left."""
+    as_list = lambda v: v if isinstance(v, list) else []
+    base, ours, theirs = as_list(base), as_list(ours), as_list(theirs)
+    removed = (set(base) - set(ours)) | (set(base) - set(theirs))
+    merged = [v for v in ours if v not in removed]
+    merged += [v for v in theirs if v not in removed and v not in merged]
+    return merged or MISSING
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -188,6 +199,8 @@ def merge_task(base, ours, theirs, vocab):
             value = merge_intervals(ours.get(key, []), theirs.get(key, []))
         elif key == "sprint_history":
             value = merge_history(ours.get(key, []), theirs.get(key, []))
+        elif key == "related":
+            value = merge_set(base.get(key, []), ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict and key == "phase" and ("sprint" in ours or "sprint" in theirs):

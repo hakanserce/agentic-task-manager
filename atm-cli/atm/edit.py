@@ -9,6 +9,7 @@ from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
 from .model import (
+    RESOLUTIONS,
     REVIEW_MODES,
     archived_task,
     find_release,
@@ -358,6 +359,31 @@ def cmd_edit(args):
         out(line)
 
 
+def check_resolution(vocab, task, known_ids, errors):
+    """A task's resolution, duplicate_of and related (SR-2.8): a resolution only on a done or skipped task, one of
+    RESOLUTIONS; duplicate_of only with the duplicate resolution, naming another task that exists (in either file)."""
+    task_id = task["id"]
+    resolution = task.get("resolution")
+    if "resolution" in task:
+        if resolution not in RESOLUTIONS:
+            errors.append(f"{task_id}: the resolution {resolution!r} is not one of {', '.join(RESOLUTIONS)}")
+        elif kind_of(vocab, task.get("status")) not in ("done", "skipped"):
+            errors.append(f"{task_id}: has a resolution ({resolution}) but isn't done or skipped")
+    if "duplicate_of" in task:
+        other = task["duplicate_of"]
+        if resolution != "duplicate":
+            errors.append(f"{task_id}: duplicate_of needs the resolution duplicate")
+        if other == task_id or other not in known_ids:
+            errors.append(f"{task_id}: duplicate_of {other!r} isn't another task")
+    related = task.get("related", [])
+    if not (isinstance(related, list) and all(isinstance(r, str) for r in related)):
+        errors.append(f"{task_id}: 'related' must be a list of task IDs")
+    else:
+        for other in related:
+            if other == task_id or other not in known_ids:
+                errors.append(f"{task_id}: related to {other}, which isn't another task")
+
+
 def check_data(data, root, files=False, archived=()):
     """Problems in a task file: (errors, warnings), each a list of messages. `archived` are the archive's tasks:
     dependencies on them are fine, and an ID in both files is an error. With `files`, also a warning for each file a
@@ -407,9 +433,10 @@ def check_data(data, root, files=False, archived=()):
             and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
         ):
             errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
-        files = [f for f in task.get("files") or [] if isinstance(f, str)]
-        if vocab["components"] and files and not suggest_components(vocab, files):
+        task_files = [f for f in task.get("files") or [] if isinstance(f, str)]
+        if vocab["components"] and task_files and not suggest_components(vocab, task_files):
             warnings.append(f"{task_id}: its files match no component (meta.components' paths)")
+        check_resolution(vocab, task, known_ids, errors)
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")

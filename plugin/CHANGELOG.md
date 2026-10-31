@@ -143,6 +143,18 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
   the closed sprints.
 
+### Added (T-318)
+- **Resolution and relations** (SR-2.8): `atm done --resolution done|wont_do|duplicate|obsolete` and
+  `atm skip --resolution wont_do|obsolete|duplicate [--duplicate-of ID]` record how a task ended; only a resolution
+  other than the default (`done`, or `wont_do` for a skipped task) is stored. `--duplicate-of` needs `duplicate` and
+  a task that exists in either file; `atm reopen` clears both. `atm show` prints the resolution, the task's
+  `related` tasks on both sides ("related: T-4, T-1") and "duplicated by: T-2". `atm check` checks them; the merge
+  driver merges `related` as a set. None of it affects readiness.
+
+### Fixed (T-318)
+- `atm check` warned about every finished task's missing files without `--files` (since components, T-311): the
+  option was hidden by a variable of the same name.
+
 ### Changed (T-310)
 - **Releases recovered from past PRs** (SR-8.2): `atm releases add` takes `--pr` more than once (a release shipped
   in several PRs gets all their tasks, the release records the last PR) and `--released-at TIME`, which adds it as

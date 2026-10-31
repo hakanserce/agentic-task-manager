@@ -195,6 +195,18 @@
     }
   },
   {
+    "name": "check without --files doesn't look for a task's files",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "A", "type": "feature", "status": "done", "files": ["src/gone.ts"] }]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "stdout": "tasks.json is fine (1 tasks)\n" }
+  },
+  {
     "name": "check --files: a finished task's files that don't exist are warnings",
     "setup": {
       "files": {

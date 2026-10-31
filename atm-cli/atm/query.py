@@ -118,6 +118,23 @@ def describe_task(data, task):
         lines.append(
             "  depends on: " + ", ".join(f"{d} ({by_id[d].get('status')})" if d in by_id else f"{d} (missing)" for d in deps)
         )
+    # How it ended, when it isn't the default (done, or won't do for a skipped task), and its relations (SR-2.8):
+    # `related` is stored on one side and shown on both
+    if task.get("resolution"):
+        lines.append(
+            f"  resolution: {task['resolution']}" + (f" (of {task['duplicate_of']})" if task.get("duplicate_of") else "")
+        )
+    own = [r for r in task.get("related") or [] if isinstance(r, str)]
+    others = [
+        t.get("id")
+        for t in data["tasks"]
+        if t is not task and task.get("id") in (t.get("related") or []) and t.get("id") not in own
+    ]
+    if own or others:
+        lines.append("  related: " + ", ".join(own + others))
+    duplicates = [t.get("id") for t in data["tasks"] if t.get("duplicate_of") == task.get("id")]
+    if duplicates:
+        lines.append("  duplicated by: " + ", ".join(duplicates))
     for key in ("requirements", "use_cases", "files"):
         if task.get(key):
             lines.append(f"  {key.replace('_', ' ')}: {', '.join(task[key])}")

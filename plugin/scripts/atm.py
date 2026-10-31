@@ -761,6 +761,10 @@ STATUS_CHANGES = {
 WAITING_ON = ("user", "agent")
 # Review states that make a task in review work for an agent again (SR-3.9)
 REWORK_STATES = ("changes_requested", "approved")
+# How a finished task ended (SR-2.8): stored only when it isn't the default, `done` for a done task and `wont_do` for
+# a skipped one
+RESOLUTIONS = ("done", "wont_do", "duplicate", "obsolete")
+SKIP_RESOLUTIONS = ("wont_do", "obsolete", "duplicate")
 
 
 def _terms(meta, key, defaults, need_kind=False):
@@ -1294,6 +1298,8 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         "questions",
         "blocked_at",
         "sprint_review",
+        "resolution",
+        "duplicate_of",
     ):
         task.pop(field, None)
     if not keep_commit:
@@ -1333,13 +1339,25 @@ def change_status(
     waiting_on=None,
     questions=(),
     answers=(),
+    resolution=None,
+    duplicate_of=None,
 ):
     """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
     picks the new status when its kind has several; `agent` is who runs it. `start` records them as started_by,
     `done` as completed_by (both kept when it is done, so the dashboard can show who did what); `note` and `reason`
     become notes, `commit` the task's commit. `block` records who it waits on and the open questions; `unblock`
-    turns them, with the answers, into an answer note."""
+    turns them, with the answers, into an answer note. `done` and `skip` record a `resolution` (SR-2.8), `skip` also
+    `duplicate_of` (the caller checks that task exists, in either file)."""
     vocab = vocabulary(data)
+    if command in ("done", "skip"):
+        resolution = resolution or ("done" if command == "done" else "wont_do")
+        allowed_resolutions = RESOLUTIONS if command == "done" else SKIP_RESOLUTIONS
+        if resolution not in allowed_resolutions:
+            raise AtmError(f"--resolution must be one of {', '.join(allowed_resolutions)}", 2)
+        if duplicate_of is not None and resolution != "duplicate":
+            raise AtmError("--duplicate-of goes with --resolution duplicate", 2)
+        if duplicate_of == task["id"]:
+            raise AtmError(f"{task['id']} can't be a duplicate of itself", 2)
     allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
     if kind_of(vocab, current) not in allowed:
@@ -1426,6 +1444,10 @@ def change_status(
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
         task["skipped_at"] = stamp
+        if resolution != "wont_do":
+            task["resolution"] = resolution  # none means the default, won't do
+        if duplicate_of:
+            task["duplicate_of"] = duplicate_of
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
@@ -1437,6 +1459,8 @@ def change_status(
             task["started_by"] = agent
     elif command == "done":
         task["completed_at"] = stamp
+        if resolution != "done":
+            task["resolution"] = resolution  # none means the default, done
         if agent:
             task["completed_by"] = agent
         if commit:
@@ -2485,6 +2509,23 @@ def describe_task(data, task):
         lines.append(
             "  depends on: " + ", ".join(f"{d} ({by_id[d].get('status')})" if d in by_id else f"{d} (missing)" for d in deps)
         )
+    # How it ended, when it isn't the default (done, or won't do for a skipped task), and its relations (SR-2.8):
+    # `related` is stored on one side and shown on both
+    if task.get("resolution"):
+        lines.append(
+            f"  resolution: {task['resolution']}" + (f" (of {task['duplicate_of']})" if task.get("duplicate_of") else "")
+        )
+    own = [r for r in task.get("related") or [] if isinstance(r, str)]
+    others = [
+        t.get("id")
+        for t in data["tasks"]
+        if t is not task and task.get("id") in (t.get("related") or []) and t.get("id") not in own
+    ]
+    if own or others:
+        lines.append("  related: " + ", ".join(own + others))
+    duplicates = [t.get("id") for t in data["tasks"] if t.get("duplicate_of") == task.get("id")]
+    if duplicates:
+        lines.append("  duplicated by: " + ", ".join(duplicates))
     for key in ("requirements", "use_cases", "files"):
         if task.get(key):
             lines.append(f"  {key.replace('_', ' ')}: {', '.join(task[key])}")
@@ -3118,6 +3159,9 @@ def cmd_status_change(command):
                     write_store(paths, store)
                     raise own
             check_holder(claims, task_id, agent, command)
+            duplicate_of = getattr(args, "duplicate_of", None)
+            if duplicate_of and not any(t.get("id") == duplicate_of for t in data["tasks"]) and not archived_task(duplicate_of):
+                raise AtmError(f"{task_id} can't be a duplicate of {duplicate_of}, which doesn't exist", 2)
             waits_in = adopt_waiting(task, data, store, paths, command)
             previous = change_status(
                 task,
@@ -3131,6 +3175,8 @@ def cmd_status_change(command):
                 waiting_on=getattr(args, "on", None),
                 questions=getattr(args, "question", None) or [],
                 answers=getattr(args, "answer", None) or [],
+                resolution=getattr(args, "resolution", None),
+                duplicate_of=duplicate_of,
             )
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)
@@ -3547,6 +3593,31 @@ def cmd_edit(args):
         out(line)
 
 
+def check_resolution(vocab, task, known_ids, errors):
+    """A task's resolution, duplicate_of and related (SR-2.8): a resolution only on a done or skipped task, one of
+    RESOLUTIONS; duplicate_of only with the duplicate resolution, naming another task that exists (in either file)."""
+    task_id = task["id"]
+    resolution = task.get("resolution")
+    if "resolution" in task:
+        if resolution not in RESOLUTIONS:
+            errors.append(f"{task_id}: the resolution {resolution!r} is not one of {', '.join(RESOLUTIONS)}")
+        elif kind_of(vocab, task.get("status")) not in ("done", "skipped"):
+            errors.append(f"{task_id}: has a resolution ({resolution}) but isn't done or skipped")
+    if "duplicate_of" in task:
+        other = task["duplicate_of"]
+        if resolution != "duplicate":
+            errors.append(f"{task_id}: duplicate_of needs the resolution duplicate")
+        if other == task_id or other not in known_ids:
+            errors.append(f"{task_id}: duplicate_of {other!r} isn't another task")
+    related = task.get("related", [])
+    if not (isinstance(related, list) and all(isinstance(r, str) for r in related)):
+        errors.append(f"{task_id}: 'related' must be a list of task IDs")
+    else:
+        for other in related:
+            if other == task_id or other not in known_ids:
+                errors.append(f"{task_id}: related to {other}, which isn't another task")
+
+
 def check_data(data, root, files=False, archived=()):
     """Problems in a task file: (errors, warnings), each a list of messages. `archived` are the archive's tasks:
     dependencies on them are fine, and an ID in both files is an error. With `files`, also a warning for each file a
@@ -3596,9 +3667,10 @@ def check_data(data, root, files=False, archived=()):
             and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
         ):
             errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
-        files = [f for f in task.get("files") or [] if isinstance(f, str)]
-        if vocab["components"] and files and not suggest_components(vocab, files):
+        task_files = [f for f in task.get("files") or [] if isinstance(f, str)]
+        if vocab["components"] and task_files and not suggest_components(vocab, task_files):
             warnings.append(f"{task_id}: its files match no component (meta.components' paths)")
+        check_resolution(vocab, task, known_ids, errors)
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")
@@ -4452,6 +4524,17 @@ def merge_item(base, ours, theirs, rank):
     return merged, conflicts
 
 
+def merge_set(base, ours, theirs):
+    """A list merged as a set (`related`, SR-2.8): what either side added stays, what either side removed goes, in
+    ours' order, then theirs' additions. MISSING when nothing is left."""
+    as_list = lambda v: v if isinstance(v, list) else []
+    base, ours, theirs = as_list(base), as_list(ours), as_list(theirs)
+    removed = (set(base) - set(ours)) | (set(base) - set(theirs))
+    merged = [v for v in ours if v not in removed]
+    merged += [v for v in theirs if v not in removed and v not in merged]
+    return merged or MISSING
+
+
 def merge_task(base, ours, theirs, vocab):
     """Merge one task changed on both sides. Returns (task, names of conflicting fields)."""
     changed = lambda side: any(side.get(f, MISSING) != base.get(f, MISSING) for f in PROGRESS_FIELDS)
@@ -4472,6 +4555,8 @@ def merge_task(base, ours, theirs, vocab):
             value = merge_intervals(ours.get(key, []), theirs.get(key, []))
         elif key == "sprint_history":
             value = merge_history(ours.get(key, []), theirs.get(key, []))
+        elif key == "related":
+            value = merge_set(base.get(key, []), ours.get(key, []), theirs.get(key, []))
         else:
             value, conflict = merge_value(base.get(key, MISSING), ours.get(key, MISSING), theirs.get(key, MISSING))
             if conflict and key == "phase" and ("sprint" in ours or "sprint" in theirs):
@@ -6196,7 +6281,7 @@ commands:
   start <id>     mark a task in_progress and claim it (its dependencies must be done); prints the task
   review <id> [--note TEXT]
                  ask for a review of a finished task: in_review, and its claim is released
-  done <id> [--note TEXT] [--commit SHA]
+  done <id> [--note TEXT] [--commit SHA] [--resolution R]
                  mark an in_progress or in_review task done and drop its claim; the note is a one-line
                  outcome (for a task in review, done means the review passed); prints the tasks now ready
   reject <id> --reason TEXT
@@ -6210,7 +6295,7 @@ commands:
                  back to todo, with the questions and answers kept as a note
   reopen <id> --reason TEXT
                  a done or skipped task back to todo (done by mistake, or not finished after all)
-  skip <id> --reason TEXT
+  skip <id> --reason TEXT [--resolution wont_do|obsolete|duplicate] [--duplicate-of ID]
                  a todo or blocked task that isn't needed: skipped, with the reason as a note
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
@@ -6381,6 +6466,10 @@ def build_parser():
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't done after all (a note)")
         if name == "skip":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't needed (a note)")
+            sub.add_argument(
+                "--resolution", choices=["wont_do", "obsolete", "duplicate"], help="why it ended (default: wont_do)"
+            )
+            sub.add_argument("--duplicate-of", metavar="ID", help="the task it duplicates (with --resolution duplicate)")
         if name == "block":
             sub.add_argument("--on", required=True, choices=["user", "agent"], help="who has to decide")
             sub.add_argument("--question", action="append", default=[], metavar="TEXT", help="an open question")
@@ -6390,6 +6479,9 @@ def build_parser():
         if name == "done":
             sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")
+            sub.add_argument(
+                "--resolution", choices=["done", "wont_do", "duplicate", "obsolete"], help="how it ended (default: done)"
+            )
 
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--type", help="only this task type")

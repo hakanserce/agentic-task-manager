@@ -53,6 +53,10 @@ STATUS_CHANGES = {
 WAITING_ON = ("user", "agent")
 # Review states that make a task in review work for an agent again (SR-3.9)
 REWORK_STATES = ("changes_requested", "approved")
+# How a finished task ended (SR-2.8): stored only when it isn't the default, `done` for a done task and `wont_do` for
+# a skipped one
+RESOLUTIONS = ("done", "wont_do", "duplicate", "obsolete")
+SKIP_RESOLUTIONS = ("wont_do", "obsolete", "duplicate")
 
 
 def _terms(meta, key, defaults, need_kind=False):
@@ -586,6 +590,8 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         "questions",
         "blocked_at",
         "sprint_review",
+        "resolution",
+        "duplicate_of",
     ):
         task.pop(field, None)
     if not keep_commit:
@@ -625,13 +631,25 @@ def change_status(
     waiting_on=None,
     questions=(),
     answers=(),
+    resolution=None,
+    duplicate_of=None,
 ):
     """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
     picks the new status when its kind has several; `agent` is who runs it. `start` records them as started_by,
     `done` as completed_by (both kept when it is done, so the dashboard can show who did what); `note` and `reason`
     become notes, `commit` the task's commit. `block` records who it waits on and the open questions; `unblock`
-    turns them, with the answers, into an answer note."""
+    turns them, with the answers, into an answer note. `done` and `skip` record a `resolution` (SR-2.8), `skip` also
+    `duplicate_of` (the caller checks that task exists, in either file)."""
     vocab = vocabulary(data)
+    if command in ("done", "skip"):
+        resolution = resolution or ("done" if command == "done" else "wont_do")
+        allowed_resolutions = RESOLUTIONS if command == "done" else SKIP_RESOLUTIONS
+        if resolution not in allowed_resolutions:
+            raise AtmError(f"--resolution must be one of {', '.join(allowed_resolutions)}", 2)
+        if duplicate_of is not None and resolution != "duplicate":
+            raise AtmError("--duplicate-of goes with --resolution duplicate", 2)
+        if duplicate_of == task["id"]:
+            raise AtmError(f"{task['id']} can't be a duplicate of itself", 2)
     allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
     if kind_of(vocab, current) not in allowed:
@@ -718,6 +736,10 @@ def change_status(
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
         task["skipped_at"] = stamp
+        if resolution != "wont_do":
+            task["resolution"] = resolution  # none means the default, won't do
+        if duplicate_of:
+            task["duplicate_of"] = duplicate_of
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
@@ -729,6 +751,8 @@ def change_status(
             task["started_by"] = agent
     elif command == "done":
         task["completed_at"] = stamp
+        if resolution != "done":
+            task["resolution"] = resolution  # none means the default, done
         if agent:
             task["completed_by"] = agent
         if commit:

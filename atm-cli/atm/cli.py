@@ -48,7 +48,7 @@ commands:
   start <id>     mark a task in_progress and claim it (its dependencies must be done); prints the task
   review <id> [--note TEXT]
                  ask for a review of a finished task: in_review, and its claim is released
-  done <id> [--note TEXT] [--commit SHA]
+  done <id> [--note TEXT] [--commit SHA] [--resolution R]
                  mark an in_progress or in_review task done and drop its claim; the note is a one-line
                  outcome (for a task in review, done means the review passed); prints the tasks now ready
   reject <id> --reason TEXT
@@ -62,7 +62,7 @@ commands:
                  back to todo, with the questions and answers kept as a note
   reopen <id> --reason TEXT
                  a done or skipped task back to todo (done by mistake, or not finished after all)
-  skip <id> --reason TEXT
+  skip <id> --reason TEXT [--resolution wont_do|obsolete|duplicate] [--duplicate-of ID]
                  a todo or blocked task that isn't needed: skipped, with the reason as a note
   fail <id> [--reason TEXT]
                  put an in_progress task back to todo, recording why (a failure note)
@@ -233,6 +233,10 @@ def build_parser():
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't done after all (a note)")
         if name == "skip":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't needed (a note)")
+            sub.add_argument(
+                "--resolution", choices=["wont_do", "obsolete", "duplicate"], help="why it ended (default: wont_do)"
+            )
+            sub.add_argument("--duplicate-of", metavar="ID", help="the task it duplicates (with --resolution duplicate)")
         if name == "block":
             sub.add_argument("--on", required=True, choices=["user", "agent"], help="who has to decide")
             sub.add_argument("--question", action="append", default=[], metavar="TEXT", help="an open question")
@@ -242,6 +246,9 @@ def build_parser():
         if name == "done":
             sub.add_argument("--note", metavar="TEXT", help="a one-line outcome")
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")
+            sub.add_argument(
+                "--resolution", choices=["done", "wont_do", "duplicate", "obsolete"], help="how it ended (default: done)"
+            )
 
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--type", help="only this task type")

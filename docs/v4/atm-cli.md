@@ -96,7 +96,8 @@ Existing commands are marked *(exists)*.
 | Command | From → to | Also |
 |---|---|---|
 | `atm start <id>` *(exists)* | todo → active | now prints the task, as `next --claim` does |
-| `atm done <id> [--note T] [--commit SHA]` *(exists)* | active, review → done | prints the tasks it unblocked |
+| `atm done <id> [--note T] [--commit SHA] [--resolution R]` *(exists)* | active, review → done | prints the tasks it unblocked; `--resolution` (`done`, `wont_do`, `duplicate`, `obsolete`) is stored only when it isn't `done` (SR-2.8, T-318) |
+| `atm skip <id> --reason T [--resolution wont_do\|obsolete\|duplicate] [--duplicate-of ID]` | todo, blocked → skipped | the reason is a note; the resolution is stored only when it isn't `wont_do`; `--duplicate-of` needs `duplicate` and a task in either file. `reopen` clears both. `atm show` prints the resolution, `related` on both sides and "duplicated by"; neither affects readiness, and the merge driver merges `related` as a set |
 | `atm fail <id> [--reason T]` *(exists)* | active → todo | the reason becomes a `failure` note |
 | `atm release <id> [--note T]` *(exists)* | active → todo | the note is a `handoff` |
 | `atm review <id> [--note T] [--status S]` | active → review | records `review_requested_at`, releases the claim |

@@ -831,6 +831,53 @@ def check_workflow(workflow):
             raise AtmError(f"meta.workflow.{key} must be {expected}")
 
 
+SPRINT_STATES = ("planned", "active", "closed")
+SPRINT_NAMING = ("people", "time")
+REVIEW_MODES = ("blocker", "async", "batch", "none")
+MAX_SPRINT_NAME = 48
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def check_sprints(meta):
+    """meta.sprints (docs/sprints-and-releases-design.md SR-2.1, SR-2.3) as a list of sprints, in order; [] when
+    absent. A sprint's ID is its name: unique (compared case-insensitively), at most 48 characters, no space at either
+    end. A sprint without a state is planned. Raises AtmError naming the problem."""
+    sprints = meta.get("sprints", [])
+    if not isinstance(sprints, list):
+        raise AtmError("meta.sprints must be a list of sprints")
+    seen, active = set(), []
+    for sprint in sprints:
+        if not isinstance(sprint, dict) or not isinstance(sprint.get("id"), str) or not sprint["id"].strip():
+            raise AtmError('meta.sprints: every sprint needs an "id", its name (a non-empty string)')
+        name = sprint["id"]
+        if name != name.strip() or len(name) > MAX_SPRINT_NAME:
+            raise AtmError(f"meta.sprints: {name!r} is not a sprint name (at most {MAX_SPRINT_NAME} characters, no "
+                           "space at either end)")
+        if name.casefold() in seen:
+            raise AtmError(f"meta.sprints: {name!r} is listed twice")
+        seen.add(name.casefold())
+        state = sprint.get("state", "planned")
+        if state not in SPRINT_STATES:
+            raise AtmError(f"meta.sprints: {name!r} has the state {state!r}; use one of {', '.join(SPRINT_STATES)}")
+        if state == "active":
+            active.append(name)
+        if "due" in sprint and not (isinstance(sprint["due"], str) and DATE.fullmatch(sprint["due"])):
+            raise AtmError(f"meta.sprints: {name!r} has the due date {sprint['due']!r}; use YYYY-MM-DD")
+        for key in ("goal", "release", "start", "end"):
+            if key in sprint and not isinstance(sprint[key], str):
+                raise AtmError(f"meta.sprints: {name!r}'s {key} must be a string")
+    if len(active) > 1:
+        raise AtmError(f"meta.sprints: only one sprint can be active, but {' and '.join(active)} are")
+    return [{**s, "state": s.get("state", "planned")} for s in sprints]
+
+
+def check_setting(meta, key, choices, default):
+    value = meta.get(key, default)
+    if value not in choices:
+        raise AtmError(f"meta.{key} must be one of {', '.join(choices)}")
+    return value
+
+
 def workflow_of(data):
     """The project's workflow with its defaults filled in, or None when it has none."""
     meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
@@ -870,7 +917,61 @@ def vocabulary(data):
         "priorities": priorities,
         "default_priority": default_priority,
         "phases": phases,
+        "sprints": check_sprints(meta),
+        "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
+        "review": check_setting(meta, "review", REVIEW_MODES, "none"),
+        "components": meta.get("components") if isinstance(meta.get("components"), list) else [],
     }
+
+
+def find_sprint(vocab, name):
+    """The sprint with this name (compared case-insensitively), or None."""
+    if not isinstance(name, str):
+        return None
+    for sprint in vocab["sprints"]:
+        if sprint["id"].casefold() == name.casefold():
+            return sprint
+    return None
+
+
+def set_sprint(task, sprint, stamp):
+    """Put `task` in `sprint` (a sprint ID), or in the backlog (None). Every change ends the open sprint_history entry
+    and, for a sprint, starts a new one (SR-2.5). Returns whether anything changed."""
+    if task.get("sprint") == sprint:
+        return False
+    history = task.setdefault("sprint_history", [])
+    for entry in history:
+        if isinstance(entry, dict) and "to" not in entry:
+            entry["to"] = stamp
+    if sprint is None:
+        task.pop("sprint", None)
+    else:
+        task["sprint"] = sprint
+        history.append({"sprint": sprint, "from": stamp})
+    if not history:
+        task.pop("sprint_history")
+    return True
+
+
+def effective_release(vocab, task):
+    """A task's release: its own, else its sprint's (SR-2.6), or None."""
+    if task.get("release"):
+        return task["release"]
+    sprint = find_sprint(vocab, task.get("sprint"))
+    return sprint.get("release") if sprint else None
+
+
+def effective_review(vocab, task):
+    """A task's review mode: its own, else its first component's that has one, else the project's (meta.review),
+    else none (SR-2.6)."""
+    if task.get("review") in REVIEW_MODES:
+        return task["review"]
+    components = {c.get("id"): c for c in vocab["components"] if isinstance(c, dict)}
+    for component in task.get("components") or []:
+        mode = components.get(component, {}).get("review")
+        if mode in REVIEW_MODES:
+            return mode
+    return vocab["review"]
 
 
 def kind_of(vocab, status):
@@ -2715,6 +2816,17 @@ def check_labels(labels):
     return labels
 
 
+def open_sprint(vocab, name):
+    """The ID of the sprint called `name`, which a task can be put in: it must exist and not be closed (SR-2.5)."""
+    sprint = find_sprint(vocab, name)
+    if sprint is None:
+        known = ", ".join(s["id"] for s in vocab["sprints"] if s["state"] != "closed") or "none yet: atm sprints add"
+        raise AtmError(f"no sprint {name!r}; the open sprints: {known}", 2)
+    if sprint["state"] == "closed":
+        raise AtmError(f"the sprint {sprint['id']!r} is closed; a task can only go into a planned or active sprint", 2)
+    return sprint["id"]
+
+
 def number(value, what):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise AtmError(f"{what} must be a number", 2)
@@ -2758,6 +2870,8 @@ def new_task(vocab, fields, actor, stamp):
     if actor:
         task["created_by"] = actor
         task["updated_by"] = actor
+    if fields.get("sprint"):
+        set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
     return task
 
 
@@ -2843,6 +2957,7 @@ def cmd_add(args):
                 "dependencies": args.dep,
                 "files": args.file,
                 "requirements": args.requirement,
+                "sprint": args.sprint,
             }
         ]
     paths = find_paths(os.getcwd())
@@ -2885,6 +3000,9 @@ def edit_task(data, task, args):
         set_field("description", description)
     if args.phase is not None:
         set_field("phase", number(args.phase, "phase"))
+    if args.sprint is not None or args.backlog:
+        if set_sprint(task, None if args.backlog else open_sprint(vocab, args.sprint), now_iso()):
+            changed.append("sprint")
     if args.type is not None:
         types = [t["id"] for t in vocab["types"]]
         if args.type not in types:
@@ -2971,6 +3089,13 @@ def check_data(data, root, files=False, archived=()):
         for key in ("dependencies", "files", "labels", "requirements", "use_cases"):
             if key in task and not (isinstance(task[key], list) and all(isinstance(v, str) for v in task[key])):
                 errors.append(f"{task_id}: {key!r} must be a list of strings")
+        if "sprint" in task and find_sprint(vocab, task["sprint"]) is None:
+            errors.append(f"{task_id}: the sprint {task['sprint']!r} is not one of meta.sprints")
+        if "sprint_history" in task and not (
+            isinstance(task["sprint_history"], list)
+            and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
+        ):
+            errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")
@@ -4718,9 +4843,10 @@ commands:
                  put an in_progress task back to todo; the note is a handoff for the next agent
   note <id> TEXT add a note to a task (at most 500 characters)
   add --name N --phase P --type T [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
+      [--sprint S]
                  add a task with the next ID; add --json-file F adds many (see atm add --help)
-  edit <id> [--name] [--description] [--phase] [--type] [--priority] [--add-dep/--remove-dep ID]
-            [--add-file/--remove-file F] [--add-label/--remove-label L]
+  edit <id> [--name] [--description] [--phase] [--sprint S | --backlog] [--type] [--priority]
+            [--add-dep/--remove-dep ID] [--add-file/--remove-file F] [--add-label/--remove-label L]
                  change a task's definition (its status changes only through the status commands)
   check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
   archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]
@@ -4909,6 +5035,7 @@ def build_parser():
     add.add_argument("--dep", action="append", default=[], metavar="ID", help="a task it depends on (repeatable)")
     add.add_argument("--file", action="append", default=[], help="a file it will create or change (repeatable)")
     add.add_argument("--requirement", action="append", default=[], help="a requirement ID (repeatable)")
+    add.add_argument("--sprint", metavar="NAME", help="the sprint it goes into (default: none, the backlog)")
     add.add_argument(
         "--json-file",
         metavar="FILE",
@@ -4924,6 +5051,9 @@ def build_parser():
     edit_description.add_argument("--description")
     edit_description.add_argument("--description-file", metavar="FILE")
     edit.add_argument("--phase", type=float)
+    edit_sprint = edit.add_mutually_exclusive_group()
+    edit_sprint.add_argument("--sprint", metavar="NAME", help="put it in this sprint (planned or active)")
+    edit_sprint.add_argument("--backlog", action="store_true", help="take it out of its sprint, into the backlog")
     edit.add_argument("--type")
     edit.add_argument("--priority")
     for option, help_text in (

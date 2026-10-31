@@ -36,6 +36,9 @@ All in `.agentic-task-manager/` at the project root.
 | `workflow` | none (asked on first push) | `{type, base, verify, max_rounds, commit_template, trailers}` ([workflows](skills-and-workflows.md#1-workflows)) |
 | `archive` | `{threshold_kb: 1024, threshold_tasks: 500, keep_days: 14, auto: true}` | when to suggest archiving, and whether agents may do it (5) |
 | `next_id` | the highest ID in both files + 1 | the number the next new task gets |
+| `sprints` | none | `[{id, goal, state, release, start, end, due, report}]`, in order; the ID is the sprint's name; states `planned`, `active` (at most one), `closed` ([sprints design](../sprints-and-releases-design.md) SR-2.1, SR-2.3) |
+| `sprint_names` | `people` | how a sprint created without a name is named: `people` or `time` (SR-2.9) |
+| `review` | `none` | the project's default review mode: `blocker`, `async`, `batch` or `none` (SR-2.6) |
 
 | ID | P | Requirement |
 |---|---|---|
@@ -94,6 +97,8 @@ New fields, all optional:
 | `commit` | `commit`, `done --commit` | a return to `todo` | the SHA of the task's commit |
 | `pr` | `pr` | — | `{number, url}` of the PR that contains the task |
 | `merged_at` | `merged` | — | when that PR was merged |
+| `sprint` | `add --sprint`, `edit --sprint` | `edit --backlog` | the sprint the task is in; absent: the backlog ([sprints design](../sprints-and-releases-design.md) SR-2.5) |
+| `sprint_history` | atm-cli, when `sprint` changes | — | `[{sprint, from, to}]`: each sprint the task was in; the open entry has no `to` (SR-2.5) |
 
 | ID | P | Requirement |
 |---|---|---|

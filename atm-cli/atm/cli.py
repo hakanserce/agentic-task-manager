@@ -63,9 +63,10 @@ commands:
                  put an in_progress task back to todo; the note is a handoff for the next agent
   note <id> TEXT add a note to a task (at most 500 characters)
   add --name N --phase P --type T [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
+      [--sprint S]
                  add a task with the next ID; add --json-file F adds many (see atm add --help)
-  edit <id> [--name] [--description] [--phase] [--type] [--priority] [--add-dep/--remove-dep ID]
-            [--add-file/--remove-file F] [--add-label/--remove-label L]
+  edit <id> [--name] [--description] [--phase] [--sprint S | --backlog] [--type] [--priority]
+            [--add-dep/--remove-dep ID] [--add-file/--remove-file F] [--add-label/--remove-label L]
                  change a task's definition (its status changes only through the status commands)
   check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
   archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]
@@ -254,6 +255,7 @@ def build_parser():
     add.add_argument("--dep", action="append", default=[], metavar="ID", help="a task it depends on (repeatable)")
     add.add_argument("--file", action="append", default=[], help="a file it will create or change (repeatable)")
     add.add_argument("--requirement", action="append", default=[], help="a requirement ID (repeatable)")
+    add.add_argument("--sprint", metavar="NAME", help="the sprint it goes into (default: none, the backlog)")
     add.add_argument(
         "--json-file",
         metavar="FILE",
@@ -269,6 +271,9 @@ def build_parser():
     edit_description.add_argument("--description")
     edit_description.add_argument("--description-file", metavar="FILE")
     edit.add_argument("--phase", type=float)
+    edit_sprint = edit.add_mutually_exclusive_group()
+    edit_sprint.add_argument("--sprint", metavar="NAME", help="put it in this sprint (planned or active)")
+    edit_sprint.add_argument("--backlog", action="store_true", help="take it out of its sprint, into the backlog")
     edit.add_argument("--type")
     edit.add_argument("--priority")
     for option, help_text in (

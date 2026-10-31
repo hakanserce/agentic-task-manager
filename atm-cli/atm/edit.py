@@ -9,7 +9,9 @@ from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
 from .model import (
+    find_sprint,
     find_task,
+    set_sprint,
     kind_of,
     load_archive,
     load_tasks,
@@ -68,6 +70,17 @@ def check_labels(labels):
     return labels
 
 
+def open_sprint(vocab, name):
+    """The ID of the sprint called `name`, which a task can be put in: it must exist and not be closed (SR-2.5)."""
+    sprint = find_sprint(vocab, name)
+    if sprint is None:
+        known = ", ".join(s["id"] for s in vocab["sprints"] if s["state"] != "closed") or "none yet: atm sprints add"
+        raise AtmError(f"no sprint {name!r}; the open sprints: {known}", 2)
+    if sprint["state"] == "closed":
+        raise AtmError(f"the sprint {sprint['id']!r} is closed; a task can only go into a planned or active sprint", 2)
+    return sprint["id"]
+
+
 def number(value, what):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise AtmError(f"{what} must be a number", 2)
@@ -111,6 +124,8 @@ def new_task(vocab, fields, actor, stamp):
     if actor:
         task["created_by"] = actor
         task["updated_by"] = actor
+    if fields.get("sprint"):
+        set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
     return task
 
 
@@ -196,6 +211,7 @@ def cmd_add(args):
                 "dependencies": args.dep,
                 "files": args.file,
                 "requirements": args.requirement,
+                "sprint": args.sprint,
             }
         ]
     paths = find_paths(os.getcwd())
@@ -238,6 +254,9 @@ def edit_task(data, task, args):
         set_field("description", description)
     if args.phase is not None:
         set_field("phase", number(args.phase, "phase"))
+    if args.sprint is not None or args.backlog:
+        if set_sprint(task, None if args.backlog else open_sprint(vocab, args.sprint), now_iso()):
+            changed.append("sprint")
     if args.type is not None:
         types = [t["id"] for t in vocab["types"]]
         if args.type not in types:
@@ -324,6 +343,13 @@ def check_data(data, root, files=False, archived=()):
         for key in ("dependencies", "files", "labels", "requirements", "use_cases"):
             if key in task and not (isinstance(task[key], list) and all(isinstance(v, str) for v in task[key])):
                 errors.append(f"{task_id}: {key!r} must be a list of strings")
+        if "sprint" in task and find_sprint(vocab, task["sprint"]) is None:
+            errors.append(f"{task_id}: the sprint {task['sprint']!r} is not one of meta.sprints")
+        if "sprint_history" in task and not (
+            isinstance(task["sprint_history"], list)
+            and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
+        ):
+            errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")

@@ -125,6 +125,53 @@ def check_workflow(workflow):
             raise AtmError(f"meta.workflow.{key} must be {expected}")
 
 
+SPRINT_STATES = ("planned", "active", "closed")
+SPRINT_NAMING = ("people", "time")
+REVIEW_MODES = ("blocker", "async", "batch", "none")
+MAX_SPRINT_NAME = 48
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def check_sprints(meta):
+    """meta.sprints (docs/sprints-and-releases-design.md SR-2.1, SR-2.3) as a list of sprints, in order; [] when
+    absent. A sprint's ID is its name: unique (compared case-insensitively), at most 48 characters, no space at either
+    end. A sprint without a state is planned. Raises AtmError naming the problem."""
+    sprints = meta.get("sprints", [])
+    if not isinstance(sprints, list):
+        raise AtmError("meta.sprints must be a list of sprints")
+    seen, active = set(), []
+    for sprint in sprints:
+        if not isinstance(sprint, dict) or not isinstance(sprint.get("id"), str) or not sprint["id"].strip():
+            raise AtmError('meta.sprints: every sprint needs an "id", its name (a non-empty string)')
+        name = sprint["id"]
+        if name != name.strip() or len(name) > MAX_SPRINT_NAME:
+            raise AtmError(f"meta.sprints: {name!r} is not a sprint name (at most {MAX_SPRINT_NAME} characters, no "
+                           "space at either end)")
+        if name.casefold() in seen:
+            raise AtmError(f"meta.sprints: {name!r} is listed twice")
+        seen.add(name.casefold())
+        state = sprint.get("state", "planned")
+        if state not in SPRINT_STATES:
+            raise AtmError(f"meta.sprints: {name!r} has the state {state!r}; use one of {', '.join(SPRINT_STATES)}")
+        if state == "active":
+            active.append(name)
+        if "due" in sprint and not (isinstance(sprint["due"], str) and DATE.fullmatch(sprint["due"])):
+            raise AtmError(f"meta.sprints: {name!r} has the due date {sprint['due']!r}; use YYYY-MM-DD")
+        for key in ("goal", "release", "start", "end"):
+            if key in sprint and not isinstance(sprint[key], str):
+                raise AtmError(f"meta.sprints: {name!r}'s {key} must be a string")
+    if len(active) > 1:
+        raise AtmError(f"meta.sprints: only one sprint can be active, but {' and '.join(active)} are")
+    return [{**s, "state": s.get("state", "planned")} for s in sprints]
+
+
+def check_setting(meta, key, choices, default):
+    value = meta.get(key, default)
+    if value not in choices:
+        raise AtmError(f"meta.{key} must be one of {', '.join(choices)}")
+    return value
+
+
 def workflow_of(data):
     """The project's workflow with its defaults filled in, or None when it has none."""
     meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
@@ -164,7 +211,61 @@ def vocabulary(data):
         "priorities": priorities,
         "default_priority": default_priority,
         "phases": phases,
+        "sprints": check_sprints(meta),
+        "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
+        "review": check_setting(meta, "review", REVIEW_MODES, "none"),
+        "components": meta.get("components") if isinstance(meta.get("components"), list) else [],
     }
+
+
+def find_sprint(vocab, name):
+    """The sprint with this name (compared case-insensitively), or None."""
+    if not isinstance(name, str):
+        return None
+    for sprint in vocab["sprints"]:
+        if sprint["id"].casefold() == name.casefold():
+            return sprint
+    return None
+
+
+def set_sprint(task, sprint, stamp):
+    """Put `task` in `sprint` (a sprint ID), or in the backlog (None). Every change ends the open sprint_history entry
+    and, for a sprint, starts a new one (SR-2.5). Returns whether anything changed."""
+    if task.get("sprint") == sprint:
+        return False
+    history = task.setdefault("sprint_history", [])
+    for entry in history:
+        if isinstance(entry, dict) and "to" not in entry:
+            entry["to"] = stamp
+    if sprint is None:
+        task.pop("sprint", None)
+    else:
+        task["sprint"] = sprint
+        history.append({"sprint": sprint, "from": stamp})
+    if not history:
+        task.pop("sprint_history")
+    return True
+
+
+def effective_release(vocab, task):
+    """A task's release: its own, else its sprint's (SR-2.6), or None."""
+    if task.get("release"):
+        return task["release"]
+    sprint = find_sprint(vocab, task.get("sprint"))
+    return sprint.get("release") if sprint else None
+
+
+def effective_review(vocab, task):
+    """A task's review mode: its own, else its first component's that has one, else the project's (meta.review),
+    else none (SR-2.6)."""
+    if task.get("review") in REVIEW_MODES:
+        return task["review"]
+    components = {c.get("id"): c for c in vocab["components"] if isinstance(c, dict)}
+    for component in task.get("components") or []:
+        mode = components.get(component, {}).get("review")
+        if mode in REVIEW_MODES:
+            return mode
+    return vocab["review"]
 
 
 def kind_of(vocab, status):

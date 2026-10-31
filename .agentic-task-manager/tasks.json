@@ -11042,7 +11042,7 @@
         "SR-2.6"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [],
       "files": [
         "atm-cli/atm/model.py",
@@ -11050,9 +11050,11 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:15:41Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T00:15:41Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-288",

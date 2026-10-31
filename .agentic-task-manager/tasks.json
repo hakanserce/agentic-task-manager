@@ -11538,7 +11538,7 @@
         "SR-4.5"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-293"
       ],
@@ -11549,11 +11549,27 @@
         "dashboard/src/lib/projectstats.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T04:31:47Z",
+      "updated_at": "2026-10-31T05:30:26Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
-      "started_at": "2026-10-31T04:31:47Z",
-      "started_by": "claude:9fec227a"
+      "commit": "71153ce0e8d5b3718c80d60c0e257e2cbe97337e",
+      "notes": [
+        {
+          "at": "2026-10-31T05:30:20Z",
+          "kind": "failure",
+          "text": "lease expired (claude:9fec227a)"
+        },
+        {
+          "at": "2026-10-31T05:30:26Z",
+          "kind": "outcome",
+          "text": "Detail panel shows the sprint, release and sprint history (flagged when carried twice); header counts sprints and the backlog; `atm serve` summary adds `active_sprint`/`recent_sprints` and the cards show them; `next` follows the active sprint.",
+          "by": "claude:9fec227a"
+        }
+      ],
+      "started_at": "2026-10-31T05:30:25Z",
+      "started_by": "claude:9fec227a",
+      "completed_at": "2026-10-31T05:30:26Z",
+      "completed_by": "claude:9fec227a"
     },
     {
       "id": "T-299",
@@ -11735,7 +11751,7 @@
         "SR-5.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-290"
       ],
@@ -11743,9 +11759,11 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T05:36:05Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T05:36:05Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-304",

@@ -11,6 +11,10 @@ into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks witho
 priority alone, `--phase` would select nothing; nothing is lost or rewritten).
 
 ### Changed
+- **`/atm:create-tasks` proposes sprints** (T-303, SR-5.5): for new tasks, the active sprint, a planned one, a new
+  one (added with `atm sprints add`, planned, never started) or the backlog, instead of phases and phase names; tasks
+  go in with `"sprint"` (or none, the backlog). It pre-approves `atm sprints` and `atm backlog` instead of
+  `atm phases`. `atm add` no longer needs a phase.
 - **Sprints in the detail panel, the header and the overview** (T-298, SR-7.6, SR-7.7, SR-4.5): the detail panel's
   phase badge is the task's sprint (or *Backlog*, `#detail-sprint`), with its effective release
   (`#detail-release`), and a *Sprint history* when it was in more than one, flagged once carried twice. The header

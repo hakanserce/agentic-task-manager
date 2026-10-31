@@ -118,7 +118,8 @@ def number(value, what):
 
 def new_task(vocab, fields, actor, stamp):
     """A complete new task from the given fields, checked against the vocabularies."""
-    for key in ("name", "phase", "type"):
+    # A phase is optional: tasks go into sprints (or the backlog) since phases became sprints (SR-5.5)
+    for key in ("name", "type"):
         if fields.get(key) in (None, ""):
             raise AtmError(f"a new task needs a {key}", 2)
     types = [t["id"] for t in vocab["types"]]
@@ -127,12 +128,10 @@ def new_task(vocab, fields, actor, stamp):
     priorities = [p["id"] for p in vocab["priorities"]]
     if fields.get("priority") is not None and fields["priority"] not in priorities:
         raise AtmError(f"unknown priority {fields['priority']!r}; use one of {', '.join(priorities)}", 2)
-    task = {
-        "id": None,
-        "name": str(fields["name"]),
-        "phase": number(fields["phase"], "phase"),
-        "type": fields["type"],
-    }
+    task = {"id": None, "name": str(fields["name"])}
+    if fields.get("phase") not in (None, ""):
+        task["phase"] = number(fields["phase"], "phase")
+    task["type"] = fields["type"]
     if fields.get("priority") is not None:
         task["priority"] = fields["priority"]
     labels = check_labels(list(fields.get("labels") or []))

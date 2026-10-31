@@ -221,10 +221,69 @@
     "expect": { "exit": 2, "stderrIncludes": ["atm: label 'Spike 2': use lowercase letters, digits, - and _"] }
   },
   {
-    "name": "add needs a name, a phase and a type",
+    "name": "add needs a name and a type",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
     "args": ["add", "--phase", "0", "--type", "docs"],
     "expect": { "exit": 2, "stderrIncludes": ["atm: a new task needs a name"] }
+  },
+  {
+    "name": "add without a phase: into a sprint, or the backlog (SR-5.5)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": []
+        },
+        "new.json": [
+          { "id": "new-1", "name": "In the sprint", "type": "feature", "sprint": "Now" },
+          { "id": "new-2", "name": "In the backlog", "type": "docs" }
+        ]
+      }
+    },
+    "args": ["add", "--json-file", "new.json"],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdoutIncludes": ["T-001", "T-002"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }], "next_id": 3 },
+          "tasks": [
+            {
+              "id": "T-001",
+              "name": "In the sprint",
+              "type": "feature",
+              "description": "",
+              "requirements": [],
+              "use_cases": [],
+              "status": "todo",
+              "dependencies": [],
+              "files": [],
+              "created_at": "2026-05-02T10:00:00Z",
+              "updated_at": "2026-05-02T10:00:00Z",
+              "created_by": "alice",
+              "updated_by": "alice",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-05-02T10:00:00Z" }]
+            },
+            {
+              "id": "T-002",
+              "name": "In the backlog",
+              "type": "docs",
+              "description": "",
+              "requirements": [],
+              "use_cases": [],
+              "status": "todo",
+              "dependencies": [],
+              "files": [],
+              "created_at": "2026-05-02T10:00:00Z",
+              "updated_at": "2026-05-02T10:00:00Z",
+              "created_by": "alice",
+              "updated_by": "alice"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "add --json-file that isn't a list of tasks",

@@ -461,3 +461,26 @@ for (const theme of [
     });
   }
 }
+
+// The sprint header and the release view (SR-7.2, SR-7.5), in fixtures/sprints.json: "Ada Lovelace" is active, due
+// 2026-04-12, so two days overdue here
+for (const colorScheme of ['dark', 'light'] as const) {
+  test.describe(colorScheme, () => {
+    test.use({ colorScheme });
+
+    test(`visual: sprint header (${colorScheme})`, async ({ page, tasksServer }) => {
+      await page.clock.setFixedTime(new Date('2026-04-14T12:00:00Z'));
+      await openDashboard(page, tasksServer, 'sprints');
+      await expect(page.locator('#sprint-header')).toHaveScreenshot(`sprint-header-${colorScheme}.png`);
+    });
+
+    test(`visual: release view (${colorScheme})`, async ({ page, tasksServer }) => {
+      await page.clock.setFixedTime(new Date('2026-04-14T12:00:00Z'));
+      // Tall enough for the whole tab: scrolled down, the view would sit under the fixed status bar
+      await page.setViewportSize({ width: 1280, height: 1800 });
+      await openDashboard(page, tasksServer, 'sprints', { tab: 'progress' });
+      await page.locator('.release-row[data-release="1.0"] summary').click();
+      await expect(page.locator('#release-view')).toHaveScreenshot(`release-view-${colorScheme}.png`);
+    });
+  });
+}

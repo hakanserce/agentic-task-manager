@@ -59,6 +59,18 @@ export interface Task {
   notes?: Note[];
   /** Before v4: the last failed attempt (now a `failure` note; still read, see notes.ts) */
   last_failure?: { at?: string; reason?: string };
+  /** The sprint it is in (a sprint's name, meta.sprints); absent: the backlog (docs/sprints-and-releases-design.md) */
+  sprint?: string;
+  /** Each sprint it was in, from when to when; the open entry has no `to` (SR-2.5) */
+  sprint_history?: { sprint: string; from: string; to?: string }[];
+  /** The release it ships in; when absent, its sprint's (SR-2.6, lib/sprints.ts effectiveRelease) */
+  release?: string;
+  /** Component IDs (meta.components) */
+  components?: string[];
+  /** How it is reviewed: blocker, async, batch or none */
+  review?: string;
+  /** Related tasks (a link that doesn't block) */
+  related?: string[];
 }
 
 export interface Note {
@@ -94,6 +106,8 @@ export interface TasksFile {
     archived?: number;
     /** Archive settings: threshold_kb, threshold_tasks, keep_days, auto (docs/v4/data-model.md §5) */
     archive?: unknown;
+    /** The sprints, in order (docs/sprints-and-releases-design.md §2.1); read leniently by lib/sprints.ts */
+    sprints?: unknown;
   };
   tasks?: Task[];
 }

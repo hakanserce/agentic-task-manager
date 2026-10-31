@@ -32,6 +32,7 @@ import type { BurndownRange } from './burndown';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
+import { sprintModel } from './sprints';
 import { DEFAULT_VOCABULARY, resolveVocabulary, type Vocabulary } from './vocab';
 import { loadWorktrees, mergeWorktrees, type Worktree, type WorktreesResult } from './worktrees';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
@@ -79,6 +80,8 @@ export class DashboardState {
   meta = $state.raw<LoadedTasks['meta']>(undefined);
   /** The project's vocabularies (statuses with kinds, types, priorities, phase names), defaults where meta has none */
   vocab = $state.raw<Vocabulary>(DEFAULT_VOCABULARY);
+  /** The project's sprints and which sprint each task is in (lib/sprints.ts); read from phases until it is migrated */
+  sprints = $derived(sprintModel(this.meta, this.tasks, this.vocab));
   /** Live claims by task ID (who works on what), from the optional claims.json; empty without it. */
   // Replaced on every (re)load, never mutated (like taskMap)
   // eslint-disable-next-line svelte/prefer-svelte-reactivity

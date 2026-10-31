@@ -200,6 +200,35 @@ def check_releases(meta):
     return [{**r, "state": r.get("state", "planned")} for r in releases]
 
 
+def check_components(meta):
+    """meta.components (docs/sprints-and-releases-design.md §2, SR-2.7) as a list, in order; [] when absent: each
+    {id, label, paths (globs matched against a task's files), review}. Raises AtmError naming the problem."""
+    components = meta.get("components", [])
+    if not isinstance(components, list):
+        raise AtmError("meta.components must be a list of components")
+    seen = set()
+    for component in components:
+        if not isinstance(component, dict) or not isinstance(component.get("id"), str) or not RELEASE_ID.fullmatch(
+            component["id"]
+        ):
+            raise AtmError(
+                'meta.components: every component needs an "id" of letters, digits, ".", "-" and "_" (at most 64)'
+            )
+        name = component["id"]
+        if name in seen:
+            raise AtmError(f"meta.components: {name!r} is listed twice")
+        seen.add(name)
+        paths = component.get("paths", [])
+        if not isinstance(paths, list) or not all(isinstance(p, str) and p for p in paths):
+            raise AtmError(f"meta.components: {name!r}'s paths must be a list of globs (strings)")
+        if "review" in component and component["review"] not in REVIEW_MODES:
+            raise AtmError(f"meta.components: {name!r} has the review {component['review']!r}; use one of "
+                           f"{', '.join(REVIEW_MODES)}")
+        if "label" in component and not isinstance(component["label"], str):
+            raise AtmError(f"meta.components: {name!r}'s label must be a string")
+    return [{**c, "paths": c.get("paths", [])} for c in components]
+
+
 def find_release(vocab, release_id):
     """The release with this ID, or None."""
     return next((r for r in vocab["releases"] if r["id"] == release_id), None)
@@ -263,7 +292,7 @@ def vocabulary(data):
         "releases": check_releases(meta),
         "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
         "review": check_setting(meta, "review", REVIEW_MODES, "none"),
-        "components": meta.get("components") if isinstance(meta.get("components"), list) else [],
+        "components": check_components(meta),
     }
 
 

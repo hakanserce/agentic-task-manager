@@ -26,6 +26,7 @@ from .model import (
     valid_task_id,
     vocabulary,
 )
+from .components import component_ids, suggest_components, suggestion_line
 from .paths import find_paths
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -83,16 +84,6 @@ def open_sprint(vocab, name):
     if sprint["state"] == "closed":
         raise AtmError(f"the sprint {sprint['id']!r} is closed; a task can only go into a planned or active sprint", 2)
     return sprint["id"]
-
-
-TERM_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
-
-
-def check_term(value, what):
-    """A component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
-    if not isinstance(value, str) or not TERM_ID.fullmatch(value):
-        raise AtmError(f"{what} {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
-    return value
 
 
 def check_review(value):
@@ -156,7 +147,9 @@ def new_task(vocab, fields, actor, stamp):
         set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
     if fields.get("release"):
         task["release"] = known_release(vocab, fields["release"])
-    components = [check_term(c, "component") for c in fields.get("components") or []]
+    # "auto" (--components auto): the components its files are in (SR-2.7)
+    requested = fields.get("components") or []
+    components = suggest_components(vocab, task["files"]) if requested == "auto" else component_ids(vocab, requested)
     if components:
         task["components"] = components
     if fields.get("review"):
@@ -252,7 +245,7 @@ def cmd_add(args):
                 "requirements": args.requirement,
                 "sprint": args.sprint,
                 "release": args.release,
-                "components": args.component,
+                "components": "auto" if args.components == "auto" else args.component,
                 "review": args.review,
                 "related": args.related,
             }
@@ -265,8 +258,12 @@ def cmd_add(args):
     if args.json:
         out(to_json(tasks))
     else:
+        vocab = vocabulary(data)
         for task in tasks:
             out(f"Added {task['id']} {task['name']}")
+            line = suggestion_line(vocab, task)
+            if line:
+                out(line)
 
 
 def edit_task(data, task, args):
@@ -322,7 +319,9 @@ def edit_task(data, task, args):
                 changed.append(key)
         elif value is not None:
             set_field(key, check(value))
-    edit_list("components", [check_term(c, "component") for c in args.add_component], args.remove_component)
+    if args.components == "auto":
+        edit_list("components", suggest_components(vocab, task.get("files") or []), [])
+    edit_list("components", component_ids(vocab, args.add_component), args.remove_component)
     known = {t.get("id") for t in data["tasks"]}
     edit_list("related", check_related(task["id"], args.add_related, known), args.remove_related)
     for key in ("components", "related"):
@@ -353,10 +352,12 @@ def cmd_edit(args):
             write_json_atomic(paths["tasks"], data)
     if args.json:
         out(to_json(task))
-    elif changed:
-        out(f"{task['id']}: changed {', '.join(changed)}")
-    else:
-        out(f"{task['id']}: nothing changed")
+        return
+    out(f"{task['id']}: changed {', '.join(changed)}" if changed else f"{task['id']}: nothing changed")
+    # New files may put the task in components it isn't in yet (SR-2.7): suggested, not set
+    line = suggestion_line(vocabulary(data), task) if args.add_file else None
+    if line:
+        out(line)
 
 
 def check_data(data, root, files=False, archived=()):
@@ -412,6 +413,9 @@ def check_data(data, root, files=False, archived=()):
             and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
         ):
             errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
+        files = [f for f in task.get("files") or [] if isinstance(f, str)]
+        if vocab["components"] and files and not suggest_components(vocab, files):
+            warnings.append(f"{task_id}: its files match no component (meta.components' paths)")
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")

@@ -78,6 +78,8 @@ For each requirement or feature:
   project's sprints (`/atm:loop-tasks` takes the active sprint's tasks). Tasks that depend on each other usually go
   in the same sprint, or the dependency in an earlier one. Without sprints, the backlog is fine: the loop then takes
   every task. Don't start a sprint here: `/atm:plan-sprint` plans and starts sprints with the user
+- In a project with **components** (`meta.components`, the parts of the project with the globs of their files),
+  give each task the components its `files` are in (`"components": "auto"` sets them from the files; or name them)
 - Assign types: `feature`, `bugfix`, `test`, `infra`, `docs`, `refactor`, `polish` (or the project's own, see Step 3)
 - Assign every task a **priority**, most urgent first: `P0` Critical/Required (the release can't go without it, or
   other work is blocked on it), `P1` High, `P2` Medium (the usual), `P3` Low/Nice-to-have. Use the project's own

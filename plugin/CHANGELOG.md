@@ -47,6 +47,11 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **Components** (T-311, SR-2.7): `meta.components` (`[{id, label, paths, review}]`, `paths` globs over the
+  project's files, checked with `meta`). In a project with components a task's components must name them. `atm add`
+  and `atm edit --add-file` print the components a task's files suggest (with the `atm edit … --add-component`
+  that sets them); `--components auto` (and `"components": "auto"` in `--json-file`) sets them. `atm check` warns
+  about a task whose files match no component. `/atm:create-tasks` proposes them.
 - **`atm merged` releases a release** (T-308, SR-3.7, SR-5.6): when the PR it records completes a planned release
   (all its tasks in `tasks.json`, by their own release or their sprint's, skipped ones aside, merged in that PR), the
   release becomes `released` with its `pr` and `released_at`; otherwise atm says which tasks keep it planned

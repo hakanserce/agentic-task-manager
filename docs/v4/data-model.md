@@ -38,6 +38,7 @@ All in `.agentic-task-manager/` at the project root.
 | `next_id` | the highest ID in both files + 1 | the number the next new task gets |
 | `sprints` | none | `[{id, goal, state, release, start, end, due, report}]`, in order; the ID is the sprint's name; states `planned`, `active` (at most one), `closed` ([sprints design](../sprints-and-releases-design.md) SR-2.1, SR-2.3) |
 | `releases` | none | `[{id, name, state, target, pr, released_at}]`, in order; the ID is letters, digits, `.`, `-` and `_`; states `planned`, `released`, `archived`; `target` a date. A sprint's or a task's `release` must be one of them (`atm check`; SR-2.2) |
+| `components` | none | `[{id, label, paths, review}]`: the parts of the project; `paths` are globs over the files (`*` and `**` both cross folders), `review` its default review mode. A task's `components` must name them; `atm add` and `edit --add-file` suggest them from the task's files (`--components auto` sets them), and `atm check` warns about a task whose files match none (SR-2.7) |
 | `sprint_names` | `people` | how a sprint created without a name is named: `people` or `time` (SR-2.9) |
 | `review` | `none` | the project's default review mode: `blocker`, `async`, `batch` or `none` (SR-2.6) |
 

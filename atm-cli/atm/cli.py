@@ -296,6 +296,9 @@ def build_parser():
     add.add_argument("--release", metavar="R", help="the release it ships in (default: its sprint's)")
     add.add_argument("--component", action="append", default=[], metavar="C", help="a component (repeatable)")
     add.add_argument(
+        "--components", choices=["auto"], help="auto: the components its files are in (otherwise only suggested)"
+    )
+    add.add_argument(
         "--review", choices=list(REVIEW_MODES), help="how it is reviewed (default: its component's, else the project's)"
     )
     add.add_argument("--related", action="append", default=[], metavar="ID", help="a related task (repeatable)")
@@ -332,6 +335,9 @@ def build_parser():
     ):
         edit.add_argument(f"--add-{option}", action="append", default=[], metavar="VALUE", help=f"add {help_text}")
         edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
+    edit.add_argument(
+        "--components", choices=["auto"], help="auto: add the components its files are in (otherwise only suggested)"
+    )
     agent_option(edit)
 
     check = command("check", cmd_check, "check tasks.json: the schema, the vocabularies, dependencies; exit 1 on errors")

@@ -23,6 +23,7 @@ import sys
 import threading
 import time
 from datetime import datetime, timedelta, timezone
+from fnmatch import fnmatchcase
 from urllib.parse import parse_qs, urlsplit
 
 
@@ -907,6 +908,35 @@ def check_releases(meta):
     return [{**r, "state": r.get("state", "planned")} for r in releases]
 
 
+def check_components(meta):
+    """meta.components (docs/sprints-and-releases-design.md §2, SR-2.7) as a list, in order; [] when absent: each
+    {id, label, paths (globs matched against a task's files), review}. Raises AtmError naming the problem."""
+    components = meta.get("components", [])
+    if not isinstance(components, list):
+        raise AtmError("meta.components must be a list of components")
+    seen = set()
+    for component in components:
+        if not isinstance(component, dict) or not isinstance(component.get("id"), str) or not RELEASE_ID.fullmatch(
+            component["id"]
+        ):
+            raise AtmError(
+                'meta.components: every component needs an "id" of letters, digits, ".", "-" and "_" (at most 64)'
+            )
+        name = component["id"]
+        if name in seen:
+            raise AtmError(f"meta.components: {name!r} is listed twice")
+        seen.add(name)
+        paths = component.get("paths", [])
+        if not isinstance(paths, list) or not all(isinstance(p, str) and p for p in paths):
+            raise AtmError(f"meta.components: {name!r}'s paths must be a list of globs (strings)")
+        if "review" in component and component["review"] not in REVIEW_MODES:
+            raise AtmError(f"meta.components: {name!r} has the review {component['review']!r}; use one of "
+                           f"{', '.join(REVIEW_MODES)}")
+        if "label" in component and not isinstance(component["label"], str):
+            raise AtmError(f"meta.components: {name!r}'s label must be a string")
+    return [{**c, "paths": c.get("paths", [])} for c in components]
+
+
 def find_release(vocab, release_id):
     """The release with this ID, or None."""
     return next((r for r in vocab["releases"] if r["id"] == release_id), None)
@@ -970,7 +1000,7 @@ def vocabulary(data):
         "releases": check_releases(meta),
         "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
         "review": check_setting(meta, "review", REVIEW_MODES, "none"),
-        "components": meta.get("components") if isinstance(meta.get("components"), list) else [],
+        "components": check_components(meta),
     }
 
 
@@ -1395,6 +1425,43 @@ def change_status(
         if note:
             add_note(task, "outcome", note, agent, stamp)
     return current
+
+
+# ==== components.py ====
+# Components (docs/sprints-and-releases-design.md §2, SR-2.7): the parts of a project (meta.components, each with
+# globs over its files), the components a task's files suggest, and the IDs a task may name.
+
+def matches(component, path):
+    """Whether `path` (a task's file, relative to the project) is in the component: one of its globs matches. `*`
+    and `**` both match across folders (`dashboard/**` is everything under dashboard/)."""
+    return any(fnmatchcase(path, glob) for glob in component.get("paths") or [])
+
+
+def suggest_components(vocab, files):
+    """The components the files are in, in the project's order."""
+    return [c["id"] for c in vocab["components"] if any(matches(c, f) for f in files if isinstance(f, str))]
+
+
+def component_ids(vocab, values):
+    """The component IDs a task may have: in a project with components, only theirs; otherwise any ID of letters,
+    digits, '.', '-' and '_' (agents put them in shell commands). Raises AtmError naming the first bad one."""
+    known = [c["id"] for c in vocab["components"]]
+    for value in values:
+        if not isinstance(value, str) or not RELEASE_ID.fullmatch(value):
+            raise AtmError(f"component {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
+        if known and value not in known:
+            raise AtmError(f"no component {value!r}; the components: {', '.join(known)}", 2)
+    return list(values)
+
+
+def suggestion_line(vocab, task):
+    """`atm add` / `edit --add-file` (SR-2.7): the components the task's files suggest that it doesn't have yet, as a
+    line with the command that sets them; None when there are none (or the project has no components)."""
+    missing = [c for c in suggest_components(vocab, task.get("files") or []) if c not in (task.get("components") or [])]
+    if not missing:
+        return None
+    adds = " ".join(f"--add-component {c}" for c in missing)
+    return f"  {task['id']}: its files suggest the component{'s' if len(missing) > 1 else ''} {', '.join(missing)} (atm edit {task['id']} {adds})"
 
 
 # ==== sprint_names.py ====
@@ -3160,16 +3227,6 @@ def open_sprint(vocab, name):
     return sprint["id"]
 
 
-TERM_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
-
-
-def check_term(value, what):
-    """A component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
-    if not isinstance(value, str) or not TERM_ID.fullmatch(value):
-        raise AtmError(f"{what} {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
-    return value
-
-
 def check_review(value):
     if value not in REVIEW_MODES:
         raise AtmError(f"review {value!r}: use one of {', '.join(REVIEW_MODES)}", 2)
@@ -3231,7 +3288,9 @@ def new_task(vocab, fields, actor, stamp):
         set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
     if fields.get("release"):
         task["release"] = known_release(vocab, fields["release"])
-    components = [check_term(c, "component") for c in fields.get("components") or []]
+    # "auto" (--components auto): the components its files are in (SR-2.7)
+    requested = fields.get("components") or []
+    components = suggest_components(vocab, task["files"]) if requested == "auto" else component_ids(vocab, requested)
     if components:
         task["components"] = components
     if fields.get("review"):
@@ -3327,7 +3386,7 @@ def cmd_add(args):
                 "requirements": args.requirement,
                 "sprint": args.sprint,
                 "release": args.release,
-                "components": args.component,
+                "components": "auto" if args.components == "auto" else args.component,
                 "review": args.review,
                 "related": args.related,
             }
@@ -3340,8 +3399,12 @@ def cmd_add(args):
     if args.json:
         out(to_json(tasks))
     else:
+        vocab = vocabulary(data)
         for task in tasks:
             out(f"Added {task['id']} {task['name']}")
+            line = suggestion_line(vocab, task)
+            if line:
+                out(line)
 
 
 def edit_task(data, task, args):
@@ -3397,7 +3460,9 @@ def edit_task(data, task, args):
                 changed.append(key)
         elif value is not None:
             set_field(key, check(value))
-    edit_list("components", [check_term(c, "component") for c in args.add_component], args.remove_component)
+    if args.components == "auto":
+        edit_list("components", suggest_components(vocab, task.get("files") or []), [])
+    edit_list("components", component_ids(vocab, args.add_component), args.remove_component)
     known = {t.get("id") for t in data["tasks"]}
     edit_list("related", check_related(task["id"], args.add_related, known), args.remove_related)
     for key in ("components", "related"):
@@ -3428,10 +3493,12 @@ def cmd_edit(args):
             write_json_atomic(paths["tasks"], data)
     if args.json:
         out(to_json(task))
-    elif changed:
-        out(f"{task['id']}: changed {', '.join(changed)}")
-    else:
-        out(f"{task['id']}: nothing changed")
+        return
+    out(f"{task['id']}: changed {', '.join(changed)}" if changed else f"{task['id']}: nothing changed")
+    # New files may put the task in components it isn't in yet (SR-2.7): suggested, not set
+    line = suggestion_line(vocabulary(data), task) if args.add_file else None
+    if line:
+        out(line)
 
 
 def check_data(data, root, files=False, archived=()):
@@ -3487,6 +3554,9 @@ def check_data(data, root, files=False, archived=()):
             and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
         ):
             errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
+        files = [f for f in task.get("files") or [] if isinstance(f, str)]
+        if vocab["components"] and files and not suggest_components(vocab, files):
+            warnings.append(f"{task_id}: its files match no component (meta.components' paths)")
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")
@@ -6365,6 +6435,9 @@ def build_parser():
     add.add_argument("--release", metavar="R", help="the release it ships in (default: its sprint's)")
     add.add_argument("--component", action="append", default=[], metavar="C", help="a component (repeatable)")
     add.add_argument(
+        "--components", choices=["auto"], help="auto: the components its files are in (otherwise only suggested)"
+    )
+    add.add_argument(
         "--review", choices=list(REVIEW_MODES), help="how it is reviewed (default: its component's, else the project's)"
     )
     add.add_argument("--related", action="append", default=[], metavar="ID", help="a related task (repeatable)")
@@ -6401,6 +6474,9 @@ def build_parser():
     ):
         edit.add_argument(f"--add-{option}", action="append", default=[], metavar="VALUE", help=f"add {help_text}")
         edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
+    edit.add_argument(
+        "--components", choices=["auto"], help="auto: add the components its files are in (otherwise only suggested)"
+    )
     agent_option(edit)
 
     check = command("check", cmd_check, "check tasks.json: the schema, the vocabularies, dependencies; exit 1 on errors")

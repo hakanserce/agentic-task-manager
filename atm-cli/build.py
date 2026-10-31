@@ -26,6 +26,7 @@ MODULES = [
     "lock",
     "registry",
     "model",
+    "components",
     "sprint_names",
     "repository",
     "logo",

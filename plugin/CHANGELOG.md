@@ -54,6 +54,13 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **Review states, components and work together on the dashboard** (T-316, SR-6.6, SR-7.6): cards show a task back
+  from review (*Changes requested*, *Approved*), *with you* for `with: user`, and its components; the detail panel
+  also its effective review mode (`lib/review.ts`) and whether it waits for the sprint review. *Needs you* counts
+  `with: user` tasks to do ("to do with you") and no longer a task back from review (an agent's work again), in
+  the dashboard (`needsYouReason`) and in `atm serve`'s summary (`needs_you.together`). The sprint header says how
+  many done tasks wait for the end-of-sprint review. The Kanban's Next up takes tasks back from review first and
+  skips `with: user`, as `atm next` does.
 - **`with: user`** (T-314, SR-3.5, SR-5.3, SR-6.5, SR-6.6): a task done together with the user (`atm add` / `edit
   --with user`, removed with `--with ''`). `atm next` skips it unless `--with-user`, and says when only such work is
   left; `atm start <id>` takes it; `atm list --with-user` lists them. `/atm:loop-tasks --with-user` takes them;

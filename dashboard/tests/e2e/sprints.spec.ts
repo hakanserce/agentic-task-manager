@@ -1,4 +1,4 @@
-import { expect, filterButton, openDashboard, openFilters, test } from './helpers';
+import { expect, filterButton, loadFixture, openDashboard, openFilters, test } from './helpers';
 
 // fixtures/sprints.json: "Ada Lovelace" is active (due 2026-04-12), "Foundations" closed, "Alan Turing" planned
 const NOW = new Date('2026-04-09T12:00:00Z');
@@ -56,6 +56,22 @@ test.describe('sprint header', () => {
     await openDashboard(page, tasksServer, 'standard');
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
     await expect(page.locator('#sprint-header')).toHaveCount(0);
+  });
+
+  test('work together and review states on the cards; with: user needs you (SR-6.6)', async ({ page, tasksServer }) => {
+    const data = loadFixture('sprints');
+    for (const task of data.tasks) {
+      if (task.id === 'T-003') task.with = 'user';
+      if (task.id === 'T-004') Object.assign(task, { status: 'in_review', review_state: 'changes_requested' });
+    }
+    await openDashboard(page, tasksServer, data);
+    const card = (id: string) => page.locator(`.kanban-card[data-id="${id}"]`);
+    await expect(card('T-003').locator('.with-user-chip')).toHaveText('with you');
+    await expect(card('T-004').locator('.review-state-chip')).toHaveText('Changes requested');
+    // Back from review: an agent's work again, so it doesn't need you; T-003 does (one task: the chip opens it)
+    await expect(page.locator('#attention-count')).toHaveText('1 needs you');
+    await page.locator('#attention-count').click();
+    await expect(page.locator('#detail-overlay.open #detail-with-user')).toHaveText('with you');
   });
 
   for (const colorScheme of ['dark', 'light'] as const) {

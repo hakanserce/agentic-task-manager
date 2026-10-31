@@ -164,6 +164,8 @@ export interface SprintSummary {
   carried: number;
   /** Days to its due date (negative: overdue); undefined without one, or once it is closed */
   dueIn?: number;
+  /** Done batch tasks waiting for the end-of-sprint review (SR-4.4) */
+  reviewPending: number;
 }
 
 /** The figures the sprint header shows (SR-7.2), over `tasks` (the history, archived tasks too once loaded) */
@@ -183,6 +185,7 @@ export function sprintSummary(
     added: own.filter((t) => addedMidSprint(t, sprint)).length,
     carried: own.filter((t) => carriedCount(t, sprint.id) > 0).length,
     dueIn: sprint.due && sprint.state !== 'closed' ? daysUntil(sprint.due, now) : undefined,
+    reviewPending: own.filter((t) => t.sprint_review === 'pending').length,
   };
 }
 

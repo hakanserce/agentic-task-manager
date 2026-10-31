@@ -209,7 +209,7 @@ describe('serve', () => {
       working: [],
       next: [{ id: 'T-7', name: 'T-7' }],
       last_done: { id: 'T-1', name: 'T-1', completed_at: '2026-03-15T10:00:00Z' },
-      needs_you: { review: 1, blocked_on_user: 1 },
+      needs_you: { review: 1, blocked_on_user: 1, together: 0 },
       needs_you_tasks: [
         { id: 'T-5', name: 'T-5', reason: 'review' },
         { id: 'T-6', name: 'T-6', reason: 'blocked' },

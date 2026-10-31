@@ -2050,6 +2050,23 @@ button.repo-ref {
   border-radius: 10px;
   min-height: 420px;
 }
+/* Review states, work together, components (SR-6.6, SR-7.6) */
+.review-state-chip {
+  background: color-mix(in srgb, var(--orange) 15%, transparent);
+  color: var(--orange);
+}
+.review-state-chip[data-review-state='approved'] {
+  background: color-mix(in srgb, var(--green) 15%, transparent);
+  color: var(--green);
+}
+.with-user-chip {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+.component-chip {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
 /* The releases on the Progress tab (SR-7.5) */
 .release-view {
   margin-top: 20px;
@@ -2132,6 +2149,9 @@ button.repo-ref {
 .sprint-added,
 .sprint-carried {
   color: var(--text-muted);
+}
+.sprint-review-pending {
+  color: var(--orange);
 }
 .sprint-due.overdue {
   color: var(--red);

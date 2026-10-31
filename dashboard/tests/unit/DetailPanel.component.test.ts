@@ -49,6 +49,29 @@ describe('DetailPanel', () => {
     expect(container.querySelector('#detail-sprint-history')).toBeNull();
   });
 
+  it('shows the review mode and state, the sprint review, with you and components (SR-7.6)', () => {
+    const container = open({
+      status: 'in_review',
+      review: 'blocker',
+      review_state: 'changes_requested',
+      with: 'user',
+      components: ['ui', 'api'],
+      sprint_review: 'pending',
+    });
+    expect(container.querySelector('#detail-review-mode')).toHaveTextContent('review: blocker');
+    expect(container.querySelector('.task-meta [data-review-state]')).toHaveTextContent('Changes requested');
+    expect(container.querySelector('#detail-sprint-review')).toHaveTextContent('waits for the sprint review');
+    expect(container.querySelector('#detail-with-user')).toHaveTextContent('with you');
+    expect([...container.querySelectorAll('.task-meta .component-chip')].map((c) => c.textContent)).toEqual([
+      'review: blocker',
+      'ui',
+      'api',
+    ]);
+    const plain = open({});
+    expect(plain.querySelector('#detail-review-mode')).toBeNull();
+    expect(plain.querySelector('#detail-with-user')).toBeNull();
+  });
+
   it('a task carried twice or more is flagged', () => {
     const data = sprints as TasksFile;
     const tasks = (data.tasks ?? []).map((t) =>

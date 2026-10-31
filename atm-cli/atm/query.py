@@ -11,6 +11,7 @@ import re
 from .claims import Selection, next_task, read_store, ready_in_order, select
 from .core import AtmError, now, out, parse_iso, to_json
 from .model import (
+    REWORK_STATES,
     archive_hint,
     archive_path,
     archived_task,
@@ -574,11 +575,19 @@ def project_summary(paths):
             if 0 <= age < SUMMARY_DAYS:
                 completions[SUMMARY_DAYS - 1 - age] += 1
 
-    # The tasks that need the user, as the dashboard's needingUser decides it: in review, or blocked on the user
+    # The tasks that need the user, as the dashboard's needsYouReason decides it: in review and waiting for the
+    # reviewer, blocked on the user, or to do together with the user (SR-6.6)
+    def needs_you(t, k):
+        if k == "review":
+            return None if t.get("review_state") in REWORK_STATES else "review"
+        if k == "blocked" and t.get("waiting_on") == "user":
+            return "blocked"
+        return "together" if k == "todo" and t.get("with") == "user" else None
+
     needs_you_tasks = [
-        {"id": t.get("id"), "name": capped(t.get("name")), "reason": "review" if k == "review" else "blocked"}
+        {"id": t.get("id"), "name": capped(t.get("name")), "reason": needs_you(t, k)}
         for t, k in zip(tasks, kinds)
-        if k == "review" or (k == "blocked" and t.get("waiting_on") == "user")
+        if needs_you(t, k)
     ]
 
     return {
@@ -595,8 +604,9 @@ def project_summary(paths):
         "next": next_up,
         "last_done": last_done,
         "needs_you": {
-            "review": kinds.count("review"),
-            "blocked_on_user": sum(1 for t, k in zip(tasks, kinds) if k == "blocked" and t.get("waiting_on") == "user"),
+            "review": sum(1 for item in needs_you_tasks if item["reason"] == "review"),
+            "blocked_on_user": sum(1 for item in needs_you_tasks if item["reason"] == "blocked"),
+            "together": sum(1 for item in needs_you_tasks if item["reason"] == "together"),
         },
         "needs_you_tasks": needs_you_tasks,
         "git": git_summary(paths, tasks),

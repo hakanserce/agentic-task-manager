@@ -69,6 +69,12 @@ export interface Task {
   components?: string[];
   /** How it is reviewed: blocker, async, batch or none */
   review?: string;
+  /** In the review kind: waiting, changes_requested or approved (SR-6.1) */
+  review_state?: string;
+  /** A batch task done by an agent: pending until the end-of-sprint review, then reviewed (SR-4.4) */
+  sprint_review?: string;
+  /** `user`: the work is done together with the user (SR-6.5) */
+  with?: string;
   /** Related tasks (a link that doesn't block) */
   related?: string[];
 }
@@ -110,6 +116,10 @@ export interface TasksFile {
     sprints?: unknown;
     /** The releases, in order (§2.1); read leniently by lib/releases.ts */
     releases?: unknown;
+    /** The components ({id, label, paths, review}); read leniently by lib/review.ts */
+    components?: unknown;
+    /** The project's default review mode */
+    review?: unknown;
   };
   tasks?: Task[];
 }

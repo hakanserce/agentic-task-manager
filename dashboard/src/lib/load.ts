@@ -48,7 +48,8 @@ export interface ProjectSummary {
   description?: string | null;
   /** The main worktree's branch and the latest PR recorded on the tasks (absent before 0.18) */
   git?: { branch: string | null; pr: { number: number; url: string | null; state: 'open' | 'merged' } | null };
-  needs_you: { review: number; blocked_on_user: number };
+  /** `together`: to do with the user (absent from servers before 0.24) */
+  needs_you: { review: number; blocked_on_user: number; together?: number };
   /** The tasks behind needs_you (absent from servers before 0.17) */
   needs_you_tasks?: NeedsYouItem[];
   last_activity: string | null;

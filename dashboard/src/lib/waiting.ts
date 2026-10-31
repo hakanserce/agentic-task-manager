@@ -67,26 +67,35 @@ export function blockSummary(wait: BlockWait): string {
   return parts.join(' · ');
 }
 
-/** Tasks that need the user (D-3.3): in review, or blocked waiting on the user. */
+/** Review states that hand the task back to an agent: no longer waiting on the reviewer (SR-6.1) */
+export const REWORK_STATES = ['changes_requested', 'approved'];
+
+/** Why a task needs the user (D-3.3, SR-6.6): in review and waiting for the reviewer, blocked on a question for the
+ * user, or to do together with the user (`with: user`); undefined when it doesn't. */
+export function needsYouReason(task: Task, vocab: Vocabulary = DEFAULT_VOCABULARY): NeedsYouItem['reason'] | undefined {
+  const kind = kindOf(vocab, task.status);
+  if (kind === 'review') return REWORK_STATES.includes(task.review_state ?? '') ? undefined : 'review';
+  if (kind === 'blocked' && task.waiting_on === 'user') return 'blocked';
+  if (kind === 'todo' && task.with === 'user') return 'together';
+  return undefined;
+}
+
+/** Tasks that need the user */
 export function needingUser(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): Task[] {
-  return tasks.filter((t) => {
-    const kind = kindOf(vocab, t.status);
-    return kind === 'review' || (kind === 'blocked' && t.waiting_on === 'user');
-  });
+  return tasks.filter((t) => needsYouReason(t, vocab));
 }
 
 /** A task that needs the user, and why: what the "need you" chips list (also atm serve's `needs_you_tasks`) */
 export interface NeedsYouItem {
   id: string;
   name: string;
-  reason: 'review' | 'blocked';
+  reason: 'review' | 'blocked' | 'together';
 }
 
 /** needingUser as the chips list it */
 export function needsYouItems(tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): NeedsYouItem[] {
-  return needingUser(tasks, vocab).map((t) => ({
-    id: t.id,
-    name: t.name,
-    reason: kindOf(vocab, t.status) === 'review' ? 'review' : 'blocked',
-  }));
+  return tasks.flatMap((t) => {
+    const reason = needsYouReason(t, vocab);
+    return reason ? [{ id: t.id, name: t.name, reason }] : [];
+  });
 }

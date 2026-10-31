@@ -39,6 +39,11 @@
       {#if summary.carried}<span class="sprint-carried" title="Carried over from an earlier sprint"
           >{summary.carried} carried in</span
         >{/if}
+      {#if summary.reviewPending}<span
+          class="sprint-review-pending"
+          title="Done, waiting for the end-of-sprint review with you (/atm:close-sprint)"
+          >{summary.reviewPending} waiting for the sprint review</span
+        >{/if}
     </div>
   </section>
 {/if}

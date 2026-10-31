@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
   import { markdownPlainText } from '../lib/markdown';
+  import { REVIEW_STATE_LABELS } from '../lib/review';
   import { kindOf, priorityOf } from '../lib/vocab';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import BranchChip from './BranchChip.svelte';
@@ -55,6 +56,13 @@
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
     <PriorityBadge {task} />
     <StageChip {task} />
+    {#if kind === 'review' && task.review_state && task.review_state !== 'waiting'}
+      <span class="badge review-state-chip" data-review-state={task.review_state}
+        >{REVIEW_STATE_LABELS[task.review_state] ?? task.review_state}</span
+      >
+    {/if}
+    {#if task.with === 'user'}<span class="badge with-user-chip" title="Done together with you">with you</span>{/if}
+    {#each task.components ?? [] as component (component)}<span class="badge component-chip">{component}</span>{/each}
     <BranchChip {task} />
     <LabelChips {task} compact />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}

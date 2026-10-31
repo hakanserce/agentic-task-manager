@@ -106,6 +106,7 @@ describe('the sprint header', () => {
       added: 1,
       carried: 1,
       dueIn: 3,
+      reviewPending: 0,
     });
   });
 

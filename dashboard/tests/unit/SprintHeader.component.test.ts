@@ -33,6 +33,16 @@ describe('SprintHeader', () => {
     expect(header.querySelector('.sprint-carried')).toHaveTextContent('1 carried in');
   });
 
+  it('says how many done tasks wait for the end-of-sprint review (SR-4.4)', () => {
+    const tasks = (fixture.tasks ?? []).map((t) =>
+      t.id === 'T-002' ? { ...t, status: 'done', sprint_review: 'pending' } : t,
+    );
+    loadIntoDashboard({ ...fixture, tasks });
+    dashboard.loadedAt = at('2026-04-09');
+    const { container } = render(SprintHeader);
+    expect(container.querySelector('.sprint-review-pending')).toHaveTextContent('1 waiting for the sprint review');
+  });
+
   it('marks an overdue sprint', () => {
     dashboard.loadedAt = at('2026-04-14');
     const { container } = render(SprintHeader);

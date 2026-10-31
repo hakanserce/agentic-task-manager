@@ -14671,7 +14671,7 @@
         "SR-4.4"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-312",
         "T-313",
@@ -14683,7 +14683,7 @@
         "plugin/skills/close-sprint/SKILL.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:35:23Z",
+      "updated_at": "2026-10-31T06:37:42Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14694,7 +14694,18 @@
         }
       ],
       "started_at": "2026-10-31T06:35:23Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "6f6f9e7d4a3ca178d4c5a3e0475ef4878fc37be6",
+      "completed_at": "2026-10-31T06:37:42Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T06:37:42Z",
+          "kind": "outcome",
+          "text": "do-task and loop-tasks end tasks by review mode (blocker waits now, async goes on, batch/none done); close-sprint starts with the end-of-sprint review and closes with `--reviewed`.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-316",
@@ -14711,7 +14722,7 @@
         "SR-7.6"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-313",
         "T-314",
@@ -14724,7 +14735,7 @@
         "dashboard/src/components/SprintHeader.svelte"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:26:19Z",
+      "updated_at": "2026-10-31T06:37:47Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14741,7 +14752,9 @@
           "text": "From T-313: `atm next` now hands tasks back from review (`review_state` approved or changes_requested) before new ones, their own agent first for a lease length. The Kanban’s Next up (`nextUp` in `lib/kanban.ts`) should follow, and `next-up-parity.test.ts` cover it.",
           "by": "claude:9fec227a"
         }
-      ]
+      ],
+      "started_at": "2026-10-31T06:37:47Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-317",

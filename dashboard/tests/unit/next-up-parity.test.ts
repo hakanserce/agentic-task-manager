@@ -98,4 +98,25 @@ describe('next task: dashboard and atm agree', () => {
     const noneActive = { sprints: [{ id: 'Now' }, { id: 'Later' }] };
     expect(agree({ meta: noneActive, tasks } as TasksFile)).toBeNull();
   });
+
+  it('back from review first; work done together with the user skipped (SR-3.9, SR-3.5)', () => {
+    const task = (id: string, status: string, extra = {}) => ({
+      id,
+      name: id,
+      phase: 0,
+      type: 'feature',
+      description: '',
+      status,
+      dependencies: [],
+      ...extra,
+    });
+    const tasks = [
+      task('T-1', 'todo', { priority: 'P0', with: 'user' }),
+      task('T-2', 'todo', { priority: 'P0' }),
+      task('T-3', 'in_review', { review_state: 'changes_requested' }),
+      task('T-4', 'in_review', { review_state: 'waiting' }),
+    ];
+    expect(agree({ tasks } as TasksFile)).toBe('T-3');
+    expect(agree({ tasks: tasks.filter((t) => t.id !== 'T-3') } as TasksFile)).toBe('T-2');
+  });
 });

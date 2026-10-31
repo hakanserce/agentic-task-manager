@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
+  import { effectiveReview, REVIEW_STATE_LABELS } from '../lib/review';
   import { carriedCount, effectiveRelease } from '../lib/sprints';
   import { kindOf, statusLabel } from '../lib/vocab';
   import { actorsLine, earlierAttempts } from '../lib/actors';
@@ -46,6 +47,7 @@
   const release = $derived(task ? effectiveRelease(dashboard.sprints, task) : undefined);
   const history = $derived(task && Array.isArray(task.sprint_history) ? task.sprint_history : []);
   const carried = $derived(task && sprint ? carriedCount(task, sprint) : 0);
+  const reviewMode = $derived(task ? effectiveReview(dashboard.meta, task) : 'none');
   const actors = $derived(task ? actorsLine(task) : '');
   const attempts = $derived(task ? earlierAttempts(task) : []);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
@@ -182,6 +184,18 @@
         {#if release}<span class="badge detail-release" id="detail-release" title="Release {release}"
             >release {release}</span
           >{/if}
+        {#if reviewMode !== 'none'}<span class="badge component-chip" id="detail-review-mode" title="How it is reviewed"
+            >review: {reviewMode}</span
+          >{/if}
+        {#if task.review_state}<span class="badge review-state-chip" data-review-state={task.review_state}
+            >{REVIEW_STATE_LABELS[task.review_state] ?? task.review_state}</span
+          >{/if}
+        {#if task.sprint_review === 'pending'}<span class="badge review-state-chip" id="detail-sprint-review"
+            >waits for the sprint review</span
+          >{/if}
+        {#if task.with === 'user'}<span class="badge with-user-chip" id="detail-with-user">with you</span>{/if}
+        {#each task.components ?? [] as component (component)}<span class="badge component-chip">{component}</span
+          >{/each}
         <PriorityBadge {task} />
         <StageChip {task} />
         <BranchChip {task} />

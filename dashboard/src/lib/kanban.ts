@@ -1,5 +1,6 @@
 import { BACKLOG } from './filters';
 import { activeSprint, NO_SPRINTS, type SprintModel } from './sprints';
+import { REWORK_STATES } from './waiting';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, priorityOf, priorityRank, type StatusKind, type Vocabulary } from './vocab';
 
@@ -67,14 +68,18 @@ export function nextUp(allTasks: Task[], vocab = DEFAULT_VOCABULARY, sprints = N
   // Phases read as sprints (an unmigrated project) aren't a selection: atm next takes every task there
   const selected = sprints.derived || !sprints.sprints.length ? undefined : (activeSprint(sprints)?.id ?? null);
   if (selected === null) return undefined;
+  // Back from review (approved, or changes asked for) first, as atm next takes them (SR-3.9); work done together with
+  // the user isn't taken by a loop on its own (SR-3.5)
+  const rework = (t: Task) => kindOf(vocab, t.status) === 'review' && REWORK_STATES.includes(t.review_state ?? '');
   return allTasks
     .filter(
       (t) =>
         (selected === undefined || sprints.sprintOf(t) === selected) &&
-        kindOf(vocab, t.status) === 'todo' &&
+        t.with !== 'user' &&
+        (rework(t) || kindOf(vocab, t.status) === 'todo') &&
         readiness(t, taskMap, vocab).ready,
     )
-    .sort(loopOrder(vocab))[0];
+    .sort((a, b) => Number(rework(b)) - Number(rework(a)) || loopOrder(vocab)(a, b))[0];
 }
 
 const ORDER: Partial<Record<StatusKind, (a: Task, b: Task) => number>> = {

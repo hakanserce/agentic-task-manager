@@ -55,8 +55,8 @@
   },
   {
     "name": "an option's value is checked",
-    "args": ["next", "--phase", "one"],
-    "expect": { "exit": 2, "stderrIncludes": ["argument --phase: invalid float value: 'one'"] }
+    "args": ["releases", "add", "1.0", "--pr", "one"],
+    "expect": { "exit": 2, "stderrIncludes": ["argument --pr: invalid int value: 'one'"] }
   },
   {
     "name": "with --json, a usage error is JSON on stderr, with the same exit code",

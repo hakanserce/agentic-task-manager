@@ -51,12 +51,9 @@ export function readiness(task: Task, taskMap: ReadonlyMap<string, Task>, vocab 
   return waitingOn.length ? { ready: false, waitingOn } : { ready: true };
 }
 
-/** The loop's order: lowest phase first (none counts as 0: a project with sprints has none), then the most urgent
- * priority, then lowest ID (atm next) */
+/** The loop's order: the most urgent priority, then lowest ID (atm next; phases no longer count, T-320) */
 const loopOrder = (vocab: Vocabulary) => (a: Task, b: Task) =>
-  (a.phase ?? 0) - (b.phase ?? 0) ||
-  priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) ||
-  byId(a, b);
+  priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) || byId(a, b);
 
 /**
  * The task /atm:loop-tasks picks next (`atm next` with its default selection): a todo-kind status, all dependencies

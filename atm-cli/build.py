@@ -36,7 +36,6 @@ MODULES = [
     "edit",
     "sprints",
     "releases",
-    "phases",
     "merge",
     "archive",
     "git_ops",

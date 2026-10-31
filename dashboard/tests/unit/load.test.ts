@@ -96,12 +96,10 @@ describe('loadProjects', () => {
     done: 1,
     skipped: 0,
     percent: 33,
-    current_phase: null,
     agents_working: 0,
     needs_you: { review: 0, blocked_on_user: 0 },
     last_activity: null,
     completions_14d: [],
-    recent_phases: [],
   };
 
   it('fetches api/projects past the browser cache, conditionally once it has validators', async () => {

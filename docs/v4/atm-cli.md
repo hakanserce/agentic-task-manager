@@ -83,11 +83,11 @@ Existing commands are marked *(exists)*.
 | Command | Prints |
 |---|---|
 | `atm show <id>... ` | tasks in full, falling back to the archive |
-| `atm list [--status S] [--phase N] [--type T] [--priority P] [--label L]... [--agent A] [--ready] [--blocked] [--archived]` | one line per task: ID, status, phase, priority, labels, name |
-| `atm status` | counts by status, phase, type and label; in progress and who claims it; the next available task; blocked tasks and what they wait for; in review; the files' sizes, the archive count and the largest tasks |
+| `atm list [--status S] [--type T] [--priority P] [--label L]... [--agent A] [--ready] [--blocked] [--archived]` | one line per task: ID, status, priority, labels, name |
+| `atm status` | counts by status, sprint (with sprints), type and label; in progress and who claims it; the next available task; blocked tasks and what they wait for; in review; the files' sizes, the archive count and the largest tasks |
 | `atm deps <id>` | what the task waits for (with each one's status) and what waits for it |
 | `atm vocab` | the effective vocabularies (P2) |
-| `atm next [--claim]` *(exists)* | ordered by phase, then priority rank, then ID (natural sort) |
+| `atm next [--claim]` *(exists)* | ordered by priority rank, then ID (natural sort); phases no longer count (T-320) |
 | `atm next [--sprint S]... \| --tasks ID,ID \| --all \| --backlog` | a **selection** ([sprints design](../sprints-and-releases-design.md) §3.2): by default the active sprint in a project with sprints (none active: nothing, and a reason that says to plan one or use `--all`), every task in a project without; `--tasks` in the order given, `--all` the active sprint, then planned ones in order, then the backlog. The reason for nothing ready says whether the selection is finished, waiting (and on what) or empty (SR-3.4, SR-3.6) |
 
 ### 4.2 Status changes
@@ -118,24 +118,26 @@ usual refusal.
 
 | Command | Does |
 |---|---|
-| `atm add --name … --phase N --type T [--priority P] [--label L]... [--description T \| --description-file F] [--dep ID]... [--file F]...` | adds one task with the next ID; prints it |
+| `atm add --name … --type T [--priority P] [--label L]... [--description T \| --description-file F] [--dep ID]... [--file F]...` | adds one task with the next ID; prints it |
 | `atm add --json-file F` | adds many (what `/atm:create-tasks` uses); IDs in the file are placeholders (`new-1`, …) that dependencies can refer to, and are replaced by real IDs |
-| `atm edit <id> [--name] [--description \| --description-file] [--add-file/--remove-file] [--add-dep/--remove-dep] [--phase] [--type] [--priority] [--add-label/--remove-label]` | changes a task; refuses a dependency that is missing or would make a cycle |
-| `atm check [--files]` | the schema, `meta` (DM-2.2), missing and circular dependencies, IDs in both files; unknown types and priorities, and named phases without tasks, as warnings; with `--files`, files listed by finished tasks that don't exist as warnings (off by default: files get renamed and deleted later, and to-do tasks list files they will create); exit code 1 on errors |
+| `atm edit <id> [--name] [--description \| --description-file] [--add-file/--remove-file] [--add-dep/--remove-dep] [--type] [--priority] [--add-label/--remove-label]` | changes a task; refuses a dependency that is missing or would make a cycle |
+| `atm check [--files]` | the schema, `meta` (DM-2.2), missing and circular dependencies, IDs in both files; unknown types and priorities as warnings; with `--files`, files listed by finished tasks that don't exist as warnings (off by default: files get renamed and deleted later, and to-do tasks list files they will create); exit code 1 on errors |
 | `atm sprints [--all]`, `atm sprints add ["<name>"] [--goal T] [--release R] [--due DATE] [--after S]`, `atm sprints edit <S> [--goal] [--release] [--due]`, `atm sprints start <S>`, `atm sprints close <S> [--carry-to <S2> \| new [--name N] \| backlog]` | the sprints in order with their task counts by kind and the backlog's size (closed ones with `--all`); add a planned sprint (named by `meta.sprint_names` when no name is given: a historical person, or the creation time), change one (an empty value removes a field), make one active, one at a time, or close one ([sprints design](../sprints-and-releases-design.md) §3.1, SR-2.9). Closing refuses while a task in the sprint is in progress; its unfinished tasks go to `--carry-to` (required when there are any; `new` adds a planned sprint after it), keeping their status and `sprint_history`; the sprint gets `end` and `report: {done, carried, added, to}`, `added` being the tasks whose history entry for it begins after its `start` (SR-4.3, SR-4.5) |
 | `atm releases [--all]`, `atm releases add <R> [--name N] [--target DATE] [--pr N]`, `atm releases edit <R> [--name] [--target]`, `atm releases archive <R>`, `atm releases notes <R>` | the releases in order with their tasks (by their effective release, both files) by kind and by stage (done, in PR, merged), archived ones with `--all`; add a planned one (`--pr N` gives it every task of pull request N, in both files, and records the PR: releases recovered from PRs, SR-8.2), change one (an empty value removes a field), archive one, or print a Markdown draft of its changes for the CHANGELOG and WHATS-NEW entries a person writes (its done tasks grouped by type in the project's order, each with its ID, name and last outcome note, then the tasks not done yet; `--json` gives the same as data) ([sprints design](../sprints-and-releases-design.md) §3.3, SR-2.2). A sprint's or task's `--release`, and the `--release` filters, must name one of them |
 | `atm move <id>... --to <S>\|next\|active\|backlog` | moves to-do, blocked and in-review tasks into a sprint, the next planned one after theirs, the active one, or the backlog, keeping their `sprint_history`; claimed and finished tasks are refused, and then nothing moves (SR-3.1) |
 | `atm backlog [--all]` | the unfinished tasks with no sprint, as `atm list` prints them (finished ones too with `--all`) |
 | `atm list`, `atm status`: `--sprint S`... `--backlog` `--release R` `--component C`; `atm archive --sprint S`... | only those tasks (a task's release is its own, else its sprint's); `atm status` starts with the active sprint: progress, due, release, goal (SR-3.2) |
 | `atm add`: `--sprint S --release R --component C... --review MODE --related ID...`; `atm edit`: `--sprint S \| --backlog`, `--release R`, `--review MODE`, `--add-/--remove-component`, `--add-/--remove-related` | the sprint fields; an empty `--release` or `--review` removes it (SR-3.3) |
-| `atm phases [--archived]` | every phase with tasks or a name, in order: its number, name and task counts by status kind (`--archived` counts the archive too) (T-180) |
-| `atm phases name <n> "<name>"`, `atm phases unname <n>` | sets, renames or removes one phase's name in `meta.phases` under the lock, leaving the others as they are, so naming a phase never means rewriting the whole list (which `init --meta-file` does) |
+
+Phases are gone (T-320): `atm phases`, the `--phase` options and the phase in `list`, `status` and `next` were
+removed once every reader used sprints; `atm migrate` turns a project's phases into sprints (DM-6.3), and a `phase`
+left on a task is kept but ignored.
 
 ### 4.4 Archive
 
 | Command | Does |
 |---|---|
-| `atm archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]` | moves finished tasks to the archive (DM-5); prints what it moved and the new sizes |
+| `atm archive [--sprint S]... [--before DATE] [--keep-days N] [--dry-run]` | moves finished tasks to the archive (DM-5); prints what it moved and the new sizes |
 | `atm unarchive <id>...` | brings tasks back, for example to reopen one |
 
 ### 4.5 Git and workflow

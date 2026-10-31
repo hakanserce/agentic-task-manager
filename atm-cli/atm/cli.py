@@ -14,7 +14,6 @@ from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
-from .phases import cmd_phases
 from .releases import cmd_releases
 from .sprints import cmd_backlog, cmd_move, cmd_sprints
 from .logo import cmd_logo
@@ -41,8 +40,9 @@ commands:
                  --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
-  list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
-                 one line per task: ID, status, phase, priority, labels, name
+  list [--status S] [--sprint S | --backlog] [--type T] [--priority P] [--label L] [--agent A] [--ready]
+       [--blocked] [--in-pr] [--with-user]
+                 one line per task: ID, status, priority, labels, name
   deps <id>      what a task waits for, and what waits for it
   start <id>     mark a task in_progress and claim it (its dependencies must be done); prints the task
   review <id> [--note TEXT]
@@ -68,14 +68,13 @@ commands:
   release <id> [--note TEXT]
                  put an in_progress task back to todo; the note is a handoff for the next agent
   note <id> TEXT add a note to a task (at most 500 characters)
-  add --name N --phase P --type T [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
-      [--sprint S]
-                 add a task with the next ID; add --json-file F adds many (see atm add --help)
-  edit <id> [--name] [--description] [--phase] [--sprint S | --backlog] [--type] [--priority]
+  add --name N --type T [--sprint S] [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
+                 add a task with the next ID (in the backlog without --sprint); add --json-file F adds many
+  edit <id> [--name] [--description] [--sprint S | --backlog] [--type] [--priority]
             [--add-dep/--remove-dep ID] [--add-file/--remove-file F] [--add-label/--remove-label L]
                  change a task's definition (its status changes only through the status commands)
   check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
-  archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]
+  archive [--sprint S]... [--before DATE] [--keep-days N] [--dry-run]
                  move finished tasks to tasks-archive.json, to keep tasks.json small
   unarchive <id>...
                  bring archived tasks back into tasks.json
@@ -88,16 +87,17 @@ commands:
                  record the PR that contains the tasks
   merged --pr N [--at TIME]
                  record that PR N was merged, on its tasks
-  next [--phase N] [--type T] [--claim] [--json]
-                 the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
-                 lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
+  next [--sprint S | --tasks T-1,T-5 | --all | --backlog] [--type T] [--with-user] [--claim] [--json]
+                 the task /atm:loop-tasks works on next: of the active sprint by default (every task without
+                 sprints), tasks back from review first, then the most urgent priority, then lowest ID; --claim
+                 also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
   run <id> [--every SECONDS] -- <command> [args...]
                  run a long command (tests, a build, a wait on CI) while keeping your claim on <id> alive; the
                  hook renews claims only between tool calls. Exits with the command's exit code
   init [--meta-file F]
                  give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
-                 clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
+                 clone (migrate registers the driver too); --meta-file sets meta (project, vocabularies)
                  from a JSON object, creating tasks.json if there is none
   merge-driver <base> <ours> <theirs>
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
@@ -128,8 +128,6 @@ commands:
                  the backlog (claimed and finished tasks stay where they are)
   backlog [--all]
                  the tasks with no sprint (with --all, finished ones too)
-  phases [--archived] | phases name <n> "<name>" | phases unname <n>
-                 the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
                  the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
                  list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
@@ -244,7 +242,6 @@ def build_parser():
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")
 
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
-    next_.add_argument("--phase", type=float, help="only this phase")
     next_.add_argument("--type", help="only this task type")
     next_.add_argument(
         "--with-user", action="store_true", help="also tasks done together with the user (the user is watching)"
@@ -262,9 +259,8 @@ def build_parser():
 
     show = command("show", cmd_show, "tasks in full: what an agent needs to work on them")
     show.add_argument("ids", nargs="+", metavar="id", help="task IDs")
-    list_ = command("list", cmd_list, "one line per task: ID, status, phase, priority, labels, name")
+    list_ = command("list", cmd_list, "one line per task: ID, status, priority, labels, name")
     list_.add_argument("--status", action="append", metavar="ID", help="only these statuses (repeatable)")
-    list_.add_argument("--phase", type=float, help="only this phase")
     list_.add_argument("--type", help="only this task type")
     list_.add_argument("--priority", help="only this priority (a missing one counts as the default)")
     list_.add_argument("--label", action="append", help="only tasks with this label (repeatable: all of them)")
@@ -293,7 +289,6 @@ def build_parser():
 
     add = command("add", cmd_add, "add a task with the next ID, or many from a JSON file")
     add.add_argument("--name", help="a short name (about 60 characters)")
-    add.add_argument("--phase", type=float, help="the phase number")
     add.add_argument("--type", help="the task type (one of the project's types)")
     add.add_argument("--priority", help="the priority (default: none, which counts as the project's default)")
     add.add_argument("--label", action="append", default=[], help="a label (repeatable)")
@@ -330,7 +325,6 @@ def build_parser():
     edit_description = edit.add_mutually_exclusive_group()
     edit_description.add_argument("--description")
     edit_description.add_argument("--description-file", metavar="FILE")
-    edit.add_argument("--phase", type=float)
     edit_sprint = edit.add_mutually_exclusive_group()
     edit_sprint.add_argument("--sprint", metavar="NAME", help="put it in this sprint (planned or active)")
     edit_sprint.add_argument("--backlog", action="store_true", help="take it out of its sprint, into the backlog")
@@ -361,7 +355,6 @@ def build_parser():
     check.add_argument("--files", action="store_true", help="also warn about missing files listed by finished tasks")
 
     archive = command("archive", cmd_archive, "move finished tasks to tasks-archive.json, to keep tasks.json small")
-    archive.add_argument("--phase", action="append", type=float, help="only this phase (repeatable)")
     archive.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")
     archive.add_argument("--before", metavar="DATE", help="only tasks finished before this date (2026-05-01)")
     archive.add_argument(
@@ -432,7 +425,7 @@ def build_parser():
     init.add_argument(
         "--meta-file",
         metavar="F",
-        help="set tasks.json meta from a JSON object (project, phases, vocabularies); creates tasks.json if needed",
+        help="set tasks.json meta from a JSON object (project, vocabularies); creates tasks.json if needed",
     )
     merge = command("merge-driver", cmd_merge_driver, "git merge driver for tasks.json")
     for side in ("base", "ours", "theirs"):
@@ -450,11 +443,6 @@ def build_parser():
     logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
     logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
     logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")
-    phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
-    phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
-    phases.add_argument("number", nargs="?", help="the phase number")
-    phases.add_argument("name", nargs="?", help="name: the phase's name")
-    phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
     sprints = command("sprints", cmd_sprints, "the sprints with their task counts; add, edit or start one")
     sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start", "close"], help="what to do")
     sprints.add_argument("name", nargs="?", help="the sprint's name (add: generated when left out)")

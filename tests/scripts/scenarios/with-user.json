@@ -14,8 +14,8 @@
     },
     "args": ["next"],
     "expect": {
-      "stdout": "Next: T-2 Alone (phase None, feature)\n",
-      "files": { "together.txt": "Next: T-1 Together (phase None, feature)\n" }
+      "stdout": "Next: T-2 Alone (backlog, feature)\n",
+      "files": { "together.txt": "Next: T-1 Together (backlog, feature)\n" }
     }
   },
   {
@@ -35,7 +35,7 @@
       "stdoutIncludes": ["\"status\": \"in_progress\""],
       "files": {
         "next.txt": "No task available: only work done together with the user is left in the tasks: T-1 (--with-user takes it).\n",
-        "list.txt": "T-1  todo  None P2  Together\n"
+        "list.txt": "T-1  todo  P2  Together\n"
       }
     }
   },

@@ -38,8 +38,8 @@ test.describe('Kanban board', () => {
 
   test('cards are ordered like the loop works', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
-    // Todo: ready first (by phase, then ID), then waiting
-    expect(await cardIds(page, 'todo')).toEqual(['T-029', 'T-028', 'T-032', 'T-030', 'T-031', 'T-033']);
+    // Todo: ready first (by priority, then ID; phases no longer count), then waiting
+    expect(await cardIds(page, 'todo')).toEqual(['T-028', 'T-029', 'T-032', 'T-030', 'T-031', 'T-033']);
     // In progress: most recently started first
     expect(await cardIds(page, 'in_progress')).toEqual(['T-027', 'T-025', 'T-026']);
     // Done: most recently completed first
@@ -99,14 +99,14 @@ test.describe('Kanban board', () => {
   test('Next up marks the task the loop would pick, and moves when it is done', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await expect(page.locator('.kanban-card.next-up')).toHaveCount(1);
-    await expect(card(page, 'T-029')).toHaveClass(/next-up/);
-    await expect(card(page, 'T-029').locator('.kanban-next-up')).toHaveText('Next up');
+    await expect(card(page, 'T-028')).toHaveClass(/next-up/);
+    await expect(card(page, 'T-028').locator('.kanban-next-up')).toHaveText('Next up');
 
     const data = loadFixture('kanban');
-    data.tasks.find((t) => t.id === 'T-029')!.status = 'done';
+    data.tasks.find((t) => t.id === 'T-028')!.status = 'done';
     tasksServer.use(data);
     await page.locator('#reload-btn').click();
-    await expect(card(page, 'T-028')).toHaveClass(/next-up/);
+    await expect(card(page, 'T-029')).toHaveClass(/next-up/);
     await expect(page.locator('.kanban-card.next-up')).toHaveCount(1);
   });
 

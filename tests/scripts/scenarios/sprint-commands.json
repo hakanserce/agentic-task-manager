@@ -345,7 +345,7 @@
       }
     },
     "args": ["backlog"],
-    "expect": { "stdout": "T-2  todo  1   P2  Unplanned\n" }
+    "expect": { "stdout": "T-2  todo  P2  Unplanned\n" }
   },
   {
     "name": "atm backlog --all adds the finished tasks with no sprint",
@@ -360,7 +360,7 @@
       }
     },
     "args": ["backlog", "--all"],
-    "expect": { "stdout": "T-2  todo  1   P2  Unplanned\nT-3  done  1   P2  Old work\n" }
+    "expect": { "stdout": "T-2  todo  P2  Unplanned\nT-3  done  P2  Old work\n" }
   },
   {
     "name": "an empty backlog says so",

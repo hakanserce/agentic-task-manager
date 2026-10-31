@@ -27,8 +27,8 @@ Agents never read or edit `tasks.json` or `tasks-archive.json` themselves (no Re
 them): every read and change goes through `atm`, which knows the archive, the project's vocabulary and the locking.
 Every command takes `--json`; `atm help` lists them all.
 - Read: `atm status` (the overview), `atm show <id>...` (tasks in full, with notes), `atm deps <id>`,
-  `atm list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--ready] [--blocked] [--in-pr]
-  [--archived]`, `atm claims`, `atm workflow`
+  `atm list [--status S] [--sprint NAME | --backlog] [--type T] [--priority P] [--label L] [--ready] [--blocked]
+  [--in-pr] [--archived]`, `atm claims`, `atm workflow`
 - Work: `atm next --claim`, `atm start <id>`, `atm done <id> [--note]`, `atm review <id> --note`,
   `atm block <id> --on user|agent --question ...`, `atm fail <id> --reason`, `atm release <id> --note`,
   `atm note <id> TEXT`, `atm run <id> -- <command>` (a long command, e.g. the test suite, that keeps your claim
@@ -40,9 +40,8 @@ Every command takes `--json`; `atm help` lists them all.
   progress; only then `atm done` (or `review`/`block`). A task is never done with its work uncommitted
 - Push: `/atm:push` records the PR with `atm pr <id>... --number N --url U` and merges with `atm merged --pr N`
 - Define: `atm init --meta-file F` (project, vocabularies), `atm repository [set URL]` (the repository's web address,
-  for commit and PR links; `atm init` fills it from origin), `atm phases` (the phases with names and counts),
-  `atm phases name <n> "<name>"` / `atm phases unname <n>`, `atm add` (`--json-file` for many), `atm edit <id>`,
-  `atm check`, `atm workflow set`
+  for commit and PR links; `atm init` fills it from origin), `atm sprints` (the sprints; `/atm:plan-sprint` plans
+  one), `atm add` (`--json-file` for many), `atm edit <id>`, `atm check`, `atm workflow set`
 - Archive: `atm archive` (when atm suggests it), `atm unarchive <id>...`
 - atm locks the file, writes timestamps and actors, and records claims (which agent works on which task, with a
   30-minute lease that the plugin's hook renews), shared by all git worktrees of a clone. `atm commit` commits only

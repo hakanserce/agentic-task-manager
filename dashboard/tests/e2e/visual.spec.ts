@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { board, boardCard, expect, openDashboard, summary, test } from './helpers';
+import { board, boardCard, expect, openDashboard, sprintNumbers, summary, test } from './helpers';
 
 /**
  * Screenshot of the view under the title bar (#graph-section). The section is scrolled into view first, and the
@@ -310,7 +310,7 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
-// The overview of all projects: cards with progress, phase, agents, activity, a "needs you" and a gone project
+// The overview of all projects: cards with sprints or without, agents, activity, a "needs you" and a gone project
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: projects overview (${mode})`, async ({ page, tasksServer }) => {
     await page.emulateMedia({ colorScheme: mode });
@@ -325,13 +325,13 @@ for (const mode of ['dark', 'light'] as const) {
           done: 9,
           skipped: 2,
           percent: 50,
-          current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
-          recent_phases: [
-            { id: 1, name: 'Setup', done: 5, total: 5, percent: 100 },
-            { id: 2, name: 'Core', done: 3, total: 7, percent: 43 },
-            { id: 3, name: 'Polish', done: 1, total: 4, percent: 25 },
-            { id: 4, name: null, done: 0, total: 2, percent: 0 },
+          recent_sprints: [
+            sprintNumbers('Setup', 5, 5, 'closed'),
+            sprintNumbers('Core', 3, 7, 'closed'),
+            sprintNumbers('Polish', 1, 4, 'active'),
+            sprintNumbers('Ada Lovelace', 0, 2),
           ],
+          active_sprint: { ...sprintNumbers('Polish', 1, 4, 'active'), due: '2026-01-04', goal: 'Card polish' },
           agents_working: 2,
           working: [
             { task: 'T-14', name: 'Kanban card polish', agent: 'claude:e5ea9db0', branch: 'dev/polish' },
@@ -354,7 +354,6 @@ for (const mode of ['dark', 'light'] as const) {
         'Waiting Project',
         summary({
           needs_you: { review: 1, blocked_on_user: 1 },
-          recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
           next: [{ id: 'T-3', name: 'Sign-in page' }],
         }),
       )

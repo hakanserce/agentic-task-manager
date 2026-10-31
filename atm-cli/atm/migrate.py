@@ -320,9 +320,8 @@ def ensure_gitignore(task_dir):
     return True
 
 
-def migrate(paths, phases=True):
-    """Move a legacy tasks.json into the task folder and set the folder up; with `phases`, turn phases into sprints.
-    Never commits."""
+def migrate(paths):
+    """Move a legacy tasks.json into the task folder, set the folder up, and turn phases into sprints. Never commits."""
     root, task_dir, legacy = paths["root"], paths["dir"], paths["legacy"]
     result = {
         "moved": None,
@@ -366,7 +365,7 @@ def migrate(paths, phases=True):
         write_claims_snapshot(paths, read_store(paths)["claims"])
     result["cleaned_up"] = clean_up_old_dashboard(task_dir)
     result["finish_times_filled"] = backfill_finish_times(paths)
-    result["sprints_from_phases"] = migrate_phases(paths) if phases else None
+    result["sprints_from_phases"] = migrate_phases(paths)
     result["with_user_from_label"] = migrate_interactive(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))

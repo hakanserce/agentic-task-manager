@@ -29,7 +29,7 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   `active_sprint` (with progress, due date and goal) and `recent_sprints` (up to four: the open ones, then the latest
   closed), and its `next` follows the loop's default selection (the active sprint); a project card with sprints
   shows rings for them and the active sprint's line ("Ada Lovelace — 1 / 3 · due in 3 days", or "No active
-  sprint"). Projects without sprints keep the phase rings until phases leave atm-cli (T-320).
+  sprint"). Projects without sprints lost their phase rings with T-320 (Removed, below).
 - **Kanban: Group by sprint** (T-296, SR-7.3) replaces *Group by phase* (`#kanban-group-by-sprint`): one lane per
   sprint with tasks, in the project's order, the backlog last (`buildLanes` in `lib/kanban.ts`, lanes
   `data-sprint`). A card names its sprint (`.kanban-card-sprint`, coloured by the sprint's place in the list) only
@@ -142,6 +142,17 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   keeps the focused sprint (`progressSprint`; a saved `progressPhase` is dropped, a `phase` range reads as
   `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
   the closed sprints.
+
+### Removed
+- **Phases leave atm-cli** (T-320, SR-8.3): `atm phases` (and `phases name`/`unname`), `--phase` on `next`, `list`,
+  `archive`, `add` and `edit`, the phase column of `atm list` (now ID, status, priority, labels, name), the
+  `by phase` line of `atm status` (a `by sprint` line instead, in a project with sprints) and the checks of
+  `meta.phases`. `atm next` orders by priority, then ID; its line names the task's sprint ("Next: T-2 Two (Themes,
+  feature)", or "backlog"), as `atm show` does. `atm serve`'s summary drops `current_phase` and `recent_phases`, its
+  board cards carry `sprint` instead of `phase`, and its board's to-do column holds the loop's default selection; a
+  project card without sprints shows one ring for all its tasks and "No sprints yet", and the All projects board's
+  cards lose their phase badge. A `phase` left on a task is kept but ignored; `atm migrate` (run by every skill and
+  by `atm serve`) turns phases into sprints first. `/atm:push` groups the PR body by sprint.
 
 ### Fixed
 - `atm unblock` refused to record the answers when the questions and answers together were longer than 500

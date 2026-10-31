@@ -38,7 +38,7 @@
     },
     "args": ["show", "T-1", "T-2"],
     "expect": {
-      "stdout": "T-1  One\n  done · phase 0 · feature · P1 · labels: api\n  files: src/a.ts\n  started 2026-05-01T08:00:00Z by alice · completed 2026-05-01T08:30:00Z by alice\n  commit: abc1234\n  description:\n    First line.\n    Second line.\n  notes:\n    2026-05-01T08:30:00Z outcome (alice): Shipped\n\nT-2  Two\n  todo · phase 0 · feature · P0 · labels: api, ux\n  depends on: T-1 (done)\n"
+      "stdout": "T-1  One\n  done · backlog · feature · P1 · labels: api\n  files: src/a.ts\n  started 2026-05-01T08:00:00Z by alice · completed 2026-05-01T08:30:00Z by alice\n  commit: abc1234\n  description:\n    First line.\n    Second line.\n  notes:\n    2026-05-01T08:30:00Z outcome (alice): Shipped\n\nT-2  Two\n  todo · backlog · feature · P0 · labels: api, ux\n  depends on: T-1 (done)\n"
     }
   },
   {
@@ -72,7 +72,7 @@
       }
     },
     "args": ["list"],
-    "expect": { "stdout": "T-1  done         0   P1  [api] One\nT-5  in_progress  1   P2  Five\n" }
+    "expect": { "stdout": "T-1  done         P1  [api] One\nT-5  in_progress  P2  Five\n" }
   },
   {
     "name": "list --ready: to-do tasks whose dependencies are done",
@@ -103,7 +103,7 @@
           "id": "T-2",
           "status": "todo",
           "kind": "todo",
-          "phase": 0,
+          "sprint": null,
           "priority": "P0",
           "labels": ["api", "ux"],
           "name": "Two"
@@ -128,12 +128,20 @@
     "args": ["list", "--blocked", "--json"],
     "expect": {
       "json": [
-        { "id": "T-3", "status": "todo", "kind": "todo", "phase": 0, "priority": "P2", "labels": [], "name": "Three" },
+        {
+          "id": "T-3",
+          "status": "todo",
+          "kind": "todo",
+          "sprint": null,
+          "priority": "P2",
+          "labels": [],
+          "name": "Three"
+        },
         {
           "id": "T-4",
           "status": "blocked",
           "kind": "blocked",
-          "phase": 1,
+          "sprint": null,
           "priority": "P2",
           "labels": [],
           "name": "Four"
@@ -142,14 +150,15 @@
     }
   },
   {
-    "name": "list filters combine: labels (all of them), priority, status, phase, agent",
+    "name": "list filters combine: labels (all of them), priority, status, type",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
           "tasks": [
-            { "id": "T-1", "name": "One", "phase": 0, "status": "done", "labels": ["api"], "started_by": "alice" },
-            { "id": "T-2", "name": "Two", "phase": 0, "status": "todo", "priority": "P0", "labels": ["api", "ux"] },
-            { "id": "T-3", "name": "Three", "phase": 1, "status": "todo", "labels": ["api", "ux"] }
+            { "id": "T-1", "name": "One", "type": "test", "status": "done", "labels": ["api"], "started_by": "alice" },
+            { "id": "T-2", "name": "Two", "type": "test", "status": "todo", "priority": "P0", "labels": ["api", "ux"] },
+            { "id": "T-3", "name": "Three", "type": "test", "status": "todo", "labels": ["api", "ux"] },
+            { "id": "T-4", "name": "Four", "type": "docs", "status": "todo", "labels": ["api", "ux"] }
           ]
         }
       }
@@ -164,8 +173,8 @@
       "todo",
       "--priority",
       "P2",
-      "--phase",
-      "1",
+      "--type",
+      "test",
       "--json"
     ],
     "expect": {
@@ -174,7 +183,7 @@
           "id": "T-3",
           "status": "todo",
           "kind": "todo",
-          "phase": 1,
+          "sprint": null,
           "priority": "P2",
           "labels": ["api", "ux"],
           "name": "Three"
@@ -196,7 +205,7 @@
       }
     },
     "args": ["list", "--agent", "alice"],
-    "expect": { "stdout": "T-1  done  0   P2  One\nT-2  done  0   P2  Two\n" }
+    "expect": { "stdout": "T-1  done  P2  One\nT-2  done  P2  Two\n" }
   },
   {
     "name": "list with nothing matching",
@@ -271,7 +280,6 @@
     "expect": {
       "stdoutIncludes": [
         "6 tasks: todo 2, in_progress 1, in_review 1, blocked 1, done 1\n",
-        "by phase: 0 3, 1 3\n",
         "by type: feature 4, test 1, docs 1\n",
         "by label: api 1\n",
         "in progress: T-5 Five (bob)\n",

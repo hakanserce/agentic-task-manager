@@ -10,8 +10,6 @@
       "add",
       "--name",
       "New",
-      "--phase",
-      "1",
       "--type",
       "feature",
       "--priority",
@@ -35,7 +33,6 @@
             {
               "id": "T-002",
               "name": "New",
-              "phase": 1,
               "type": "feature",
               "priority": "P1",
               "labels": ["api"],
@@ -74,7 +71,6 @@
         {
           "id": "T-10",
           "name": "A",
-          "phase": 0,
           "type": "feature",
           "description": "",
           "requirements": [],
@@ -90,7 +86,6 @@
         {
           "id": "T-11",
           "name": "B",
-          "phase": 0,
           "type": "test",
           "priority": "P0",
           "description": "",
@@ -117,7 +112,7 @@
         }
       }
     },
-    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs"],
+    "args": ["add", "--name", "N", "--type", "docs"],
     "env": { "ATM_AGENT": "alice" },
     "expect": { "stdout": "Added T-020 N\n" }
   },
@@ -128,7 +123,7 @@
         ".agentic-task-manager/tasks.json": { "meta": { "next_id": 2 }, "tasks": [{ "id": "T-005", "status": "done" }] }
       }
     },
-    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs"],
+    "args": ["add", "--name", "N", "--type", "docs"],
     "env": { "ATM_AGENT": "alice" },
     "expect": { "stdout": "Added T-006 N\n" }
   },
@@ -149,14 +144,13 @@
         }
       }
     },
-    "args": ["add", "--name", "Try it", "--phase", "0", "--type", "spike", "--json"],
+    "args": ["add", "--name", "Try it", "--type", "spike", "--json"],
     "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "alice" },
     "expect": {
       "json": [
         {
           "id": "T-001",
           "name": "Try it",
-          "phase": 0,
           "type": "spike",
           "description": "",
           "requirements": [],
@@ -175,7 +169,7 @@
   {
     "name": "add refuses an unknown type, and nothing changes",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
-    "args": ["add", "--name", "N", "--phase", "0", "--type", "spike"],
+    "args": ["add", "--name", "N", "--type", "spike"],
     "expect": {
       "exit": 2,
       "stderrIncludes": ["atm: unknown type 'spike'; use one of feature, bugfix, test, infra, docs, refactor, polish"],
@@ -185,13 +179,13 @@
   {
     "name": "add refuses an unknown priority",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
-    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs", "--priority", "urgent"],
+    "args": ["add", "--name", "N", "--type", "docs", "--priority", "urgent"],
     "expect": { "exit": 2, "stderrIncludes": ["atm: unknown priority 'urgent'; use one of P0, P1, P2, P3"] }
   },
   {
     "name": "add refuses a dependency that doesn't exist",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
-    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs", "--dep", "T-404"],
+    "args": ["add", "--name", "N", "--type", "docs", "--dep", "T-404"],
     "expect": { "exit": 2, "stderrIncludes": ["atm: T-001 (N) depends on T-404, which doesn't exist"] }
   },
   {
@@ -217,13 +211,13 @@
   {
     "name": "add refuses a label that isn't lowercase letters, digits, - and _",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
-    "args": ["add", "--name", "N", "--phase", "0", "--type", "docs", "--label", "Spike 2"],
+    "args": ["add", "--name", "N", "--type", "docs", "--label", "Spike 2"],
     "expect": { "exit": 2, "stderrIncludes": ["atm: label 'Spike 2': use lowercase letters, digits, - and _"] }
   },
   {
     "name": "add needs a name and a type",
     "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
-    "args": ["add", "--phase", "0", "--type", "docs"],
+    "args": ["add", "--type", "docs"],
     "expect": { "exit": 2, "stderrIncludes": ["atm: a new task needs a name"] }
   },
   {

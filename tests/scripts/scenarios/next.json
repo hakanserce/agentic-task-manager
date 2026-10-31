@@ -1,6 +1,6 @@
 [
   {
-    "name": "lowest phase, then lowest id in natural order (T-2 before T-10); unmet or missing dependencies skipped",
+    "name": "lowest id in natural order (T-2 before T-5 and T-10); unmet or missing dependencies skipped",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -70,7 +70,7 @@
     },
     "args": ["next"],
     "expect": {
-      "stdout": "Next: T-2 Task T-2 (phase 0, feature)\n",
+      "stdout": "Next: T-2 Task T-2 (backlog, feature)\n",
       "files": {
         ".agentic-task-manager/tasks.json": {
           "meta": {
@@ -143,7 +143,7 @@
     }
   },
   {
-    "name": "--phase and --type filter",
+    "name": "--type filters",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -211,7 +211,7 @@
         }
       }
     },
-    "args": ["next", "--phase", "1", "--json"],
+    "args": ["next", "--type", "test", "--json"],
     "expect": {
       "json": {
         "task": {
@@ -347,7 +347,7 @@
         }
       }
     },
-    "args": ["next", "--phase", "0"],
+    "args": ["next"],
     "expect": {
       "exit": 3,
       "stdout": "No task available: 2 todo task(s) waiting on dependencies.\n"
@@ -640,7 +640,7 @@
     },
     "args": ["next"],
     "expect": {
-      "stdout": "Next: T-10 Task T-10 (phase 0, feature)\n"
+      "stdout": "Next: T-5 Task T-5 (backlog, test)\n"
     },
     "env": {
       "ATM_AGENT": "alice",
@@ -680,7 +680,7 @@
         }
       }
     },
-    "args": ["next", "--phase", "0", "--type", "feature"],
+    "args": ["next", "--type", "feature"],
     "expect": {
       "exit": 3,
       "stdout": "No task available: 1 todo task(s) waiting on dependencies or claimed by other agents (T-2).\n"
@@ -773,7 +773,7 @@
     },
     "args": ["next"],
     "expect": {
-      "stdout": "Next: T-2 Task T-2 (phase 0, feature)\n"
+      "stdout": "Next: T-2 Task T-2 (backlog, feature)\n"
     },
     "env": {
       "ATM_AGENT": "alice",
@@ -781,7 +781,7 @@
     }
   },
   {
-    "name": "priority: within a phase the most urgent goes first, before a lower ID",
+    "name": "priority: the most urgent goes first, before a lower ID",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -794,10 +794,10 @@
       }
     },
     "args": ["next"],
-    "expect": { "stdout": "Next: T-3 Urgent (phase 0, feature)\n" }
+    "expect": { "stdout": "Next: T-3 Urgent (backlog, feature)\n" }
   },
   {
-    "name": "priority: the phase still comes first",
+    "name": "priority decides; a phase left from before sprints doesn't",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
@@ -809,7 +809,7 @@
       }
     },
     "args": ["next"],
-    "expect": { "stdout": "Next: T-2 Now, low (phase 0, feature)\n" }
+    "expect": { "stdout": "Next: T-1 Later, urgent (backlog, feature)\n" }
   },
   {
     "name": "priority: a missing or unknown priority ranks as the default (P2)",
@@ -826,7 +826,7 @@
     },
     "args": ["next", "--claim"],
     "env": { "ATM_AGENT": "alice" },
-    "expect": { "stdout": "Claimed: T-3 High (phase 0, feature)\n" }
+    "expect": { "stdout": "Claimed: T-3 High (backlog, feature)\n" }
   },
   {
     "name": "priority: a project's own priorities and default",
@@ -845,6 +845,6 @@
       }
     },
     "args": ["next"],
-    "expect": { "stdout": "Next: T-2 Should (phase 0, feature)\n" }
+    "expect": { "stdout": "Next: T-2 Should (backlog, feature)\n" }
   }
 ]

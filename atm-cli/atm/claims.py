@@ -35,7 +35,6 @@ from .model import (
     kind_of,
     load_tasks,
     natural_key,
-    phase_of,
     priority_rank,
     unfinished_dependencies,
     vocabulary,
@@ -262,25 +261,25 @@ def report_expired(expired):
 
 def ready_in_order(data, store, candidates=None, rank=None):
     """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
-    completed or waiting in another worktree; by `rank` (the selection's own order, SR-3.2), then lowest phase (in
-    files not yet migrated to sprints), then the most urgent priority, then lowest ID."""
+    completed or waiting in another worktree; by `rank` (the selection's own order, SR-3.2), then the most urgent
+    priority, then lowest ID."""
     vocab = vocabulary(data)
     if candidates is None:
         candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
     taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     rank = rank or (lambda t: 0)
-    order = lambda t: (rank(t), phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    order = lambda t: (rank(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
     return sorted(ready, key=order)
 
 
 class Selection:
     """What the loop works on (docs/sprints-and-releases-design.md §3.2): the active sprint (the default in a project
-    with sprints), named sprints, a list of tasks, all tasks, or the backlog; `phase` and `task_type` narrow it."""
+    with sprints), named sprints, a list of tasks, all tasks, or the backlog; `task_type` narrows it."""
 
-    def __init__(self, sprints=(), tasks=(), all_tasks=False, backlog=False, phase=None, task_type=None):
+    def __init__(self, sprints=(), tasks=(), all_tasks=False, backlog=False, task_type=None):
         self.sprints, self.tasks, self.all, self.backlog = list(sprints or []), list(tasks or []), all_tasks, backlog
-        self.phase, self.task_type = phase, task_type
+        self.task_type = task_type
 
 
 def select(data, sel):
@@ -328,7 +327,6 @@ def select(data, sel):
         t
         for t in data["tasks"]
         if keep(t)
-        and (sel.phase is None or phase_of(t) == sel.phase)
         and (sel.task_type is None or t.get("type") == sel.task_type)
     ]
     return tasks, rank, scope, reason
@@ -346,14 +344,14 @@ def offered_to(data, task, agent):
     return now() >= reviewed + timedelta(minutes=lease_minutes(data))
 
 
-def next_task(data, store, phase=None, task_type=None, sel=None, agent=None, with_user=False):
-    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
-    in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
-    the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
-    selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
+def next_task(data, store, task_type=None, sel=None, agent=None, with_user=False):
+    """The loop's rule (same as the dashboard's "Next up"): todo (or back from review), every dependency done, not
+    claimed and not completed in another worktree, in the selection (the default one when `sel` is None); in its
+    order, then the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty
+    result: the selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
     claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
     vocab = vocabulary(data)
-    sel = sel or Selection(phase=phase, task_type=task_type)
+    sel = sel or Selection(task_type=task_type)
     selected, rank, scope, problem = select(data, sel)
     if problem:
         return None, problem
@@ -421,7 +419,6 @@ def cmd_next(args):
             tasks=[i.strip() for i in (args.tasks or "").split(",") if i.strip()],
             all_tasks=args.all,
             backlog=args.backlog,
-            phase=args.phase,
             task_type=args.type,
         )
         task, reason = next_task(data, store, sel=sel, agent=agent, with_user=args.with_user)
@@ -437,7 +434,8 @@ def cmd_next(args):
         out(to_json({"task": task, "claim": claim, "reason": reason}))
     elif task:
         verb = "Claimed" if claim else "Next"
-        out(f"{verb}: {task['id']} {task.get('name', '')} (phase {task.get('phase')}, {task.get('type')})")
+        where = task.get("sprint") or "backlog"
+        out(f"{verb}: {task['id']} {task.get('name', '')} ({where}, {task.get('type')})")
     else:
         out(f"No task available: {reason}.")
     if not task:

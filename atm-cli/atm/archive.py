@@ -39,13 +39,12 @@ def cmd_archive(args):
             before = parse_iso(args.before if "T" in args.before else args.before + "T00:00:00Z")
         except ValueError:
             raise AtmError(f"--before {args.before}: use a date like 2026-05-01", 2)
-    phases = [float(p) for p in args.phase] if args.phase else None
     paths = find_paths(os.getcwd())
     with locked(paths["dir"]):
         data = load_tasks(paths)
         archive = load_archive(paths)
         dropped = drop_duplicates(data, archive)
-        moving = archivable(data, phases, before, args.keep_days)
+        moving = archivable(data, before, args.keep_days)
         if args.sprint:
             vocab = vocabulary(data)
             names = set()

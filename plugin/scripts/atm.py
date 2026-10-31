@@ -989,19 +989,13 @@ def vocabulary(data):
     )
     if default_priority not in ids:
         raise AtmError(f"meta.default_priority {default_priority!r} is not one of meta.priorities")
-    phases = meta.get("phases", [])
-    if not isinstance(phases, list) or any(
-        not isinstance(p, dict) or not isinstance(p.get("id"), (int, float)) or isinstance(p.get("id"), bool)
-        for p in phases
-    ):
-        raise AtmError('meta.phases must be a list of {"id": <number>, "name": "..."}')
+    # meta.phases, from before sprints, isn't read: atm migrate turns it into sprints (SR-8.1, SR-8.3)
     check_workflow(meta.get("workflow"))
     return {
         "statuses": statuses,
         "types": _terms(meta, "types", DEFAULT_TYPES),
         "priorities": priorities,
         "default_priority": default_priority,
-        "phases": phases,
         "sprints": check_sprints(meta),
         "releases": check_releases(meta),
         "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
@@ -1145,16 +1139,14 @@ def finished_at(task):
     return None
 
 
-def archivable(data, phases=None, before=None, keep=None):
+def archivable(data, before=None, keep=None):
     """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days
-    (default meta.archive.keep_days), not in an open PR; only `phases` and those finished before `before`, if given."""
+    (default meta.archive.keep_days), not in an open PR; only those finished before `before`, if given."""
     vocab = vocabulary(data)
     recent = now() - timedelta(days=archive_settings(data)["keep_days"] if keep is None else keep)
     result = []
     for t in data["tasks"]:
         if not isinstance(t, dict) or kind_of(vocab, t.get("status")) not in ("done", "skipped"):
-            continue
-        if phases and phase_of(t) not in phases:
             continue
         if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
             continue  # still in an open PR
@@ -1253,10 +1245,6 @@ def unfinished_dependencies(data, task):
 def natural_key(task_id):
     """Sort T-2 before T-10, like the dashboard's localeCompare(..., { numeric: true })."""
     return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(task_id))]
-
-
-def phase_of(task):
-    return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
 MAX_NOTE = 500
@@ -2035,25 +2023,25 @@ def report_expired(expired):
 
 def ready_in_order(data, store, candidates=None, rank=None):
     """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
-    completed or waiting in another worktree; by `rank` (the selection's own order, SR-3.2), then lowest phase (in
-    files not yet migrated to sprints), then the most urgent priority, then lowest ID."""
+    completed or waiting in another worktree; by `rank` (the selection's own order, SR-3.2), then the most urgent
+    priority, then lowest ID."""
     vocab = vocabulary(data)
     if candidates is None:
         candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
     taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
     rank = rank or (lambda t: 0)
-    order = lambda t: (rank(t), phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    order = lambda t: (rank(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
     return sorted(ready, key=order)
 
 
 class Selection:
     """What the loop works on (docs/sprints-and-releases-design.md §3.2): the active sprint (the default in a project
-    with sprints), named sprints, a list of tasks, all tasks, or the backlog; `phase` and `task_type` narrow it."""
+    with sprints), named sprints, a list of tasks, all tasks, or the backlog; `task_type` narrows it."""
 
-    def __init__(self, sprints=(), tasks=(), all_tasks=False, backlog=False, phase=None, task_type=None):
+    def __init__(self, sprints=(), tasks=(), all_tasks=False, backlog=False, task_type=None):
         self.sprints, self.tasks, self.all, self.backlog = list(sprints or []), list(tasks or []), all_tasks, backlog
-        self.phase, self.task_type = phase, task_type
+        self.task_type = task_type
 
 
 def select(data, sel):
@@ -2101,7 +2089,6 @@ def select(data, sel):
         t
         for t in data["tasks"]
         if keep(t)
-        and (sel.phase is None or phase_of(t) == sel.phase)
         and (sel.task_type is None or t.get("type") == sel.task_type)
     ]
     return tasks, rank, scope, reason
@@ -2119,14 +2106,14 @@ def offered_to(data, task, agent):
     return now() >= reviewed + timedelta(minutes=lease_minutes(data))
 
 
-def next_task(data, store, phase=None, task_type=None, sel=None, agent=None, with_user=False):
-    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
-    in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
-    the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
-    selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
+def next_task(data, store, task_type=None, sel=None, agent=None, with_user=False):
+    """The loop's rule (same as the dashboard's "Next up"): todo (or back from review), every dependency done, not
+    claimed and not completed in another worktree, in the selection (the default one when `sel` is None); in its
+    order, then the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty
+    result: the selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
     claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
     vocab = vocabulary(data)
-    sel = sel or Selection(phase=phase, task_type=task_type)
+    sel = sel or Selection(task_type=task_type)
     selected, rank, scope, problem = select(data, sel)
     if problem:
         return None, problem
@@ -2194,7 +2181,6 @@ def cmd_next(args):
             tasks=[i.strip() for i in (args.tasks or "").split(",") if i.strip()],
             all_tasks=args.all,
             backlog=args.backlog,
-            phase=args.phase,
             task_type=args.type,
         )
         task, reason = next_task(data, store, sel=sel, agent=agent, with_user=args.with_user)
@@ -2210,7 +2196,8 @@ def cmd_next(args):
         out(to_json({"task": task, "claim": claim, "reason": reason}))
     elif task:
         verb = "Claimed" if claim else "Next"
-        out(f"{verb}: {task['id']} {task.get('name', '')} (phase {task.get('phase')}, {task.get('type')})")
+        where = task.get("sprint") or "backlog"
+        out(f"{verb}: {task['id']} {task.get('name', '')} ({where}, {task.get('type')})")
     else:
         out(f"No task available: {reason}.")
     if not task:
@@ -2418,7 +2405,7 @@ def summary(vocab, task):
         "id": task.get("id"),
         "status": task.get("status"),
         "kind": kind_of(vocab, task.get("status")),
-        "phase": task.get("phase"),
+        "sprint": task.get("sprint"),
         "priority": priority_of(vocab, task),
         "labels": task.get("labels", []),
         "name": task.get("name", ""),
@@ -2467,7 +2454,7 @@ def ready_tasks(data):
         for t in data["tasks"]
         if kind_of(vocab, t.get("status")) == "todo" and not unfinished_dependencies(data, t)
     ]
-    return sorted(ready, key=lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id"))))
+    return sorted(ready, key=lambda t: (priority_rank(vocab, t.get("priority")), natural_key(t.get("id"))))
 
 
 def describe_task(data, task):
@@ -2480,7 +2467,7 @@ def describe_task(data, task):
     labels = task.get("labels") or []
     lines = [
         f"{task.get('id')}  {task.get('name', '')}",
-        f"  {task.get('status')} · phase {task.get('phase')} · {task.get('type')} · {priority_of(vocab, task)}"
+        f"  {task.get('status')} · {task.get('sprint') or 'backlog'} · {task.get('type')} · {priority_of(vocab, task)}"
         + (f" · labels: {', '.join(labels)}" if labels else ""),
     ]
     deps = task.get("dependencies") or []
@@ -2542,8 +2529,6 @@ def cmd_list(args):
             continue
         if args.status and t.get("status") not in args.status:
             continue
-        if args.phase is not None and phase_of(t) != args.phase:
-            continue
         if args.type and t.get("type") != args.type:
             continue
         if args.priority and priority_of(vocab, t) != args.priority:
@@ -2572,14 +2557,14 @@ def cmd_list(args):
 
 
 def list_lines(vocab, tasks):
-    """One line per task, as `atm list` prints them: ID, status, phase, priority, labels, name."""
+    """One line per task, as `atm list` prints them: ID, status, priority, labels, name."""
     id_width = max(len(str(t.get("id"))) for t in tasks)
     status_width = max(len(str(t.get("status"))) for t in tasks)
     for t in tasks:
         labels = t.get("labels") or []
         yield (
             f"{str(t.get('id')).ljust(id_width)}  {str(t.get('status')).ljust(status_width)}  "
-            f"{str(t.get('phase')).ljust(3)} {priority_of(vocab, t)}  "
+            f"{priority_of(vocab, t)}  "
             + (f"[{', '.join(labels)}] " if labels else "")
             + str(t.get("name", ""))
         )
@@ -2615,10 +2600,6 @@ ACTIVITY_FIELDS = ("updated_at", "started_at", "completed_at", "review_requested
 SUMMARY_DAYS = 14
 
 
-def as_phase_id(phase):
-    return int(phase) if isinstance(phase, float) and phase.is_integer() else phase
-
-
 def parse_time(text):
     try:
         return parse_iso(text) if isinstance(text, str) else None
@@ -2626,7 +2607,7 @@ def parse_time(text):
         return None
 
 
-RECENT_PHASES = 4
+RECENT_SPRINTS = 4
 NEXT_TASKS = 2
 NAME_CAP = 80  # task names in the summary, so /api/projects stays small with many projects
 
@@ -2634,33 +2615,6 @@ NAME_CAP = 80  # task names in the summary, so /api/projects stays small with ma
 def capped(name):
     name = name if isinstance(name, str) else ""
     return name if len(name) <= NAME_CAP else name[: NAME_CAP - 1] + "…"
-
-
-def recent_phases(tasks, kinds, open_phases, names):
-    """Up to four phases for the overview's rings, in phase order: the lowest phases with open work first, then the
-    most recently finished ones (by their last completed_at) to fill up. A phase of only skipped tasks has nothing to
-    show and is left out."""
-    chosen = list(open_phases[:RECENT_PHASES])
-    finished = {}  # finished phase -> its last completion ("" when none is recorded)
-    for t, k in zip(tasks, kinds):
-        phase = phase_of(t)
-        if phase in open_phases or k != "done":
-            continue
-        finished[phase] = max(finished.get(phase, ""), t.get("completed_at") or "")
-    for phase in sorted(finished, key=lambda p: (finished[p], p), reverse=True)[: RECENT_PHASES - len(chosen)]:
-        chosen.append(phase)
-    result = []
-    for phase in sorted(chosen):
-        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        done, total = in_phase.count("done"), len(in_phase) - in_phase.count("skipped")
-        result.append({
-            "id": as_phase_id(phase),
-            "name": names.get(phase) or None,
-            "done": done,
-            "total": total,
-            "percent": round(100 * done / total),
-        })
-    return result
 
 
 def sprint_numbers(sprint, own_kinds):
@@ -2688,9 +2642,9 @@ def recent_sprints(vocab, tasks, kinds):
         if sprint:
             own[sprint["id"]].append(k)
     with_tasks = [s for s in vocab["sprints"] if own[s["id"]]]
-    chosen = [s["id"] for s in with_tasks if s["state"] != "closed"][:RECENT_PHASES]
+    chosen = [s["id"] for s in with_tasks if s["state"] != "closed"][:RECENT_SPRINTS]
     closed = sorted((s for s in with_tasks if s["state"] == "closed"), key=lambda s: s.get("end") or "", reverse=True)
-    chosen += [s["id"] for s in closed[: RECENT_PHASES - len(chosen)]]
+    chosen += [s["id"] for s in closed[: RECENT_SPRINTS - len(chosen)]]
     return [sprint_numbers(s, own[s["id"]]) for s in with_tasks if s["id"] in chosen]
 
 
@@ -2747,7 +2701,7 @@ def board_card(vocab, task, **extra):
         "id": task.get("id"),
         "name": capped(task.get("name")),
         "type": task.get("type"),
-        "phase": as_phase_id(phase_of(task)),
+        "sprint": task.get("sprint") if isinstance(task.get("sprint"), str) else None,
         "priority": priority_of(vocab, task),
         "labels": [l for l in labels if isinstance(l, str)] if isinstance(labels, list) else [],
     }
@@ -2760,14 +2714,12 @@ def board_column(cards, cap=BOARD_CAP):
     return {"count": len(cards), "cards": cards[:cap]}
 
 
-def board(data, store, tasks, kinds, open_phases, vocab, current, live):
+def board(data, store, tasks, kinds, ready, vocab, current, live):
     """The project's cards for the All projects board (T-257), one rule per column: the tasks ready to start in the
-    first unfinished phase, in the loop's order; everything in progress (longest running first), in review (longest
-    waiting first) and blocked (on the user first, then longest waiting); what was finished in the last 24 hours,
-    newest first."""
+    loop's default selection (`ready`, the active sprint's), in its order; everything in progress (longest running
+    first), in review (longest waiting first) and blocked (on the user first, then longest waiting); what was
+    finished in the last 24 hours, newest first."""
     of_kind = lambda kind: [t for t, k in zip(tasks, kinds) if k == kind]
-    first_phase = open_phases[0] if open_phases else None
-    ready = [t for t in ready_in_order(data, store) if phase_of(t) == first_phase]
     claimed_by = {c.get("task"): c.get("agent") for c in live}
     since = lambda t, field: t.get(field) or t.get("updated_at")
     active = sorted(of_kind("active"), key=lambda t: str(t.get("started_at") or ""))
@@ -2872,8 +2824,8 @@ def project_stats(paths, data, vocab, tasks, current):
 
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
-    status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
-    needs the user, the latest activity and the completions of the last 14 days."""
+    status kind as atm counts them everywhere else: done / (total - skipped), the active and recent sprints, live
+    claims, what needs the user, the latest activity and the completions of the last 14 days."""
     data = load_tasks(paths)
     vocab = vocabulary(data)
     tasks = data["tasks"]
@@ -2881,19 +2833,6 @@ def project_summary(paths):
     done, skipped = kinds.count("done"), kinds.count("skipped")
     counted = len(tasks) - skipped
     percent = round(100 * done / counted) if counted else (100 if skipped else 0)
-
-    current_phase = None
-    open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
-    names = {p.get("id"): p.get("name") for p in vocab["phases"]}
-    if open_phases:
-        phase = open_phases[0]
-        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        current_phase = {
-            "id": as_phase_id(phase),
-            "name": names.get(phase) or None,
-            "done": in_phase.count("done"),
-            "total": len(in_phase) - in_phase.count("skipped"),
-        }
 
     current = now()
     store = read_store(paths)
@@ -2919,7 +2858,7 @@ def project_summary(paths):
     ]
     # What the loop takes next with its default selection: the active sprint's tasks in a project with sprints (SR-5.1)
     candidates, rank, _, reason = select(data, Selection())
-    todo = [t for t in candidates if kind_of(vocab, t.get("status")) == "todo"]
+    todo = [t for t in candidates if kind_of(vocab, t.get("status")) == "todo" and t.get("with") != "user"]
     ready = [] if reason else ready_in_order(data, store, todo, rank)
     next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready[:NEXT_TASKS]]
     finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
@@ -2964,8 +2903,6 @@ def project_summary(paths):
         "done": done,
         "skipped": skipped,
         "percent": percent,
-        "current_phase": current_phase,
-        "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "active_sprint": active_sprint_numbers(vocab, tasks, kinds),
         "recent_sprints": recent_sprints(vocab, tasks, kinds),
         "agents_working": agents_working,
@@ -2982,7 +2919,7 @@ def project_summary(paths):
         "description": description(data.get("meta")),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
-        "board": board(data, store, tasks, kinds, open_phases, vocab, current, live),
+        "board": board(data, store, tasks, kinds, ready, vocab, current, live),
         "stats": project_stats(paths, data, vocab, tasks, current),
     }
 
@@ -3059,8 +2996,7 @@ def cmd_status(args):
         "sprint": sprint,
         "tasks": len(tasks),
         "by_status": by_status,
-        "by_phase": counts(lambda t: [t.get("phase")]),
-        "phase_names": {str(as_phase_id(p["id"])): p["name"] for p in vocab["phases"] if p.get("name")},
+        "by_sprint": counts(lambda t: [(find_sprint(vocab, t.get("sprint")) or {}).get("id") or "backlog"]),
         "by_type": counts(lambda t: [t.get("type")]),
         "by_label": counts(lambda t: t.get("labels") or []),
         "in_progress": in_progress,
@@ -3094,8 +3030,8 @@ def cmd_status(args):
     elif vocab["sprints"]:
         out("sprint: none active (plan one with /atm:plan-sprint)")
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
-    names = result["phase_names"]
-    out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
+    if vocab["sprints"]:
+        out(f"by sprint: {pairs(result['by_sprint'])}")
     out(f"by type: {pairs(result['by_type'])}")
     if result["by_label"]:
         out(f"by label: {pairs(result['by_label'])}")
@@ -3344,15 +3280,9 @@ def check_related(task_id, related, known):
     return related
 
 
-def number(value, what):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise AtmError(f"{what} must be a number", 2)
-    return int(value) if float(value).is_integer() else value
-
-
 def new_task(vocab, fields, actor, stamp):
     """A complete new task from the given fields, checked against the vocabularies."""
-    # A phase is optional: tasks go into sprints (or the backlog) since phases became sprints (SR-5.5)
+    # Tasks go into sprints (or the backlog): phases became sprints (SR-5.5, SR-8.3); a "phase" given is ignored
     for key in ("name", "type"):
         if fields.get(key) in (None, ""):
             raise AtmError(f"a new task needs a {key}", 2)
@@ -3362,10 +3292,7 @@ def new_task(vocab, fields, actor, stamp):
     priorities = [p["id"] for p in vocab["priorities"]]
     if fields.get("priority") is not None and fields["priority"] not in priorities:
         raise AtmError(f"unknown priority {fields['priority']!r}; use one of {', '.join(priorities)}", 2)
-    task = {"id": None, "name": str(fields["name"])}
-    if fields.get("phase") not in (None, ""):
-        task["phase"] = number(fields["phase"], "phase")
-    task["type"] = fields["type"]
+    task = {"id": None, "name": str(fields["name"]), "type": fields["type"]}
     if fields.get("priority") is not None:
         task["priority"] = fields["priority"]
     labels = check_labels(list(fields.get("labels") or []))
@@ -3480,7 +3407,6 @@ def cmd_add(args):
         entries = [
             {
                 "name": args.name,
-                "phase": args.phase,
                 "type": args.type,
                 "priority": args.priority,
                 "labels": args.label,
@@ -3538,8 +3464,6 @@ def edit_task(data, task, args):
             description = f.read()
     if description is not None:
         set_field("description", description)
-    if args.phase is not None:
-        set_field("phase", number(args.phase, "phase"))
     if args.sprint is not None or args.backlog:
         if set_sprint(task, None if args.backlog else open_sprint(vocab, args.sprint), now_iso()):
             changed.append("sprint")
@@ -3638,10 +3562,6 @@ def check_data(data, root, files=False, archived=()):
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")
-        # A task without a phase is fine: atm migrate turns phases into sprints (SR-8.1)
-        phase = task.get("phase")
-        if "phase" in task and (isinstance(phase, bool) or not isinstance(phase, (int, float))):
-            errors.append(f"{task_id}: \"phase\" must be a number")
         if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
             errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
         if isinstance(task.get("type"), str) and task["type"] not in types:
@@ -3677,10 +3597,6 @@ def check_data(data, root, files=False, archived=()):
     for sprint in vocab["sprints"]:
         if sprint.get("release") and find_release(vocab, sprint["release"]) is None:
             errors.append(f"the sprint {sprint['id']!r}: the release {sprint['release']!r} is not one of meta.releases")
-    used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
-    for p in vocab["phases"]:
-        if p["id"] not in used:
-            warnings.append(f"phase {p['id']} is named ({p.get('name')!r}) but has no tasks (atm phases unname)")
     well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
     cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
     if cycle:
@@ -4345,118 +4261,6 @@ def cmd_releases(args):
     actions[args.action](paths, args)
 
 
-# ==== phases.py ====
-# `atm phases`: the project's phases, with their names (meta.phases) and how far along each one is; and naming one
-# phase at a time, so naming a phase never means rewriting (or first having to read) the whole list.
-
-def phase_number(text):
-    """A phase number from the command line: 15, or 1.5; an int when it is whole."""
-    try:
-        value = float(text)
-    except (TypeError, ValueError):
-        raise AtmError(f"{text!r} is not a phase number", 2)
-    return int(value) if value.is_integer() else value
-
-
-def phase_overview(data, archived=()):
-    """Every phase that has tasks or a name, in order: {id, name, tasks, by_kind}."""
-    vocab = vocabulary(data)
-    names = {p["id"]: p.get("name") for p in vocab["phases"]}
-    phases = {}
-    for task in list(data["tasks"]) + list(archived):
-        if not isinstance(task, dict):
-            continue
-        entry = phases.setdefault(phase_of(task), {kind: 0 for kind in KINDS})
-        kind = kind_of(vocab, task.get("status"))
-        if kind in entry:
-            entry[kind] += 1
-    for phase_id in names:
-        phases.setdefault(phase_id, {kind: 0 for kind in KINDS})
-    return [
-        {
-            "id": phase_number(phase_id),
-            "name": names.get(phase_id) or None,
-            "tasks": sum(counts.values()),
-            "by_kind": {kind: n for kind, n in counts.items() if n},
-        }
-        for phase_id, counts in sorted(phases.items())
-    ]
-
-
-def describe_phase(p):
-    counts = ", ".join(f"{kind} {n}" for kind, n in p["by_kind"].items())
-    title = f"phase {p['id']}" + (f" · {p['name']}" if p["name"] else "")
-    return f"{title}: {p['tasks']} task{'' if p['tasks'] == 1 else 's'}" + (f" ({counts})" if counts else "")
-
-
-def phases_list(paths, archived, as_json):
-    data = load_tasks(paths)
-    phases = phase_overview(data, load_archive(paths)["tasks"] if archived else ())
-    if as_json:
-        out(to_json(phases))
-        return
-    if not phases:
-        out("No phases yet: no task has a phase, and none is named.")
-    for p in phases:
-        out(describe_phase(p))
-
-
-def set_phase_name(paths, number, name):
-    """Set (name) or remove (None) the name of one phase under the lock, leaving the others as they are. Returns the
-    previous name."""
-    with locked(paths["dir"]):
-        data = load_tasks(paths)
-        meta = data.setdefault("meta", {})
-        phases = [p for p in meta.get("phases") or [] if isinstance(p, dict)]
-        previous = next((p.get("name") for p in phases if p.get("id") == number), None)
-        if name is None and previous is None:
-            raise AtmError(f"phase {number} has no name")
-        phases = [p for p in phases if p.get("id") != number]
-        if name is not None:
-            phases.append({"id": number, "name": name})
-        phases.sort(key=lambda p: p["id"])
-        if phases:
-            meta["phases"] = phases
-        else:
-            meta.pop("phases", None)
-        vocabulary(data)
-        write_json_atomic(paths["tasks"], data)
-    return previous
-
-
-def cmd_phases(args):
-    paths = find_paths(os.getcwd())
-    if args.action in (None, "list"):
-        if args.number is not None:
-            raise AtmError(f"unexpected argument '{args.number}'", 2)
-        phases_list(paths, args.archived, args.json)
-        return
-    if args.number is None:
-        raise AtmError(f"atm phases {args.action} needs a phase number", 2)
-    number = phase_number(args.number)
-    if args.action == "name":
-        name = (args.name or "").strip()
-        if not name:
-            raise AtmError('atm phases name needs a name: atm phases name <n> "<name>"', 2)
-        previous = set_phase_name(paths, number, name)
-        if args.json:
-            out(to_json({"id": number, "name": name, "previous": previous}))
-        elif previous is None:
-            out(f"Phase {number} is now named “{name}”.")
-        elif previous == name:
-            out(f"Phase {number} was already named “{name}”.")
-        else:
-            out(f"Phase {number} renamed from “{previous}” to “{name}”.")
-        return
-    if args.name is not None:
-        raise AtmError(f"unexpected argument '{args.name}'", 2)
-    previous = set_phase_name(paths, number, None)
-    if args.json:
-        out(to_json({"id": number, "name": None, "previous": previous}))
-    else:
-        out(f"Phase {number} no longer has a name (it was “{previous}”).")
-
-
 # ==== merge.py ====
 # Merging tasks.json, and `atm init`.
 #
@@ -4894,13 +4698,12 @@ def cmd_archive(args):
             before = parse_iso(args.before if "T" in args.before else args.before + "T00:00:00Z")
         except ValueError:
             raise AtmError(f"--before {args.before}: use a date like 2026-05-01", 2)
-    phases = [float(p) for p in args.phase] if args.phase else None
     paths = find_paths(os.getcwd())
     with locked(paths["dir"]):
         data = load_tasks(paths)
         archive = load_archive(paths)
         dropped = drop_duplicates(data, archive)
-        moving = archivable(data, phases, before, args.keep_days)
+        moving = archivable(data, before, args.keep_days)
         if args.sprint:
             vocab = vocabulary(data)
             names = set()
@@ -5547,9 +5350,8 @@ def ensure_gitignore(task_dir):
     return True
 
 
-def migrate(paths, phases=True):
-    """Move a legacy tasks.json into the task folder and set the folder up; with `phases`, turn phases into sprints.
-    Never commits."""
+def migrate(paths):
+    """Move a legacy tasks.json into the task folder, set the folder up, and turn phases into sprints. Never commits."""
     root, task_dir, legacy = paths["root"], paths["dir"], paths["legacy"]
     result = {
         "moved": None,
@@ -5593,7 +5395,7 @@ def migrate(paths, phases=True):
         write_claims_snapshot(paths, read_store(paths)["claims"])
     result["cleaned_up"] = clean_up_old_dashboard(task_dir)
     result["finish_times_filled"] = backfill_finish_times(paths)
-    result["sprints_from_phases"] = migrate_phases(paths) if phases else None
+    result["sprints_from_phases"] = migrate_phases(paths)
     result["with_user_from_label"] = migrate_interactive(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))
@@ -5784,8 +5586,7 @@ def serve_start(paths, port, overview):
     """Start (or reuse) the server; returns the URL to show: the project's, or the overview's."""
     project = None
     if not overview:
-        # Phases stay until `atm migrate` (every skill runs it first): the overview summary still reads them (T-320)
-        for line in describe_migration(migrate(paths, phases=False), paths):
+        for line in describe_migration(migrate(paths), paths):
             if line != "Nothing to migrate.":
                 out(line)
         if not os.path.isfile(paths["tasks"]):
@@ -6355,8 +6156,9 @@ commands:
                  --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
   show <id>...   tasks in full (description, dependencies, files, notes)
-  list [--status S] [--phase N] [--type T] [--priority P] [--label L] [--agent A] [--ready] [--blocked] [--in-pr]
-                 one line per task: ID, status, phase, priority, labels, name
+  list [--status S] [--sprint S | --backlog] [--type T] [--priority P] [--label L] [--agent A] [--ready]
+       [--blocked] [--in-pr] [--with-user]
+                 one line per task: ID, status, priority, labels, name
   deps <id>      what a task waits for, and what waits for it
   start <id>     mark a task in_progress and claim it (its dependencies must be done); prints the task
   review <id> [--note TEXT]
@@ -6382,14 +6184,13 @@ commands:
   release <id> [--note TEXT]
                  put an in_progress task back to todo; the note is a handoff for the next agent
   note <id> TEXT add a note to a task (at most 500 characters)
-  add --name N --phase P --type T [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
-      [--sprint S]
-                 add a task with the next ID; add --json-file F adds many (see atm add --help)
-  edit <id> [--name] [--description] [--phase] [--sprint S | --backlog] [--type] [--priority]
+  add --name N --type T [--sprint S] [--priority P] [--label L]... [--description D] [--dep ID]... [--file F]...
+                 add a task with the next ID (in the backlog without --sprint); add --json-file F adds many
+  edit <id> [--name] [--description] [--sprint S | --backlog] [--type] [--priority]
             [--add-dep/--remove-dep ID] [--add-file/--remove-file F] [--add-label/--remove-label L]
                  change a task's definition (its status changes only through the status commands)
   check          check tasks.json: schema, vocabularies, dependencies (exit code 1 on errors)
-  archive [--phase N]... [--before DATE] [--keep-days N] [--dry-run]
+  archive [--sprint S]... [--before DATE] [--keep-days N] [--dry-run]
                  move finished tasks to tasks-archive.json, to keep tasks.json small
   unarchive <id>...
                  bring archived tasks back into tasks.json
@@ -6402,16 +6203,17 @@ commands:
                  record the PR that contains the tasks
   merged --pr N [--at TIME]
                  record that PR N was merged, on its tasks
-  next [--phase N] [--type T] [--claim] [--json]
-                 the task /atm:loop-tasks works on next (lowest phase, then most urgent priority, then
-                 lowest ID); --claim also starts and claims it, atomically (exit code 3 if there is none)
+  next [--sprint S | --tasks T-1,T-5 | --all | --backlog] [--type T] [--with-user] [--claim] [--json]
+                 the task /atm:loop-tasks works on next: of the active sprint by default (every task without
+                 sprints), tasks back from review first, then the most urgent priority, then lowest ID; --claim
+                 also starts and claims it, atomically (exit code 3 if there is none)
   heartbeat <id> extend your claim's lease (heartbeat --auto: the plugin's hook renews your claims for you)
   run <id> [--every SECONDS] -- <command> [args...]
                  run a long command (tests, a build, a wait on CI) while keeping your claim on <id> alive; the
                  hook renews claims only between tool calls. Exits with the command's exit code
   init [--meta-file F]
                  give tasks.json a meta.id if it has none, and register the tasks.json merge driver in this
-                 clone (migrate registers the driver too); --meta-file sets meta (project, phases, vocabularies)
+                 clone (migrate registers the driver too); --meta-file sets meta (project, vocabularies)
                  from a JSON object, creating tasks.json if there is none
   merge-driver <base> <ours> <theirs>
                  git merge driver for tasks.json (see .agentic-task-manager/.gitattributes)
@@ -6442,8 +6244,6 @@ commands:
                  the backlog (claimed and finished tasks stay where they are)
   backlog [--all]
                  the tasks with no sprint (with --all, finished ones too)
-  phases [--archived] | phases name <n> "<name>" | phases unname <n>
-                 the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
                  the projects the dashboard shows (~/.agentic-task-manager/projects.json, or $ATM_HOME):
                  list them, add one, remove one, or drop the ones whose folder or tasks.json is gone
@@ -6558,7 +6358,6 @@ def build_parser():
             sub.add_argument("--commit", metavar="SHA", help="the task's commit")
 
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
-    next_.add_argument("--phase", type=float, help="only this phase")
     next_.add_argument("--type", help="only this task type")
     next_.add_argument(
         "--with-user", action="store_true", help="also tasks done together with the user (the user is watching)"
@@ -6576,9 +6375,8 @@ def build_parser():
 
     show = command("show", cmd_show, "tasks in full: what an agent needs to work on them")
     show.add_argument("ids", nargs="+", metavar="id", help="task IDs")
-    list_ = command("list", cmd_list, "one line per task: ID, status, phase, priority, labels, name")
+    list_ = command("list", cmd_list, "one line per task: ID, status, priority, labels, name")
     list_.add_argument("--status", action="append", metavar="ID", help="only these statuses (repeatable)")
-    list_.add_argument("--phase", type=float, help="only this phase")
     list_.add_argument("--type", help="only this task type")
     list_.add_argument("--priority", help="only this priority (a missing one counts as the default)")
     list_.add_argument("--label", action="append", help="only tasks with this label (repeatable: all of them)")
@@ -6607,7 +6405,6 @@ def build_parser():
 
     add = command("add", cmd_add, "add a task with the next ID, or many from a JSON file")
     add.add_argument("--name", help="a short name (about 60 characters)")
-    add.add_argument("--phase", type=float, help="the phase number")
     add.add_argument("--type", help="the task type (one of the project's types)")
     add.add_argument("--priority", help="the priority (default: none, which counts as the project's default)")
     add.add_argument("--label", action="append", default=[], help="a label (repeatable)")
@@ -6644,7 +6441,6 @@ def build_parser():
     edit_description = edit.add_mutually_exclusive_group()
     edit_description.add_argument("--description")
     edit_description.add_argument("--description-file", metavar="FILE")
-    edit.add_argument("--phase", type=float)
     edit_sprint = edit.add_mutually_exclusive_group()
     edit_sprint.add_argument("--sprint", metavar="NAME", help="put it in this sprint (planned or active)")
     edit_sprint.add_argument("--backlog", action="store_true", help="take it out of its sprint, into the backlog")
@@ -6675,7 +6471,6 @@ def build_parser():
     check.add_argument("--files", action="store_true", help="also warn about missing files listed by finished tasks")
 
     archive = command("archive", cmd_archive, "move finished tasks to tasks-archive.json, to keep tasks.json small")
-    archive.add_argument("--phase", action="append", type=float, help="only this phase (repeatable)")
     archive.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")
     archive.add_argument("--before", metavar="DATE", help="only tasks finished before this date (2026-05-01)")
     archive.add_argument(
@@ -6746,7 +6541,7 @@ def build_parser():
     init.add_argument(
         "--meta-file",
         metavar="F",
-        help="set tasks.json meta from a JSON object (project, phases, vocabularies); creates tasks.json if needed",
+        help="set tasks.json meta from a JSON object (project, vocabularies); creates tasks.json if needed",
     )
     merge = command("merge-driver", cmd_merge_driver, "git merge driver for tasks.json")
     for side in ("base", "ours", "theirs"):
@@ -6764,11 +6559,6 @@ def build_parser():
     logo = command("logo", cmd_logo, "print, set or unset the project's logo for the dashboard (meta.logo)")
     logo.add_argument("action", nargs="?", choices=["set", "unset"], help="set or unset it")
     logo.add_argument("path", nargs="?", help="set: the image (SVG, PNG, WebP or ICO), relative to here")
-    phases = command("phases", cmd_phases, "the phases with their names and counts; name or unname one phase")
-    phases.add_argument("action", nargs="?", choices=["list", "name", "unname"], help="name or unname a phase")
-    phases.add_argument("number", nargs="?", help="the phase number")
-    phases.add_argument("name", nargs="?", help="name: the phase's name")
-    phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
     sprints = command("sprints", cmd_sprints, "the sprints with their task counts; add, edit or start one")
     sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start", "close"], help="what to do")
     sprints.add_argument("name", nargs="?", help="the sprint's name (add: generated when left out)")

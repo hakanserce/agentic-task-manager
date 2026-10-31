@@ -132,7 +132,7 @@
           "id": "T-001",
           "status": "done",
           "kind": "done",
-          "phase": null,
+          "sprint": null,
           "priority": "P2",
           "labels": [],
           "name": "a",

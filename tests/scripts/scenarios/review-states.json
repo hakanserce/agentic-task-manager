@@ -100,7 +100,7 @@
     "env": { "ATM_NOW": "2026-05-01T10:31:00Z", "ATM_AGENT": "claude:bbbb2222" },
     "expect": {
       "stdoutIncludes": ["Next: T-1"],
-      "files": { "early.txt": "Next: T-0  (phase None, None)\n" }
+      "files": { "early.txt": "Next: T-0  (backlog, None)\n" }
     }
   },
   {

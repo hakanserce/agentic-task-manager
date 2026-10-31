@@ -1,6 +1,6 @@
 // Several projects (docs/multi-project-dashboard-proposal.md 3.2, 3.5): the landing page, #project= links, switching
 // between projects with their own saved views, and a project the server doesn't list.
-import { expect, openDashboard, summary, test } from './helpers';
+import { expect, openDashboard, sprintNumbers, summary, test } from './helpers';
 
 test.describe('projects', () => {
   test('with several projects, the dashboard lands on the overview; a project opens from it', async ({
@@ -163,10 +163,7 @@ test.describe('projects', () => {
     await expect(page.locator('#other-projects-need')).toHaveCount(0);
   });
 
-  test('overview cards: progress, current phase, agents, last activity; needs you first', async ({
-    page,
-    tasksServer,
-  }) => {
+  test('overview cards: progress, agents, last activity; needs you first', async ({ page, tasksServer }) => {
     await page.clock.setFixedTime(new Date('2026-01-01T12:00:00Z'));
     tasksServer
       .addProject(
@@ -178,11 +175,8 @@ test.describe('projects', () => {
           done: 9,
           skipped: 2,
           percent: 50,
-          current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
           agents_working: 2,
-          // A server before 0.17 sends no recent_phases or working list (undefined isn't serialized): the card shows
-          // the count and current phase lines, and counts the agents
-          recent_phases: undefined,
+          // A server before 0.18 sends no working list (undefined isn't serialized): the card counts the agents
           working: undefined,
           last_activity: '2026-01-01T11:48:00Z',
         }),
@@ -192,35 +186,31 @@ test.describe('projects', () => {
     const cards = page.locator('.project-card');
     await expect(cards.locator('.project-card-name')).toHaveText(['Asks', 'Busy', 'Standard Project']);
     const busy = page.locator('.project-card[data-id="busy"]');
-    await expect(busy.locator('.project-card-counts')).toHaveText(/9 \/ 18 done\s*· 2 skipped\s*50%/);
-    await expect(busy.locator('.project-card-phase')).toHaveText('Phase 3 · Polish — 1 / 4');
+    // No sprints: one ring for all its tasks
+    await expect(busy.locator('.project-card-ring svg')).toHaveAttribute('aria-label', 'All tasks: 9 of 18 done');
+    await expect(busy.locator('.project-card-progress')).toHaveAttribute('title', '9 / 18 done · 2 skipped (50%)');
+    await expect(busy.locator('.project-card-phase')).toHaveText('No sprints yet');
     await expect(busy.locator('.project-card-agents')).toHaveText('2 agents working');
     await expect(busy.locator('.project-card-last')).toHaveText('12 m ago');
     await expect(page.locator('.project-card[data-id="asks"] .project-card-need')).toHaveText('2 need you');
   });
 
-  // T-193: up to 4 rings, one per recent phase, never wrapping, at the narrowest card (the grid's 280px minimum, two
+  // T-193: up to 4 rings, one per recent sprint, never wrapping, at the narrowest card (the grid's 280px minimum, two
   // columns) and on a phone (one column, narrower still)
   for (const width of [620, 340]) {
-    test(`overview cards: the recent phases' rings sit on one row (${width}px window)`, async ({
+    test(`overview cards: the recent sprints' rings sit on one row (${width}px window)`, async ({
       page,
       tasksServer,
     }) => {
       await page.setViewportSize({ width, height: 800 });
-      const recent_phases = [14, 15, 16, 17].map((id) => ({
-        id,
-        name: `Phase name ${id}`,
-        done: 3,
-        total: 4,
-        percent: 75,
-      }));
-      tasksServer.addProject('busy', 'minimal', 'Busy', summary({ recent_phases }));
+      const recent_sprints = [14, 15, 16, 17].map((n) => sprintNumbers(`Sprint name ${n}`, 3, 4));
+      tasksServer.addProject('busy', 'minimal', 'Busy', summary({ recent_sprints }));
       await openDashboard(page, tasksServer, 'standard');
       const card = page.locator('.project-card[data-id="busy"]');
       await expect(card.locator('.project-card-ring')).toHaveCount(4);
       await expect(card.locator('.project-card-ring svg').first()).toHaveAttribute(
         'aria-label',
-        'Phase 14 · Phase name 14: 3 of 4 done',
+        'Sprint name 14: 3 of 4 done',
       );
       const layout = await card.evaluate((el) => {
         const row = el.querySelector('.project-card-rings')!;
@@ -238,27 +228,21 @@ test.describe('projects', () => {
     });
   }
 
-  // T-190: a long phase name is cut off on one line instead of wrapping and pushing the foot down. The current phase
-  // line is shown for servers before 0.17 (no recent_phases); newer ones get the rings (T-209)
-  test('overview cards (older server): a long phase name stays on one line; the feet of a row line up', async ({
+  // T-190: a long sprint name is cut off on one line instead of wrapping and pushing the foot down
+  test('overview cards: a long sprint name stays on one line; the feet of a row line up', async ({
     page,
     tasksServer,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    const name = 'A very long phase name that would never fit on one line of a project card, not even close';
-    const older = {
-      recent_phases: undefined,
-      working: undefined,
-      next: undefined,
-      last_done: undefined,
-      git: undefined,
-    };
+    const name = 'A very long sprint name that would never fit on one line of a project card, not even close';
+    const older = { working: undefined, next: undefined, last_done: undefined, git: undefined };
+    const active = { ...sprintNumbers(name, 2, 9, 'active'), goal: null };
     tasksServer
-      .addProject('long', 'minimal', 'Long', summary({ ...older, current_phase: { id: 7, name, done: 2, total: 9 } }))
+      .addProject('long', 'minimal', 'Long', summary({ ...older, recent_sprints: [active], active_sprint: active }))
       .addProject('short', 'minimal', 'Short', summary({ ...older, agents_working: 1 }));
     await openDashboard(page, tasksServer, 'standard');
     const line = page.locator('.project-card[data-id="long"] .project-card-phase');
-    await expect(line).toHaveAttribute('title', `Phase 7 · ${name} — 2 / 9`);
+    await expect(line.locator('.project-card-phase-name')).toHaveText(name);
     await expect(line.locator('.project-card-phase-count')).toBeVisible();
     const geometry = await page.evaluate(() => {
       const phase = document.querySelector('.project-card[data-id="long"] .project-card-phase')!;
@@ -286,7 +270,7 @@ test.describe('projects', () => {
         'minimal',
         'Full',
         summary({
-          recent_phases: [{ id: 1, name: null, done: 1, total: 2, percent: 50 }],
+          recent_sprints: [sprintNumbers('One', 1, 2)],
           working: [claim],
           git: { branch: 'dev/x', pr: { number: 4, url: null, state: 'open' } },
           last_done: { id: 'T-0', name: 'Setup', completed_at: '2026-01-01T00:00:00Z' },
@@ -326,11 +310,11 @@ test.describe('projects', () => {
     tasksServer,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    const recent_phases = [{ id: 1, name: null, done: 1, total: 2, percent: 50 }];
+    const recent_sprints = [sprintNumbers('One', 1, 2)];
     const long = 'A project with a very long name that would take three or more lines on a card of this width';
     tasksServer
-      .addProject('long', 'minimal', long, summary({ recent_phases }))
-      .addProject('short', 'minimal', 'Short', summary({ recent_phases }));
+      .addProject('long', 'minimal', long, summary({ recent_sprints }))
+      .addProject('short', 'minimal', 'Short', summary({ recent_sprints }));
     await openDashboard(page, tasksServer, 'standard');
     const name = page.locator('.project-card[data-id="long"] .project-card-name');
     await expect(name.locator('.project-card-open')).toHaveAttribute('title', new RegExp(`^${long}\\n`));
@@ -476,7 +460,6 @@ test.describe('projects', () => {
       total: 5,
       done: 5,
       percent: 100,
-      current_phase: null,
       last_activity: '2026-01-01T00:00:00Z',
     });
     tasksServer.addProject('idle', 'minimal', 'Idle', idle).addProject('open', 'minimal', 'Open', summary());

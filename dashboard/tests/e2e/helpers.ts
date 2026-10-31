@@ -26,7 +26,8 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
     done: 4,
     skipped: 0,
     percent: 40,
-    current_phase: { id: 1, name: null, done: 2, total: 5 },
+    active_sprint: null,
+    recent_sprints: null,
     agents_working: 0,
     working: [],
     next: [],
@@ -35,14 +36,23 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
     needs_you: { review: 0, blocked_on_user: 0 },
     last_activity: '2026-01-01T00:00:00Z',
     completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
-    recent_phases: [],
     ...fields,
   };
 }
 
+/** A sprint's numbers as a project's summary gives them (recent_sprints, active_sprint) */
+export function sprintNumbers(
+  id: string,
+  done: number,
+  total: number,
+  state: 'planned' | 'active' | 'closed' = 'planned',
+): Record<string, unknown> {
+  return { id, state, due: null, release: null, done, total, percent: Math.round((100 * done) / total) };
+}
+
 /** A board card as a project's summary gives it (docs/multi-project-api.md 3.3) */
 export function boardCard(id: string, name: string, fields: Record<string, unknown> = {}): Record<string, unknown> {
-  return { id, name, type: 'feature', phase: 1, priority: 'P2', labels: [], ...fields };
+  return { id, name, type: 'feature', sprint: null, priority: 'P2', labels: [], ...fields };
 }
 
 type BoardColumnId = 'todo' | 'active' | 'review' | 'blocked' | 'done';

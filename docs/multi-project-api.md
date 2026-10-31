@@ -119,12 +119,12 @@ answers the same.
         "done": 152,
         "skipped": 3,
         "percent": 84,
-        "current_phase": { "id": 15, "name": "One dashboard for all projects", "done": 0, "total": 17 },
-        "recent_phases": [
-          { "id": 12, "name": "Themes", "done": 10, "total": 10, "percent": 100 },
-          { "id": 13, "name": "Agents", "done": 9, "total": 9, "percent": 100 },
-          { "id": 14, "name": "Archive", "done": 12, "total": 12, "percent": 100 },
-          { "id": 15, "name": "One dashboard for all projects", "done": 0, "total": 17, "percent": 0 }
+        "active_sprint": { "id": "One dashboard", "state": "active", "due": "2026-10-31", "release": "0.17.0", "done": 0, "total": 17, "percent": 0, "goal": "All projects on one page" },
+        "recent_sprints": [
+          { "id": "Themes", "state": "closed", "due": null, "release": null, "done": 10, "total": 10, "percent": 100 },
+          { "id": "Agents", "state": "closed", "due": null, "release": null, "done": 9, "total": 9, "percent": 100 },
+          { "id": "Archive", "state": "closed", "due": null, "release": null, "done": 12, "total": 12, "percent": 100 },
+          { "id": "One dashboard", "state": "active", "due": "2026-10-31", "release": "0.17.0", "done": 0, "total": 17, "percent": 0 }
         ],
         "agents_working": 1,
         "working": [{ "task": "T-188", "name": "One title bar for every page", "agent": "claude:e5ea9db0", "branch": "dev/phase-17" }],
@@ -136,9 +136,9 @@ answers the same.
         "last_activity": "2026-10-25T21:51:38Z",
         "completions_14d": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 41, 28],
         "board": {
-          "todo": { "count": 1, "cards": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line", "type": "polish", "phase": 17, "priority": "P2", "labels": ["overview"] }] },
-          "active": { "count": 1, "cards": [{ "id": "T-188", "name": "One title bar for every page", "type": "feature", "phase": 17, "priority": "P1", "labels": [], "by": "claude:e5ea9db0", "since": "2026-10-20T09:12:00Z" }] },
-          "review": { "count": 1, "cards": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "type": "bugfix", "phase": 17, "priority": "P2", "labels": [], "since": "2026-10-25T21:40:02Z" }] },
+          "todo": { "count": 1, "cards": [{ "id": "T-190", "name": "Project card: a long phase name stays on one line", "type": "polish", "sprint": "One dashboard", "priority": "P2", "labels": ["overview"] }] },
+          "active": { "count": 1, "cards": [{ "id": "T-188", "name": "One title bar for every page", "type": "feature", "sprint": "One dashboard", "priority": "P1", "labels": [], "by": "claude:e5ea9db0", "since": "2026-10-20T09:12:00Z" }] },
+          "review": { "count": 1, "cards": [{ "id": "T-186", "name": "Update notice: shown when the page is already the new build", "type": "bugfix", "sprint": "One dashboard", "priority": "P2", "labels": [], "since": "2026-10-25T21:40:02Z" }] },
           "blocked": { "count": 0, "cards": [] },
           "done": { "count": 28, "cards": ["… 28 cards, each with completed_at"] }
         },
@@ -178,11 +178,11 @@ logic (`query.py`). Task names in `working`, `next`, `last_done` and `needs_you_
 | `done` | done-kind tasks |
 | `skipped` | skipped-kind tasks |
 | `percent` | `round(100 × done / (total − skipped))`, an integer. When `total − skipped` is 0 (no tasks, or only skipped ones): `100` if there are skipped tasks, `0` if there are no tasks |
-| `current_phase` | the lowest phase with a task that is neither done- nor skipped-kind: `{ id, name, done, total }` within that phase, with `done` and `total` counted as above (skipped tasks left out of `total`). `name` is `null` without a phase name. `null` when every phase is finished |
-| `recent_phases` | up to 4 phases for the overview's rings, in phase order: the lowest phases with open work (a task of todo, active, review or blocked kind), then the most recently finished phases (by their latest `completed_at`; phases without one rank last, higher phase first) to fill up to 4. More than 4 open phases: the lowest 4. Each is `{ id, name, done, total, percent }`, counted as for `current_phase`, with `percent` = `round(100 × done / total)`. A phase of only skipped tasks (`total` 0) is never listed. `[]` without tasks |
+| `active_sprint` | the active sprint (SR-7.7): `{ id, state, due, release, done, total, percent, goal }`, its tasks counted as above (skipped ones left out of `total`); `null` when none is active |
+| `recent_sprints` | up to 4 sprints with tasks for the overview's rings, in the project's order: the active and planned ones, then the most recently closed (by `end`) to fill up to 4. Each is `{ id, state, due, release, done, total, percent }`. `null` for a project without sprints (the card then shows one ring for all its tasks). Servers before 0.24 sent `current_phase` and `recent_phases` instead |
 | `agents_working` | live claims (lease not expired) in the claims store |
 | `working` | those claims, oldest first: `{ task, name, agent, branch }` (the task's name from this `tasks.json`; `branch` as the claim recorded it, `null` outside git) |
-| `next` | up to 2 tasks `atm next` would hand out, in its order (to do, dependencies done, not claimed, not done or waiting in another worktree; lowest phase, most urgent priority, lowest ID): `{ id, name }` |
+| `next` | up to 2 tasks `atm next` would hand out, in its order (to do, dependencies done, not claimed, not done or waiting in another worktree, not done together with the user; in the loop's default selection, the active sprint's or else the backlog's; most urgent priority, lowest ID): `{ id, name }` |
 | `last_done` | the done-kind task with the latest `completed_at`: `{ id, name, completed_at }`, or `null` |
 | `description` | `meta.description` (an optional line about the project), trimmed and capped at 200 characters; `null` without one. The card shows it only as the name's tooltip |
 | `git.branch` | the main worktree's checked-out branch (from `.git/HEAD`; a detached HEAD's short SHA), or `null` outside git |
@@ -202,13 +202,13 @@ many tasks follow the column's rule, `cards` the first of them (so the dashboard
 
 | Column | Rule | Order | At most |
 |---|---|---|---|
-| `todo` | ready to start (the tasks `next` takes from: to do, dependencies done, not claimed) in the first unfinished phase | the loop's | 10 |
+| `todo` | ready to start (the tasks `next` takes from: to do, dependencies done, not claimed) in the loop's default selection: the active sprint's, or the backlog's in a project without sprints | the loop's | 10 |
 | `active` | every active-kind task | longest running first (`started_at`) | 30 |
 | `review` | every review-kind task | longest waiting first | 30 |
 | `blocked` | every blocked-kind task | blocked on the user first, then longest waiting | 30 |
 | `done` | done-kind tasks with `completed_at` in the last 24 hours | newest first | 30 |
 
-A card is what a project's Kanban card shows: `{ id, name, type, phase, priority, labels }` (the name capped as
+A card is what a project's Kanban card shows: `{ id, name, type, sprint, priority, labels }` (`sprint` `null` in the backlog; the name capped as
 above, the priority the project's default when a task has none), plus `by` (the claim's agent, else `started_by`) on
 `active`; `since` (`started_at`, `review_requested_at` or `blocked_at`, else `updated_at`, else `null`) on `active`,
 `review` and `blocked`;

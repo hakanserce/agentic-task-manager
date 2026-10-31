@@ -30,9 +30,6 @@ export interface ProjectSummary {
   done: number;
   skipped: number;
   percent: number;
-  current_phase: { id: number; name: string | null; done: number; total: number } | null;
-  /** Up to 4 phases, in phase order: the lowest with open work, then the most recently finished */
-  recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
   /** The active sprint with its progress (SR-7.7); null when none is active; absent from servers before 0.24 */
   active_sprint?: (SprintNumbers & { goal: string | null }) | null;
   /** Up to 4 sprints with tasks, in the project's order: the open ones, then the latest closed; null without sprints */
@@ -65,7 +62,8 @@ export interface BoardCard {
   id: string;
   name: string;
   type: string;
-  phase: number | null;
+  /** The task's sprint; null in the backlog */
+  sprint: string | null;
   priority: string | null;
   labels: string[];
   /** In progress: who works on it */

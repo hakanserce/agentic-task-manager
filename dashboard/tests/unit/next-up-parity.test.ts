@@ -48,7 +48,7 @@ describe('next task: dashboard and atm agree', () => {
     });
   }
 
-  it('priorities and a custom vocabulary: phase, then priority, then ID', () => {
+  it('priorities and a custom vocabulary: priority, then ID; a phase left from before sprints does not count', () => {
     const task = (id: string, phase: number, priority?: string, status = 'backlog') => ({
       id,
       name: id,
@@ -68,11 +68,12 @@ describe('next task: dashboard and atm agree', () => {
       priorities: [{ id: 'must' }, { id: 'should' }, { id: 'could' }],
     };
     const tasks = [task('T-1', 1, 'must'), task('T-9', 0, 'could'), task('T-5', 0), task('T-7', 0, 'must', 'doing')];
-    // Phase 0 first; there "should" (the default, for T-5) beats "could"
-    expect(agree({ meta, tasks })).toBe('T-5');
-    expect(agree({ meta, tasks: [...tasks, task('T-8', 0, 'must')] })).toBe('T-8');
+    // "must" first, though T-1 is in a later phase
+    expect(agree({ meta, tasks })).toBe('T-1');
+    // Without it, "should" (the default, for T-5) beats "could"
+    expect(agree({ meta, tasks: tasks.filter((t) => t.id !== 'T-1') })).toBe('T-5');
     // Unknown priorities rank as the default: then the ID decides
-    expect(agree({ meta, tasks: tasks.map((t) => ({ ...t, priority: 'unknown' })) })).toBe('T-5');
+    expect(agree({ meta, tasks: tasks.map((t) => ({ ...t, priority: 'unknown' })) })).toBe('T-1');
   });
 
   it('with sprints: the active sprint only, even before a more urgent task in the backlog; none without one (SR-5.1)', () => {

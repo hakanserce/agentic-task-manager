@@ -281,19 +281,13 @@ def vocabulary(data):
     )
     if default_priority not in ids:
         raise AtmError(f"meta.default_priority {default_priority!r} is not one of meta.priorities")
-    phases = meta.get("phases", [])
-    if not isinstance(phases, list) or any(
-        not isinstance(p, dict) or not isinstance(p.get("id"), (int, float)) or isinstance(p.get("id"), bool)
-        for p in phases
-    ):
-        raise AtmError('meta.phases must be a list of {"id": <number>, "name": "..."}')
+    # meta.phases, from before sprints, isn't read: atm migrate turns it into sprints (SR-8.1, SR-8.3)
     check_workflow(meta.get("workflow"))
     return {
         "statuses": statuses,
         "types": _terms(meta, "types", DEFAULT_TYPES),
         "priorities": priorities,
         "default_priority": default_priority,
-        "phases": phases,
         "sprints": check_sprints(meta),
         "releases": check_releases(meta),
         "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
@@ -437,16 +431,14 @@ def finished_at(task):
     return None
 
 
-def archivable(data, phases=None, before=None, keep=None):
+def archivable(data, before=None, keep=None):
     """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days
-    (default meta.archive.keep_days), not in an open PR; only `phases` and those finished before `before`, if given."""
+    (default meta.archive.keep_days), not in an open PR; only those finished before `before`, if given."""
     vocab = vocabulary(data)
     recent = now() - timedelta(days=archive_settings(data)["keep_days"] if keep is None else keep)
     result = []
     for t in data["tasks"]:
         if not isinstance(t, dict) or kind_of(vocab, t.get("status")) not in ("done", "skipped"):
-            continue
-        if phases and phase_of(t) not in phases:
             continue
         if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
             continue  # still in an open PR
@@ -545,10 +537,6 @@ def unfinished_dependencies(data, task):
 def natural_key(task_id):
     """Sort T-2 before T-10, like the dashboard's localeCompare(..., { numeric: true })."""
     return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(task_id))]
-
-
-def phase_of(task):
-    return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
 
 
 MAX_NOTE = 500

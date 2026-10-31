@@ -19,7 +19,6 @@ from .model import (
     known_release,
     load_archive,
     load_tasks,
-    phase_of,
     split_id,
     status_for,
     touch,
@@ -108,15 +107,9 @@ def check_related(task_id, related, known):
     return related
 
 
-def number(value, what):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise AtmError(f"{what} must be a number", 2)
-    return int(value) if float(value).is_integer() else value
-
-
 def new_task(vocab, fields, actor, stamp):
     """A complete new task from the given fields, checked against the vocabularies."""
-    # A phase is optional: tasks go into sprints (or the backlog) since phases became sprints (SR-5.5)
+    # Tasks go into sprints (or the backlog): phases became sprints (SR-5.5, SR-8.3); a "phase" given is ignored
     for key in ("name", "type"):
         if fields.get(key) in (None, ""):
             raise AtmError(f"a new task needs a {key}", 2)
@@ -126,10 +119,7 @@ def new_task(vocab, fields, actor, stamp):
     priorities = [p["id"] for p in vocab["priorities"]]
     if fields.get("priority") is not None and fields["priority"] not in priorities:
         raise AtmError(f"unknown priority {fields['priority']!r}; use one of {', '.join(priorities)}", 2)
-    task = {"id": None, "name": str(fields["name"])}
-    if fields.get("phase") not in (None, ""):
-        task["phase"] = number(fields["phase"], "phase")
-    task["type"] = fields["type"]
+    task = {"id": None, "name": str(fields["name"]), "type": fields["type"]}
     if fields.get("priority") is not None:
         task["priority"] = fields["priority"]
     labels = check_labels(list(fields.get("labels") or []))
@@ -244,7 +234,6 @@ def cmd_add(args):
         entries = [
             {
                 "name": args.name,
-                "phase": args.phase,
                 "type": args.type,
                 "priority": args.priority,
                 "labels": args.label,
@@ -302,8 +291,6 @@ def edit_task(data, task, args):
             description = f.read()
     if description is not None:
         set_field("description", description)
-    if args.phase is not None:
-        set_field("phase", number(args.phase, "phase"))
     if args.sprint is not None or args.backlog:
         if set_sprint(task, None if args.backlog else open_sprint(vocab, args.sprint), now_iso()):
             changed.append("sprint")
@@ -402,10 +389,6 @@ def check_data(data, root, files=False, archived=()):
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")
-        # A task without a phase is fine: atm migrate turns phases into sprints (SR-8.1)
-        phase = task.get("phase")
-        if "phase" in task and (isinstance(phase, bool) or not isinstance(phase, (int, float))):
-            errors.append(f"{task_id}: \"phase\" must be a number")
         if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
             errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
         if isinstance(task.get("type"), str) and task["type"] not in types:
@@ -441,10 +424,6 @@ def check_data(data, root, files=False, archived=()):
     for sprint in vocab["sprints"]:
         if sprint.get("release") and find_release(vocab, sprint["release"]) is None:
             errors.append(f"the sprint {sprint['id']!r}: the release {sprint['release']!r} is not one of meta.releases")
-    used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
-    for p in vocab["phases"]:
-        if p["id"] not in used:
-            warnings.append(f"phase {p['id']} is named ({p.get('name')!r}) but has no tasks (atm phases unname)")
     well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
     cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
     if cycle:

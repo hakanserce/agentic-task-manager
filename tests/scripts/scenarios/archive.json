@@ -69,19 +69,19 @@
     }
   },
   {
-    "name": "archive --phase, --before and --keep-days narrow it",
+    "name": "archive --before and --keep-days narrow it",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
           "tasks": [
-            { "id": "T-1", "phase": 0, "status": "done", "completed_at": "2026-03-01T00:00:00Z" },
-            { "id": "T-2", "phase": 0, "status": "done", "completed_at": "2026-04-20T00:00:00Z" },
-            { "id": "T-3", "phase": 1, "status": "done", "completed_at": "2026-03-01T00:00:00Z" }
+            { "id": "T-1", "status": "done", "completed_at": "2026-03-01T00:00:00Z" },
+            { "id": "T-2", "status": "done", "completed_at": "2026-04-20T00:00:00Z" },
+            { "id": "T-3", "status": "done", "completed_at": "2026-04-28T00:00:00Z" }
           ]
         }
       }
     },
-    "args": ["archive", "--phase", "0", "--before", "2026-04-01", "--keep-days", "0", "--json"],
+    "args": ["archive", "--before", "2026-04-01", "--keep-days", "0", "--json"],
     "env": { "ATM_NOW": "2026-05-01T00:00:00Z" },
     "expect": {
       "json": { "moved": ["T-1"], "dry_run": false, "tasks_kb": 0, "archive_kb": 0, "duplicates_dropped": [] }
@@ -100,7 +100,7 @@
       }
     },
     "args": ["next"],
-    "expect": { "stdout": "Next: T-2 Next (phase 0, feature)\n" }
+    "expect": { "stdout": "Next: T-2 Next (backlog, feature)\n" }
   },
   {
     "name": "show and deps fall back to the archive; start refuses an archived task with a hint",
@@ -147,7 +147,7 @@
       }
     },
     "args": ["list", "--archived"],
-    "expect": { "stdout": "T-1  done  0   P2  Old\n" }
+    "expect": { "stdout": "T-1  done  P2  Old\n" }
   },
   {
     "name": "unarchive brings tasks back",

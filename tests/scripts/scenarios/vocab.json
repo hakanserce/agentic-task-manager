@@ -133,7 +133,7 @@
       }
     },
     "args": ["next"],
-    "expect": { "stdout": "Next: T-4 Ready (phase 0, feature)\n" }
+    "expect": { "stdout": "Next: T-4 Ready (backlog, feature)\n" }
   },
   {
     "name": "done moves to the first done-kind status",
@@ -303,14 +303,14 @@
     "expect": { "exit": 1, "stderrIncludes": ["atm: meta.workflow.type must be one of direct, pull-request"] }
   },
   {
-    "name": "malformed phases are an error",
+    "name": "meta.phases left from before sprints is ignored, malformed or not",
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": { "meta": { "phases": [{ "id": "one", "name": "x" }] }, "tasks": [] }
       }
     },
     "args": ["next"],
-    "expect": { "exit": 1, "stderrIncludes": ["atm: meta.phases must be a list of"] }
+    "expect": { "exit": 3, "stdout": "No task available: nothing left to do.\n" }
   },
   {
     "name": "the merge driver ranks a project's statuses by kind: done-kind beats active-kind",

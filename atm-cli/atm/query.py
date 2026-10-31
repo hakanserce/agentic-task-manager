@@ -23,7 +23,6 @@ from .model import (
     load_archive,
     load_tasks,
     natural_key,
-    phase_of,
     priority_rank,
     unfinished_dependencies,
     vocabulary,
@@ -49,7 +48,7 @@ def summary(vocab, task):
         "id": task.get("id"),
         "status": task.get("status"),
         "kind": kind_of(vocab, task.get("status")),
-        "phase": task.get("phase"),
+        "sprint": task.get("sprint"),
         "priority": priority_of(vocab, task),
         "labels": task.get("labels", []),
         "name": task.get("name", ""),
@@ -98,7 +97,7 @@ def ready_tasks(data):
         for t in data["tasks"]
         if kind_of(vocab, t.get("status")) == "todo" and not unfinished_dependencies(data, t)
     ]
-    return sorted(ready, key=lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id"))))
+    return sorted(ready, key=lambda t: (priority_rank(vocab, t.get("priority")), natural_key(t.get("id"))))
 
 
 def describe_task(data, task):
@@ -111,7 +110,7 @@ def describe_task(data, task):
     labels = task.get("labels") or []
     lines = [
         f"{task.get('id')}  {task.get('name', '')}",
-        f"  {task.get('status')} · phase {task.get('phase')} · {task.get('type')} · {priority_of(vocab, task)}"
+        f"  {task.get('status')} · {task.get('sprint') or 'backlog'} · {task.get('type')} · {priority_of(vocab, task)}"
         + (f" · labels: {', '.join(labels)}" if labels else ""),
     ]
     deps = task.get("dependencies") or []
@@ -173,8 +172,6 @@ def cmd_list(args):
             continue
         if args.status and t.get("status") not in args.status:
             continue
-        if args.phase is not None and phase_of(t) != args.phase:
-            continue
         if args.type and t.get("type") != args.type:
             continue
         if args.priority and priority_of(vocab, t) != args.priority:
@@ -203,14 +200,14 @@ def cmd_list(args):
 
 
 def list_lines(vocab, tasks):
-    """One line per task, as `atm list` prints them: ID, status, phase, priority, labels, name."""
+    """One line per task, as `atm list` prints them: ID, status, priority, labels, name."""
     id_width = max(len(str(t.get("id"))) for t in tasks)
     status_width = max(len(str(t.get("status"))) for t in tasks)
     for t in tasks:
         labels = t.get("labels") or []
         yield (
             f"{str(t.get('id')).ljust(id_width)}  {str(t.get('status')).ljust(status_width)}  "
-            f"{str(t.get('phase')).ljust(3)} {priority_of(vocab, t)}  "
+            f"{priority_of(vocab, t)}  "
             + (f"[{', '.join(labels)}] " if labels else "")
             + str(t.get("name", ""))
         )
@@ -246,10 +243,6 @@ ACTIVITY_FIELDS = ("updated_at", "started_at", "completed_at", "review_requested
 SUMMARY_DAYS = 14
 
 
-def as_phase_id(phase):
-    return int(phase) if isinstance(phase, float) and phase.is_integer() else phase
-
-
 def parse_time(text):
     try:
         return parse_iso(text) if isinstance(text, str) else None
@@ -257,7 +250,7 @@ def parse_time(text):
         return None
 
 
-RECENT_PHASES = 4
+RECENT_SPRINTS = 4
 NEXT_TASKS = 2
 NAME_CAP = 80  # task names in the summary, so /api/projects stays small with many projects
 
@@ -265,33 +258,6 @@ NAME_CAP = 80  # task names in the summary, so /api/projects stays small with ma
 def capped(name):
     name = name if isinstance(name, str) else ""
     return name if len(name) <= NAME_CAP else name[: NAME_CAP - 1] + "…"
-
-
-def recent_phases(tasks, kinds, open_phases, names):
-    """Up to four phases for the overview's rings, in phase order: the lowest phases with open work first, then the
-    most recently finished ones (by their last completed_at) to fill up. A phase of only skipped tasks has nothing to
-    show and is left out."""
-    chosen = list(open_phases[:RECENT_PHASES])
-    finished = {}  # finished phase -> its last completion ("" when none is recorded)
-    for t, k in zip(tasks, kinds):
-        phase = phase_of(t)
-        if phase in open_phases or k != "done":
-            continue
-        finished[phase] = max(finished.get(phase, ""), t.get("completed_at") or "")
-    for phase in sorted(finished, key=lambda p: (finished[p], p), reverse=True)[: RECENT_PHASES - len(chosen)]:
-        chosen.append(phase)
-    result = []
-    for phase in sorted(chosen):
-        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        done, total = in_phase.count("done"), len(in_phase) - in_phase.count("skipped")
-        result.append({
-            "id": as_phase_id(phase),
-            "name": names.get(phase) or None,
-            "done": done,
-            "total": total,
-            "percent": round(100 * done / total),
-        })
-    return result
 
 
 def sprint_numbers(sprint, own_kinds):
@@ -319,9 +285,9 @@ def recent_sprints(vocab, tasks, kinds):
         if sprint:
             own[sprint["id"]].append(k)
     with_tasks = [s for s in vocab["sprints"] if own[s["id"]]]
-    chosen = [s["id"] for s in with_tasks if s["state"] != "closed"][:RECENT_PHASES]
+    chosen = [s["id"] for s in with_tasks if s["state"] != "closed"][:RECENT_SPRINTS]
     closed = sorted((s for s in with_tasks if s["state"] == "closed"), key=lambda s: s.get("end") or "", reverse=True)
-    chosen += [s["id"] for s in closed[: RECENT_PHASES - len(chosen)]]
+    chosen += [s["id"] for s in closed[: RECENT_SPRINTS - len(chosen)]]
     return [sprint_numbers(s, own[s["id"]]) for s in with_tasks if s["id"] in chosen]
 
 
@@ -378,7 +344,7 @@ def board_card(vocab, task, **extra):
         "id": task.get("id"),
         "name": capped(task.get("name")),
         "type": task.get("type"),
-        "phase": as_phase_id(phase_of(task)),
+        "sprint": task.get("sprint") if isinstance(task.get("sprint"), str) else None,
         "priority": priority_of(vocab, task),
         "labels": [l for l in labels if isinstance(l, str)] if isinstance(labels, list) else [],
     }
@@ -391,14 +357,12 @@ def board_column(cards, cap=BOARD_CAP):
     return {"count": len(cards), "cards": cards[:cap]}
 
 
-def board(data, store, tasks, kinds, open_phases, vocab, current, live):
+def board(data, store, tasks, kinds, ready, vocab, current, live):
     """The project's cards for the All projects board (T-257), one rule per column: the tasks ready to start in the
-    first unfinished phase, in the loop's order; everything in progress (longest running first), in review (longest
-    waiting first) and blocked (on the user first, then longest waiting); what was finished in the last 24 hours,
-    newest first."""
+    loop's default selection (`ready`, the active sprint's), in its order; everything in progress (longest running
+    first), in review (longest waiting first) and blocked (on the user first, then longest waiting); what was
+    finished in the last 24 hours, newest first."""
     of_kind = lambda kind: [t for t, k in zip(tasks, kinds) if k == kind]
-    first_phase = open_phases[0] if open_phases else None
-    ready = [t for t in ready_in_order(data, store) if phase_of(t) == first_phase]
     claimed_by = {c.get("task"): c.get("agent") for c in live}
     since = lambda t, field: t.get(field) or t.get("updated_at")
     active = sorted(of_kind("active"), key=lambda t: str(t.get("started_at") or ""))
@@ -503,8 +467,8 @@ def project_stats(paths, data, vocab, tasks, current):
 
 def project_summary(paths):
     """A project's numbers for the dashboard's overview and project selector (docs/multi-project-api.md, 3.2), by
-    status kind as atm counts them everywhere else: done / (total - skipped), the current phase, live claims, what
-    needs the user, the latest activity and the completions of the last 14 days."""
+    status kind as atm counts them everywhere else: done / (total - skipped), the active and recent sprints, live
+    claims, what needs the user, the latest activity and the completions of the last 14 days."""
     data = load_tasks(paths)
     vocab = vocabulary(data)
     tasks = data["tasks"]
@@ -512,19 +476,6 @@ def project_summary(paths):
     done, skipped = kinds.count("done"), kinds.count("skipped")
     counted = len(tasks) - skipped
     percent = round(100 * done / counted) if counted else (100 if skipped else 0)
-
-    current_phase = None
-    open_phases = sorted({phase_of(t) for t, k in zip(tasks, kinds) if k not in ("done", "skipped")})
-    names = {p.get("id"): p.get("name") for p in vocab["phases"]}
-    if open_phases:
-        phase = open_phases[0]
-        in_phase = [k for t, k in zip(tasks, kinds) if phase_of(t) == phase]
-        current_phase = {
-            "id": as_phase_id(phase),
-            "name": names.get(phase) or None,
-            "done": in_phase.count("done"),
-            "total": len(in_phase) - in_phase.count("skipped"),
-        }
 
     current = now()
     store = read_store(paths)
@@ -550,7 +501,7 @@ def project_summary(paths):
     ]
     # What the loop takes next with its default selection: the active sprint's tasks in a project with sprints (SR-5.1)
     candidates, rank, _, reason = select(data, Selection())
-    todo = [t for t in candidates if kind_of(vocab, t.get("status")) == "todo"]
+    todo = [t for t in candidates if kind_of(vocab, t.get("status")) == "todo" and t.get("with") != "user"]
     ready = [] if reason else ready_in_order(data, store, todo, rank)
     next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready[:NEXT_TASKS]]
     finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
@@ -595,8 +546,6 @@ def project_summary(paths):
         "done": done,
         "skipped": skipped,
         "percent": percent,
-        "current_phase": current_phase,
-        "recent_phases": recent_phases(tasks, kinds, open_phases, names),
         "active_sprint": active_sprint_numbers(vocab, tasks, kinds),
         "recent_sprints": recent_sprints(vocab, tasks, kinds),
         "agents_working": agents_working,
@@ -613,7 +562,7 @@ def project_summary(paths):
         "description": description(data.get("meta")),
         "last_activity": last.strftime("%Y-%m-%dT%H:%M:%SZ") if last else None,
         "completions_14d": completions,
-        "board": board(data, store, tasks, kinds, open_phases, vocab, current, live),
+        "board": board(data, store, tasks, kinds, ready, vocab, current, live),
         "stats": project_stats(paths, data, vocab, tasks, current),
     }
 
@@ -690,8 +639,7 @@ def cmd_status(args):
         "sprint": sprint,
         "tasks": len(tasks),
         "by_status": by_status,
-        "by_phase": counts(lambda t: [t.get("phase")]),
-        "phase_names": {str(as_phase_id(p["id"])): p["name"] for p in vocab["phases"] if p.get("name")},
+        "by_sprint": counts(lambda t: [(find_sprint(vocab, t.get("sprint")) or {}).get("id") or "backlog"]),
         "by_type": counts(lambda t: [t.get("type")]),
         "by_label": counts(lambda t: t.get("labels") or []),
         "in_progress": in_progress,
@@ -725,8 +673,8 @@ def cmd_status(args):
     elif vocab["sprints"]:
         out("sprint: none active (plan one with /atm:plan-sprint)")
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
-    names = result["phase_names"]
-    out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
+    if vocab["sprints"]:
+        out(f"by sprint: {pairs(result['by_sprint'])}")
     out(f"by type: {pairs(result['by_type'])}")
     if result["by_label"]:
         out(f"by label: {pairs(result['by_label'])}")

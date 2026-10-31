@@ -4,17 +4,7 @@ import ProjectCard from '../../src/components/ProjectCard.svelte';
 import type { ProjectEntry, ProjectSummary } from '../../src/lib/load';
 import { dashboard } from '../../src/lib/state.svelte';
 
-type RecentPhase = ProjectSummary['recent_phases'][number];
-
-const phase = (id: number, done: number, total: number, name: string | null = null): RecentPhase => ({
-  id,
-  name,
-  done,
-  total,
-  percent: Math.round((100 * done) / total),
-});
-
-const card = (recent_phases: RecentPhase[] | undefined): ProjectEntry => ({
+const card = (): ProjectEntry => ({
   id: 'p1',
   name: 'Project',
   path: '/work/p1',
@@ -24,61 +14,35 @@ const card = (recent_phases: RecentPhase[] | undefined): ProjectEntry => ({
     done: 9,
     skipped: 2,
     percent: 50,
-    current_phase: null,
+    recent_sprints: null,
     agents_working: 0,
     needs_you: { review: 0, blocked_on_user: 0 },
     last_activity: null,
     completions_14d: [],
-    ...(recent_phases ? { recent_phases } : {}),
   } as ProjectSummary,
 });
 
 const rings = (container: HTMLElement) => [...container.querySelectorAll('.project-card-ring')];
 
-describe('ProjectCard: rings for the recent phases', () => {
-  it('no phases: the row keeps its place, saying so; the whole count is in its tooltip, not a line', () => {
-    const { container } = render(ProjectCard, { project: card([]) });
+describe('ProjectCard: a project without sprints', () => {
+  it('one ring for all its tasks (skipped ones left out), and a line saying it has no sprints yet', () => {
+    const { container } = render(ProjectCard, { project: card() });
+    expect(rings(container)).toHaveLength(1);
+    const [ring] = rings(container);
+    expect(ring.querySelector('.ring-value')).toHaveTextContent('50%');
+    expect(ring.querySelector('.project-card-ring-label')).toHaveTextContent('All tasks');
+    expect(ring.querySelector('svg')).toHaveAttribute('aria-label', 'All tasks: 9 of 18 done');
+    expect(container.querySelector('.project-card-progress')).toHaveAttribute('title', '9 / 18 done · 2 skipped (50%)');
+    expect(container.querySelector('.project-card-phase')).toHaveTextContent('No sprints yet');
+  });
+
+  it('no tasks: the row keeps its place, saying so', () => {
+    const empty = card();
+    const { container } = render(ProjectCard, {
+      project: { ...empty, summary: { ...empty.summary!, total: 0, done: 0, skipped: 0, percent: 0 } },
+    });
     expect(container.querySelector('.project-card-rings')).toBeNull();
     expect(container.querySelector('.project-card-progress')).toHaveTextContent('No tasks yet');
-    expect(container.querySelector('.project-card-progress')).toHaveAttribute('title', '9 / 18 done · 2 skipped (50%)');
-    expect(container.querySelector('.project-card-counts')).toBeNull();
-    expect(container.querySelector('.project-card-phase')).toBeNull();
-  });
-
-  it('a summary without recent_phases (an older server): no rings, the count and current phase lines of before', () => {
-    const { container } = render(ProjectCard, { project: card(undefined) });
-    expect(container.querySelector('.project-card-rings')).toBeNull();
-    expect(container.querySelector('.project-card-counts')).toHaveTextContent('9 / 18 done · 2 skipped 50%');
-    expect(container.querySelector('.project-card-phase')).toHaveTextContent('Every phase is finished');
-  });
-
-  it('one phase: its percentage inside, its number under it, the name and counts in the title and label', () => {
-    const { container } = render(ProjectCard, { project: card([phase(16, 4, 13, 'Dashboard polish')]) });
-    const [ring] = rings(container);
-    expect(rings(container)).toHaveLength(1);
-    expect(ring.querySelector('.ring-value')).toHaveTextContent('31%');
-    expect(ring.querySelector('.project-card-ring-label')).toHaveTextContent('Phase 16');
-    expect(ring).toHaveAttribute('title', 'Phase 16 · Dashboard polish: 4 / 13 done');
-    expect(ring.querySelector('svg')).toHaveAttribute('aria-label', 'Phase 16 · Dashboard polish: 4 of 13 done');
-  });
-
-  it('four phases, in the order given; a phase without a name is labelled by its number', () => {
-    const { container } = render(ProjectCard, {
-      project: card([phase(14, 12, 12), phase(15, 17, 17, 'Overview'), phase(16, 4, 13), phase(17, 0, 9)]),
-    });
-    expect(rings(container).map((r) => r.querySelector('.project-card-ring-label')?.textContent)).toEqual([
-      'Phase 14',
-      'Phase 15',
-      'Phase 16',
-      'Phase 17',
-    ]);
-    expect(rings(container).map((r) => r.querySelector('.ring-value')?.textContent)).toEqual([
-      '100%',
-      '100%',
-      '31%',
-      '0%',
-    ]);
-    expect(rings(container)[2].querySelector('svg')).toHaveAttribute('aria-label', 'Phase 16: 4 of 13 done');
   });
 });
 
@@ -93,11 +57,11 @@ describe('ProjectCard: a project with sprints (SR-7.7)', () => {
     percent: Math.round((100 * done) / total),
   });
   const withSprints = (summary: Partial<ProjectSummary>): ProjectEntry => {
-    const base = card([]);
+    const base = card();
     return { ...base, summary: { ...base.summary!, ...summary } };
   };
 
-  it('rings for the recent sprints instead of phases, and the active sprint with its progress and due date', () => {
+  it('rings for the recent sprints, and the active sprint with its progress and due date', () => {
     dashboard.loadedAt = new Date('2026-04-09T12:00:00').getTime();
     const { container } = render(ProjectCard, {
       project: withSprints({
@@ -112,6 +76,18 @@ describe('ProjectCard: a project with sprints (SR-7.7)', () => {
     const line = container.querySelector('.project-card-sprint')!;
     expect(line).toHaveTextContent('Ada Lovelace — 1 / 3 · due in 3 days');
     expect(line).toHaveAttribute('title', 'Sign-in');
+    const [, ring] = rings(container);
+    expect(ring.querySelector('.ring-value')).toHaveTextContent('33%');
+    expect(ring).toHaveAttribute('title', 'Ada Lovelace (active): 1 / 3 done');
+    expect(ring.querySelector('svg')).toHaveAttribute('aria-label', 'Ada Lovelace: 1 of 3 done');
+  });
+
+  it('sprints, but none with tasks yet: the row keeps its place, saying so; the whole count is in its tooltip', () => {
+    const { container } = render(ProjectCard, { project: withSprints({ recent_sprints: [], active_sprint: null }) });
+    expect(container.querySelector('.project-card-rings')).toBeNull();
+    expect(container.querySelector('.project-card-progress')).toHaveTextContent('No tasks in a sprint yet');
+    expect(container.querySelector('.project-card-progress')).toHaveAttribute('title', '9 / 18 done · 2 skipped (50%)');
+    expect(container.querySelector('.project-card-counts')).toBeNull();
   });
 
   it('no active sprint says so', () => {
@@ -124,7 +100,7 @@ describe('ProjectCard: a project with sprints (SR-7.7)', () => {
 
 describe('ProjectCard: working now, or next up, by task name (T-207)', () => {
   const withWork = (fields: Partial<ProjectSummary>): ProjectEntry => {
-    const project = card([]);
+    const project = card();
     return { ...project, summary: { ...project.summary!, ...fields } };
   };
   const claim = (task: string, name: string) => ({ task, name, agent: 'claude:e5ea9db0', branch: 'dev/x' });
@@ -174,7 +150,7 @@ describe('ProjectCard: working now, or next up, by task name (T-207)', () => {
 
 describe('ProjectCard: the git line and the task finished last (T-208)', () => {
   const withFields = (fields: Partial<ProjectSummary>): ProjectEntry => {
-    const project = card([]);
+    const project = card();
     return { ...project, summary: { ...project.summary!, ...fields } };
   };
   const text = (el: Element | null) => el?.textContent?.replace(/\s+/g, ' ').trim();
@@ -208,7 +184,7 @@ describe('ProjectCard: the git line and the task finished last (T-208)', () => {
     expect(text(none.container.querySelector('.project-card-git'))).toBe('');
     expect(none.container.querySelector('.project-card-git .icon')).toBeNull();
     // An older server (no git field): no row at all
-    const older = render(ProjectCard, { project: card([]) });
+    const older = render(ProjectCard, { project: card() });
     expect(older.container.querySelector('.project-card-git')).toBeNull();
   });
 

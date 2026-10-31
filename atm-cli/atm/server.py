@@ -160,8 +160,7 @@ def serve_start(paths, port, overview):
     """Start (or reuse) the server; returns the URL to show: the project's, or the overview's."""
     project = None
     if not overview:
-        # Phases stay until `atm migrate` (every skill runs it first): the overview summary still reads them (T-320)
-        for line in describe_migration(migrate(paths, phases=False), paths):
+        for line in describe_migration(migrate(paths), paths):
             if line != "Nothing to migrate.":
                 out(line)
         if not os.path.isfile(paths["tasks"]):

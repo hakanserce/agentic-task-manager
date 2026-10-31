@@ -41,15 +41,15 @@ describe('readiness', () => {
 });
 
 describe('nextUp', () => {
-  it('picks the ready todo task with the lowest phase, then the lowest ID', () => {
+  it('picks the ready todo task with the lowest ID; a phase left from before sprints does not count', () => {
     const tasks = [
-      t('T-3', 'todo', { phase: 1 }),
-      t('T-10', 'todo', { phase: 0 }),
-      t('T-9', 'todo', { phase: 0 }),
-      t('T-1', 'todo', { phase: 0, dependencies: ['T-3'] }),
+      t('T-30', 'todo', { phase: 0 }),
+      t('T-10', 'todo', { phase: 1 }),
+      t('T-9', 'todo', { phase: 1 }),
+      t('T-1', 'todo', { phase: 0, dependencies: ['T-30'] }),
       t('T-2', 'in_progress', { phase: 0 }),
     ];
-    // T-1 waits on T-3; T-9 < T-10 numerically
+    // T-1 waits on T-30; T-9 < T-10 numerically, before T-30 in an earlier phase
     expect(nextUp(tasks)?.id).toBe('T-9');
   });
 

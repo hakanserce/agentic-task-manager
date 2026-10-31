@@ -11,6 +11,13 @@ into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks witho
 priority alone, `--phase` would select nothing; nothing is lost or rewritten).
 
 ### Changed
+- **The skills end tasks by their review mode** (T-315, SR-5.4, SR-4.4): `/atm:do-task` and `/atm:loop-tasks` run
+  `atm done` and follow the mode instead of reading "a review is asked for" from descriptions: `none` and `batch`
+  are done (a `batch` note is what the end-of-sprint review checks); `blocker` and `async` go to review, `blocker`
+  first (the user reviews it now, or an unattended loop stops), `async` while the loop goes on. Reviewing a task
+  can approve it or ask for changes (`atm approve`, `atm request-changes`). `/atm:close-sprint` starts with the
+  end-of-sprint review of the tasks waiting for it (fixes live, follow-ups `related` in the next sprint), then
+  closes with `--reviewed`.
 - **`/atm:create-tasks` proposes sprints** (T-303, SR-5.5): for new tasks, the active sprint, a planned one, a new
   one (added with `atm sprints add`, planned, never started) or the backlog, instead of phases and phase names; tasks
   go in with `"sprint"` (or none, the backlog). It pre-approves `atm sprints` and `atm backlog` instead of

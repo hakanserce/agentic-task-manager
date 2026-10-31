@@ -203,13 +203,22 @@ This is the default behavior. Do NOT push — only commit locally (`/atm:push` p
 
 (A task you blocked in Step 5 is already finished here.)
 
-Once the commit is in, decide how the task ends:
+Once the commit is in, the task ends by its **review mode**: its own `review`, else its first component's, else the
+project's (`meta.review`), else `none`. Run `atm done $TASK_ID --note '<one-line outcome>'`; atm applies the mode:
 
-- **A review is asked for** — by the task's description, the project's instructions (e.g. its `CLAUDE.md`) or the
-  user, whether by the user or by another agent: run `atm review $TASK_ID --note '<what the reviewer should check>'`
-  (with `--status <id>` when the project has several review statuses and one fits, e.g. `awaiting_user`). The task
-  moves to in review, your claim is released, and the tasks that depend on it keep waiting until the review passes.
-  Report the task as **waiting for review**.
+- `none`: it is done.
+- `batch`: it is done, and waits for the end-of-sprint review (`sprint_review: pending`): write the note as what
+  the reviewer should check.
+- `blocker` or `async`: atm refuses (`… is reviewed (blocker): ask for it with atm review …`). Then ask for the
+  review: `atm review $TASK_ID --note '<what the reviewer should check>'` (with `--status <id>` when the project has
+  several review statuses and one fits, e.g. `awaiting_user`). The task moves to in review, your claim is released,
+  and the tasks that depend on it keep waiting until the review passes. Report it as **waiting for review**.
+  - **`blocker`**: the review happens now, before anything else: if the user is in the session, ask them to review it
+    (they `atm approve`, `request-changes` or `done` it); in an unattended loop, stop the loop and say what waits.
+  - **`async`**: go on with other work; the reviewer decides later, and `atm next` hands it back if they ask for
+    changes or approve something left to do.
+
+A person running atm (not an agent) may always `atm done` a task: the mode is for agents' work.
 
   **A review you hold with the user** (the task says to review a draft or proposal with them, e.g. in a review tool
   or the preview): commit the draft, run `atm review` *before* you show it, so the dashboard shows it waiting on
@@ -222,18 +231,18 @@ Once the commit is in, decide how the task ends:
 
   **A task back from review** (`atm next` gives it to you first: `review_state` `approved` or `changes_requested`):
   read its latest `rejection` note (the changes asked for) or its approval note, and carry on from Step 5.
-- **Otherwise**: run `atm done $TASK_ID --note '<one-line outcome>'`. It sets the status and `completed_at`, records
-  the outcome as a note (the commit atm recorded stays), drops your claim, and prints the tasks it made ready
-  ("Now ready:").
+
+`atm done` sets the status and `completed_at`, records the note (the commit atm recorded stays), drops your claim,
+and prints the tasks it made ready ("Now ready:").
 
 This status change is written to `tasks.json` after the commit, so it goes in with the next commit, like the commit's
 SHA. If either command says your lease expired (exit code 4), the task went back to todo with your commit kept: run
 `atm start $TASK_ID`, then the same command again. If another agent has claimed it in the meantime, tell the user.
 
 **Reviewing a task** (when the user or another agent asks you to review one that is in review): read its `review`
-note and the commit, then either pass it with `atm done <id>`, or send it back with
-`atm reject <id> --reason '<what needs to change>'`. A rejected task returns to to do with the reason as a `rejection`
-note, for the next agent to address.
+note and the commit, then pass it with `atm done <id>`, approve it with something left to do
+(`atm approve <id> --note '…'`), or ask for changes (`atm request-changes <id> --reason '<what needs to change>'`):
+the agent that worked on it gets it back first. `atm reject <id> --reason '…'` sends it back to to do for anyone.
 
 **A task marked done by mistake** (its work isn't finished or committed): `atm reopen <id> --reason '<why>'` takes it
 back to to do. Never change its status by editing `tasks.json`.

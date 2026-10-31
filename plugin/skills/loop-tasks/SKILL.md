@@ -125,7 +125,7 @@ errors (the message says what).
 4. **Commit first, then finish.** Commit with `atm commit <id> --file <path> ...` while the task is still in
    progress, naming every file you changed for the task: it commits exactly those plus `tasks.json`. Never
    `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree. Only then finish with
-   `atm done <id> --note '<one-line outcome>'`, or `atm review <id> --note '...'` when a review is asked for, or
+   `atm done <id> --note '<one-line outcome>'`, or `atm review <id> --note '...'` when its review mode asks for one, or
    `atm block <id> --on user|agent --question '...'` when you can't go on without a decision (steps 5 and 6 below).
    A task is never done with its work uncommitted.
 5. Give up with `atm fail <id> --reason '...'`; stop early with `atm release <id> --note '<handoff>'`. A task marked
@@ -210,10 +210,13 @@ while true:
             saying no is the project telling the user something.
 
     6. FINISH the task, once its commit is in:
-       - If a review is asked for (by the task's description, the project's instructions or the user; by the user
-         or by another agent): `atm review $TASK_ID --note '<what the reviewer should check>'` (with `--status`
-         when one of several review statuses fits). The claim is released and the tasks that depend on it keep
-         waiting; the loop goes on with other ready tasks. Count it as waiting for review, not completed.
+       - By its review mode (/atm:do-task Step 7b): `atm done $TASK_ID --note '...'`. For a `none` or `batch`
+         task it is done (`batch`: the note says what the end-of-sprint review should check); completed_count += 1.
+         For a `blocker` or `async` task atm refuses: ask for the review, `atm review $TASK_ID --note '<what the
+         reviewer should check>'` (with `--status` when one of several review statuses fits). The claim is
+         released and the tasks that depend on it keep waiting. Count it as waiting for review, not completed.
+         `async`: the loop goes on with other ready tasks. `blocker`: the review comes first: with the user
+         watching, ask them to review it now; unattended, stop the loop and say what waits for the review.
          A review held with the user (a draft or proposal the task says to review with them): `atm review` as soon
          as the draft is committed, *before* opening the review, so the dashboard shows it waiting on them; address
          their comments while it stays in review. Once they approve, check what the task still asks for; if
@@ -225,7 +228,6 @@ while true:
          (`--on agent` when the project or the user hands such decisions to a reviewer agent). The claim is
          released and its dependents wait; the loop goes on with other ready tasks. Count it as blocked. Whoever
          decides answers with `atm unblock <id> --answer '...'` (one per question), which puts it back to to do.
-       - Otherwise: `atm done $TASK_ID --note '<one-line outcome>'`, then completed_count += 1
        (The status change goes in with the next commit, like the commit's SHA.)
 
     7. BETWEEN TASKS:

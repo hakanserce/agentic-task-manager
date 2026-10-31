@@ -51,11 +51,17 @@ says what was done, a `review` what a reviewer should check).
 If a task in it is **in progress** (claimed by an agent), atm won't close the sprint: say which, and ask the user
 whether to wait for it or to have it released (by whoever runs it) first. Stop until it's settled.
 
-## Step 3: Review what got done
+## Step 3: The end-of-sprint review, then what got done
 
-Go through the done tasks with the user, briefly: each with its outcome note, the ones with a `review` note first.
-Small fixes can be made right away, in the session, if the user wants them; what needs more becomes a follow-up task
-through `/atm:create-tasks`, in the next sprint, mentioning the original task.
+**First, the tasks waiting for this review** (SR-4.4): the `batch` tasks done in the sprint with
+`sprint_review: pending` (`atm status` lists them under the sprint; `atm show <id>` has each one's `review` note, what
+to check). Go through them with the user, one by one. Small fixes can be made right away, in the session, if the user
+wants them; what needs more becomes a follow-up task through `/atm:create-tasks`, in the next sprint, `related` to the
+original (which stays done). atm won't close the sprint while any is pending: Step 6 closes it with `--reviewed`
+once this review is over.
+
+Then go through the other done tasks with the user, briefly: each with its outcome note. The same goes for fixes and
+follow-ups.
 
 ## Step 4: Decide the rest
 
@@ -82,8 +88,9 @@ On the user's word:
 atm sprints close '<name>' --carry-to '<sprint>'      # or: --carry-to new [--name '<name>'], or --carry-to backlog
 ```
 
-(`--carry-to` is needed only while unfinished tasks are left in it.) atm prints the report: how many were done,
-carried and added mid-sprint.
+(`--carry-to` is needed only while unfinished tasks are left in it; add `--reviewed` when Step 3 reviewed tasks that
+were waiting for the sprint review: it marks them reviewed.) atm prints the report: how many were done, carried and
+added mid-sprint.
 
 Then offer `/atm:plan-sprint` for the next sprint: no sprint is active until one is started.
 

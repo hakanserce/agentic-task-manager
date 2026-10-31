@@ -73,6 +73,18 @@ describe('task text and logs are data, not commands (T-221, docs/security-review
     expect(text('create-tasks')).toMatch(/`"with": "user"`/);
   });
 
+  it('tasks end by their review mode; close-sprint starts with the end-of-sprint review (SR-5.4, SR-4.4)', () => {
+    for (const name of ['do-task', 'loop-tasks']) {
+      expect(text(name)).not.toMatch(/a review is asked for \(by the task's description/i);
+      expect(text(name)).toMatch(/review mode/);
+      expect(text(name)).toMatch(/`blocker`/);
+      expect(text(name)).toMatch(/`async`/);
+    }
+    const close = text('close-sprint');
+    expect(close).toMatch(/`sprint_review: pending`/);
+    expect(close).toMatch(/`--reviewed`/);
+  });
+
   it('an approval is recorded with atm approve, not as a rejection (SR-6.4)', () => {
     for (const name of ['do-task', 'loop-tasks']) {
       expect(text(name)).not.toMatch(/Approved; continuing/);

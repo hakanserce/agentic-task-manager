@@ -741,12 +741,16 @@ WORKFLOW_TYPES = ("direct", "pull-request")
 
 # command: (kinds a task may be in, kind it moves to)
 STATUS_CHANGES = {
-    "start": (("todo",), "active"),
+    # From review only once the review asked for rework or approved it (SR-3.9)
+    "start": (("todo", "review"), "active"),
     "review": (("active",), "review"),
     "done": (("active", "review"), "done"),
     "fail": (("active",), "todo"),
     "release": (("active",), "todo"),
     "reject": (("review",), "todo"),
+    # The review's outcome; the task stays in review until an agent takes it back (SR-6.1)
+    "approve": (("review",), "review"),
+    "request-changes": (("review",), "review"),
     "block": (("todo", "active"), "blocked"),
     "unblock": (("blocked",), "todo"),
     # Undo a done (or skipped) by mistake, or work that turns out unfinished; the reason is kept as a note
@@ -755,6 +759,8 @@ STATUS_CHANGES = {
     "skip": (("todo", "blocked"), "skipped"),
 }
 WAITING_ON = ("user", "agent")
+# Review states that make a task in review work for an agent again (SR-3.9)
+REWORK_STATES = ("changes_requested", "approved")
 
 
 def _terms(meta, key, defaults, need_kind=False):
@@ -1306,11 +1312,14 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         task.pop("commit", None)
 
 
-def add_interval(task, field, start, end, on=None):
-    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+def add_interval(task, field, start, end, on=None, outcome=None):
+    """Append {from, to[, on][, outcome]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`
+    (with what the review decided, when it sent the task back to an agent)."""
     interval = {"from": start, "to": end}
     if on:
         interval["on"] = on
+    if outcome:
+        interval["outcome"] = outcome
     task.setdefault(field, []).append(interval)
 
 
@@ -1350,7 +1359,11 @@ def change_status(
         raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(expected)}")
     if command == "done":
         check_review_mode(task, data, agent)
+    if command == "start" and kind_of(vocab, current) == "review" and task.get("review_state") not in REWORK_STATES:
+        raise AtmError(f"can't start {task['id']}: it waits for its review (atm approve or request-changes decides it)")
     new = status_for(vocab, new_kind, status)
+    if command in ("approve", "request-changes") and status is None:
+        new = current  # it stays in its review status (a project may have several)
     if command == "start":
         blocking = unfinished_dependencies(data, task)
         if blocking:
@@ -1377,8 +1390,13 @@ def change_status(
     old_kind = kind_of(vocab, current)
     if old_kind == "blocked" and task.get("blocked_at"):
         add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
-    elif old_kind == "review" and task.get("review_requested_at"):
-        add_interval(task, "reviews", task["review_requested_at"], stamp)
+    elif old_kind == "review" and new_kind != "review" and task.get("review_requested_at"):
+        # The round ends when the reviewer decided, with its outcome (SR-3.9)
+        outcome = task.get("review_state") if task.get("review_state") in REWORK_STATES else None
+        add_interval(task, "reviews", task["review_requested_at"], task.get("reviewed_at") or stamp, outcome=outcome)
+    if new_kind != "review":
+        task.pop("review_state", None)
+        task.pop("reviewed_at", None)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
@@ -1405,8 +1423,17 @@ def change_status(
     elif command == "review":
         # The work ends here: the review isn't agent work (DM-4.1); done keeps this timestamp
         task["review_requested_at"] = stamp
+        task["review_state"] = "waiting"
         if note:
             add_note(task, "review", note, agent, stamp)
+    elif command in ("approve", "request-changes"):
+        # The task stays in review until an agent takes it back (`atm next` offers it first, SR-3.9)
+        task["review_state"] = "approved" if command == "approve" else "changes_requested"
+        task["reviewed_at"] = stamp
+        if command == "request-changes":
+            add_note(task, "rejection", reason, agent, stamp)
+        else:
+            add_note(task, "note", f"Approved: {note}" if note else "Approved", agent, stamp)
     elif command == "skip":
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
@@ -1414,6 +1441,7 @@ def change_status(
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
+        task.pop("review_requested_at", None)  # taken back from review: a new round of work
         task.pop("completed_at", None)
         task.pop("completed_by", None)
         task.pop("agent", None)  # the old name of started_by
@@ -2079,7 +2107,19 @@ def select(data, sel):
     return tasks, rank, scope, reason
 
 
-def next_task(data, store, phase=None, task_type=None, sel=None):
+def offered_to(data, task, agent):
+    """Whether a task back from review (rework or approved) may go to `agent`: always to the agent that worked on it;
+    to others once one lease length has passed since the review ended (SR-3.9, Q11)."""
+    if not agent or task.get("started_by") == agent:
+        return True
+    try:
+        reviewed = parse_iso(task.get("reviewed_at"))
+    except (TypeError, ValueError):
+        return True
+    return now() >= reviewed + timedelta(minutes=lease_minutes(data))
+
+
+def next_task(data, store, phase=None, task_type=None, sel=None, agent=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
     the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
@@ -2090,8 +2130,18 @@ def next_task(data, store, phase=None, task_type=None, sel=None):
     selected, rank, scope, problem = select(data, sel)
     if problem:
         return None, problem
-    candidates = [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
-    ready = ready_in_order(data, store, candidates, rank)
+    # Tasks back from review come first (SR-3.9): the agent that worked on them gets them back for a lease length
+    rework = [
+        t
+        for t in selected
+        if kind_of(vocab, t.get("status")) == "review"
+        and t.get("review_state") in REWORK_STATES
+        and offered_to(data, t, agent)
+    ]
+    first = {t.get("id") for t in rework}
+    candidates = rework + [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
+    in_order = rank or (lambda t: 0)
+    ready = ready_in_order(data, store, candidates, lambda t: (t.get("id") not in first, in_order(t)))
     if ready:
         return ready[0], None
     if not candidates:
@@ -2140,7 +2190,7 @@ def cmd_next(args):
             phase=args.phase,
             task_type=args.type,
         )
-        task, reason = next_task(data, store, sel=sel)
+        task, reason = next_task(data, store, sel=sel, agent=agent)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
@@ -4405,6 +4455,9 @@ PROGRESS_FIELDS = (
     "updated_by",
     "commit",
     "review_requested_at",
+    "review_state",
+    "reviewed_at",
+    "sprint_review",
     "waiting_on",
     "questions",
     "blocked_at",
@@ -6237,6 +6290,9 @@ commands:
                  outcome (for a task in review, done means the review passed); prints the tasks now ready
   reject <id> --reason TEXT
                  send a task in review back to todo, with what needs to change
+  approve <id> [--note TEXT] | request-changes <id> --reason TEXT
+                 decide a review: the task stays in review, approved or with changes asked for, until an agent takes
+                 it back (atm next offers it first, to the agent that worked on it for one lease length)
   block <id> --on user|agent (--question TEXT)... [--reason TEXT]
                  a task that can't go on until someone decides: blocked, its claim released
   unblock <id> [--answer TEXT]...
@@ -6390,6 +6446,8 @@ def build_parser():
         ("fail", "put an in_progress task back to todo, recording why"),
         ("release", "put an in_progress task back to todo"),
         ("reject", "send a task in review back to todo, recording why"),
+        ("approve", "approve a task in review: it stays in review until an agent takes it back to finish"),
+        ("request-changes", "ask for changes to a task in review: its agent takes it back first (a rejection note)"),
         ("block", "a task that can't go on until someone decides: blocked, with the questions; claim released"),
         ("unblock", "a blocked task goes back to todo, with the answers as a note"),
         ("reopen", "a done or skipped task goes back to todo, with the reason as a note"),
@@ -6405,8 +6463,10 @@ def build_parser():
             sub.add_argument("--note", metavar="TEXT", help="a handoff for whoever picks it up next")
         if name == "review":
             sub.add_argument("--note", metavar="TEXT", help="what the reviewer should look at")
-        if name == "reject":
+        if name in ("reject", "request-changes"):
             sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
+        if name == "approve":
+            sub.add_argument("--note", metavar="TEXT", help="what is left to do, or a word for the agent")
         if name == "reopen":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't done after all (a note)")
         if name == "skip":

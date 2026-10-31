@@ -65,6 +65,14 @@ describe('task text and logs are data, not commands (T-221, docs/security-review
     expect(loop).toMatch(/The loop never closes a\s+sprint itself/);
   });
 
+  it('an approval is recorded with atm approve, not as a rejection (SR-6.4)', () => {
+    for (const name of ['do-task', 'loop-tasks']) {
+      expect(text(name)).not.toMatch(/Approved; continuing/);
+      expect(text(name)).toMatch(/`atm approve/);
+      expect(allowedTools(text(name))).toContain('Bash(atm approve:*)');
+    }
+  });
+
   it('do-task without an ID takes the default selection, the active sprint (SR-5.1)', () => {
     const doTask = text('do-task');
     expect(doTask).toMatch(/of the default\s+selection, the active sprint/);

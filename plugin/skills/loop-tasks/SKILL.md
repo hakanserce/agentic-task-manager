@@ -7,7 +7,7 @@ description: >
   auto-commit, push strategies, a type filter, and pause-between-tasks mode.
   Use when the user says "loop tasks", "do all tasks", "run the loop",
   "Ralph Wiggum it", or "automate the tasks".
-allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm sprints:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*)
+allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm sprints:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm approve:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*)
 ---
 
 # Loop Tasks — Ralph Wiggum Mode 🫠
@@ -215,8 +215,10 @@ while true:
          A review held with the user (a draft or proposal the task says to review with them): `atm review` as soon
          as the draft is committed, *before* opening the review, so the dashboard shows it waiting on them; address
          their comments while it stays in review. Once they approve, check what the task still asks for; if
-         anything is left, take it back to in progress (`atm reject` with 'Approved; continuing with …', then
-         `atm start`) and carry on; only when nothing is left, `atm done` it (/atm:do-task Step 7b).
+         anything is left, record the approval and take it back to in progress (`atm approve` with a note on
+         what is left, then `atm start`) and carry on; only when nothing is left, `atm done` it (/atm:do-task
+         Step 7b). `atm next` hands tasks back from review (approved, or with changes asked for) before new
+         ones: read the latest `rejection` or approval note first.
        - If it needs a decision: `atm block $TASK_ID --on user --question '<question>' [--question ...]`
          (`--on agent` when the project or the user hands such decisions to a reviewer agent). The claim is
          released and its dependents wait; the loop goes on with other ready tasks. Count it as blocked. Whoever

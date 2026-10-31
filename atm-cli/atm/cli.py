@@ -52,6 +52,9 @@ commands:
                  outcome (for a task in review, done means the review passed); prints the tasks now ready
   reject <id> --reason TEXT
                  send a task in review back to todo, with what needs to change
+  approve <id> [--note TEXT] | request-changes <id> --reason TEXT
+                 decide a review: the task stays in review, approved or with changes asked for, until an agent takes
+                 it back (atm next offers it first, to the agent that worked on it for one lease length)
   block <id> --on user|agent (--question TEXT)... [--reason TEXT]
                  a task that can't go on until someone decides: blocked, its claim released
   unblock <id> [--answer TEXT]...
@@ -205,6 +208,8 @@ def build_parser():
         ("fail", "put an in_progress task back to todo, recording why"),
         ("release", "put an in_progress task back to todo"),
         ("reject", "send a task in review back to todo, recording why"),
+        ("approve", "approve a task in review: it stays in review until an agent takes it back to finish"),
+        ("request-changes", "ask for changes to a task in review: its agent takes it back first (a rejection note)"),
         ("block", "a task that can't go on until someone decides: blocked, with the questions; claim released"),
         ("unblock", "a blocked task goes back to todo, with the answers as a note"),
         ("reopen", "a done or skipped task goes back to todo, with the reason as a note"),
@@ -220,8 +225,10 @@ def build_parser():
             sub.add_argument("--note", metavar="TEXT", help="a handoff for whoever picks it up next")
         if name == "review":
             sub.add_argument("--note", metavar="TEXT", help="what the reviewer should look at")
-        if name == "reject":
+        if name in ("reject", "request-changes"):
             sub.add_argument("--reason", metavar="TEXT", required=True, help="what needs to change (a rejection note)")
+        if name == "approve":
+            sub.add_argument("--note", metavar="TEXT", help="what is left to do, or a word for the agent")
         if name == "reopen":
             sub.add_argument("--reason", metavar="TEXT", required=True, help="why it isn't done after all (a note)")
         if name == "skip":

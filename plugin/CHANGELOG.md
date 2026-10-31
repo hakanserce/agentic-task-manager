@@ -47,6 +47,14 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **`atm approve` and `atm request-changes`** (T-313, SR-3.9, SR-6.1, SR-6.2, SR-6.4): a task in review carries
+  `review_state` (`waiting` after `atm review`, `approved`, `changes_requested`) and `reviewed_at`; both stay in the
+  review kind (dependents keep waiting) and go when the task leaves it, the round recorded in `reviews` with its
+  `outcome`. `request-changes --reason` adds a rejection note. `atm next --claim` takes such tasks back before new
+  ones, giving them to the agent that worked on them for one lease length after the review, then to any agent;
+  `atm start` takes one back too, but not one still waiting for its review. `atm reject` stays (back to to-do).
+  `/atm:do-task` and `/atm:loop-tasks` record an approval with `atm approve` instead of a rejection. The merge
+  driver merges the new fields with the progress fields.
 - **Release view** (T-309, SR-7.5, `ReleaseView.svelte`, `lib/releases.ts`): on the Progress tab, each release not
   archived with its state, PR, target, the sprints that deliver to it, its tasks by stage (done, in PR, merged), and
   the notes draft (`atm releases notes`' grouping) to copy. The dashboard file's size limit (`guardrails.spec.ts`)

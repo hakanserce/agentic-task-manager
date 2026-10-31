@@ -27,6 +27,7 @@ from .core import (
 )
 from .lock import locked
 from .model import (
+    REWORK_STATES,
     add_note,
     back_to_todo,
     change_status,
@@ -333,7 +334,19 @@ def select(data, sel):
     return tasks, rank, scope, reason
 
 
-def next_task(data, store, phase=None, task_type=None, sel=None):
+def offered_to(data, task, agent):
+    """Whether a task back from review (rework or approved) may go to `agent`: always to the agent that worked on it;
+    to others once one lease length has passed since the review ended (SR-3.9, Q11)."""
+    if not agent or task.get("started_by") == agent:
+        return True
+    try:
+        reviewed = parse_iso(task.get("reviewed_at"))
+    except (TypeError, ValueError):
+        return True
+    return now() >= reviewed + timedelta(minutes=lease_minutes(data))
+
+
+def next_task(data, store, phase=None, task_type=None, sel=None, agent=None):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
     the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
@@ -344,8 +357,18 @@ def next_task(data, store, phase=None, task_type=None, sel=None):
     selected, rank, scope, problem = select(data, sel)
     if problem:
         return None, problem
-    candidates = [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
-    ready = ready_in_order(data, store, candidates, rank)
+    # Tasks back from review come first (SR-3.9): the agent that worked on them gets them back for a lease length
+    rework = [
+        t
+        for t in selected
+        if kind_of(vocab, t.get("status")) == "review"
+        and t.get("review_state") in REWORK_STATES
+        and offered_to(data, t, agent)
+    ]
+    first = {t.get("id") for t in rework}
+    candidates = rework + [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
+    in_order = rank or (lambda t: 0)
+    ready = ready_in_order(data, store, candidates, lambda t: (t.get("id") not in first, in_order(t)))
     if ready:
         return ready[0], None
     if not candidates:
@@ -394,7 +417,7 @@ def cmd_next(args):
             phase=args.phase,
             task_type=args.type,
         )
-        task, reason = next_task(data, store, sel=sel)
+        task, reason = next_task(data, store, sel=sel, agent=agent)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)

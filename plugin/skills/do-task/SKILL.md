@@ -4,7 +4,7 @@ description: >
   Execute a single task from tasks.json. Updates status to in_progress, does
   the work, runs verification, then marks done. Use when the user says
   "do task T-xxx", "work on task", "implement task", "pick a task", or "next task".
-allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*), Bash(atm unarchive:*)
+allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm approve:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*), Bash(atm unarchive:*)
 ---
 
 # Do a Single Task
@@ -215,9 +215,13 @@ Once the commit is in, decide how the task ends:
   or the preview): commit the draft, run `atm review` *before* you show it, so the dashboard shows it waiting on
   them, then open the review. Address their comments while it stays in review (`atm commit` works in any status).
   When they approve, **don't mark it done yet**: check what the task still asks for after the review (implementing
-  what was approved, follow-up tasks to add, documents to update). If anything is left, take it back to in progress,
-  `atm reject $TASK_ID --reason 'Approved; continuing with <what is left>'` then `atm start $TASK_ID`, and carry on
-  from Step 5. Only when nothing is left, `atm done $TASK_ID --note '…'` from review.
+  what was approved, follow-up tasks to add, documents to update). If anything is left, record the approval and take
+  it back to in progress, `atm approve $TASK_ID --note '<what is left>'` then `atm start $TASK_ID`, and carry on
+  from Step 5. Only when nothing is left, `atm done $TASK_ID --note '…'` from review. When the user asks for changes
+  instead, `atm request-changes $TASK_ID --reason '<what to change>'`, then `atm start $TASK_ID` and address them.
+
+  **A task back from review** (`atm next` gives it to you first: `review_state` `approved` or `changes_requested`):
+  read its latest `rejection` note (the changes asked for) or its approval note, and carry on from Step 5.
 - **Otherwise**: run `atm done $TASK_ID --note '<one-line outcome>'`. It sets the status and `completed_at`, records
   the outcome as a note (the commit atm recorded stays), drops your claim, and prints the tasks it made ready
   ("Now ready:").

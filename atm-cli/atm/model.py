@@ -33,12 +33,16 @@ WORKFLOW_TYPES = ("direct", "pull-request")
 
 # command: (kinds a task may be in, kind it moves to)
 STATUS_CHANGES = {
-    "start": (("todo",), "active"),
+    # From review only once the review asked for rework or approved it (SR-3.9)
+    "start": (("todo", "review"), "active"),
     "review": (("active",), "review"),
     "done": (("active", "review"), "done"),
     "fail": (("active",), "todo"),
     "release": (("active",), "todo"),
     "reject": (("review",), "todo"),
+    # The review's outcome; the task stays in review until an agent takes it back (SR-6.1)
+    "approve": (("review",), "review"),
+    "request-changes": (("review",), "review"),
     "block": (("todo", "active"), "blocked"),
     "unblock": (("blocked",), "todo"),
     # Undo a done (or skipped) by mistake, or work that turns out unfinished; the reason is kept as a note
@@ -47,6 +51,8 @@ STATUS_CHANGES = {
     "skip": (("todo", "blocked"), "skipped"),
 }
 WAITING_ON = ("user", "agent")
+# Review states that make a task in review work for an agent again (SR-3.9)
+REWORK_STATES = ("changes_requested", "approved")
 
 
 def _terms(meta, key, defaults, need_kind=False):
@@ -598,11 +604,14 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         task.pop("commit", None)
 
 
-def add_interval(task, field, start, end, on=None):
-    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+def add_interval(task, field, start, end, on=None, outcome=None):
+    """Append {from, to[, on][, outcome]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`
+    (with what the review decided, when it sent the task back to an agent)."""
     interval = {"from": start, "to": end}
     if on:
         interval["on"] = on
+    if outcome:
+        interval["outcome"] = outcome
     task.setdefault(field, []).append(interval)
 
 
@@ -642,7 +651,11 @@ def change_status(
         raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(expected)}")
     if command == "done":
         check_review_mode(task, data, agent)
+    if command == "start" and kind_of(vocab, current) == "review" and task.get("review_state") not in REWORK_STATES:
+        raise AtmError(f"can't start {task['id']}: it waits for its review (atm approve or request-changes decides it)")
     new = status_for(vocab, new_kind, status)
+    if command in ("approve", "request-changes") and status is None:
+        new = current  # it stays in its review status (a project may have several)
     if command == "start":
         blocking = unfinished_dependencies(data, task)
         if blocking:
@@ -669,8 +682,13 @@ def change_status(
     old_kind = kind_of(vocab, current)
     if old_kind == "blocked" and task.get("blocked_at"):
         add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
-    elif old_kind == "review" and task.get("review_requested_at"):
-        add_interval(task, "reviews", task["review_requested_at"], stamp)
+    elif old_kind == "review" and new_kind != "review" and task.get("review_requested_at"):
+        # The round ends when the reviewer decided, with its outcome (SR-3.9)
+        outcome = task.get("review_state") if task.get("review_state") in REWORK_STATES else None
+        add_interval(task, "reviews", task["review_requested_at"], task.get("reviewed_at") or stamp, outcome=outcome)
+    if new_kind != "review":
+        task.pop("review_state", None)
+        task.pop("reviewed_at", None)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
@@ -697,8 +715,17 @@ def change_status(
     elif command == "review":
         # The work ends here: the review isn't agent work (DM-4.1); done keeps this timestamp
         task["review_requested_at"] = stamp
+        task["review_state"] = "waiting"
         if note:
             add_note(task, "review", note, agent, stamp)
+    elif command in ("approve", "request-changes"):
+        # The task stays in review until an agent takes it back (`atm next` offers it first, SR-3.9)
+        task["review_state"] = "approved" if command == "approve" else "changes_requested"
+        task["reviewed_at"] = stamp
+        if command == "request-changes":
+            add_note(task, "rejection", reason, agent, stamp)
+        else:
+            add_note(task, "note", f"Approved: {note}" if note else "Approved", agent, stamp)
     elif command == "skip":
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
@@ -706,6 +733,7 @@ def change_status(
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
+        task.pop("review_requested_at", None)  # taken back from review: a new round of work
         task.pop("completed_at", None)
         task.pop("completed_by", None)
         task.pop("agent", None)  # the old name of started_by

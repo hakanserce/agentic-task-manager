@@ -47,6 +47,10 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **`atm releases notes <R>`** (T-307, §3.3): a Markdown draft of the release's changes from its tasks (by effective
+  release, `tasks.json` and the archive): the done tasks grouped by type in the project's order, each with its ID,
+  name and last outcome note, then what isn't done yet; `--json` gives the same as data. For the CHANGELOG and
+  WHATS-NEW entries a person writes.
 - **Releases** (T-306, SR-2.2, §3.3): `meta.releases` (`[{id, name, state, target, pr, released_at}]`, states
   `planned`, `released`, `archived`, checked with `meta`) and `atm releases [--all]` (each release's tasks by kind and
   stage, by their own release or their sprint's), `atm releases add <R> [--name] [--target DATE] [--pr N]` (`--pr`

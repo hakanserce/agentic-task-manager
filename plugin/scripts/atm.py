@@ -4074,6 +4074,67 @@ def releases_archive(paths, args):
     out(to_json(release) if args.json else f"Archived the release “{release['id']}”.")
 
 
+def outcome_of(task):
+    """The task's last outcome note (what `atm done --note` said), or None."""
+    notes = [n for n in task.get("notes") or [] if isinstance(n, dict) and n.get("kind") == "outcome"]
+    return notes[-1].get("text") if notes else None
+
+
+def release_notes(data, archived, release_id):
+    """A draft of the release's changes (§3.3): its done tasks (by effective release, both files) grouped by type in
+    the project's order, each with its ID, name and outcome note; and the tasks in it not done yet."""
+    vocab = vocabulary(data)
+    release = find_release(vocab, release_id)
+    if release is None:
+        known = ", ".join(r["id"] for r in vocab["releases"]) or "none yet: atm releases add <R>"
+        raise AtmError(f"no release {release_id!r}; the releases: {known}", 2)
+    tasks = [t for t in list(data["tasks"]) + list(archived) if isinstance(t, dict)]
+    own = [t for t in tasks if effective_release(vocab, t) == release_id]
+    done = [t for t in own if kind_of(vocab, t.get("status")) == "done"]
+    types = [(t["id"], t["label"]) for t in vocab["types"]]
+    types += [(t, t) for t in dict.fromkeys(x.get("type") for x in done) if t not in dict(types)]
+    groups = []
+    for type_id, label in types:
+        items = [
+            {"id": t.get("id"), "name": t.get("name"), "outcome": outcome_of(t)}
+            for t in done
+            if t.get("type") == type_id
+        ]
+        if items:
+            groups.append({"type": type_id, "label": label, "tasks": items})
+    open_tasks = [
+        {"id": t.get("id"), "name": t.get("name"), "status": t.get("status")}
+        for t in own
+        if kind_of(vocab, t.get("status")) not in ("done", "skipped")
+    ]
+    return {"release": release, "groups": groups, "open": open_tasks}
+
+
+def describe_notes(notes):
+    """The draft as Markdown: a heading per type, a line per task; what's not done yet at the end."""
+    release = notes["release"]
+    lines = [f"# {release['id']}" + (f" “{release['name']}”" if release.get("name") else "")]
+    if not notes["groups"]:
+        lines += ["", "Nothing done in it yet."]
+    for group in notes["groups"]:
+        lines += ["", f"## {group['label']}", ""]
+        for t in group["tasks"]:
+            lines.append(f"- **{t['id']}** {t['name']}" + (f": {t['outcome']}" if t["outcome"] else ""))
+    if notes["open"]:
+        lines += ["", "## Not done yet", ""]
+        lines += [f"- {t['id']} {t['name']} ({t['status']})" for t in notes["open"]]
+    return lines
+
+
+def releases_notes(paths, args):
+    notes = release_notes(load_tasks(paths), load_archive(paths)["tasks"], args.id)
+    if args.json:
+        out(to_json(notes))
+        return
+    for line in describe_notes(notes):
+        out(line)
+
+
 def cmd_releases(args):
     paths = find_paths(os.getcwd())
     if args.action in (None, "list"):
@@ -4085,7 +4146,8 @@ def cmd_releases(args):
         raise AtmError(f"atm releases {args.action} needs a release ID", 2)
     if args.pr is not None and args.action != "add":
         raise AtmError("--pr is for atm releases add", 2)
-    {"add": releases_add, "edit": releases_edit, "archive": releases_archive}[args.action](paths, args)
+    actions = {"add": releases_add, "edit": releases_edit, "archive": releases_archive, "notes": releases_notes}
+    actions[args.action](paths, args)
 
 
 # ==== phases.py ====
@@ -6071,10 +6133,11 @@ commands:
                  unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
                  keeps a report of what was done, carried and added mid-sprint
   releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N] | releases edit <R> [--name] [--target]
-          | releases archive <R>
+          | releases archive <R> | releases notes <R>
                  the releases in order with their tasks by kind and stage (archived ones with --all); add one
-                 (--pr gives it every task of that pull request), change one, or archive it. A sprint's or a
-                 task's release must be one of them
+                 (--pr gives it every task of that pull request), change one, archive it, or print a Markdown
+                 draft of its changes (done tasks by type, with their outcome notes; what isn't done yet). A
+                 sprint's or a task's release must be one of them
   move <id>... --to <sprint>|next|active|backlog
                  move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
                  the backlog (claimed and finished tasks stay where they are)
@@ -6411,7 +6474,9 @@ def build_parser():
     backlog = command("backlog", cmd_backlog, "the tasks with no sprint (not finished ones, unless --all)")
     backlog.add_argument("--all", action="store_true", help="also the finished tasks with no sprint")
     releases = command("releases", cmd_releases, "the releases with their tasks; add, edit or archive one")
-    releases.add_argument("action", nargs="?", choices=["list", "add", "edit", "archive"], help="what to do")
+    releases.add_argument(
+        "action", nargs="?", choices=["list", "add", "edit", "archive", "notes"], help="what to do"
+    )
     releases.add_argument("id", nargs="?", help="the release's ID (letters, digits, '.', '-', '_')")
     releases.add_argument("--all", action="store_true", help="list: the archived releases too")
     releases.add_argument("--name", dest="title", help="add, edit: a name besides its ID (empty: remove it)")

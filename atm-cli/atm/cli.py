@@ -115,10 +115,11 @@ commands:
                  unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
                  keeps a report of what was done, carried and added mid-sprint
   releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N] | releases edit <R> [--name] [--target]
-          | releases archive <R>
+          | releases archive <R> | releases notes <R>
                  the releases in order with their tasks by kind and stage (archived ones with --all); add one
-                 (--pr gives it every task of that pull request), change one, or archive it. A sprint's or a
-                 task's release must be one of them
+                 (--pr gives it every task of that pull request), change one, archive it, or print a Markdown
+                 draft of its changes (done tasks by type, with their outcome notes; what isn't done yet). A
+                 sprint's or a task's release must be one of them
   move <id>... --to <sprint>|next|active|backlog
                  move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
                  the backlog (claimed and finished tasks stay where they are)
@@ -455,7 +456,9 @@ def build_parser():
     backlog = command("backlog", cmd_backlog, "the tasks with no sprint (not finished ones, unless --all)")
     backlog.add_argument("--all", action="store_true", help="also the finished tasks with no sprint")
     releases = command("releases", cmd_releases, "the releases with their tasks; add, edit or archive one")
-    releases.add_argument("action", nargs="?", choices=["list", "add", "edit", "archive"], help="what to do")
+    releases.add_argument(
+        "action", nargs="?", choices=["list", "add", "edit", "archive", "notes"], help="what to do"
+    )
     releases.add_argument("id", nargs="?", help="the release's ID (letters, digits, '.', '-', '_')")
     releases.add_argument("--all", action="store_true", help="list: the archived releases too")
     releases.add_argument("--name", dest="title", help="add, edit: a name besides its ID (empty: remove it)")

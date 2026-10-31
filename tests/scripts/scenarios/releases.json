@@ -1,5 +1,57 @@
 [
   {
+    "name": "atm releases notes: done tasks by type in the project's order, with their outcome notes; what isn't done yet",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [{ "id": "A", "state": "active", "release": "1.0" }],
+            "releases": [{ "id": "1.0", "name": "First" }, { "id": "1.1" }]
+          },
+          "tasks": [
+            {
+              "id": "T-2",
+              "name": "Fix the login",
+              "type": "bugfix",
+              "status": "done",
+              "sprint": "A",
+              "notes": [
+                { "at": "2026-05-01T00:00:00Z", "kind": "note", "text": "not this one" },
+                { "at": "2026-05-02T00:00:00Z", "kind": "outcome", "text": "Sessions survive a restart" }
+              ]
+            },
+            { "id": "T-3", "name": "Sign-in page", "type": "feature", "status": "done", "sprint": "A" },
+            { "id": "T-4", "name": "Dark mode", "type": "feature", "status": "todo", "sprint": "A" },
+            { "id": "T-5", "name": "Later", "type": "feature", "status": "done", "release": "1.1" },
+            { "id": "T-6", "name": "Dropped", "type": "feature", "status": "skipped", "sprint": "A" }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [{ "id": "T-1", "name": "Repository", "type": "infra", "status": "done", "release": "1.0" }]
+        }
+      }
+    },
+    "args": ["releases", "notes", "1.0"],
+    "expect": {
+      "stdout": "# 1.0 “First”\n\n## Feature\n\n- **T-3** Sign-in page\n\n## Bugfix\n\n- **T-2** Fix the login: Sessions survive a restart\n\n## Infra\n\n- **T-1** Repository\n\n## Not done yet\n\n- T-4 Dark mode (todo)\n"
+    }
+  },
+  {
+    "name": "atm releases notes --json; a release with nothing done; an unknown release is refused",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "2.0" }] }, "tasks": [] } },
+      "commands": [["sh", "-c", "\"$ATM\" releases notes 2.0 > out.txt; \"$ATM\" releases notes 9.9 2> err.txt; true"]]
+    },
+    "args": ["releases", "notes", "2.0", "--json"],
+    "expect": {
+      "json": { "release": { "id": "2.0", "state": "planned" }, "groups": [], "open": [] },
+      "files": {
+        "out.txt": "# 2.0\n\nNothing done in it yet.\n",
+        "err.txt": "atm: no release '9.9'; the releases: 2.0\n"
+      }
+    }
+  },
+  {
     "name": "atm releases lists the open releases with their tasks by kind and stage; a task's release is its own, else its sprint's",
     "setup": {
       "files": {

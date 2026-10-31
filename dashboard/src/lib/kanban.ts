@@ -1,3 +1,4 @@
+import { BACKLOG } from './filters';
 import { activeSprint, NO_SPRINTS, type SprintModel } from './sprints';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, priorityOf, priorityRank, type StatusKind, type Vocabulary } from './vocab';
@@ -129,24 +130,32 @@ export function buildBoard(
 }
 
 export interface KanbanLane {
-  phase: number;
+  /** The sprint's ID, or BACKLOG */
+  key: string;
+  /** Its place in the project's sprints (for its colour); -1 for the backlog */
+  index: number;
   done: number;
   total: number;
   columns: KanbanColumn[];
 }
 
-/** One swimlane per phase (FR-3.7), all with the same columns as the ungrouped board so they line up. */
+/** One swimlane per sprint with tasks, in the project's order, the backlog last (FR-3.7, SR-7.3); all with the
+ * same columns as the ungrouped board so they line up. */
 export function buildLanes(tasks: Task[], allTasks: Task[], options: BoardOptions): KanbanLane[] {
   const vocab = options.vocab ?? DEFAULT_VOCABULARY;
+  const model = options.sprints ?? NO_SPRINTS;
   const columns = buildBoard(tasks, allTasks, options).map((c) => c.id);
-  const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
-  return phases.map((phase) => {
-    const inPhase = tasks.filter((t) => t.phase === phase);
+  const keyOf = (t: Task) => model.sprintOf(t) ?? BACKLOG;
+  const present = new Set(tasks.map(keyOf));
+  const keys = [...model.sprints.map((s) => s.id), BACKLOG].filter((key) => present.has(key));
+  return keys.map((key) => {
+    const own = tasks.filter((t) => keyOf(t) === key);
     return {
-      phase,
-      done: inPhase.filter((t) => kindOf(vocab, t.status) === 'done').length,
-      total: inPhase.length,
-      columns: buildBoard(inPhase, allTasks, options, columns),
+      key,
+      index: model.sprints.findIndex((s) => s.id === key),
+      done: own.filter((t) => kindOf(vocab, t.status) === 'done').length,
+      total: own.length,
+      columns: buildBoard(own, allTasks, options, columns),
     };
   });
 }

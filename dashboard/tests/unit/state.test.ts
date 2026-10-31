@@ -288,7 +288,7 @@ describe('DashboardState saved view', () => {
     s.toggleFilter('type', 'feature');
     s.query = 'login';
     s.selectTab('agents');
-    s.kanbanGroupByPhase = true;
+    s.kanbanGroupBySprint = true;
     s.kanbanShowSkipped = true;
     s.kanbanShowAllDone = true;
     s.progressSprint = 'Phase 1';

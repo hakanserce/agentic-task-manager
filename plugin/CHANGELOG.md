@@ -11,6 +11,11 @@ into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks witho
 priority alone, `--phase` would select nothing; nothing is lost or rewritten).
 
 ### Changed
+- **Kanban: Group by sprint** (T-296, SR-7.3) replaces *Group by phase* (`#kanban-group-by-sprint`): one lane per
+  sprint with tasks, in the project's order, the backlog last (`buildLanes` in `lib/kanban.ts`, lanes
+  `data-sprint`). A card names its sprint (`.kanban-card-sprint`, coloured by the sprint's place in the list) only
+  when the ungrouped board shows more than one; the "Phase N" badge is gone. The saved view's `kanban.groupByPhase`
+  is `groupBySprint` (an old view's value is kept).
 - **The loop and do-task work by sprint** (T-302, SR-5.1, SR-5.2): `/atm:loop-tasks` takes a selection, passed to
   every `atm next`: `--sprint S` (repeatable; replaces `--phase`), `--tasks T-1,T-5`, `--all`, `--backlog`; none
   means the active sprint, or every task in a project without sprints. It stops when its selection has nothing

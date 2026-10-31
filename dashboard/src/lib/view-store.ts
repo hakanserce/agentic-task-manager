@@ -20,7 +20,7 @@ export interface SavedView {
   /** The keyword search */
   query: string;
   tab: ViewId;
-  kanban: { groupByPhase: boolean; showSkipped: boolean; showAllDone: boolean };
+  kanban: { groupBySprint: boolean; showSkipped: boolean; showAllDone: boolean };
   /** The List tab's order */
   listSort: ListSort;
   /** The sprint the Progress tab focuses on (its ID, or BACKLOG), or null for all of them */
@@ -61,7 +61,7 @@ export function defaultView(): SavedView {
     query: '',
     tab: DEFAULT_VIEW,
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
-    kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
+    kanban: { groupBySprint: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
     progressSprint: null,
     filterClosedSprints: false,
@@ -116,7 +116,8 @@ export function readView(key: string): SavedView {
     query: typeof stored.query === 'string' ? stored.query : '',
     tab: (VIEWS as readonly unknown[]).includes(stored.tab) ? (stored.tab as ViewId) : view.tab,
     kanban: {
-      groupByPhase: bool(kanban.groupByPhase, view.kanban.groupByPhase),
+      // groupByPhase, its name before sprints (SR-7.3), meant the same
+      groupBySprint: bool(kanban.groupBySprint, bool(kanban.groupByPhase, view.kanban.groupBySprint)),
       showSkipped: bool(kanban.showSkipped, view.kanban.showSkipped),
       showAllDone: bool(kanban.showAllDone, view.kanban.showAllDone),
     },

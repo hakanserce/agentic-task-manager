@@ -11,8 +11,15 @@
   let {
     columns,
     showAllDone,
+    showSprint = false,
     onshowall,
-  }: { columns: KanbanColumn[]; showAllDone: boolean; onshowall: (all: boolean) => void } = $props();
+  }: {
+    columns: KanbanColumn[];
+    showAllDone: boolean;
+    /** Cards name their sprint (the board shows more than one) */
+    showSprint?: boolean;
+    onshowall: (all: boolean) => void;
+  } = $props();
 
   const columnColor = (column: KanbanColumn) => (column.kind ? kindStyle(column.kind).color : 'var(--text-muted)');
   // In a pull-request project the Done column is split by stage: In PR (per PR), Done, Merged (D-4.2)
@@ -44,7 +51,7 @@
                 <span class="kanban-section-count">{section.cards.length}</span>
               </div>
               {#each cut ? section.cards.slice(0, DONE_LIMIT) : section.cards as card (card.task.id)}
-                <KanbanCard {card} />
+                <KanbanCard {card} {showSprint} />
               {/each}
               {#if cut}
                 <button class="kanban-show-all" onclick={() => onshowall(true)}
@@ -59,7 +66,7 @@
           {/each}
         {:else}
           {#each limited ? column.cards.slice(0, DONE_LIMIT) : column.cards as card (card.task.id)}
-            <KanbanCard {card} />
+            <KanbanCard {card} {showSprint} />
           {:else}
             <div class="kanban-empty">No tasks</div>
           {/each}

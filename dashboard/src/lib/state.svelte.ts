@@ -148,7 +148,7 @@ export class DashboardState {
 
   /** The selected view tab; mirrored in the URL hash ("#view=kanban") */
   tab = $state<ViewId>(parseViewHash(location.hash));
-  kanbanGroupByPhase = $state(false);
+  kanbanGroupBySprint = $state(false);
   kanbanShowSkipped = $state(false);
   /** The Kanban done column shows every card, not just the most recent */
   kanbanShowAllDone = $state(false);
@@ -502,7 +502,7 @@ export class DashboardState {
       query: this.query,
       tab: this.tab,
       kanban: {
-        groupByPhase: this.kanbanGroupByPhase,
+        groupBySprint: this.kanbanGroupBySprint,
         showSkipped: this.kanbanShowSkipped,
         showAllDone: this.kanbanShowAllDone,
       },
@@ -543,7 +543,7 @@ export class DashboardState {
   private applyView(view: SavedView, includeTab: boolean) {
     this.filters = filtersFrom(view.filters);
     this.query = view.query;
-    this.kanbanGroupByPhase = view.kanban.groupByPhase;
+    this.kanbanGroupBySprint = view.kanban.groupBySprint;
     this.kanbanShowSkipped = view.kanban.showSkipped;
     this.kanbanShowAllDone = view.kanban.showAllDone;
     this.listSort = view.listSort;

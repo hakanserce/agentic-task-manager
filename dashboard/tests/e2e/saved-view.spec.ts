@@ -16,7 +16,7 @@ test.describe('saved view', () => {
     await filterButton(page, 'sprint', 'Phase 1').click();
     await filterButton(page, 'type', 'feature').click();
     await page.locator('#task-search').fill('user');
-    await page.locator('#kanban-group-by-phase').check();
+    await page.locator('#kanban-group-by-sprint').check();
     await page.locator('#kanban-show-skipped').check();
     await page.locator('#tab-graph').click();
 
@@ -27,7 +27,7 @@ test.describe('saved view', () => {
     await expect(page.locator('#tab-graph')).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/#view=graph$/);
     await page.locator('#tab-kanban').click();
-    await expect(page.locator('#kanban-group-by-phase')).toBeChecked();
+    await expect(page.locator('#kanban-group-by-sprint')).toBeChecked();
     await expect(page.locator('#kanban-show-skipped')).toBeChecked();
     await openFilters(page);
     await expect(filterButton(page, 'sprint', 'Phase 1')).toHaveClass(/\bactive\b/);

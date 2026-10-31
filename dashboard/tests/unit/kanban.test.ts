@@ -1,10 +1,15 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { BACKLOG } from '../../src/lib/filters';
 import { buildBoard, buildLanes, nextUp, readiness } from '../../src/lib/kanban';
-import type { Task } from '../../src/lib/types';
+import { sprintModel } from '../../src/lib/sprints';
+import type { Task, TasksFile } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
+import sprintsData from '../fixtures/sprints.json';
 import standard from '../fixtures/standard.json';
+
+const sprintsFixture = sprintsData as TasksFile;
 
 const t = (id: string, status: string, extra: Partial<Task> = {}): Task => ({
   id,
@@ -192,23 +197,40 @@ describe('a custom vocabulary', () => {
 });
 
 describe('buildLanes', () => {
-  it('makes one lane per phase with progress, all with the same columns', async () => {
-    const { buildLanes } = await import('../../src/lib/kanban');
+  it('makes one lane per sprint with progress, all with the same columns (phases read as sprints)', () => {
     const tasks = [
       t('a', 'done', { phase: 0 }),
       t('b', 'todo', { phase: 0 }),
       t('c', 'review', { phase: 1 }),
       t('d', 'in_progress', { phase: 1 }),
     ];
-    const lanes = buildLanes(tasks, tasks, all);
-    expect(lanes.map((l) => [l.phase, l.done, l.total])).toEqual([
-      [0, 1, 2],
-      [1, 0, 2],
+    const sprints = sprintModel({}, tasks, resolveVocabulary({}));
+    const lanes = buildLanes(tasks, tasks, { ...all, sprints });
+    expect(lanes.map((l) => [l.key, l.index, l.done, l.total])).toEqual([
+      ['Phase 0', 0, 1, 2],
+      ['Phase 1', 1, 0, 2],
     ]);
-    // "Other" exists because of phase 1; phase 0 gets it too (empty) so lanes line up
+    // "Other" exists because of Phase 1; Phase 0 gets it too (empty) so lanes line up
     for (const lane of lanes)
       expect(lane.columns.map((c) => c.id)).toEqual(['todo', 'in_progress', 'in_review', 'blocked', 'done', 'other']);
     expect(lanes[0].columns.find((c) => c.id === 'other')!.cards).toEqual([]);
     expect(ids(lanes[1].columns.find((c) => c.id === 'other')!.cards)).toEqual(['c']);
+  });
+
+  it("follows the project's sprint order, leaves out sprints without tasks, and puts the backlog last (SR-7.3)", () => {
+    const tasks = sprintsFixture.tasks as Task[];
+    const vocab = resolveVocabulary(sprintsFixture.meta);
+    const sprints = sprintModel(sprintsFixture.meta, tasks, vocab);
+    const lanes = buildLanes(tasks, tasks, { ...all, vocab, sprints });
+    expect(lanes.map((l) => [l.key, l.index, l.done, l.total])).toEqual([
+      ['Foundations', 0, 1, 1],
+      ['Ada Lovelace', 1, 0, 3],
+      [BACKLOG, -1, 0, 1],
+    ]);
+  });
+
+  it('without sprints or phases, every task is in the backlog lane', () => {
+    const tasks = [{ id: 'a', name: 'a', type: 'feature', description: '', status: 'todo' } as Task];
+    expect(buildLanes(tasks, tasks, all).map((l) => [l.key, l.total])).toEqual([[BACKLOG, 1]]);
   });
 });

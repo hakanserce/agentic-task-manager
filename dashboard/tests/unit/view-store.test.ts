@@ -45,7 +45,7 @@ describe('reading and writing', () => {
       },
       query: 'login',
       tab: 'agents',
-      kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
+      kanban: { groupBySprint: true, showSkipped: true, showAllDone: true },
       listSort: 'priority',
       progressSprint: 'Phase 2',
       filterClosedSprints: true,
@@ -85,6 +85,11 @@ describe('reading and writing', () => {
     expect(view).not.toHaveProperty('progressPhase');
     expect(view.progressSprint).toBeNull();
     expect(view.progressRange).toBe('sprint');
+  });
+
+  it('a view saved before sprints keeps "group by phase" as "group by sprint" (SR-7.3)', () => {
+    localStorage.setItem(key, JSON.stringify({ kanban: { groupByPhase: true } }));
+    expect(readView(key).kanban.groupBySprint).toBe(true);
   });
 
   it('projects are kept apart', () => {
@@ -129,9 +134,9 @@ describe('reading and writing', () => {
 
   it('the old per-browser "group by phase" choice seeds projects that have no saved view yet', () => {
     setPref('kanbanGroupByPhase', true);
-    expect(readView(key).kanban.groupByPhase).toBe(true);
-    writeView(key, { ...defaultView(), kanban: { groupByPhase: false, showSkipped: false, showAllDone: false } });
-    expect(readView(key).kanban.groupByPhase).toBe(false);
+    expect(readView(key).kanban.groupBySprint).toBe(true);
+    writeView(key, { ...defaultView(), kanban: { groupBySprint: false, showSkipped: false, showAllDone: false } });
+    expect(readView(key).kanban.groupBySprint).toBe(false);
     expect(JSON.parse(localStorage.getItem(PREFS_KEY)!).kanbanGroupByPhase).toBe(true);
   });
 });

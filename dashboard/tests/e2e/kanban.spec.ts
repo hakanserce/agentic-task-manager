@@ -246,13 +246,13 @@ test.describe('Kanban board', () => {
     await expect(column(page, 'in_progress').locator('.kanban-more')).toHaveCount(0);
   });
 
-  test('grouped by phase, the lanes scroll as one and the page still does not (T-262)', async ({
+  test('grouped by sprint, the lanes scroll as one and the page still does not (T-262)', async ({
     page,
     tasksServer,
   }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await openKanban(page, tasksServer, 'kanban');
-    await page.locator('#kanban-group-by-phase').check();
+    await page.locator('#kanban-group-by-sprint').check();
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(720);
     const kanban = page.locator('#kanban');
     expect(await kanban.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
@@ -322,12 +322,15 @@ test.describe('Kanban board', () => {
   });
 });
 
-test.describe('Kanban: group by phase', () => {
+test.describe('Kanban: group by sprint', () => {
   const lanes = (page: Page) => page.locator('.kanban-lane');
 
-  test('one swimlane per phase, with progress and aligned columns; remembered', async ({ page, tasksServer }) => {
+  test('one swimlane per sprint (here its phases, read as sprints), with progress and aligned columns; remembered', async ({
+    page,
+    tasksServer,
+  }) => {
     await openKanban(page, tasksServer, 'kanban');
-    await page.locator('#kanban-group-by-phase').check();
+    await page.locator('#kanban-group-by-sprint').check();
     await expect(lanes(page)).toHaveCount(3);
     await expect(page.locator('.kanban-lane-header')).toHaveText([
       /Phase 0\s*16\/16 done/,
@@ -345,12 +348,52 @@ test.describe('Kanban: group by phase', () => {
       ]);
     }
     await expect(
-      page.locator('.kanban-lane[data-phase="1"] .kanban-column[data-status="todo"] .kanban-card'),
+      page.locator('.kanban-lane[data-sprint="Phase 1"] .kanban-column[data-status="todo"] .kanban-card'),
     ).toHaveCount(3);
+    // A lane names its sprint, so its cards don't
+    await expect(page.locator('.kanban-card-sprint')).toHaveCount(0);
 
     await page.reload();
     await page.locator('#tab-kanban').click();
-    await expect(page.locator('#kanban-group-by-phase')).toBeChecked();
+    await expect(page.locator('#kanban-group-by-sprint')).toBeChecked();
     await expect(lanes(page)).toHaveCount(3);
+  });
+
+  test('a migrated project: the sprints in order, the backlog last; cards name their sprint only when the board shows several', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openKanban(page, tasksServer, 'sprints');
+    await expect(card(page, 'T-002').locator('.kanban-card-sprint')).toHaveText('Ada Lovelace');
+    await expect(card(page, 'T-005').locator('.kanban-card-sprint')).toHaveText('Backlog');
+    await openFilters(page);
+    await filterButton(page, 'sprint', 'Ada Lovelace').click();
+    await expect(page.locator('.kanban-card-sprint')).toHaveCount(0);
+    await filterButton(page, 'sprint', 'all').click();
+
+    await page.locator('#kanban-group-by-sprint').check();
+    expect(await lanes(page).evaluateAll((all) => all.map((lane) => (lane as HTMLElement).dataset.sprint))).toEqual([
+      'Foundations',
+      'Ada Lovelace',
+      ':backlog',
+    ]);
+    await expect(page.locator('.kanban-lane-header')).toHaveText([
+      /Foundations\s*1\/1 done/,
+      /Ada Lovelace\s*0\/3 done/,
+      /Backlog\s*0\/1 done/,
+    ]);
+  });
+
+  test('a view saved before sprints keeps its grouping', async ({ page, tasksServer }) => {
+    await openKanban(page, tasksServer, 'kanban');
+    await page.evaluate(() => {
+      for (const key of Object.keys(localStorage).filter((k) => k.startsWith('atm-dashboard:view:'))) {
+        const view = JSON.parse(localStorage.getItem(key)!);
+        localStorage.setItem(key, JSON.stringify({ ...view, kanban: { groupByPhase: true } }));
+      }
+    });
+    await page.reload();
+    await page.locator('#tab-kanban').click();
+    await expect(page.locator('#kanban-group-by-sprint')).toBeChecked();
   });
 });

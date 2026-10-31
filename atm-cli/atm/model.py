@@ -481,9 +481,10 @@ def check_note(text):
     return text
 
 
-def add_note(task, kind, text, by, stamp):
-    """Append a note (DM-4): handoff, outcome, review, rejection, failure, answer or note."""
-    note = {"at": stamp, "kind": kind, "text": check_note(text)}
+def add_note(task, kind, text, by, stamp, checked=True):
+    """Append a note (DM-4): handoff, outcome, review, rejection, failure, answer or note. `checked=False` for a note
+    built from parts already checked one by one (an unblock's questions and answers)."""
+    note = {"at": stamp, "kind": kind, "text": check_note(text) if checked else text}
     if by:
         note["by"] = by
     task.setdefault("notes", []).append(note)
@@ -576,10 +577,12 @@ def change_status(
             raise AtmError(f"--on must be {' or '.join(WAITING_ON)}", 2)
         if not questions and not reason:
             raise AtmError("say what it waits for: --question (repeatable) or --reason", 2)
+    for answer in answers:
+        check_note(answer)
     asked = list(task.get("questions") or [])
+    # Each question was checked when the task was blocked, each answer just now: together they may be longer than one
+    # note, and must still be recordable, or the task could never be unblocked
     answered = answer_note(asked, list(answers)) if command == "unblock" and (asked or answers) else None
-    if answered is not None:
-        check_note(answered)
     stamp = now_iso()
     # A block's or a review's start goes when the task moves on: keep each interval, so waiting time can be measured
     old_kind = kind_of(vocab, current)
@@ -591,7 +594,7 @@ def change_status(
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
         if answered:
-            add_note(task, "answer", answered, agent, stamp)
+            add_note(task, "answer", answered, agent, stamp, checked=False)
         if command == "fail":
             add_note(task, "failure", reason or "verification failed", agent, stamp)
         elif command == "reject":

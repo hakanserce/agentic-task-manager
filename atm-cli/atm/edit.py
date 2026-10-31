@@ -86,6 +86,13 @@ def open_sprint(vocab, name):
     return sprint["id"]
 
 
+def check_with(value):
+    """`with`: who the work is done together with; `user` for now (SR-6.5)."""
+    if value != "user":
+        raise AtmError(f"with {value!r}: use user (work done together with the user)", 2)
+    return value
+
+
 def check_review(value):
     if value not in REVIEW_MODES:
         raise AtmError(f"review {value!r}: use one of {', '.join(REVIEW_MODES)}", 2)
@@ -154,6 +161,8 @@ def new_task(vocab, fields, actor, stamp):
         task["components"] = components
     if fields.get("review"):
         task["review"] = check_review(fields["review"])
+    if fields.get("with"):
+        task["with"] = check_with(fields["with"])
     if fields.get("related"):
         task["related"] = list(fields["related"])  # checked once the new IDs are known (add_tasks)
     return task
@@ -247,6 +256,7 @@ def cmd_add(args):
                 "release": args.release,
                 "components": "auto" if args.components == "auto" else args.component,
                 "review": args.review,
+                "with": args.with_,
                 "related": args.related,
             }
         ]
@@ -312,6 +322,7 @@ def edit_task(data, task, args):
     for key, value, check in (
         ("release", args.release, lambda v: known_release(vocab, v)),
         ("review", args.review, check_review),
+        ("with", args.with_, check_with),
     ):
         if value == "":
             if key in task:

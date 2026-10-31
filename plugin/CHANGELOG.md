@@ -47,6 +47,12 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **`with: user`** (T-314, SR-3.5, SR-5.3, SR-6.5, SR-6.6): a task done together with the user (`atm add` / `edit
+  --with user`, removed with `--with ''`). `atm next` skips it unless `--with-user`, and says when only such work is
+  left; `atm start <id>` takes it; `atm list --with-user` lists them. `/atm:loop-tasks --with-user` takes them;
+  without it they are listed at the end as waiting for you. `atm migrate` gives unfinished tasks labelled
+  `interactive` `with: user` once (recorded in `meta.migrations`; the label stays; `--json`: `with_user_from_label`).
+  `/atm:create-tasks` sets it for work the user wants to do together.
 - **`atm approve` and `atm request-changes`** (T-313, SR-3.9, SR-6.1, SR-6.2, SR-6.4): a task in review carries
   `review_state` (`waiting` after `atm review`, `approved`, `changes_requested`) and `reviewed_at`; both stay in the
   review kind (dependents keep waiting) and go when the task leaves it, the round recorded in `reviews` with its

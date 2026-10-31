@@ -28,6 +28,7 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 | `--all` | | Every task: the active sprint, then the planned sprints in order, then the backlog |
 | `--backlog` | | Only the tasks in no sprint |
 | `--continue` | off | When the sprint is finished, go on to the next planned sprint (never closes one) |
+| `--with-user` | off | Also take tasks done together with the user (`with: user`): only when the user is watching |
 | `--type <type>` | all | Only work on tasks of a specific type |
 | `--max <N>` | unlimited | Stop after completing N tasks |
 | `--dry-run` | off | Show what would be executed without doing it |
@@ -44,7 +45,8 @@ and auto-commit after each task (default behavior).
 
 **The selection.** `--sprint`, `--tasks`, `--all` and `--backlog` choose which tasks the loop takes (at most one of
 them; `--sprint` may be given more than once). Pass the selection, as given, to every `atm next` below: written
-`[selection]` there. A project with sprints but none active has no default selection: `atm next` says so, and the
+`[selection]` there, together with `--with-user` when the loop has it. Without it, `atm next` skips tasks marked
+`with: user` (work done together with the user): an unattended loop never takes them. A project with sprints but none active has no default selection: `atm next` says so, and the
 loop stops (`/atm:plan-sprint` plans one; `--all` or `--backlog` work without one). `--phase <N>` is gone: phases are
 sprints now (`atm migrate` names each after its phase, "Phase N" when it had no name), so use `--sprint` instead.
 
@@ -271,7 +273,9 @@ review, blocked or waiting, and what's next) and output a final summary:
 **Why it stopped** goes first, from the last `atm next`'s reason (or the max, or the user quitting). When the sprint
 it worked on is **finished**, say what it got done and what's left in it (`atm list --sprint S`), and that
 `/atm:close-sprint` closes it, with the user, and `/atm:plan-sprint` plans the next one. The loop never closes a
-sprint itself. When the selection's rest is **waiting**, say on what (dependencies, reviews, decisions).
+sprint itself. When the selection's rest is **waiting**, say on what (dependencies, reviews, decisions). Without
+`--with-user`, list the tasks **waiting for you**: `atm list --with-user --status todo` ("waiting for you: T-…"),
+done together with the user, e.g. with `/atm:do-task <id>` or `/atm:loop-tasks --with-user`.
 
 If any push flag was set (`--push`, `--batch-push`, `--push-every`), push the rest now with `/atm:push` (or
 `/atm:push --no-watch` if the loop has `--no-watch`): it watches CI and fixes failures, and its report goes into the

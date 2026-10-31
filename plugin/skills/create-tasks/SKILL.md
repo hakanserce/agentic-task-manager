@@ -83,6 +83,8 @@ For each requirement or feature:
 - Propose a **review mode** where a task needs one other than its component's or the project's (`meta.review`):
   `blocker` (reviewed before anything goes on), `async` (reviewed while agents go on), `batch` (in the end-of-sprint
   review) or `none`; set it with `"review"`
+- Mark work the user wants to **do together** (a live session, a review in the browser, a decision made as it goes)
+  with `"with": "user"`: unattended loops skip it, and it shows as needing the user
 - Assign types: `feature`, `bugfix`, `test`, `infra`, `docs`, `refactor`, `polish` (or the project's own, see Step 3)
 - Assign every task a **priority**, most urgent first: `P0` Critical/Required (the release can't go without it, or
   other work is blocked on it), `P1` High, `P2` Medium (the usual), `P3` Low/Nice-to-have. Use the project's own

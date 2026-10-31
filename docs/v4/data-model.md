@@ -101,6 +101,7 @@ New fields, all optional:
 | `merged_at` | `merged` | — | when that PR was merged |
 | `sprint` | `add --sprint`, `edit --sprint` | `edit --backlog` | the sprint the task is in; absent: the backlog ([sprints design](../sprints-and-releases-design.md) SR-2.5) |
 | `sprint_history` | atm-cli, when `sprint` changes | — | `[{sprint, from, to}]`: each sprint the task was in; the open entry has no `to` (SR-2.5) |
+| `with` | `add --with user`, `edit --with user` | `edit --with ''` | `user`: the work is done together with the user; `atm next` skips it unless `--with-user`, `atm start <id>` takes it. `atm migrate` gives unfinished tasks labelled `interactive` `with: user` once (`meta.migrations` records it) (SR-3.5, SR-6.5) |
 | `review_state` | `review` (`waiting`), `approve` (`approved`), `request-changes` (`changes_requested`) | leaving the review kind | the review's state beside the task's review status; `approved` and `changes_requested` make it work for an agent again: `atm next` offers it first (SR-6.1, SR-3.9) |
 | `reviewed_at` | `approve`, `request-changes` | leaving the review kind | when the review was decided: its agent gets the task back first for one lease length after it; the round then goes into `reviews` with its `outcome` |
 | `sprint_review` | `done` by an agent on a `batch` task | `sprints close --reviewed` (`reviewed`), `reopen` | `pending` until the end-of-sprint review, then `reviewed` (SR-4.4) |

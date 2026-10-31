@@ -188,6 +188,8 @@ def cmd_list(args):
             continue
         if args.in_pr and not in_open_pr(t):
             continue
+        if args.with_user and t.get("with") != "user":
+            continue
         tasks.append(t)
     if args.json:
         out(to_json([summary(vocab, t) for t in tasks]))

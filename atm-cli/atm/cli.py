@@ -246,6 +246,9 @@ def build_parser():
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--phase", type=float, help="only this phase")
     next_.add_argument("--type", help="only this task type")
+    next_.add_argument(
+        "--with-user", action="store_true", help="also tasks done together with the user (the user is watching)"
+    )
     pick = next_.add_mutually_exclusive_group()
     pick.add_argument(
         "--sprint", action="append", metavar="NAME", help="this sprint's tasks (repeatable; default: the active one)"
@@ -269,6 +272,7 @@ def build_parser():
     list_.add_argument("--ready", action="store_true", help="only to-do tasks whose dependencies are done")
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
     list_.add_argument("--in-pr", action="store_true", help="only tasks in a PR that isn't recorded as merged")
+    list_.add_argument("--with-user", action="store_true", help="only tasks done together with the user (with: user)")
     list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
     status = command(
         "status",
@@ -310,6 +314,9 @@ def build_parser():
     )
     add.add_argument("--related", action="append", default=[], metavar="ID", help="a related task (repeatable)")
     add.add_argument(
+        "--with", dest="with_", choices=["user"], help="user: done together with the user (unattended loops skip it)"
+    )
+    add.add_argument(
         "--json-file",
         metavar="FILE",
         help='add many: a JSON list of tasks; an "id" there is a placeholder (e.g. "new-1") other tasks\' '
@@ -344,6 +351,9 @@ def build_parser():
         edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
     edit.add_argument(
         "--components", choices=["auto"], help="auto: add the components its files are in (otherwise only suggested)"
+    )
+    edit.add_argument(
+        "--with", dest="with_", choices=["user", ""], help="user: done together with the user (empty: not any more)"
     )
     agent_option(edit)
 

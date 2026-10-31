@@ -2119,7 +2119,7 @@ def offered_to(data, task, agent):
     return now() >= reviewed + timedelta(minutes=lease_minutes(data))
 
 
-def next_task(data, store, phase=None, task_type=None, sel=None, agent=None):
+def next_task(data, store, phase=None, task_type=None, sel=None, agent=None, with_user=False):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
     the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
@@ -2140,10 +2140,17 @@ def next_task(data, store, phase=None, task_type=None, sel=None, agent=None):
     ]
     first = {t.get("id") for t in rework}
     candidates = rework + [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
+    # Work done together with the user waits for them, unless they're watching (SR-3.5)
+    together = [t for t in candidates if t.get("with") == "user"]
+    if not with_user:
+        candidates = [t for t in candidates if t.get("with") != "user"]
     in_order = rank or (lambda t: 0)
     ready = ready_in_order(data, store, candidates, lambda t: (t.get("id") not in first, in_order(t)))
     if ready:
         return ready[0], None
+    if together and not with_user and not candidates:
+        ids = ", ".join(t.get("id") for t in together)
+        return None, f"only work done together with the user is left in {scope}: {ids} (--with-user takes it)"
     if not candidates:
         if not selected:
             if not vocab["sprints"]:
@@ -2190,7 +2197,7 @@ def cmd_next(args):
             phase=args.phase,
             task_type=args.type,
         )
-        task, reason = next_task(data, store, sel=sel, agent=agent)
+        task, reason = next_task(data, store, sel=sel, agent=agent, with_user=args.with_user)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
@@ -2550,6 +2557,8 @@ def cmd_list(args):
         if args.blocked and not (kind == "blocked" or (kind == "todo" and t.get("id") not in ready)):
             continue
         if args.in_pr and not in_open_pr(t):
+            continue
+        if args.with_user and t.get("with") != "user":
             continue
         tasks.append(t)
     if args.json:
@@ -3304,6 +3313,13 @@ def open_sprint(vocab, name):
     return sprint["id"]
 
 
+def check_with(value):
+    """`with`: who the work is done together with; `user` for now (SR-6.5)."""
+    if value != "user":
+        raise AtmError(f"with {value!r}: use user (work done together with the user)", 2)
+    return value
+
+
 def check_review(value):
     if value not in REVIEW_MODES:
         raise AtmError(f"review {value!r}: use one of {', '.join(REVIEW_MODES)}", 2)
@@ -3372,6 +3388,8 @@ def new_task(vocab, fields, actor, stamp):
         task["components"] = components
     if fields.get("review"):
         task["review"] = check_review(fields["review"])
+    if fields.get("with"):
+        task["with"] = check_with(fields["with"])
     if fields.get("related"):
         task["related"] = list(fields["related"])  # checked once the new IDs are known (add_tasks)
     return task
@@ -3465,6 +3483,7 @@ def cmd_add(args):
                 "release": args.release,
                 "components": "auto" if args.components == "auto" else args.component,
                 "review": args.review,
+                "with": args.with_,
                 "related": args.related,
             }
         ]
@@ -3530,6 +3549,7 @@ def edit_task(data, task, args):
     for key, value, check in (
         ("release", args.release, lambda v: known_release(vocab, v)),
         ("review", args.review, check_review),
+        ("with", args.with_, check_with),
     ):
         if value == "":
             if key in task:
@@ -5458,6 +5478,45 @@ def migrate_phases(paths):
     return added
 
 
+WITH_USER_MIGRATION = "interactive-label"
+
+
+def migrate_interactive(paths):
+    """Tasks labelled `interactive` (work done with the user, T-240) get `with: user` (SR-6.5), once: the change is
+    recorded in meta.migrations, so a `with` taken off later isn't put back. The label stays. Only unfinished tasks in
+    tasks.json; nothing is written when none has the label. Returns how many tasks it changed."""
+    def todo(data):
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+        if WITH_USER_MIGRATION in (meta.get("migrations") or []):
+            return []
+        vocab = vocabulary(data)
+        return [
+            t
+            for t in data["tasks"]
+            if isinstance(t, dict)
+            and "interactive" in (t.get("labels") or [])
+            and not t.get("with")
+            and kind_of(vocab, t.get("status")) not in ("done", "skipped")
+        ]
+
+    try:
+        if not todo(load_tasks(paths)):
+            return 0
+    except AtmError:
+        return 0  # an unreadable file: the command the skill runs next reports the problem
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        tasks = todo(data)
+        for task in tasks:
+            task["with"] = "user"
+        meta = data.setdefault("meta", {})
+        meta["migrations"] = list(meta.get("migrations") or []) + [WITH_USER_MIGRATION]
+        write_json_atomic(paths["tasks"], data)
+    if in_git(paths["root"]):
+        git(["add", "--", rel(paths["root"], paths["tasks"])], paths["root"])
+    return len(tasks)
+
+
 def ensure_gitignore(task_dir):
     """Add any missing runtime entries to the folder's .gitignore, keeping the user's lines. Returns True if changed."""
     p = os.path.join(task_dir, ".gitignore")
@@ -5492,6 +5551,7 @@ def migrate(paths, phases=True):
         "cleaned_up": None,
         "finish_times_filled": 0,
         "sprints_from_phases": None,
+        "with_user_from_label": 0,
     }
     if legacy and paths["tasks_exists"]:
         result["warning"] = (
@@ -5525,6 +5585,7 @@ def migrate(paths, phases=True):
     result["cleaned_up"] = clean_up_old_dashboard(task_dir)
     result["finish_times_filled"] = backfill_finish_times(paths)
     result["sprints_from_phases"] = migrate_phases(paths) if phases else None
+    result["with_user_from_label"] = migrate_interactive(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))
     except AtmError:
@@ -5576,6 +5637,12 @@ def describe_migration(r, paths):
     sprints = r.get("sprints_from_phases")
     if sprints is not None:
         lines.extend(describe_sprints_from_phases(sprints))
+    together = r.get("with_user_from_label")
+    if together:
+        tasks = "1 task" if together == 1 else f"{together} tasks"
+        lines.append(
+            f"Gave {tasks} labelled interactive `with: user` (done together with you; unattended loops skip them)."
+        )
     if not lines:
         lines.append("Nothing to migrate.")
     if r.get("suggest"):
@@ -6484,6 +6551,9 @@ def build_parser():
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--phase", type=float, help="only this phase")
     next_.add_argument("--type", help="only this task type")
+    next_.add_argument(
+        "--with-user", action="store_true", help="also tasks done together with the user (the user is watching)"
+    )
     pick = next_.add_mutually_exclusive_group()
     pick.add_argument(
         "--sprint", action="append", metavar="NAME", help="this sprint's tasks (repeatable; default: the active one)"
@@ -6507,6 +6577,7 @@ def build_parser():
     list_.add_argument("--ready", action="store_true", help="only to-do tasks whose dependencies are done")
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
     list_.add_argument("--in-pr", action="store_true", help="only tasks in a PR that isn't recorded as merged")
+    list_.add_argument("--with-user", action="store_true", help="only tasks done together with the user (with: user)")
     list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
     status = command(
         "status",
@@ -6548,6 +6619,9 @@ def build_parser():
     )
     add.add_argument("--related", action="append", default=[], metavar="ID", help="a related task (repeatable)")
     add.add_argument(
+        "--with", dest="with_", choices=["user"], help="user: done together with the user (unattended loops skip it)"
+    )
+    add.add_argument(
         "--json-file",
         metavar="FILE",
         help='add many: a JSON list of tasks; an "id" there is a placeholder (e.g. "new-1") other tasks\' '
@@ -6582,6 +6656,9 @@ def build_parser():
         edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
     edit.add_argument(
         "--components", choices=["auto"], help="auto: add the components its files are in (otherwise only suggested)"
+    )
+    edit.add_argument(
+        "--with", dest="with_", choices=["user", ""], help="user: done together with the user (empty: not any more)"
     )
     agent_option(edit)
 

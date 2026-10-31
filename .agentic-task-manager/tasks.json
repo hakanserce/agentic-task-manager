@@ -14561,7 +14561,7 @@
         "SR-6.4"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-312"
       ],
@@ -14573,7 +14573,7 @@
         "tests/scripts/scenarios/review.json"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:19:11Z",
+      "updated_at": "2026-10-31T06:29:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14584,7 +14584,18 @@
         }
       ],
       "started_at": "2026-10-31T06:19:11Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "aed37075cd280d4cde135c78b1b69210c2369214",
+      "completed_at": "2026-10-31T06:29:23Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T06:29:23Z",
+          "kind": "outcome",
+          "text": "`atm approve`/`request-changes` set `review_state`; `atm next` hands such tasks back first, to their agent for a lease length; rounds recorded with their outcome; skills use `atm approve`; merge driver knows the fields.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-314",
@@ -14604,7 +14615,7 @@
         "SR-6.6"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-291"
       ],
@@ -14616,16 +14627,18 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T06:29:28Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce",
+      "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
       "sprint_history": [
         {
           "sprint": "Sprints and releases",
           "from": "2026-10-31T00:07:18Z"
         }
-      ]
+      ],
+      "started_at": "2026-10-31T06:29:28Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-315",

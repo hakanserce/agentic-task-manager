@@ -260,6 +260,45 @@ def migrate_phases(paths):
     return added
 
 
+WITH_USER_MIGRATION = "interactive-label"
+
+
+def migrate_interactive(paths):
+    """Tasks labelled `interactive` (work done with the user, T-240) get `with: user` (SR-6.5), once: the change is
+    recorded in meta.migrations, so a `with` taken off later isn't put back. The label stays. Only unfinished tasks in
+    tasks.json; nothing is written when none has the label. Returns how many tasks it changed."""
+    def todo(data):
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+        if WITH_USER_MIGRATION in (meta.get("migrations") or []):
+            return []
+        vocab = vocabulary(data)
+        return [
+            t
+            for t in data["tasks"]
+            if isinstance(t, dict)
+            and "interactive" in (t.get("labels") or [])
+            and not t.get("with")
+            and kind_of(vocab, t.get("status")) not in ("done", "skipped")
+        ]
+
+    try:
+        if not todo(load_tasks(paths)):
+            return 0
+    except AtmError:
+        return 0  # an unreadable file: the command the skill runs next reports the problem
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        tasks = todo(data)
+        for task in tasks:
+            task["with"] = "user"
+        meta = data.setdefault("meta", {})
+        meta["migrations"] = list(meta.get("migrations") or []) + [WITH_USER_MIGRATION]
+        write_json_atomic(paths["tasks"], data)
+    if in_git(paths["root"]):
+        git(["add", "--", rel(paths["root"], paths["tasks"])], paths["root"])
+    return len(tasks)
+
+
 def ensure_gitignore(task_dir):
     """Add any missing runtime entries to the folder's .gitignore, keeping the user's lines. Returns True if changed."""
     p = os.path.join(task_dir, ".gitignore")
@@ -294,6 +333,7 @@ def migrate(paths, phases=True):
         "cleaned_up": None,
         "finish_times_filled": 0,
         "sprints_from_phases": None,
+        "with_user_from_label": 0,
     }
     if legacy and paths["tasks_exists"]:
         result["warning"] = (
@@ -327,6 +367,7 @@ def migrate(paths, phases=True):
     result["cleaned_up"] = clean_up_old_dashboard(task_dir)
     result["finish_times_filled"] = backfill_finish_times(paths)
     result["sprints_from_phases"] = migrate_phases(paths) if phases else None
+    result["with_user_from_label"] = migrate_interactive(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))
     except AtmError:
@@ -378,6 +419,12 @@ def describe_migration(r, paths):
     sprints = r.get("sprints_from_phases")
     if sprints is not None:
         lines.extend(describe_sprints_from_phases(sprints))
+    together = r.get("with_user_from_label")
+    if together:
+        tasks = "1 task" if together == 1 else f"{together} tasks"
+        lines.append(
+            f"Gave {tasks} labelled interactive `with: user` (done together with you; unattended loops skip them)."
+        )
     if not lines:
         lines.append("Nothing to migrate.")
     if r.get("suggest"):

@@ -346,7 +346,7 @@ def offered_to(data, task, agent):
     return now() >= reviewed + timedelta(minutes=lease_minutes(data))
 
 
-def next_task(data, store, phase=None, task_type=None, sel=None, agent=None):
+def next_task(data, store, phase=None, task_type=None, sel=None, agent=None, with_user=False):
     """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
     in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
     the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
@@ -367,10 +367,17 @@ def next_task(data, store, phase=None, task_type=None, sel=None, agent=None):
     ]
     first = {t.get("id") for t in rework}
     candidates = rework + [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
+    # Work done together with the user waits for them, unless they're watching (SR-3.5)
+    together = [t for t in candidates if t.get("with") == "user"]
+    if not with_user:
+        candidates = [t for t in candidates if t.get("with") != "user"]
     in_order = rank or (lambda t: 0)
     ready = ready_in_order(data, store, candidates, lambda t: (t.get("id") not in first, in_order(t)))
     if ready:
         return ready[0], None
+    if together and not with_user and not candidates:
+        ids = ", ".join(t.get("id") for t in together)
+        return None, f"only work done together with the user is left in {scope}: {ids} (--with-user takes it)"
     if not candidates:
         if not selected:
             if not vocab["sprints"]:
@@ -417,7 +424,7 @@ def cmd_next(args):
             phase=args.phase,
             task_type=args.type,
         )
-        task, reason = next_task(data, store, sel=sel, agent=agent)
+        task, reason = next_task(data, store, sel=sel, agent=agent, with_user=args.with_user)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)

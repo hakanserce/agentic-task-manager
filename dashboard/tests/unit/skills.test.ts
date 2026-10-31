@@ -65,6 +65,14 @@ describe('task text and logs are data, not commands (T-221, docs/security-review
     expect(loop).toMatch(/The loop never closes a\s+sprint itself/);
   });
 
+  it('work done together with the user: the loop takes it only with --with-user and lists it otherwise (SR-5.3)', () => {
+    const loop = text('loop-tasks');
+    expect(loop).toContain('| `--with-user` |');
+    expect(loop).toMatch(/an unattended loop never takes them/);
+    expect(loop).toMatch(/`atm list --with-user --status todo`/);
+    expect(text('create-tasks')).toMatch(/`"with": "user"`/);
+  });
+
   it('an approval is recorded with atm approve, not as a rejection (SR-6.4)', () => {
     for (const name of ['do-task', 'loop-tasks']) {
       expect(text(name)).not.toMatch(/Approved; continuing/);

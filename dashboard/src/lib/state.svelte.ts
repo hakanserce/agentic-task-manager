@@ -154,12 +154,12 @@ export class DashboardState {
   kanbanShowAllDone = $state(false);
   /** The List tab's order: as in the file, or by priority */
   listSort = $state<ListSort>('file');
-  /** The phase the Progress tab focuses on; null for all phases */
-  progressPhase = $state<number | null>(null);
+  /** The sprint the Progress tab focuses on (its ID, or BACKLOG); null for all of them */
+  progressSprint = $state<string | null>(null);
   /** The filter panel's Sprint group lists the closed sprints too (part of the saved view) */
   filterClosedSprints = $state(false);
   /** The Progress tab's burndown range (part of the saved view) */
-  progressRange = $state<BurndownRange>('phase');
+  progressRange = $state<BurndownRange>('sprint');
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph greys out done tasks, whatever the filters (part of the saved view) */
@@ -507,7 +507,7 @@ export class DashboardState {
         showAllDone: this.kanbanShowAllDone,
       },
       listSort: this.listSort,
-      progressPhase: this.progressPhase,
+      progressSprint: this.progressSprint,
       filterClosedSprints: this.filterClosedSprints,
       progressRange: this.progressRange,
       graphFiltered: this.graphFiltered,
@@ -547,7 +547,7 @@ export class DashboardState {
     this.kanbanShowSkipped = view.kanban.showSkipped;
     this.kanbanShowAllDone = view.kanban.showAllDone;
     this.listSort = view.listSort;
-    this.progressPhase = view.progressPhase;
+    this.progressSprint = view.progressSprint;
     this.filterClosedSprints = view.filterClosedSprints;
     this.progressRange = view.progressRange;
     this.graphFiltered = view.graphFiltered;

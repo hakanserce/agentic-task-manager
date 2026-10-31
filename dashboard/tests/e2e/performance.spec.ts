@@ -65,7 +65,7 @@ test.describe('performance with 500 tasks and a large archive', () => {
     // The first visit to Progress loads it (once); after that, switches are measured with it loaded
     await page.locator('#tab-progress').click();
     await expect.poll(() => tasksServer.archiveRequests).toBe(1);
-    await expect(page.locator('#phase-table')).toBeVisible();
+    await expect(page.locator('#sprint-table')).toBeVisible();
     await page.locator('#tab-graph').click();
     const timings = {
       progress: await timeAction(page, '#tab-progress', "document.querySelector('#burndown svg')?.isConnected"),

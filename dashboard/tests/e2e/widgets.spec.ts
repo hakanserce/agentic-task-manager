@@ -19,16 +19,16 @@ test.describe('Progress widget', () => {
     await expect(progressPill(page).locator('svg.mini-ring circle')).toHaveCount(2);
   });
 
-  test('opens the details: overall, by status, by phase and by type', async ({ page }) => {
+  test('opens the details: overall, by status, by sprint and by type', async ({ page }) => {
     await progressPill(page).click();
     await expect(progressPill(page)).toHaveAttribute('aria-expanded', 'true');
     const panel = page.locator('#progress-panel');
     await expect(panel.locator('.insights-title')).toHaveText('6 of 8 tasks done');
     await expect(panel.locator('.insights-hero .status-legend li')).toHaveText(['Done6', 'In Progress1', 'To Do1']);
-    // Phase 0 is finished: a chip; phase 1 a ring (T-243)
-    await expect(panel.locator('#progress-by-phase .ring-label')).toHaveText(['Phase 1']);
-    await expect(panel.locator('#progress-by-phase .ring-count')).toHaveText(['2/4']);
-    await expect(panel.locator('#progress-finished-chips')).toHaveText('✓ 0');
+    // Its phases read as sprints: Phase 0 is finished, so closed: a chip; Phase 1 a ring (T-243)
+    await expect(panel.locator('#progress-by-sprint .ring-label')).toHaveText(['Phase 1']);
+    await expect(panel.locator('#progress-by-sprint .ring-count')).toHaveText(['2/4']);
+    await expect(panel.locator('#progress-closed-chips')).toHaveText('✓ Phase 0');
     // By type: one stacked bar, a segment per type, and its legend
     await expect(panel.locator('#progress-by-type .type-bar-segment')).toHaveCount(5);
     await expect(panel.locator('#progress-by-type li')).toHaveText([

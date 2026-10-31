@@ -59,7 +59,7 @@ test.describe('saved view', () => {
     data.meta = { ...data.meta, id: 'prog' };
     await openDashboard(page, tasksServer, data);
     await page.locator('#tab-progress').click();
-    await page.locator('#phase-table tbody tr').nth(1).click();
+    await page.locator('#sprint-table tbody tr').nth(1).click();
     const focused = await page.locator('#burndown-focus').textContent();
     expect(focused).toMatch(/^Phase \d+$/);
     await page.reload();

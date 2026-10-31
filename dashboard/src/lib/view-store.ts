@@ -4,6 +4,7 @@
 // version stay per browser (prefs.ts).
 import { BURNDOWN_RANGES, type BurndownRange } from './burndown';
 import { FILTER_GROUPS, filterValues, type FilterGroup, type ListSort } from './filters';
+import { sprintKey } from './forecast';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
 import { NO_SPRINTS, type SprintModel } from './sprints';
@@ -22,11 +23,11 @@ export interface SavedView {
   kanban: { groupByPhase: boolean; showSkipped: boolean; showAllDone: boolean };
   /** The List tab's order */
   listSort: ListSort;
-  /** The phase the Progress tab focuses on, or null for all phases */
-  progressPhase: number | null;
+  /** The sprint the Progress tab focuses on (its ID, or BACKLOG), or null for all of them */
+  progressSprint: string | null;
   /** The filter panel's Sprint group lists the closed sprints too, not just the open ones */
   filterClosedSprints: boolean;
-  /** The Progress tab's burndown range: since the (focused or first unfinished) phase started, 14 days, or all time */
+  /** The Progress tab's burndown range: since the (focused or current) sprint started, 14 days, or all time */
   progressRange: BurndownRange;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
@@ -62,9 +63,9 @@ export function defaultView(): SavedView {
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
     kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
-    progressPhase: null,
+    progressSprint: null,
     filterClosedSprints: false,
-    progressRange: 'phase',
+    progressRange: 'sprint',
     graphFiltered: 'hide',
     graphDimDone: false,
     graph: null,
@@ -120,12 +121,17 @@ export function readView(key: string): SavedView {
       showAllDone: bool(kanban.showAllDone, view.kanban.showAllDone),
     },
     listSort: stored.listSort === 'priority' ? 'priority' : 'file',
-    progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
+    // A focused phase (progressPhase, before sprints) is dropped: phases are no longer a unit of the Progress tab
+    progressSprint: typeof stored.progressSprint === 'string' ? stored.progressSprint : null,
     // filterFinishedPhases, its name before sprints, meant the same
     filterClosedSprints: stored.filterClosedSprints === true || stored.filterFinishedPhases === true,
-    progressRange: (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
-      ? (stored.progressRange as BurndownRange)
-      : view.progressRange,
+    // "phase", the range's name before sprints, is now "sprint"
+    progressRange:
+      stored.progressRange === 'phase'
+        ? 'sprint'
+        : (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
+          ? (stored.progressRange as BurndownRange)
+          : view.progressRange,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graphDimDone: stored.graphDimDone === true,
     graph: graphView(stored.graph),
@@ -145,7 +151,7 @@ export function clearView(key: string): void {
 
 /**
  * Drop what the tasks no longer have: filter values for removed sprints, releases, components, types, statuses,
- * priorities or labels, a removed phase.
+ * priorities or labels, a focused sprint that has no tasks.
  */
 export function sanitizeView(
   view: SavedView,
@@ -157,10 +163,10 @@ export function sanitizeView(
     const present = new Set(tasks.flatMap((t) => filterValues(group, t, vocab, model)));
     return view.filters[group].filter((v) => present.has(v));
   };
-  const phases = new Set(tasks.map((t) => t.phase));
+  const sprints = new Set(tasks.map((t) => sprintKey(model, t)));
   return {
     ...view,
     filters: Object.fromEntries(FILTER_GROUPS.map((g) => [g, keep(g)])) as SavedView['filters'],
-    progressPhase: view.progressPhase !== null && phases.has(view.progressPhase) ? view.progressPhase : null,
+    progressSprint: view.progressSprint !== null && sprints.has(view.progressSprint) ? view.progressSprint : null,
   };
 }

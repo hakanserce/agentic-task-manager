@@ -28,6 +28,18 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   `sprint_history`, how many tasks were added mid-sprint and carried in (`headerSprint`, `sprintSummary` in
   `lib/sprints.ts`).
 
+### Changed
+- **Progress tab by sprint** (T-297, SR-7.4): the phase table is a sprint table (`SprintTable.svelte`, `#sprint-table`,
+  rows `data-sprint`): one row per sprint with tasks, in the project's order, then the backlog; a sprint's state and
+  due date next to its name; a closed sprint shows when it closed and its report (carried to, added mid-sprint), and
+  two or more fold into one row. Estimates add up in the loop's order: the active sprint, the planned ones, the
+  backlog (`forecastSprints`, `nextInLoop` in `lib/forecast.ts`; `forecastPhases`, `phaseRanges` and `activePhases`
+  are gone). The burndown focuses on a sprint; its default range is since that sprint (or the one the loop works on)
+  started; a closed sprint's chart ends where it closed, and the due date of an open one is marked. The saved view
+  keeps the focused sprint (`progressSprint`; a saved `progressPhase` is dropped, a `phase` range reads as
+  `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
+  the closed sprints.
+
 ### Fixed
 - `atm unblock` refused to record the answers when the questions and answers together were longer than 500
   characters; the limit now applies to each question and answer.

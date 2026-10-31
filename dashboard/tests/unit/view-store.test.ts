@@ -47,7 +47,7 @@ describe('reading and writing', () => {
       tab: 'agents',
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
       listSort: 'priority',
-      progressPhase: 2,
+      progressSprint: 'Phase 2',
       filterClosedSprints: true,
       progressRange: '14d',
       graphFiltered: 'dim',
@@ -61,22 +61,30 @@ describe('reading and writing', () => {
     expect(readView(key)).toEqual(view);
   });
 
-  it('an old view\'s "Active phases only" is dropped quietly; the burndown range defaults to the phase (T-240, T-243)', () => {
+  it('an old view\'s "Active phases only" is dropped quietly; the burndown range defaults to the sprint (T-240, T-243)', () => {
     localStorage.setItem(key, JSON.stringify({ progressActive: { only: false }, progressRange: 'decade' }));
     const view = readView(key);
     expect(view).not.toHaveProperty('progressActive');
-    expect(view.progressRange).toBe('phase');
+    expect(view.progressRange).toBe('sprint');
   });
 
-  it('a view saved before sprints: its phase filter is dropped, "finished phases" means closed sprints (SR-7.1)', () => {
+  it('a view saved before sprints: its phase filter and focused phase are dropped, "finished phases" means closed sprints, the phase range is the sprint range (SR-7.1, SR-7.4)', () => {
     localStorage.setItem(
       key,
-      JSON.stringify({ filters: { phase: ['1'], type: ['test'] }, filterFinishedPhases: true }),
+      JSON.stringify({
+        filters: { phase: ['1'], type: ['test'] },
+        filterFinishedPhases: true,
+        progressPhase: 2,
+        progressRange: 'phase',
+      }),
     );
     const view = readView(key);
     expect(view.filters).not.toHaveProperty('phase');
     expect(view.filters.type).toEqual(['test']);
     expect(view.filterClosedSprints).toBe(true);
+    expect(view).not.toHaveProperty('progressPhase');
+    expect(view.progressSprint).toBeNull();
+    expect(view.progressRange).toBe('sprint');
   });
 
   it('projects are kept apart', () => {
@@ -90,7 +98,7 @@ describe('reading and writing', () => {
     expect(readView(key)).toEqual(defaultView());
     localStorage.setItem(
       key,
-      JSON.stringify({ tab: 'nope', filters: { sprint: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
+      JSON.stringify({ tab: 'nope', filters: { sprint: [1, '2'], type: 'x' }, kanban: 3, progressSprint: 1 }),
     );
     expect(readView(key)).toEqual({
       ...defaultView(),
@@ -136,7 +144,7 @@ describe('sanitizeView', () => {
   const vocab = resolveVocabulary({});
   const model = sprintModel({}, tasks, vocab);
 
-  it('drops filter values and a focused phase the tasks no longer have', () => {
+  it('drops filter values and a focused sprint the tasks no longer have', () => {
     const view: SavedView = {
       ...defaultView(),
       filters: {
@@ -150,7 +158,7 @@ describe('sanitizeView', () => {
         label: ['ux', 'gone'],
         agent: ['claude:a', 'claude:gone'],
       },
-      progressPhase: 5,
+      progressSprint: 'Phase 5',
     };
     // Neither task has a priority: both are the default, P2
     expect(sanitizeView(view, tasks, vocab, model)).toEqual({
@@ -166,7 +174,7 @@ describe('sanitizeView', () => {
         label: ['ux'],
         agent: ['claude:a'],
       },
-      progressPhase: null,
+      progressSprint: null,
     });
   });
 
@@ -174,7 +182,7 @@ describe('sanitizeView', () => {
     const view: SavedView = {
       ...defaultView(),
       filters: { ...defaultView().filters, sprint: ['Phase 1'] },
-      progressPhase: 0,
+      progressSprint: 'Phase 0',
     };
     expect(sanitizeView(view, tasks, vocab, model)).toEqual(view);
   });

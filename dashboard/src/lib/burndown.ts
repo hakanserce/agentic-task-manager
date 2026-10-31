@@ -1,7 +1,8 @@
 // Burndown series (FR-4.1): remaining tasks and total scope over time, plus a forecast from now to the estimated
 // finish. Skipped-kind tasks are not part of the scope; blocked and in-review tasks stay "remaining" (they are not
 // done), and the forecast doesn't cover them (they wait on someone, not on agent work).
-import type { Forecast } from './forecast';
+import { nextInLoop, sprintKey, type Forecast } from './forecast';
+import { NO_SPRINTS, type SprintModel } from './sprints';
 import { completedAt } from './timeline';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, type Vocabulary } from './vocab';
@@ -25,6 +26,10 @@ export interface Burndown {
   forecast?: BurndownForecast;
   /** No task has any time: there is no timeline to draw yet */
   untimed?: boolean;
+  /** A closed sprint's end: the chart stops there, with no "now" and no forecast */
+  end?: number;
+  /** The focused sprint's due date (the end of that day, UTC), marked on the chart */
+  due?: number;
 }
 
 const time = (iso: string | undefined) => {
@@ -40,42 +45,64 @@ function earliest(tasks: Task[], now: number): number {
 }
 
 /**
- * The burndown's time range (T-240): since the focused phase, or else the first unfinished one, started (the default:
- * on a long project, all time squeezes the forecast into a sliver), the last 14 days, or all time.
+ * The burndown's time range (T-240, SR-7.4): the focused sprint's, or else the one the loop works on (from its start;
+ * the default: on a long project, all time squeezes the forecast into a sliver), the last 14 days, or all time.
  */
-export type BurndownRange = 'phase' | '14d' | 'all';
-export const BURNDOWN_RANGES: BurndownRange[] = ['phase', '14d', 'all'];
+export type BurndownRange = 'sprint' | '14d' | 'all';
+export const BURNDOWN_RANGES: BurndownRange[] = ['sprint', '14d', 'all'];
 const DAY = 24 * 60 * 60_000;
 
-/** Where the range starts, or undefined for all time (also when the phase has no times to start from) */
+/** The sprint (its key) the "sprint" range and the chart's markers are about: the focused one, else the loop's next */
+export function rangeSprint(forecast: Forecast, focus?: string): string | undefined {
+  return focus ?? nextInLoop(forecast)?.key;
+}
+
+/** Where the range starts, or undefined for all time (also when the sprint has no times to start from): the sprint's
+ * start, else when its first task started, else when its first task was created */
 export function rangeStart(
   range: BurndownRange,
   tasks: Task[],
   forecast: Forecast,
   now: number,
-  focus?: number,
+  focus?: string,
+  model: SprintModel = NO_SPRINTS,
 ): number | undefined {
   if (range === 'all') return undefined;
   if (range === '14d') return now - 14 * DAY;
-  const phase = focus ?? forecast.phases.find((p) => p.state !== 'done')?.phase;
-  const inPhase = tasks.filter((t) => t.phase === phase);
-  const starts = inPhase.map((t) => time(t.started_at)).filter((t): t is number => t !== undefined);
-  const created = inPhase.map((t) => time(t.created_at)).filter((t): t is number => t !== undefined);
+  const key = rangeSprint(forecast, focus);
+  const start = time(forecast.sprints.find((s) => s.key === key)?.sprint?.start);
+  if (start !== undefined) return start < now ? start : undefined;
+  const own = tasks.filter((t) => sprintKey(model, t) === key);
+  const starts = own.map((t) => time(t.started_at)).filter((t): t is number => t !== undefined);
+  const created = own.map((t) => time(t.created_at)).filter((t): t is number => t !== undefined);
   const from = starts.length ? Math.min(...starts) : created.length ? Math.min(...created) : undefined;
   return from !== undefined && from < now ? from : undefined;
 }
+
+/** The end of a YYYY-MM-DD day, UTC */
+const endOfDay = (date: string | undefined) => {
+  const t = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? Date.parse(`${date}T23:59:59Z`) : NaN;
+  return Number.isNaN(t) ? undefined : t;
+};
 
 export function burndown(
   allTasks: Task[],
   forecast: Forecast,
   now: number,
-  phase?: number,
+  focus?: string,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
   from?: number,
+  model: SprintModel = NO_SPRINTS,
 ): Burndown {
   const kind = (t: Task) => kindOf(vocab, t.status);
-  const tasks = allTasks.filter((t) => kind(t) !== 'skipped' && (phase === undefined || t.phase === phase));
+  const tasks = allTasks.filter((t) => kind(t) !== 'skipped' && (focus === undefined || sprintKey(model, t) === focus));
   if (tasks.length === 0) return { points: [] };
+  // A focused closed sprint is drawn from its start to its end; an open one gets its due date marked
+  const sprint = forecast.sprints.find((s) => s.key === rangeSprint(forecast, focus))?.sprint;
+  const closedAt = focus !== undefined && sprint?.state === 'closed' ? time(sprint.end) : undefined;
+  const end = closedAt !== undefined && closedAt < now ? closedAt : undefined;
+  const due = sprint && sprint.state !== 'closed' ? endOfDay(sprint.due) : undefined;
+  const until = end ?? now;
   const untimed = !allTasks.some((t) =>
     [t.created_at, t.started_at, t.completed_at].some((x) => time(x) !== undefined),
   );
@@ -86,23 +113,31 @@ export function burndown(
 
   // With a range, the chart starts at `from` with the state then, and shows the changes after it
   const times = [...new Set([...created, ...completed])]
-    .filter((t) => t <= now && (from === undefined || t > from))
+    .filter((t) => t <= until && (from === undefined || t > from))
     .sort((a, b) => a - b);
   const at = (t: number): BurndownPoint => {
     const scope = created.filter((c) => c <= t).length;
     return { t, scope, remaining: scope - completed.filter((c) => c <= t).length };
   };
-  const points = [...(from === undefined ? [] : [from]), ...times, now].map(at);
+  const points = [...(from === undefined ? [] : [from]), ...times, until].map(at);
 
-  const phases = forecast.phases.filter((p) => p.estimate && (phase === undefined || p.phase === phase));
-  const last = phases.at(-1)?.estimate;
+  // The estimate that finishes last among the shown sprints: the loop's last
+  const estimates = forecast.sprints
+    .filter((s) => s.estimate && (focus === undefined || s.key === focus))
+    .map((s) => s.estimate!);
+  const last = estimates.reduce<(typeof estimates)[number] | undefined>(
+    (latest, e) => (!latest || e.finishAt.likely > latest.finishAt.likely ? e : latest),
+    undefined,
+  );
   const current = points[points.length - 1];
   // What the estimate doesn't cover: tasks waiting on someone rather than on agent work
   const waiting = tasks.filter((t) => kind(t) === 'blocked' || kind(t) === 'review').length;
   return {
     points,
     ...(untimed ? { untimed } : {}),
-    ...(last && current.remaining > waiting
+    ...(end !== undefined ? { end } : {}),
+    ...(due !== undefined ? { due } : {}),
+    ...(end === undefined && last && current.remaining > waiting
       ? {
           forecast: {
             from: { t: now, remaining: current.remaining },

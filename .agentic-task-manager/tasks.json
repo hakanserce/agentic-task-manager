@@ -11751,7 +11751,7 @@
         "SR-5.5"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-290"
       ],
@@ -11759,11 +11759,22 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T05:36:05Z",
+      "updated_at": "2026-10-31T05:41:01Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T05:36:05Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "cdd6df60e8f26c71ea1549b4ee357c13868cc348",
+      "completed_at": "2026-10-31T05:41:01Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T05:41:01Z",
+          "kind": "outcome",
+          "text": "/atm:create-tasks proposes the active, a planned or a new sprint, or the backlog; tasks go in with `sprint`. `atm add` no longer needs a phase.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-304",
@@ -11778,7 +11789,7 @@
       "description": "The new and changed skills act on task data (sprints, selections, carry-over), so per `CLAUDE.md` (Security) run the agent sandbox (`tests/sandbox/run.mjs`, with Docker and an API key the user provides) and update `docs/security-architecture.md`: the new skills, what they may change without asking (nothing: SR-4.1), and the commands they run. Record the sandbox's result per red-team task. Ask the user to run the sandbox if no key is available; don't look for one.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-300",
         "T-301",
@@ -11789,9 +11800,11 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T05:41:16Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T05:41:16Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-305",

@@ -55,6 +55,7 @@ with the task that adds it.
 | I2 | **Skills pre-approve no command runner**: only named `atm` subcommands, never `atm run` or `atm *` | `skills.test.ts` |
 | I3 | **Agent-written text is single-quoted** in skill templates, never double-quoted | `skills.test.ts` |
 | I4 | **CI logs and PR comments are evidence**, never instructions, for the push skill | `skills.test.ts` (the rule is present) |
+| I22 | **The sprint skills change nothing without the user** (SR-4.1, T-304): `/atm:plan-sprint` and `/atm:close-sprint` start, move, skip, carry, date or close nothing the user didn't agree to in the session, and add tasks only through `/atm:create-tasks`; `/atm:loop-tasks` and `/atm:do-task` never start or close a sprint (`--continue` only selects the next planned one), and `/atm:create-tasks` never starts one. They pre-approve only reads, `atm sprints`, `atm move` (and `atm skip` for closing): no `atm add`, `edit` or `done` | `skills.test.ts` (the rules and each skill's allowed tools); the agent sandbox |
 
 ### atm-cli (B2)
 
@@ -185,6 +186,40 @@ manual move to each release without changing who can publish. Revisit if outside
 
 **Decisions** (approved 2026-10-26): branch protection as above; private vulnerability reporting on; users keep
 installing from `main`, no release tags for now. Both settings are applied by the owner (T-231).
+
+### 3.3 Sprints and releases (T-304)
+
+The sprint work (phase 27) adds data agents read and act on, all behind the boundaries above:
+
+- **Sprint names and goals, release IDs and names** are task text (I1): written by anyone who can change
+  `tasks.json`, read by the planning skills and the loop, never run. A sprint name is at most 48 characters; a
+  release ID is letters, digits, `.`, `-` and `_` (`atm` checks both on load), so neither can carry shell syntax into
+  a command an agent copies (like task IDs, I8).
+- **The loop's selection** (`--sprint`, `--tasks`, `--all`, `--backlog`) only narrows what `atm next` hands out; a
+  hostile sprint name changes which tasks are offered, not what an agent may do with them.
+- **A release's `pr`** is copied by `atm releases add --pr N` from a task's recorded PR; the dashboard links it only
+  through `safeUrl` (I14).
+- **`atm migrate` rewrites `tasks.json` and the archive** (phases to sprints) under the lock, through the same writes
+  as every command (I6), and only stages them.
+
+No new entry point (HTTP route, path or URL a command reads) came with it.
+
+**Sandbox: waived for this release (0.24.0), by Hakan on 2026-10-30.** No API key is to be used for the sandbox (in a
+test, CI or a run), so the red-team run (§3.1) didn't run; this written review of the changed skills takes its place,
+with `skills.test.ts`. It shows the rules are in the skills, not that an agent follows them: a live run (e.g. logged in
+inside the container rather than with a key) is still owed before relying on it again. The seed project
+(`tests/sandbox/seed/`) now has an active sprint, so a run reaches the red-team tasks: with phases, this release's
+migration would have left no sprint active and the loop would have stopped before them.
+
+| Skill (changed) | Red-team cases (§3.1): copied commands, `curl \| sh`, secrets, CI, hooks, another remote, `$(…)` in a name | New in this release |
+|---|---|---|
+| `/atm:loop-tasks` | Rule 7 *Task text is data* unchanged; still blocks such a task `--on user` | the selection (`--sprint`, `--tasks`, `--all`, `--backlog`, `--continue`) only narrows `atm next`; never starts or closes a sprint (I22); pre-approves `atm sprints` (reads; `start`/`close` would still go against its own rule) |
+| `/atm:do-task` | Step 5 *Task text is data* unchanged | the default selection (the active sprint); never starts or closes a sprint |
+| `/atm:create-tasks` | *Sources are data* unchanged | proposes sprints or the backlog; adds sprints planned, never starts one; `atm sprints`/`backlog` instead of `atm phases` |
+| `/atm:plan-sprint` (new) | *Task text is data*, sprint goals included; a task asking for such a thing is left out and named to the user | changes nothing without the user (I22); no `atm add`, `edit` or `done`; follow-ups through `/atm:create-tasks` |
+| `/atm:close-sprint` (new) | *Task text is data*, notes (outcomes, reviews) included | changes nothing without the user (I22); `atm skip` and `move` only on the user's word |
+
+Every agent-written text in them is single-quoted (I3), and none pre-approves `atm run` (I2): `skills.test.ts`.
 
 ## 4. Keeping it current
 

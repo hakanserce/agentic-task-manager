@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 320,
+    "next_id": 321,
     "labels": [
       {
         "id": "dashboard",
@@ -12108,6 +12108,44 @@
       ],
       "created_at": "2026-10-31T00:07:18Z",
       "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-320",
+      "name": "Remove phases from atm-cli",
+      "phase": 27,
+      "type": "refactor",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "Once projects are migrated to sprints (T-292) and the dashboard reads sprints everywhere, including the overview and project cards (T-298), atm-cli drops its phase support (`docs/sprints-and-releases-design.md` SR-8.3, as settled for T-292).\n\n## Change\n- Remove `--phase` from `next`, `list`, `archive`, `add` and `edit`, and the `atm phases` command (and `phases.py`); `atm add` no longer needs a phase.\n- `atm list` drops its phase column; `atm status` drops its phase counts and phase names; `atm show` no longer prints a phase.\n- `atm next` no longer orders by phase (`phase_of` goes from `ready_in_order`).\n- `atm serve`'s overview summary drops `current_phase` and `recent_phases` (the dashboard's cards read sprints since T-298).\n- `atm check` no longer requires a phase or warns about named phases.\n- Help (`atm help`, `docs/help.md`), `plugin/CLAUDE.md` and the v4 docs stop describing phases.\n\n## Tests\natm-cli's scenarios and tests that use phases move to sprints or drop the phase; the full `npm run test:scripts` passes.",
+      "requirements": [
+        "SR-8.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-292",
+        "T-298"
+      ],
+      "files": [
+        "atm-cli/atm/phases.py",
+        "atm-cli/atm/cli.py",
+        "atm-cli/atm/query.py",
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/edit.py",
+        "atm-cli/atm/archive.py",
+        "atm-cli/build.py",
+        "tests/scripts/scenarios",
+        "plugin/CLAUDE.md",
+        "docs/help.md",
+        "docs/v4/atm-cli.md"
+      ],
+      "created_at": "2026-10-31T00:54:44Z",
+      "updated_at": "2026-10-31T00:54:44Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

@@ -594,6 +594,9 @@
         "state": "planned",
         "name": "Sprints and releases"
       }
+    ],
+    "migrations": [
+      "interactive-label"
     ]
   },
   "tasks": [
@@ -12843,7 +12846,8 @@
           "sprint": "Testing together",
           "from": "2026-10-27T09:19:02Z"
         }
-      ]
+      ],
+      "with": "user"
     },
     {
       "id": "T-278",
@@ -12930,7 +12934,8 @@
           "sprint": "Testing together",
           "from": "2026-10-27T16:41:57Z"
         }
-      ]
+      ],
+      "with": "user"
     },
     {
       "id": "T-280",
@@ -14615,7 +14620,7 @@
         "SR-6.6"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-291"
       ],
@@ -14627,7 +14632,7 @@
         "plugin/skills/create-tasks/SKILL.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:29:28Z",
+      "updated_at": "2026-10-31T06:35:08Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14638,7 +14643,18 @@
         }
       ],
       "started_at": "2026-10-31T06:29:28Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "51704fc6133a6354750ce4a93aee1ec0962e6799",
+      "completed_at": "2026-10-31T06:35:08Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T06:35:08Z",
+          "kind": "outcome",
+          "text": "`with: user` on tasks: `atm next` skips it unless `--with-user`, `atm start` takes it, `atm list --with-user` lists it; the loop names them at the end; `atm migrate` converts the `interactive` label once.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-315",

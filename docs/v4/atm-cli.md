@@ -86,6 +86,7 @@ Existing commands are marked *(exists)*.
 | `atm list [--status S] [--type T] [--priority P] [--label L]... [--agent A] [--ready] [--blocked] [--archived]` | one line per task: ID, status, priority, labels, name |
 | `atm status` | counts by status, sprint (with sprints), type and label; in progress and who claims it; the next available task; blocked tasks and what they wait for; in review; the files' sizes, the archive count and the largest tasks |
 | `atm deps <id>` | what the task waits for (with each one's status) and what waits for it |
+| `atm summary` | the project's summary as `atm serve` lists it in `api/projects` ([API](../multi-project-api.md) §3.2), JSON either way; the dashboard's dev server plays `atm serve` with it, and the e2e fixture with `withAtmSummary()`, so the Kanban's Next up is atm's own answer everywhere (T-321) |
 | `atm vocab` | the effective vocabularies (P2) |
 | `atm next [--claim]` *(exists)* | ordered by priority rank, then ID (natural sort); phases no longer count (T-320) |
 | `atm next [--sprint S]... \| --tasks ID,ID \| --all \| --backlog` | a **selection** ([sprints design](../sprints-and-releases-design.md) §3.2): by default the active sprint in a project with sprints (none active: nothing, and a reason that says to plan one or use `--all`), every task in a project without; `--tasks` in the order given, `--all` the active sprint, then planned ones in order, then the backlog. The reason for nothing ready says whether the selection is finished, waiting (and on what) or empty (SR-3.4, SR-3.6) |

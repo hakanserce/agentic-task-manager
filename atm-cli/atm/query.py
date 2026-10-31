@@ -8,7 +8,7 @@ import json
 import os
 import re
 
-from .claims import Selection, next_task, read_store, ready_in_order, select
+from .claims import Selection, loop_order, next_task, read_store
 from .core import AtmError, now, out, parse_iso, to_json
 from .model import (
     REWORK_STATES,
@@ -499,11 +499,11 @@ def project_summary(paths):
         }
         for c in live
     ]
-    # What the loop takes next with its default selection: the active sprint's tasks in a project with sprints (SR-5.1)
-    candidates, rank, _, reason = select(data, Selection())
-    todo = [t for t in candidates if kind_of(vocab, t.get("status")) == "todo" and t.get("with") != "user"]
-    ready = [] if reason else ready_in_order(data, store, todo, rank)
-    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready[:NEXT_TASKS]]
+    # What the loop takes next with its default selection (the active sprint's tasks in a project with sprints, SR-5.1),
+    # by the very rule `atm next` follows: the dashboard's Next up shows the first (T-321)
+    in_loop_order = loop_order(data, store, Selection())[0]
+    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in in_loop_order[:NEXT_TASKS]]
+    ready = [t for t in in_loop_order if kind_of(vocab, t.get("status")) == "todo"]
     finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
     last_task = max(finished, key=lambda f: f[0])[1] if finished else None
     last_done = (
@@ -565,6 +565,12 @@ def project_summary(paths):
         "board": board(data, store, tasks, kinds, ready, vocab, current, live),
         "stats": project_stats(paths, data, vocab, tasks, current),
     }
+
+
+def cmd_summary(args):
+    """The project's summary as atm serve lists it in api/projects (3.2); the dashboard's dev server plays atm serve
+    with it, so its numbers and Next up come from atm-cli too. JSON either way: it is for tools."""
+    out(to_json(project_summary(find_paths(os.getcwd()))))
 
 
 def cmd_status(args):

@@ -62,7 +62,7 @@ test('visual: detail panel', async ({ page, tasksServer }) => {
 
 for (const fixture of ['standard', 'kanban']) {
   test(`visual: kanban board (${fixture})`, async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, fixture);
+    await openDashboard(page, tasksServer.withAtmSummary(), fixture);
     await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
     await sectionScreenshot(page, `${fixture}-kanban.png`);
@@ -145,7 +145,7 @@ test.describe('visual: light mode', () => {
   });
 
   test('kanban board', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'kanban');
+    await openDashboard(page, tasksServer.withAtmSummary(), 'kanban');
     await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
     await sectionScreenshot(page, 'light-kanban.png');
@@ -200,7 +200,7 @@ for (const mode of ['dark', 'light'] as const) {
     });
 
     test('kanban board: review, blocked, stages in Done', async ({ page, tasksServer }) => {
-      await openDashboard(page, tasksServer, 'v4', { tab: 'kanban' });
+      await openDashboard(page, tasksServer.withAtmSummary(), 'v4', { tab: 'kanban' });
       await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
       await sectionScreenshot(page, `v4-${mode}-kanban.png`);
     });
@@ -274,7 +274,7 @@ for (const mode of ['dark', 'light'] as const) {
   test(`visual: update notice (${mode})`, async ({ page, tasksServer }) => {
     await page.emulateMedia({ colorScheme: mode });
     await tasksServer.serverBuild('newer-build');
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer.withAtmSummary(), 'standard');
     await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
     await expect(page.locator('#update-notice')).toBeVisible();
     await expect(page).toHaveScreenshot(`update-notice-${mode}.png`, {
@@ -454,7 +454,7 @@ for (const theme of [
         ([t, m]) => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: t, mode: m, autoRefresh: false })),
         [theme, mode],
       );
-      await openDashboard(page, tasksServer, 'kanban');
+      await openDashboard(page, tasksServer.withAtmSummary(), 'kanban');
       await page.locator('#tab-kanban').click();
       await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
       await sectionScreenshot(page, `theme-${theme}-${mode}.png`);

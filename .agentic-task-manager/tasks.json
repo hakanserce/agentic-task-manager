@@ -14895,7 +14895,7 @@
         "SR-8.3"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-292",
         "T-298"
@@ -14915,7 +14915,7 @@
         "atm-cli/atm/server.py"
       ],
       "created_at": "2026-10-31T00:54:44Z",
-      "updated_at": "2026-10-31T06:48:06Z",
+      "updated_at": "2026-10-31T07:32:53Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14931,10 +14931,19 @@
           "kind": "note",
           "text": "From planning the first sprint (T-305): after the migration `atm list` prints `None` in its phase column for every task; dropping the column here fixes it.",
           "by": "claude:9fec227a"
+        },
+        {
+          "at": "2026-10-31T07:32:53Z",
+          "kind": "outcome",
+          "text": "Phases removed from atm-cli: no `atm phases` or `--phase`; `next` by priority then ID; serve summary drops `current_phase`/`recent_phases`, board cards carry `sprint`; project cards without sprints show one ring; Kanban Next up matches atm.",
+          "by": "claude:9fec227a"
         }
       ],
       "started_at": "2026-10-31T06:48:06Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "16c2d518adc6572c9932068cdb2fa434718900e5",
+      "completed_at": "2026-10-31T07:32:53Z",
+      "completed_by": "claude:9fec227a"
     },
     {
       "id": "T-321",
@@ -14944,7 +14953,7 @@
       "description": "The project Kanban marks *Next up* with the dashboard's own `nextUp()` (`dashboard/src/lib/kanban.ts`), a copy of `atm next`'s rules that has to be kept in step by hand (`next-up-parity.test.ts`). `atm serve` already computes the answer with atm-cli's own `next_up`: the project's summary in `api/projects` has `next` (up to two tasks, in the loop's order). Use that instead, so the dashboard and the loop can't disagree; it also knows what the browser can't see (claims, tasks done or waiting in another worktree).\n\n## Change\n- The Kanban's Next up marker is the open project's `summary.next[0]` from `api/projects`, which the project page already loads and polls (`dashboard.projects`); no marker when the summary has no `next` or it is empty.\n- Remove the dashboard's copy of the loop rules: `nextUp()` and what only it uses (the sprint selection, rework first, skipping `with: user`). The to-do column keeps a plain display order: ready first, then priority, then ID.\n- Delete `tests/unit/next-up-parity.test.ts`; move what still applies into `kanban.test.ts` and the Kanban e2e spec (the marker follows `next`).\n- The Vite dev server (`build/dev-data.ts`) and the e2e `tasksServer` fixture already play `api/projects`: make sure their summaries carry `next` for the project (the dev server from atm-cli, as `atm serve` does).\n- Update `docs/multi-project-api.md` (§3.2 `next`: the Kanban reads it too) and the CHANGELOG.\n\n## Tests\n`npm run verify` in `dashboard/`; screenshot baselines change only if the marked card does.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-320"
       ],
@@ -14960,16 +14969,18 @@
         "plugin/CHANGELOG.md"
       ],
       "created_at": "2026-10-31T07:31:08Z",
-      "updated_at": "2026-10-31T07:31:08Z",
+      "updated_at": "2026-10-31T07:32:57Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce",
+      "updated_by": "claude:9fec227a",
       "sprint_history": [
         {
           "sprint": "Sprints and releases",
           "from": "2026-10-31T07:31:08Z"
         }
       ],
-      "sprint": "Sprints and releases"
+      "sprint": "Sprints and releases",
+      "started_at": "2026-10-31T07:32:57Z",
+      "started_by": "claude:9fec227a"
     }
   ]
 }

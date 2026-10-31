@@ -23,7 +23,7 @@ from .server import DEFAULT_PORT, cmd_serve, cmd_serve_child, refresh_server
 from .archive import cmd_archive, cmd_unarchive
 from .edit import cmd_add, cmd_check, cmd_edit
 from .git_ops import cmd_commit, cmd_merged, cmd_pr, cmd_workflow
-from .query import cmd_deps, cmd_list, cmd_show, cmd_status
+from .query import cmd_deps, cmd_list, cmd_show, cmd_status, cmd_summary
 from .tasks import cmd_note, cmd_status_change
 
 USAGE = """usage: atm <command> [options]
@@ -39,6 +39,7 @@ commands:
                  (start registers this project, or the one at PATH, and prints its URL; --all the overview's;
                  --refresh only restarts a running server whose dashboard is older than this plugin's)
   status         the overview: counts, what is in progress, in review or blocked, the next task
+  summary        the project's numbers as atm serve gives them to the dashboard (JSON)
   show <id>...   tasks in full (description, dependencies, files, notes)
   list [--status S] [--sprint S | --backlog] [--type T] [--priority P] [--label L] [--agent A] [--ready]
        [--blocked] [--in-pr] [--with-user]
@@ -275,6 +276,8 @@ def build_parser():
         cmd_status,
         "the overview: counts, what is in progress, in review or blocked, the next task, the file's size",
     )
+
+    command("summary", cmd_summary, "the project's numbers as atm serve gives them to the dashboard (JSON)")
 
     def scope_options(sub):
         sub.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")

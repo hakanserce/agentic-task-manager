@@ -22,6 +22,8 @@
     statusFilter: dashboard.filters.status,
     vocab: dashboard.vocab,
     sprints: dashboard.sprints,
+    // Next up is atm's own answer (T-321): the open project's summary, which every poll reloads with the tasks
+    nextUp: dashboard.projects.find((p) => p.id === dashboard.projectId)?.summary?.next?.[0]?.id ?? null,
   });
   const board = $derived(groupBySprint ? [] : buildBoard(dashboard.filtered, dashboard.tasks, options));
   const lanes = $derived(groupBySprint ? buildLanes(dashboard.filtered, dashboard.tasks, options) : []);

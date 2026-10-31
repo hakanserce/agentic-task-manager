@@ -143,6 +143,15 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
   the closed sprints.
 
+### Changed (T-321)
+- **The Kanban's Next up comes from atm**: the project's Kanban marks the first task of its summary's `next` in
+  `api/projects` instead of applying the loop's rule itself, so it is always the task `atm next` hands out, also
+  when the browser can't see why another isn't (a claim, a task done or waiting in another worktree). The summary's
+  `next` now follows `atm next` exactly, tasks back from review first (`loop_order` in `claims.py`, shared by both).
+  The dashboard's `nextUp()` and `next-up-parity.test.ts` are gone; the To Do column orders ready tasks by priority,
+  then ID, for reading only. New `atm summary` prints the summary for the project it runs in; the Vite dev server
+  serves it (projects there now have their numbers too), and the e2e fixture with `withAtmSummary()`.
+
 ### Removed
 - **Phases leave atm-cli** (T-320, SR-8.3): `atm phases` (and `phases name`/`unname`), `--phase` on `next`, `list`,
   `archive`, `add` and `edit`, the phase column of `atm list` (now ID, status, priority, labels, name), the

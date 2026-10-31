@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BACKLOG } from '../../src/lib/filters';
-import { buildBoard, buildLanes, nextUp, readiness } from '../../src/lib/kanban';
+import { buildBoard, buildLanes, readiness } from '../../src/lib/kanban';
 import { sprintModel } from '../../src/lib/sprints';
 import type { Task, TasksFile } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
@@ -40,31 +40,28 @@ describe('readiness', () => {
   });
 });
 
-describe('nextUp', () => {
-  it('picks the ready todo task with the lowest ID; a phase left from before sprints does not count', () => {
-    const tasks = [
-      t('T-30', 'todo', { phase: 0 }),
-      t('T-10', 'todo', { phase: 1 }),
-      t('T-9', 'todo', { phase: 1 }),
-      t('T-1', 'todo', { phase: 0, dependencies: ['T-30'] }),
-      t('T-2', 'in_progress', { phase: 0 }),
-    ];
-    // T-1 waits on T-30; T-9 < T-10 numerically, before T-30 in an earlier phase
-    expect(nextUp(tasks)?.id).toBe('T-9');
+describe('Next up: atm says which task it is (T-321)', () => {
+  const tasks = [t('T-1', 'todo'), t('T-2', 'todo'), t('T-3', 'in_review', { review_state: 'changes_requested' })];
+  const marked = (nextUp: string | null | undefined) =>
+    buildBoard(tasks, tasks, { ...all, nextUp })
+      .flatMap((c) => c.cards)
+      .filter((c) => c.nextUp)
+      .map((c) => c.task.id);
+
+  it("marks the task the project summary's next names, whichever column it is in", () => {
+    expect(marked('T-2')).toEqual(['T-2']);
+    // A task back from review, which atm next hands out first
+    expect(marked('T-3')).toEqual(['T-3']);
   });
 
-  it('matches the standard fixture', () => {
-    // Ready todo tasks: T-006 (phase 1, deps done). T-008/T-009/T-011 wait on unfinished work.
-    expect(nextUp(standard.tasks as Task[])?.id).toBe('T-006');
-  });
-
-  it('is undefined when nothing is ready', () => {
-    expect(nextUp([t('a', 'done'), t('b', 'todo', { dependencies: ['c'] }), t('c', 'blocked')])).toBeUndefined();
+  it('marks nothing without one (nothing ready, or a summary without next)', () => {
+    expect(marked(null)).toEqual([]);
+    expect(marked(undefined)).toEqual([]);
   });
 
   it('is the rule /atm:loop-tasks uses: the skill takes its tasks from `atm next`', () => {
-    // The rule itself lives in plugin/scripts/atm.py (next_task); next-up-parity.test.ts checks that it and nextUp()
-    // pick the same task for every fixture. If this fails, the skill stopped using atm next: re-check the parity.
+    // The rule lives in atm-cli only (claims.py loop_order): atm next hands out the first task, atm serve's summary
+    // lists them as next, and the board marks that one. If this fails, the skill stopped using atm next.
     const skill = readFileSync(new URL('../../../plugin/skills/loop-tasks/SKILL.md', import.meta.url), 'utf8');
     expect(skill).toContain('`atm next --claim --json [selection] [--type T]`');
     expect(skill).toContain('to do, all dependencies done, not claimed');
@@ -109,17 +106,17 @@ describe('buildBoard', () => {
     );
   });
 
-  it('orders Todo ready-first, then by phase and ID', () => {
+  it('orders Todo ready-first, then by priority and ID', () => {
     const tasks = [
-      t('T-1', 'todo', { phase: 0, dependencies: ['T-9'] }),
-      t('T-3', 'todo', { phase: 1 }),
-      t('T-2', 'todo', { phase: 1 }),
+      t('T-1', 'todo', { dependencies: ['T-9'] }),
+      t('T-3', 'todo'),
+      t('T-2', 'todo'),
+      t('T-4', 'todo', { priority: 'P0' }),
       t('T-9', 'in_progress'),
     ];
     const todo = buildBoard(tasks, tasks, all)[0];
-    expect(ids(todo.cards)).toEqual(['T-2', 'T-3', 'T-1']);
-    expect(todo.cards.map((c) => c.readiness?.ready)).toEqual([true, true, false]);
-    expect(todo.cards.map((c) => c.nextUp)).toEqual([true, false, false]);
+    expect(ids(todo.cards)).toEqual(['T-4', 'T-2', 'T-3', 'T-1']);
+    expect(todo.cards.map((c) => c.readiness?.ready)).toEqual([true, true, true, false]);
   });
 
   it('orders In Progress by start and Done by completion, newest first, with fallbacks', () => {
@@ -135,14 +132,9 @@ describe('buildBoard', () => {
     expect(ids(board.find((c) => c.id === 'done')!.cards)).toEqual(['d', 'c', 'e']);
   });
 
-  it('judges readiness and next-up against all tasks, not just the visible ones', () => {
-    const allTasks = [
-      t('T-1', 'todo', { phase: 0 }),
-      t('T-2', 'todo', { phase: 1, dependencies: ['T-3'] }),
-      t('T-3', 'done'),
-    ];
-    const visible = allTasks.filter((x) => x.phase === 1);
-    const todo = buildBoard(visible, allTasks, all)[0];
+  it('judges readiness against all tasks, not just the visible ones', () => {
+    const allTasks = [t('T-1', 'todo'), t('T-2', 'todo', { dependencies: ['T-3'] }), t('T-3', 'done')];
+    const todo = buildBoard([allTasks[1]], allTasks, { ...all, nextUp: 'T-1' })[0];
     expect(todo.cards[0].readiness).toEqual({ ready: true });
     // T-1 (hidden by the filter) is still the loop's next pick
     expect(todo.cards[0].nextUp).toBe(false);
@@ -182,13 +174,12 @@ describe('a custom vocabulary', () => {
     expect(buildBoard(tasks, tasks, { ...options, showSkipped: true }).map((c) => c.id)).toContain('dropped');
   });
 
-  it('judges readiness and next-up by kind: done-kind meets a dependency, review-kind does not', () => {
+  it('judges readiness by kind: done-kind meets a dependency, review-kind does not', () => {
     const backlog = buildBoard(tasks, tasks, options)[0];
-    expect(backlog.cards.map((c) => [c.task.id, c.readiness, c.nextUp])).toEqual([
-      ['T-2', { ready: true }, true],
-      ['T-3', { ready: false, waitingOn: ['T-4'] }, false],
+    expect(backlog.cards.map((c) => [c.task.id, c.readiness])).toEqual([
+      ['T-2', { ready: true }],
+      ['T-3', { ready: false, waitingOn: ['T-4'] }],
     ]);
-    expect(nextUp(tasks, vocab)?.id).toBe('T-2');
   });
 
   it('counts done-kind tasks as done in lanes', () => {

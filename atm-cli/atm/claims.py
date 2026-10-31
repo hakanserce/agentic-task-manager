@@ -344,17 +344,14 @@ def offered_to(data, task, agent):
     return now() >= reviewed + timedelta(minutes=lease_minutes(data))
 
 
-def next_task(data, store, task_type=None, sel=None, agent=None, with_user=False):
-    """The loop's rule (same as the dashboard's "Next up"): todo (or back from review), every dependency done, not
-    claimed and not completed in another worktree, in the selection (the default one when `sel` is None); in its
-    order, then the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty
-    result: the selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
-    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
+def loop_order(data, store, sel, agent=None, with_user=False):
+    """Every task the loop could take now, in the order it takes them: `atm next` hands out the first, and atm serve's
+    summary lists them as `next`, which the dashboard's Next up shows (T-321), so the two can't disagree. Returns
+    (ready, selected, candidates, together, scope, problem); `problem` says why the selection itself is refused."""
     vocab = vocabulary(data)
-    sel = sel or Selection(task_type=task_type)
     selected, rank, scope, problem = select(data, sel)
     if problem:
-        return None, problem
+        return [], selected, [], [], scope, problem
     # Tasks back from review come first (SR-3.9): the agent that worked on them gets them back for a lease length
     rework = [
         t
@@ -371,6 +368,19 @@ def next_task(data, store, task_type=None, sel=None, agent=None, with_user=False
         candidates = [t for t in candidates if t.get("with") != "user"]
     in_order = rank or (lambda t: 0)
     ready = ready_in_order(data, store, candidates, lambda t: (t.get("id") not in first, in_order(t)))
+    return ready, selected, candidates, together, scope, None
+
+
+def next_task(data, store, task_type=None, sel=None, agent=None, with_user=False):
+    """The loop's rule (same as the dashboard's "Next up"): todo (or back from review), every dependency done, not
+    claimed and not completed in another worktree, in the selection (the default one when `sel` is None); in its
+    order, then the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty
+    result: the selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
+    vocab = vocabulary(data)
+    sel = sel or Selection(task_type=task_type)
+    ready, selected, candidates, together, scope, problem = loop_order(data, store, sel, agent, with_user)
+    if problem:
+        return None, problem
     if ready:
         return ready[0], None
     if together and not with_user and not candidates:
@@ -392,9 +402,9 @@ def next_task(data, store, task_type=None, sel=None, agent=None, with_user=False
                 f", {kinds.count('skipped')} skipped" if kinds.count("skipped") else ""
             )
         return None, "nothing left to do"
-    claimed = [t["id"] for t in candidates if t.get("id") in claims]
-    done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
-    waiting_elsewhere = [t["id"] for t in candidates if t.get("id") in waiting]
+    claimed = [t["id"] for t in candidates if t.get("id") in store["claims"]]
+    done_elsewhere = [t["id"] for t in candidates if t.get("id") in store["completed"]]
+    waiting_elsewhere = [t["id"] for t in candidates if t.get("id") in store["waiting"]]
     reason = f"{len(candidates)} todo task(s) waiting on dependencies"
     if claimed:
         reason += f" or claimed by other agents ({', '.join(claimed)})"

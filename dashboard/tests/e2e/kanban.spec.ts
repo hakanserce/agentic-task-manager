@@ -13,7 +13,8 @@ async function openKanban(
   tasksServer: Parameters<typeof openDashboard>[1],
   data: Parameters<typeof openDashboard>[2],
 ) {
-  await openDashboard(page, tasksServer, data);
+  // Next up is atm's answer, from the project's summary in api/projects (T-321)
+  await openDashboard(page, tasksServer.withAtmSummary(), data);
   await page.locator('#tab-kanban').click();
   await expect(page.locator('#kanban')).toBeVisible();
 }
@@ -108,6 +109,13 @@ test.describe('Kanban board', () => {
     await page.locator('#reload-btn').click();
     await expect(card(page, 'T-029')).toHaveClass(/next-up/);
     await expect(page.locator('.kanban-card.next-up')).toHaveCount(1);
+  });
+
+  test('no Next up without one from atm (a summary without next)', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'kanban');
+    await page.locator('#tab-kanban').click();
+    await expect(card(page, 'T-028')).toBeVisible();
+    await expect(page.locator('.kanban-card.next-up')).toHaveCount(0);
   });
 
   test("a project's own statuses make the columns, by kind", async ({ page, tasksServer }) => {

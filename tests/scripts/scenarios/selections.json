@@ -1,0 +1,349 @@
+[
+  {
+    "name": "next: in a project with sprints, the active sprint's tasks, even before a more urgent backlog task",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "priority": "P0" },
+            { "id": "T-2", "status": "todo", "sprint": "B", "priority": "P0" },
+            { "id": "T-3", "status": "todo", "sprint": "A", "priority": "P3" }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--json"],
+    "expect": {
+      "json": {
+        "task": { "id": "T-3", "status": "todo", "sprint": "A", "priority": "P3" },
+        "claim": null,
+        "reason": null
+      }
+    }
+  },
+  {
+    "name": "next: sprints but none active selects nothing, and says how to go on",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A" }] },
+          "tasks": [{ "id": "T-1", "status": "todo", "sprint": "A" }]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": {
+      "exit": 3,
+      "stdout": "No task available: no active sprint: plan one with /atm:plan-sprint, or run with --all.\n"
+    }
+  },
+  {
+    "name": "next --sprint: that sprint's tasks",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "sprint": "A" },
+            { "id": "T-2", "status": "todo", "sprint": "B" }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--sprint", "b", "--json"],
+    "expect": { "json": { "task": { "id": "T-2", "status": "todo", "sprint": "B" }, "claim": null, "reason": null } }
+  },
+  {
+    "name": "next --sprint of a closed sprint is refused",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "sprints": [{ "id": "Old", "state": "closed" }] }, "tasks": [] }
+      }
+    },
+    "args": ["next", "--sprint", "Old"],
+    "expect": { "exit": 2, "stderrIncludes": ["the sprint 'Old' is closed"] }
+  },
+  {
+    "name": "next --tasks: those tasks, in the order given",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "todo", "priority": "P0" },
+            { "id": "T-2", "status": "todo" },
+            { "id": "T-3", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--tasks", "T-3,T-1", "--json"],
+    "expect": { "json": { "task": { "id": "T-3", "status": "todo" }, "claim": null, "reason": null } }
+  },
+  {
+    "name": "next --tasks with a task that doesn't exist is refused",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["next", "--tasks", "T-1,T-9"],
+    "expect": { "exit": 2, "stderrIncludes": ["--tasks: no task T-9"] }
+  },
+  {
+    "name": "next --all: the active sprint, then the planned ones in order, then the backlog",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }, { "id": "C" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "priority": "P0" },
+            { "id": "T-2", "status": "todo", "sprint": "C", "priority": "P0" },
+            { "id": "T-3", "status": "todo", "sprint": "B" },
+            { "id": "T-4", "status": "done", "sprint": "A" }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--all", "--json"],
+    "expect": { "json": { "task": { "id": "T-3", "status": "todo", "sprint": "B" }, "claim": null, "reason": null } }
+  },
+  {
+    "name": "next --backlog: the tasks with no sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "sprint": "A" },
+            { "id": "T-2", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--backlog", "--json"],
+    "expect": { "json": { "task": { "id": "T-2", "status": "todo" }, "claim": null, "reason": null } }
+  },
+  {
+    "name": "next: a finished sprint says so, with what got done",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "done", "sprint": "A" },
+            { "id": "T-2", "status": "done", "sprint": "A" },
+            { "id": "T-3", "status": "skipped", "sprint": "A" },
+            { "id": "T-4", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 3, "stdout": "No task available: the sprint “A” is finished: 2 done, 1 skipped.\n" }
+  },
+  {
+    "name": "next: the rest of the sprint is waiting, and on what",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "done", "sprint": "A" },
+            { "id": "T-2", "status": "in_review", "sprint": "A" },
+            { "id": "T-3", "status": "blocked", "sprint": "A" }
+          ]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": {
+      "exit": 3,
+      "stdout": "No task available: nothing ready in the sprint “A”: the rest is waiting (1 in review, 1 blocked).\n"
+    }
+  },
+  {
+    "name": "next: an empty sprint says so",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["next"],
+    "expect": { "exit": 3, "stdout": "No task available: the sprint “A” has no tasks.\n" }
+  },
+  {
+    "name": "list --sprint, --backlog and --release (a task's own release, or its sprint's)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active", "release": "1.0" }, { "id": "B" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "phase": 1, "name": "In A", "sprint": "A" },
+            { "id": "T-2", "status": "todo", "phase": 1, "name": "In B, for 1.0", "sprint": "B", "release": "1.0" },
+            { "id": "T-3", "status": "todo", "phase": 1, "name": "Backlog" }
+          ]
+        }
+      }
+    },
+    "args": ["list", "--release", "1.0"],
+    "expect": { "stdout": "T-1  todo  1   P2  In A\nT-2  todo  1   P2  In B, for 1.0\n" }
+  },
+  {
+    "name": "list --backlog",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "phase": 1, "name": "In A", "sprint": "A" },
+            { "id": "T-3", "status": "todo", "phase": 1, "name": "Backlog" }
+          ]
+        }
+      }
+    },
+    "args": ["list", "--backlog"],
+    "expect": { "stdout": "T-3  todo  1   P2  Backlog\n" }
+  },
+  {
+    "name": "list --sprint of a sprint that doesn't exist is refused",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["list", "--sprint", "Nope"],
+    "expect": { "exit": 2, "stderrIncludes": ["no sprint 'Nope'"] }
+  },
+  {
+    "name": "status shows the active sprint first: progress, due, release, goal",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [{ "id": "A", "state": "active", "due": "2026-06-01", "release": "1.0", "goal": "Ship it" }]
+          },
+          "tasks": [
+            { "id": "T-1", "status": "done", "sprint": "A" },
+            { "id": "T-2", "status": "todo", "sprint": "A" },
+            { "id": "T-3", "status": "skipped", "sprint": "A" }
+          ]
+        }
+      }
+    },
+    "args": ["status"],
+    "expect": {
+      "stdoutIncludes": ["sprint: A (active): 1 of 2 done · due 2026-06-01 · release 1.0\n  goal: Ship it\n"]
+    }
+  },
+  {
+    "name": "status without an active sprint says to plan one",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "sprints": [{ "id": "A" }] }, "tasks": [] }
+      }
+    },
+    "args": ["status"],
+    "expect": { "stdoutIncludes": ["sprint: none active (plan one with /atm:plan-sprint)\n"] }
+  },
+  {
+    "name": "add sets release, components, review and related",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "todo" }] } }
+    },
+    "args": [
+      "add",
+      "--name",
+      "a",
+      "--phase",
+      "1",
+      "--type",
+      "feature",
+      "--release",
+      "1.0",
+      "--component",
+      "cli",
+      "--review",
+      "batch",
+      "--related",
+      "T-001",
+      "--json"
+    ],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": [
+        {
+          "id": "T-002",
+          "name": "a",
+          "phase": 1,
+          "type": "feature",
+          "description": "",
+          "requirements": [],
+          "use_cases": [],
+          "status": "todo",
+          "dependencies": [],
+          "files": [],
+          "created_at": "2026-05-02T10:00:00Z",
+          "updated_at": "2026-05-02T10:00:00Z",
+          "created_by": "alice",
+          "updated_by": "alice",
+          "release": "1.0",
+          "components": ["cli"],
+          "review": "batch",
+          "related": ["T-001"]
+        }
+      ]
+    }
+  },
+  {
+    "name": "edit removes a release and a review with an empty value, and a component and a related task",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "todo" },
+            {
+              "id": "T-2",
+              "status": "todo",
+              "release": "1.0",
+              "review": "batch",
+              "components": ["cli"],
+              "related": ["T-1"]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["edit", "T-2", "--release", "", "--review", "", "--remove-component", "cli", "--remove-related", "T-1"],
+    "expect": { "stdout": "T-2: changed release, review, components, related\n" }
+  },
+  {
+    "name": "a related task must exist, and isn't the task itself",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["edit", "T-1", "--add-related", "T-1"],
+    "expect": { "exit": 2, "stderrIncludes": ["T-1 can't be related to itself"] }
+  },
+  {
+    "name": "a release ID is letters, digits, dots, dashes and underscores",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "args": ["edit", "T-1", "--release", "1.0; rm -rf /"],
+    "expect": { "exit": 2, "stderrIncludes": ["release '1.0; rm -rf /': use letters, digits"] }
+  },
+  {
+    "name": "archive --sprint: only that sprint's finished tasks",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "A", "state": "closed" },
+              { "id": "B", "state": "active" }
+            ]
+          },
+          "tasks": [
+            { "id": "T-1", "status": "done", "sprint": "A", "completed_at": "2026-01-01T00:00:00Z" },
+            { "id": "T-2", "status": "done", "sprint": "B", "completed_at": "2026-01-01T00:00:00Z" }
+          ]
+        }
+      }
+    },
+    "args": ["archive", "--sprint", "A", "--dry-run", "--json"],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z" },
+    "expect": { "stdoutIncludes": ["\"T-1\""] }
+  }
+]

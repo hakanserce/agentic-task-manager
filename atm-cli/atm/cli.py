@@ -9,6 +9,7 @@ import sys
 
 from .claims import cmd_claims, cmd_heartbeat, cmd_next, cmd_run
 from .core import AtmError, AtmExit, out, plugin_version, to_json
+from .model import REVIEW_MODES
 from .lock import cmd_lock_test
 from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
@@ -228,6 +229,13 @@ def build_parser():
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--phase", type=float, help="only this phase")
     next_.add_argument("--type", help="only this task type")
+    pick = next_.add_mutually_exclusive_group()
+    pick.add_argument(
+        "--sprint", action="append", metavar="NAME", help="this sprint's tasks (repeatable; default: the active one)"
+    )
+    pick.add_argument("--tasks", metavar="ID,ID", help="these tasks, in this order")
+    pick.add_argument("--all", action="store_true", help="every task: the active sprint, the planned ones, the backlog")
+    pick.add_argument("--backlog", action="store_true", help="the tasks with no sprint")
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
     status_option(next_)
@@ -245,11 +253,20 @@ def build_parser():
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
     list_.add_argument("--in-pr", action="store_true", help="only tasks in a PR that isn't recorded as merged")
     list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
-    command(
+    status = command(
         "status",
         cmd_status,
         "the overview: counts, what is in progress, in review or blocked, the next task, the file's size",
     )
+
+    def scope_options(sub):
+        sub.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")
+        sub.add_argument("--backlog", action="store_true", help="only the tasks with no sprint")
+        sub.add_argument("--release", metavar="R", help="only the tasks in this release (their own, or their sprint's)")
+        sub.add_argument("--component", metavar="C", help="only the tasks in this component")
+
+    scope_options(list_)
+    scope_options(status)
     deps = command("deps", cmd_deps, "what a task waits for, and what waits for it")
     deps.add_argument("id", help="the task ID")
 
@@ -266,6 +283,12 @@ def build_parser():
     add.add_argument("--file", action="append", default=[], help="a file it will create or change (repeatable)")
     add.add_argument("--requirement", action="append", default=[], help="a requirement ID (repeatable)")
     add.add_argument("--sprint", metavar="NAME", help="the sprint it goes into (default: none, the backlog)")
+    add.add_argument("--release", metavar="R", help="the release it ships in (default: its sprint's)")
+    add.add_argument("--component", action="append", default=[], metavar="C", help="a component (repeatable)")
+    add.add_argument(
+        "--review", choices=list(REVIEW_MODES), help="how it is reviewed (default: its component's, else the project's)"
+    )
+    add.add_argument("--related", action="append", default=[], metavar="ID", help="a related task (repeatable)")
     add.add_argument(
         "--json-file",
         metavar="FILE",
@@ -286,10 +309,16 @@ def build_parser():
     edit_sprint.add_argument("--backlog", action="store_true", help="take it out of its sprint, into the backlog")
     edit.add_argument("--type")
     edit.add_argument("--priority")
+    edit.add_argument("--release", metavar="R", help="the release it ships in (empty: its sprint's)")
+    edit.add_argument(
+        "--review", choices=list(REVIEW_MODES) + [""], help="how it is reviewed (empty: its component's, else the project's)"
+    )
     for option, help_text in (
         ("file", "a file it creates or changes"),
         ("dep", "a task it depends on"),
         ("label", "a label"),
+        ("component", "a component"),
+        ("related", "a related task"),
     ):
         edit.add_argument(f"--add-{option}", action="append", default=[], metavar="VALUE", help=f"add {help_text}")
         edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
@@ -300,6 +329,7 @@ def build_parser():
 
     archive = command("archive", cmd_archive, "move finished tasks to tasks-archive.json, to keep tasks.json small")
     archive.add_argument("--phase", action="append", type=float, help="only this phase (repeatable)")
+    archive.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")
     archive.add_argument("--before", metavar="DATE", help="only tasks finished before this date (2026-05-01)")
     archive.add_argument(
         "--keep-days", type=float, help="keep tasks finished in the last N days (default: meta.archive.keep_days, 14)"

@@ -30,6 +30,7 @@ from .model import (
     add_note,
     back_to_todo,
     change_status,
+    find_sprint,
     kind_of,
     load_tasks,
     natural_key,
@@ -258,35 +259,110 @@ def report_expired(expired):
         sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
 
 
-def ready_in_order(data, store, candidates=None):
+def ready_in_order(data, store, candidates=None, rank=None):
     """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
-    completed or waiting in another worktree; lowest phase first, then the most urgent priority, then lowest ID."""
+    completed or waiting in another worktree; by `rank` (the selection's own order, SR-3.2), then lowest phase (in
+    files not yet migrated to sprints), then the most urgent priority, then lowest ID."""
     vocab = vocabulary(data)
     if candidates is None:
         candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
     taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
-    order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    rank = rank or (lambda t: 0)
+    order = lambda t: (rank(t), phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
     return sorted(ready, key=order)
 
 
-def next_task(data, store, phase=None, task_type=None):
-    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
-    in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
-    Returns (task, reason) where reason explains an empty result."""
-    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
+class Selection:
+    """What the loop works on (docs/sprints-and-releases-design.md §3.2): the active sprint (the default in a project
+    with sprints), named sprints, a list of tasks, all tasks, or the backlog; `phase` and `task_type` narrow it."""
+
+    def __init__(self, sprints=(), tasks=(), all_tasks=False, backlog=False, phase=None, task_type=None):
+        self.sprints, self.tasks, self.all, self.backlog = list(sprints or []), list(tasks or []), all_tasks, backlog
+        self.phase, self.task_type = phase, task_type
+
+
+def select(data, sel):
+    """The tasks `sel` covers, in any status, with how to rank them and a word for them. Returns (tasks, rank, scope,
+    reason): reason is set when the selection can't be made (no active sprint, a closed sprint)."""
     vocab = vocabulary(data)
-    candidates = [
+    sprints = vocab["sprints"]
+    in_sprint = lambda names: (lambda t: (find_sprint(vocab, t.get("sprint")) or {}).get("id") in names)
+    rank, scope, reason = None, "the tasks", None
+    if sel.tasks:
+        order = {task_id: i for i, task_id in enumerate(sel.tasks)}
+        missing = [i for i in sel.tasks if i not in {t.get("id") for t in data["tasks"]}]
+        if missing:
+            raise AtmError(f"--tasks: no task {', '.join(missing)}", 2)
+        keep, rank, scope = (lambda t: t.get("id") in order), (lambda t: order[t.get("id")]), "the listed tasks"
+    elif sel.all:
+        # The active sprint, then the planned ones in order, then the backlog (closed sprints' leftovers before it)
+        place = {
+            s["id"]: 0 if s["state"] == "active" else 1 + i if s["state"] == "planned" else len(sprints) + 1
+            for i, s in enumerate(sprints)
+        }
+        keep = lambda t: True
+        rank = lambda t: place.get((find_sprint(vocab, t.get("sprint")) or {}).get("id"), len(sprints) + 2)
+        scope = "all tasks"
+    elif sel.backlog:
+        keep, scope = (lambda t: not find_sprint(vocab, t.get("sprint"))), "the backlog"
+    elif sel.sprints:
+        named = []
+        for name in sel.sprints:
+            sprint = find_sprint(vocab, name)
+            if sprint is None:
+                raise AtmError(f"no sprint {name!r}; the sprints: {', '.join(s['id'] for s in sprints) or 'none'}", 2)
+            if sprint["state"] == "closed":
+                raise AtmError(f"the sprint {sprint['id']!r} is closed", 2)
+            named.append(sprint["id"])
+        keep, scope = in_sprint(named), "the sprint " + " and ".join(f"“{n}”" for n in named)
+    elif sprints:
+        active = [s["id"] for s in sprints if s["state"] == "active"]
+        if not active:
+            return [], None, "the active sprint", "no active sprint: plan one with /atm:plan-sprint, or run with --all"
+        keep, scope = in_sprint(active), f"the sprint “{active[0]}”"
+    else:
+        keep = lambda t: True  # a project without sprints: every task, as before sprints
+    tasks = [
         t
         for t in data["tasks"]
-        if kind_of(vocab, t.get("status")) == "todo"
-        and (phase is None or phase_of(t) == phase)
-        and (task_type is None or t.get("type") == task_type)
+        if keep(t)
+        and (sel.phase is None or phase_of(t) == sel.phase)
+        and (sel.task_type is None or t.get("type") == sel.task_type)
     ]
-    ready = ready_in_order(data, store, candidates)
+    return tasks, rank, scope, reason
+
+
+def next_task(data, store, phase=None, task_type=None, sel=None):
+    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
+    in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
+    the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
+    selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
+    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
+    vocab = vocabulary(data)
+    sel = sel or Selection(phase=phase, task_type=task_type)
+    selected, rank, scope, problem = select(data, sel)
+    if problem:
+        return None, problem
+    candidates = [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
+    ready = ready_in_order(data, store, candidates, rank)
     if ready:
         return ready[0], None
     if not candidates:
+        if not selected:
+            if not vocab["sprints"]:
+                return None, "nothing left to do"
+            return None, f"{scope} {'has' if scope.startswith('the sprint') else 'have'} no tasks"
+        kinds = [kind_of(vocab, t.get("status")) for t in selected]
+        open_kinds = {k: kinds.count(k) for k in ("active", "review", "blocked") if k in kinds}
+        if open_kinds:
+            words = {"active": "in progress", "review": "in review", "blocked": "blocked"}
+            what = ", ".join(f"{n} {words[k]}" for k, n in open_kinds.items())
+            return None, f"nothing ready in {scope}: the rest is waiting ({what})"
+        if vocab["sprints"]:
+            return None, f"{scope} is finished: {kinds.count('done')} done" + (
+                f", {kinds.count('skipped')} skipped" if kinds.count("skipped") else ""
+            )
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
     done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
@@ -310,7 +386,15 @@ def cmd_next(args):
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
         applied = apply_resolutions(paths, data, store)
-        task, reason = next_task(data, store, args.phase, args.type)
+        sel = Selection(
+            sprints=args.sprint,
+            tasks=[i.strip() for i in (args.tasks or "").split(",") if i.strip()],
+            all_tasks=args.all,
+            backlog=args.backlog,
+            phase=args.phase,
+            task_type=args.type,
+        )
+        task, reason = next_task(data, store, sel=sel)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)

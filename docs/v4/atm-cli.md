@@ -88,6 +88,7 @@ Existing commands are marked *(exists)*.
 | `atm deps <id>` | what the task waits for (with each one's status) and what waits for it |
 | `atm vocab` | the effective vocabularies (P2) |
 | `atm next [--claim]` *(exists)* | ordered by phase, then priority rank, then ID (natural sort) |
+| `atm next [--sprint S]... \| --tasks ID,ID \| --all \| --backlog` | a **selection** ([sprints design](../sprints-and-releases-design.md) §3.2): by default the active sprint in a project with sprints (none active: nothing, and a reason that says to plan one or use `--all`), every task in a project without; `--tasks` in the order given, `--all` the active sprint, then planned ones in order, then the backlog. The reason for nothing ready says whether the selection is finished, waiting (and on what) or empty (SR-3.4, SR-3.6) |
 
 ### 4.2 Status changes
 
@@ -124,6 +125,8 @@ usual refusal.
 | `atm sprints [--all]`, `atm sprints add ["<name>"] [--goal T] [--release R] [--due DATE] [--after S]`, `atm sprints edit <S> [--goal] [--release] [--due]`, `atm sprints start <S>` | the sprints in order with their task counts by kind and the backlog's size (closed ones with `--all`); add a planned sprint (named by `meta.sprint_names` when no name is given: a historical person, or the creation time), change one (an empty value removes a field), or make one active, one at a time ([sprints design](../sprints-and-releases-design.md) §3.1, SR-2.9) |
 | `atm move <id>... --to <S>\|next\|active\|backlog` | moves to-do, blocked and in-review tasks into a sprint, the next planned one after theirs, the active one, or the backlog, keeping their `sprint_history`; claimed and finished tasks are refused, and then nothing moves (SR-3.1) |
 | `atm backlog [--all]` | the unfinished tasks with no sprint, as `atm list` prints them (finished ones too with `--all`) |
+| `atm list`, `atm status`: `--sprint S`... `--backlog` `--release R` `--component C`; `atm archive --sprint S`... | only those tasks (a task's release is its own, else its sprint's); `atm status` starts with the active sprint: progress, due, release, goal (SR-3.2) |
+| `atm add`: `--sprint S --release R --component C... --review MODE --related ID...`; `atm edit`: `--sprint S \| --backlog`, `--release R`, `--review MODE`, `--add-/--remove-component`, `--add-/--remove-related` | the sprint fields; an empty `--release` or `--review` removes it (SR-3.3) |
 | `atm phases [--archived]` | every phase with tasks or a name, in order: its number, name and task counts by status kind (`--archived` counts the archive too) (T-180) |
 | `atm phases name <n> "<name>"`, `atm phases unname <n>` | sets, renames or removes one phase's name in `meta.phases` under the lock, leaving the others as they are, so naming a phase never means rewriting the whole list (which `init --meta-file` does) |
 

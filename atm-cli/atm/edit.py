@@ -9,6 +9,8 @@ from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
 from .model import (
+    REVIEW_MODES,
+    archived_task,
     find_sprint,
     find_task,
     set_sprint,
@@ -81,6 +83,31 @@ def open_sprint(vocab, name):
     return sprint["id"]
 
 
+TERM_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def check_term(value, what):
+    """A release or component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
+    if not isinstance(value, str) or not TERM_ID.fullmatch(value):
+        raise AtmError(f"{what} {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
+    return value
+
+
+def check_review(value):
+    if value not in REVIEW_MODES:
+        raise AtmError(f"review {value!r}: use one of {', '.join(REVIEW_MODES)}", 2)
+    return value
+
+
+def check_related(task_id, related, known):
+    for other in related:
+        if other == task_id:
+            raise AtmError(f"{task_id} can't be related to itself", 2)
+        if other not in known and not archived_task(other):
+            raise AtmError(f"{task_id} can't be related to {other}, which doesn't exist", 2)
+    return related
+
+
 def number(value, what):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise AtmError(f"{what} must be a number", 2)
@@ -126,6 +153,15 @@ def new_task(vocab, fields, actor, stamp):
         task["updated_by"] = actor
     if fields.get("sprint"):
         set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
+    if fields.get("release"):
+        task["release"] = check_term(fields["release"], "release")
+    components = [check_term(c, "component") for c in fields.get("components") or []]
+    if components:
+        task["components"] = components
+    if fields.get("review"):
+        task["review"] = check_review(fields["review"])
+    if fields.get("related"):
+        task["related"] = list(fields["related"])  # checked once the new IDs are known (add_tasks)
     return task
 
 
@@ -174,6 +210,8 @@ def add_tasks(data, entries, actor):
         missing = [d for d in task["dependencies"] if d not in existing and d not in ids]
         if missing:
             raise AtmError(f"{real} ({task['name']}) depends on {', '.join(missing)}, which doesn't exist", 2)
+        if task.get("related"):
+            task["related"] = check_related(real, [rename.get(r, r) for r in task["related"]], existing | set(ids))
     cycle = find_cycle(data["tasks"] + tasks)
     if cycle:
         raise AtmError("these dependencies would make a cycle: " + " -> ".join(cycle), 2)
@@ -212,6 +250,10 @@ def cmd_add(args):
                 "files": args.file,
                 "requirements": args.requirement,
                 "sprint": args.sprint,
+                "release": args.release,
+                "components": args.component,
+                "review": args.review,
+                "related": args.related,
             }
         ]
     paths = find_paths(os.getcwd())
@@ -269,6 +311,22 @@ def edit_task(data, task, args):
         set_field("priority", args.priority)
     edit_list("files", args.add_file, args.remove_file)
     edit_list("labels", check_labels(args.add_label), args.remove_label)
+    for key, value, check in (
+        ("release", args.release, lambda v: check_term(v, "release")),
+        ("review", args.review, check_review),
+    ):
+        if value == "":
+            if key in task:
+                del task[key]
+                changed.append(key)
+        elif value is not None:
+            set_field(key, check(value))
+    edit_list("components", [check_term(c, "component") for c in args.add_component], args.remove_component)
+    known = {t.get("id") for t in data["tasks"]}
+    edit_list("related", check_related(task["id"], args.add_related, known), args.remove_related)
+    for key in ("components", "related"):
+        if key in task and not task[key]:
+            del task[key]
     ids = {t.get("id") for t in data["tasks"]}
     missing = [d for d in args.add_dep if d not in ids]
     if missing:

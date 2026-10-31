@@ -14,6 +14,8 @@ from .model import (
     archive_hint,
     archive_path,
     archived_task,
+    effective_release,
+    find_sprint,
     find_task,
     kind_of,
     load_archive,
@@ -54,6 +56,29 @@ def summary(vocab, task):
         fields["pr"] = task["pr"]
         fields["merged_at"] = task.get("merged_at")
     return fields
+
+
+def scope_filter(vocab, args):
+    """A test for the tasks `--sprint` (repeatable), `--backlog`, `--release` and `--component` keep (SR-3.2); a
+    task's release is its effective one (its own, else its sprint's)."""
+    names = []
+    for name in getattr(args, "sprint", None) or []:
+        sprint = find_sprint(vocab, name)
+        if sprint is None:
+            raise AtmError(f"no sprint {name!r}; the sprints: {', '.join(s['id'] for s in vocab['sprints']) or 'none'}", 2)
+        names.append(sprint["id"])
+
+    def keep(task):
+        sprint = (find_sprint(vocab, task.get("sprint")) or {}).get("id")
+        if names and sprint not in names:
+            return False
+        if getattr(args, "backlog", False) and sprint:
+            return False
+        if getattr(args, "release", None) and effective_release(vocab, task) != args.release:
+            return False
+        return not getattr(args, "component", None) or args.component in (task.get("components") or [])
+
+    return keep
 
 
 def in_open_pr(task):
@@ -136,9 +161,12 @@ def cmd_list(args):
     data = load_tasks(paths)
     vocab = vocabulary(data)
     ready = {t.get("id") for t in ready_tasks(data)}
+    in_scope = scope_filter(vocab, args)
     tasks = []
     for t in load_archive(paths)["tasks"] if args.archived else data["tasks"]:
         kind = kind_of(vocab, t.get("status"))
+        if not in_scope(t):
+            continue
         if args.status and t.get("status") not in args.status:
             continue
         if args.phase is not None and phase_of(t) != args.phase:
@@ -534,7 +562,17 @@ def cmd_status(args):
     data = load_tasks(paths)
     vocab = vocabulary(data)
     store = read_store(paths)
-    tasks = data["tasks"]
+    in_scope = scope_filter(vocab, args)
+    tasks = [t for t in data["tasks"] if in_scope(t)]
+    active = next((s for s in vocab["sprints"] if s["state"] == "active"), None)
+    sprint = None
+    if active:
+        in_active = [t for t in data["tasks"] if (find_sprint(vocab, t.get("sprint")) or {}).get("id") == active["id"]]
+        sprint = {
+            **{k: active[k] for k in ("id", "goal", "due", "release", "start") if active.get(k)},
+            "done": sum(1 for t in in_active if kind_of(vocab, t.get("status")) == "done"),
+            "tasks": sum(1 for t in in_active if kind_of(vocab, t.get("status")) != "skipped"),
+        }
 
     def counts(key):
         result = {}
@@ -586,6 +624,7 @@ def cmd_status(args):
     nxt, reason = next_task(data, store)
     sizes = sorted(((len(json.dumps(t, ensure_ascii=False)), t.get("id")) for t in tasks), reverse=True)
     result = {
+        "sprint": sprint,
         "tasks": len(tasks),
         "by_status": by_status,
         "by_phase": counts(lambda t: [t.get("phase")]),
@@ -611,6 +650,15 @@ def cmd_status(args):
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
     elsewhere = lambda i: f" [in another worktree, {i['branch'] or 'detached'}]" if "branch" in i else ""
+    if sprint:
+        details = [f"{sprint['done']} of {sprint['tasks']} done"] + [
+            f"{k} {sprint[k]}" for k in ("due", "release") if sprint.get(k)
+        ]
+        out(f"sprint: {sprint['id']} (active): {' · '.join(details)}")
+        if sprint.get("goal"):
+            out(f"  goal: {sprint['goal']}")
+    elif vocab["sprints"]:
+        out("sprint: none active (plan one with /atm:plan-sprint)")
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
     names = result["phase_names"]
     out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))

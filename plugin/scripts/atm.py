@@ -1863,35 +1863,110 @@ def report_expired(expired):
         sys.stderr.write(f"atm: lease of {claim['task']} by {claim.get('agent')} expired; it is available again\n")
 
 
-def ready_in_order(data, store, candidates=None):
+def ready_in_order(data, store, candidates=None, rank=None):
     """The to-do tasks the loop could take, in the order it takes them: every dependency done, not claimed, not
-    completed or waiting in another worktree; lowest phase first, then the most urgent priority, then lowest ID."""
+    completed or waiting in another worktree; by `rank` (the selection's own order, SR-3.2), then lowest phase (in
+    files not yet migrated to sprints), then the most urgent priority, then lowest ID."""
     vocab = vocabulary(data)
     if candidates is None:
         candidates = [t for t in data["tasks"] if kind_of(vocab, t.get("status")) == "todo"]
     taken = set(store["claims"]) | set(store["completed"]) | set(store["waiting"])
     ready = [t for t in candidates if not unfinished_dependencies(data, t) and t.get("id") not in taken]
-    order = lambda t: (phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
+    rank = rank or (lambda t: 0)
+    order = lambda t: (rank(t), phase_of(t), priority_rank(vocab, t.get("priority")), natural_key(t.get("id")))
     return sorted(ready, key=order)
 
 
-def next_task(data, store, phase=None, task_type=None):
-    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
-    in another worktree, matching the filters; lowest phase first, then the most urgent priority, then lowest ID.
-    Returns (task, reason) where reason explains an empty result."""
-    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
+class Selection:
+    """What the loop works on (docs/sprints-and-releases-design.md §3.2): the active sprint (the default in a project
+    with sprints), named sprints, a list of tasks, all tasks, or the backlog; `phase` and `task_type` narrow it."""
+
+    def __init__(self, sprints=(), tasks=(), all_tasks=False, backlog=False, phase=None, task_type=None):
+        self.sprints, self.tasks, self.all, self.backlog = list(sprints or []), list(tasks or []), all_tasks, backlog
+        self.phase, self.task_type = phase, task_type
+
+
+def select(data, sel):
+    """The tasks `sel` covers, in any status, with how to rank them and a word for them. Returns (tasks, rank, scope,
+    reason): reason is set when the selection can't be made (no active sprint, a closed sprint)."""
     vocab = vocabulary(data)
-    candidates = [
+    sprints = vocab["sprints"]
+    in_sprint = lambda names: (lambda t: (find_sprint(vocab, t.get("sprint")) or {}).get("id") in names)
+    rank, scope, reason = None, "the tasks", None
+    if sel.tasks:
+        order = {task_id: i for i, task_id in enumerate(sel.tasks)}
+        missing = [i for i in sel.tasks if i not in {t.get("id") for t in data["tasks"]}]
+        if missing:
+            raise AtmError(f"--tasks: no task {', '.join(missing)}", 2)
+        keep, rank, scope = (lambda t: t.get("id") in order), (lambda t: order[t.get("id")]), "the listed tasks"
+    elif sel.all:
+        # The active sprint, then the planned ones in order, then the backlog (closed sprints' leftovers before it)
+        place = {
+            s["id"]: 0 if s["state"] == "active" else 1 + i if s["state"] == "planned" else len(sprints) + 1
+            for i, s in enumerate(sprints)
+        }
+        keep = lambda t: True
+        rank = lambda t: place.get((find_sprint(vocab, t.get("sprint")) or {}).get("id"), len(sprints) + 2)
+        scope = "all tasks"
+    elif sel.backlog:
+        keep, scope = (lambda t: not find_sprint(vocab, t.get("sprint"))), "the backlog"
+    elif sel.sprints:
+        named = []
+        for name in sel.sprints:
+            sprint = find_sprint(vocab, name)
+            if sprint is None:
+                raise AtmError(f"no sprint {name!r}; the sprints: {', '.join(s['id'] for s in sprints) or 'none'}", 2)
+            if sprint["state"] == "closed":
+                raise AtmError(f"the sprint {sprint['id']!r} is closed", 2)
+            named.append(sprint["id"])
+        keep, scope = in_sprint(named), "the sprint " + " and ".join(f"“{n}”" for n in named)
+    elif sprints:
+        active = [s["id"] for s in sprints if s["state"] == "active"]
+        if not active:
+            return [], None, "the active sprint", "no active sprint: plan one with /atm:plan-sprint, or run with --all"
+        keep, scope = in_sprint(active), f"the sprint “{active[0]}”"
+    else:
+        keep = lambda t: True  # a project without sprints: every task, as before sprints
+    tasks = [
         t
         for t in data["tasks"]
-        if kind_of(vocab, t.get("status")) == "todo"
-        and (phase is None or phase_of(t) == phase)
-        and (task_type is None or t.get("type") == task_type)
+        if keep(t)
+        and (sel.phase is None or phase_of(t) == sel.phase)
+        and (sel.task_type is None or t.get("type") == sel.task_type)
     ]
-    ready = ready_in_order(data, store, candidates)
+    return tasks, rank, scope, reason
+
+
+def next_task(data, store, phase=None, task_type=None, sel=None):
+    """The loop's rule (same as the dashboard's "Next up"): todo, every dependency done, not claimed and not completed
+    in another worktree, in the selection (the default one when `sel` is None); in its order, then lowest phase, then
+    the most urgent priority, then lowest ID. Returns (task, reason) where reason explains an empty result: the
+    selection is finished, the rest of it waits, or it is empty (SR-3.6)."""
+    claims, completed, waiting = store["claims"], store["completed"], store["waiting"]
+    vocab = vocabulary(data)
+    sel = sel or Selection(phase=phase, task_type=task_type)
+    selected, rank, scope, problem = select(data, sel)
+    if problem:
+        return None, problem
+    candidates = [t for t in selected if kind_of(vocab, t.get("status")) == "todo"]
+    ready = ready_in_order(data, store, candidates, rank)
     if ready:
         return ready[0], None
     if not candidates:
+        if not selected:
+            if not vocab["sprints"]:
+                return None, "nothing left to do"
+            return None, f"{scope} {'has' if scope.startswith('the sprint') else 'have'} no tasks"
+        kinds = [kind_of(vocab, t.get("status")) for t in selected]
+        open_kinds = {k: kinds.count(k) for k in ("active", "review", "blocked") if k in kinds}
+        if open_kinds:
+            words = {"active": "in progress", "review": "in review", "blocked": "blocked"}
+            what = ", ".join(f"{n} {words[k]}" for k, n in open_kinds.items())
+            return None, f"nothing ready in {scope}: the rest is waiting ({what})"
+        if vocab["sprints"]:
+            return None, f"{scope} is finished: {kinds.count('done')} done" + (
+                f", {kinds.count('skipped')} skipped" if kinds.count("skipped") else ""
+            )
         return None, "nothing left to do"
     claimed = [t["id"] for t in candidates if t.get("id") in claims]
     done_elsewhere = [t["id"] for t in candidates if t.get("id") in completed]
@@ -1915,7 +1990,15 @@ def cmd_next(args):
         claims = store["claims"]
         expired = expire_claims(paths, data, claims)
         applied = apply_resolutions(paths, data, store)
-        task, reason = next_task(data, store, args.phase, args.type)
+        sel = Selection(
+            sprints=args.sprint,
+            tasks=[i.strip() for i in (args.tasks or "").split(",") if i.strip()],
+            all_tasks=args.all,
+            backlog=args.backlog,
+            phase=args.phase,
+            task_type=args.type,
+        )
+        task, reason = next_task(data, store, sel=sel)
         if task and args.claim:
             change_status(task, data, "start", agent=agent, status=args.status)
             claims[task["id"]] = new_claim(paths, data, task["id"], agent)
@@ -2147,6 +2230,29 @@ def summary(vocab, task):
     return fields
 
 
+def scope_filter(vocab, args):
+    """A test for the tasks `--sprint` (repeatable), `--backlog`, `--release` and `--component` keep (SR-3.2); a
+    task's release is its effective one (its own, else its sprint's)."""
+    names = []
+    for name in getattr(args, "sprint", None) or []:
+        sprint = find_sprint(vocab, name)
+        if sprint is None:
+            raise AtmError(f"no sprint {name!r}; the sprints: {', '.join(s['id'] for s in vocab['sprints']) or 'none'}", 2)
+        names.append(sprint["id"])
+
+    def keep(task):
+        sprint = (find_sprint(vocab, task.get("sprint")) or {}).get("id")
+        if names and sprint not in names:
+            return False
+        if getattr(args, "backlog", False) and sprint:
+            return False
+        if getattr(args, "release", None) and effective_release(vocab, task) != args.release:
+            return False
+        return not getattr(args, "component", None) or args.component in (task.get("components") or [])
+
+    return keep
+
+
 def in_open_pr(task):
     """In PR: a recorded PR, not merged yet (DM-4.3)."""
     return isinstance(task.get("pr"), dict) and not task.get("merged_at")
@@ -2227,9 +2333,12 @@ def cmd_list(args):
     data = load_tasks(paths)
     vocab = vocabulary(data)
     ready = {t.get("id") for t in ready_tasks(data)}
+    in_scope = scope_filter(vocab, args)
     tasks = []
     for t in load_archive(paths)["tasks"] if args.archived else data["tasks"]:
         kind = kind_of(vocab, t.get("status"))
+        if not in_scope(t):
+            continue
         if args.status and t.get("status") not in args.status:
             continue
         if args.phase is not None and phase_of(t) != args.phase:
@@ -2625,7 +2734,17 @@ def cmd_status(args):
     data = load_tasks(paths)
     vocab = vocabulary(data)
     store = read_store(paths)
-    tasks = data["tasks"]
+    in_scope = scope_filter(vocab, args)
+    tasks = [t for t in data["tasks"] if in_scope(t)]
+    active = next((s for s in vocab["sprints"] if s["state"] == "active"), None)
+    sprint = None
+    if active:
+        in_active = [t for t in data["tasks"] if (find_sprint(vocab, t.get("sprint")) or {}).get("id") == active["id"]]
+        sprint = {
+            **{k: active[k] for k in ("id", "goal", "due", "release", "start") if active.get(k)},
+            "done": sum(1 for t in in_active if kind_of(vocab, t.get("status")) == "done"),
+            "tasks": sum(1 for t in in_active if kind_of(vocab, t.get("status")) != "skipped"),
+        }
 
     def counts(key):
         result = {}
@@ -2677,6 +2796,7 @@ def cmd_status(args):
     nxt, reason = next_task(data, store)
     sizes = sorted(((len(json.dumps(t, ensure_ascii=False)), t.get("id")) for t in tasks), reverse=True)
     result = {
+        "sprint": sprint,
         "tasks": len(tasks),
         "by_status": by_status,
         "by_phase": counts(lambda t: [t.get("phase")]),
@@ -2702,6 +2822,15 @@ def cmd_status(args):
         return
     pairs = lambda d: ", ".join(f"{k} {v}" for k, v in d.items())
     elsewhere = lambda i: f" [in another worktree, {i['branch'] or 'detached'}]" if "branch" in i else ""
+    if sprint:
+        details = [f"{sprint['done']} of {sprint['tasks']} done"] + [
+            f"{k} {sprint[k]}" for k in ("due", "release") if sprint.get(k)
+        ]
+        out(f"sprint: {sprint['id']} (active): {' · '.join(details)}")
+        if sprint.get("goal"):
+            out(f"  goal: {sprint['goal']}")
+    elif vocab["sprints"]:
+        out("sprint: none active (plan one with /atm:plan-sprint)")
     out(f"{len(tasks)} tasks: {pairs(by_status)}")
     names = result["phase_names"]
     out("by phase: " + ", ".join(f"{k}{f' ({names[k]})' if k in names else ''} {v}" for k, v in result["by_phase"].items()))
@@ -2931,6 +3060,31 @@ def open_sprint(vocab, name):
     return sprint["id"]
 
 
+TERM_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def check_term(value, what):
+    """A release or component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
+    if not isinstance(value, str) or not TERM_ID.fullmatch(value):
+        raise AtmError(f"{what} {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
+    return value
+
+
+def check_review(value):
+    if value not in REVIEW_MODES:
+        raise AtmError(f"review {value!r}: use one of {', '.join(REVIEW_MODES)}", 2)
+    return value
+
+
+def check_related(task_id, related, known):
+    for other in related:
+        if other == task_id:
+            raise AtmError(f"{task_id} can't be related to itself", 2)
+        if other not in known and not archived_task(other):
+            raise AtmError(f"{task_id} can't be related to {other}, which doesn't exist", 2)
+    return related
+
+
 def number(value, what):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise AtmError(f"{what} must be a number", 2)
@@ -2976,6 +3130,15 @@ def new_task(vocab, fields, actor, stamp):
         task["updated_by"] = actor
     if fields.get("sprint"):
         set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
+    if fields.get("release"):
+        task["release"] = check_term(fields["release"], "release")
+    components = [check_term(c, "component") for c in fields.get("components") or []]
+    if components:
+        task["components"] = components
+    if fields.get("review"):
+        task["review"] = check_review(fields["review"])
+    if fields.get("related"):
+        task["related"] = list(fields["related"])  # checked once the new IDs are known (add_tasks)
     return task
 
 
@@ -3024,6 +3187,8 @@ def add_tasks(data, entries, actor):
         missing = [d for d in task["dependencies"] if d not in existing and d not in ids]
         if missing:
             raise AtmError(f"{real} ({task['name']}) depends on {', '.join(missing)}, which doesn't exist", 2)
+        if task.get("related"):
+            task["related"] = check_related(real, [rename.get(r, r) for r in task["related"]], existing | set(ids))
     cycle = find_cycle(data["tasks"] + tasks)
     if cycle:
         raise AtmError("these dependencies would make a cycle: " + " -> ".join(cycle), 2)
@@ -3062,6 +3227,10 @@ def cmd_add(args):
                 "files": args.file,
                 "requirements": args.requirement,
                 "sprint": args.sprint,
+                "release": args.release,
+                "components": args.component,
+                "review": args.review,
+                "related": args.related,
             }
         ]
     paths = find_paths(os.getcwd())
@@ -3119,6 +3288,22 @@ def edit_task(data, task, args):
         set_field("priority", args.priority)
     edit_list("files", args.add_file, args.remove_file)
     edit_list("labels", check_labels(args.add_label), args.remove_label)
+    for key, value, check in (
+        ("release", args.release, lambda v: check_term(v, "release")),
+        ("review", args.review, check_review),
+    ):
+        if value == "":
+            if key in task:
+                del task[key]
+                changed.append(key)
+        elif value is not None:
+            set_field(key, check(value))
+    edit_list("components", [check_term(c, "component") for c in args.add_component], args.remove_component)
+    known = {t.get("id") for t in data["tasks"]}
+    edit_list("related", check_related(task["id"], args.add_related, known), args.remove_related)
+    for key in ("components", "related"):
+        if key in task and not task[key]:
+            del task[key]
     ids = {t.get("id") for t in data["tasks"]}
     missing = [d for d in args.add_dep if d not in ids]
     if missing:
@@ -4051,6 +4236,15 @@ def cmd_archive(args):
         archive = load_archive(paths)
         dropped = drop_duplicates(data, archive)
         moving = archivable(data, phases, before, args.keep_days)
+        if args.sprint:
+            vocab = vocabulary(data)
+            names = set()
+            for name in args.sprint:
+                sprint = find_sprint(vocab, name)
+                if sprint is None:
+                    raise AtmError(f"no sprint {name!r}", 2)
+                names.add(sprint["id"])
+            moving = [t for t in moving if (find_sprint(vocab, t.get("sprint")) or {}).get("id") in names]
         ids = [t.get("id") for t in moving]
         if not args.dry_run and (moving or dropped):
             # New IDs must never come back to an archived ID (DM-2.3)
@@ -5443,6 +5637,13 @@ def build_parser():
     next_ = command("next", cmd_next, "the task /atm:loop-tasks works on next (exit code 3 if there is none)")
     next_.add_argument("--phase", type=float, help="only this phase")
     next_.add_argument("--type", help="only this task type")
+    pick = next_.add_mutually_exclusive_group()
+    pick.add_argument(
+        "--sprint", action="append", metavar="NAME", help="this sprint's tasks (repeatable; default: the active one)"
+    )
+    pick.add_argument("--tasks", metavar="ID,ID", help="these tasks, in this order")
+    pick.add_argument("--all", action="store_true", help="every task: the active sprint, the planned ones, the backlog")
+    pick.add_argument("--backlog", action="store_true", help="the tasks with no sprint")
     next_.add_argument("--claim", action="store_true", help="also start and claim it, atomically")
     agent_option(next_)
     status_option(next_)
@@ -5460,11 +5661,20 @@ def build_parser():
     list_.add_argument("--blocked", action="store_true", help="only blocked tasks and to-do tasks still waiting")
     list_.add_argument("--in-pr", action="store_true", help="only tasks in a PR that isn't recorded as merged")
     list_.add_argument("--archived", action="store_true", help="list the archive (tasks-archive.json) instead")
-    command(
+    status = command(
         "status",
         cmd_status,
         "the overview: counts, what is in progress, in review or blocked, the next task, the file's size",
     )
+
+    def scope_options(sub):
+        sub.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")
+        sub.add_argument("--backlog", action="store_true", help="only the tasks with no sprint")
+        sub.add_argument("--release", metavar="R", help="only the tasks in this release (their own, or their sprint's)")
+        sub.add_argument("--component", metavar="C", help="only the tasks in this component")
+
+    scope_options(list_)
+    scope_options(status)
     deps = command("deps", cmd_deps, "what a task waits for, and what waits for it")
     deps.add_argument("id", help="the task ID")
 
@@ -5481,6 +5691,12 @@ def build_parser():
     add.add_argument("--file", action="append", default=[], help="a file it will create or change (repeatable)")
     add.add_argument("--requirement", action="append", default=[], help="a requirement ID (repeatable)")
     add.add_argument("--sprint", metavar="NAME", help="the sprint it goes into (default: none, the backlog)")
+    add.add_argument("--release", metavar="R", help="the release it ships in (default: its sprint's)")
+    add.add_argument("--component", action="append", default=[], metavar="C", help="a component (repeatable)")
+    add.add_argument(
+        "--review", choices=list(REVIEW_MODES), help="how it is reviewed (default: its component's, else the project's)"
+    )
+    add.add_argument("--related", action="append", default=[], metavar="ID", help="a related task (repeatable)")
     add.add_argument(
         "--json-file",
         metavar="FILE",
@@ -5501,10 +5717,16 @@ def build_parser():
     edit_sprint.add_argument("--backlog", action="store_true", help="take it out of its sprint, into the backlog")
     edit.add_argument("--type")
     edit.add_argument("--priority")
+    edit.add_argument("--release", metavar="R", help="the release it ships in (empty: its sprint's)")
+    edit.add_argument(
+        "--review", choices=list(REVIEW_MODES) + [""], help="how it is reviewed (empty: its component's, else the project's)"
+    )
     for option, help_text in (
         ("file", "a file it creates or changes"),
         ("dep", "a task it depends on"),
         ("label", "a label"),
+        ("component", "a component"),
+        ("related", "a related task"),
     ):
         edit.add_argument(f"--add-{option}", action="append", default=[], metavar="VALUE", help=f"add {help_text}")
         edit.add_argument(f"--remove-{option}", action="append", default=[], metavar="VALUE", help=f"remove {help_text}")
@@ -5515,6 +5737,7 @@ def build_parser():
 
     archive = command("archive", cmd_archive, "move finished tasks to tasks-archive.json, to keep tasks.json small")
     archive.add_argument("--phase", action="append", type=float, help="only this phase (repeatable)")
+    archive.add_argument("--sprint", action="append", metavar="NAME", help="only this sprint's tasks (repeatable)")
     archive.add_argument("--before", metavar="DATE", help="only tasks finished before this date (2026-05-01)")
     archive.add_argument(
         "--keep-days", type=float, help="keep tasks finished in the last N days (default: meta.archive.keep_days, 14)"

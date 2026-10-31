@@ -4,9 +4,10 @@ import { expect, test } from './helpers';
 // Checks on the shipped artifact itself (plugin/templates/tasks-dashboard.html), not on its behavior.
 const BUILT = new URL('../../../plugin/templates/tasks-dashboard.html', import.meta.url);
 const PLUGIN_JSON = new URL('../../../plugin/.claude-plugin/plugin.json', import.meta.url);
-// 450 KiB = 460,800 bytes (Vite's build output counts kB as 1,000 bytes, so it shows this as 460.8 kB). Raised from
-// 400 KiB in 0.23.0 for dagre, the dependency graph's layout (about 48 kB; the file is served locally, 134 kB gzipped)
-const MAX_BYTES = 450 * 1024;
+// 500 KiB = 512,000 bytes (Vite's build output counts kB as 1,000 bytes, so it shows this as 512 kB). Raised from
+// 400 KiB in 0.23.0 for dagre, the dependency graph's layout (about 48 kB; the file is served locally, 134 kB gzipped),
+// then from 450 KiB in 0.24.0 for the sprint and release views (decided with Hakan in sprint planning, T-305/T-309)
+const MAX_BYTES = 500 * 1024;
 
 test.describe('shipped dashboard file', () => {
   const html = () => readFileSync(BUILT, 'utf8');

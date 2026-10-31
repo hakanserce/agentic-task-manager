@@ -9,17 +9,24 @@ from .claims import agent_identity
 from .core import AtmError, AtmExit, now_iso, out, read_json, to_json, write_json_atomic
 from .lock import locked
 from .model import (
+    RESOLUTIONS,
+    REVIEW_MODES,
+    archived_task,
+    find_release,
+    find_sprint,
     find_task,
+    set_sprint,
     kind_of,
+    known_release,
     load_archive,
     load_tasks,
-    phase_of,
     split_id,
     status_for,
     touch,
     valid_task_id,
     vocabulary,
 )
+from .components import component_ids, suggest_components, suggestion_line
 from .paths import find_paths
 
 LABEL = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -68,15 +75,43 @@ def check_labels(labels):
     return labels
 
 
-def number(value, what):
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise AtmError(f"{what} must be a number", 2)
-    return int(value) if float(value).is_integer() else value
+def open_sprint(vocab, name):
+    """The ID of the sprint called `name`, which a task can be put in: it must exist and not be closed (SR-2.5)."""
+    sprint = find_sprint(vocab, name)
+    if sprint is None:
+        known = ", ".join(s["id"] for s in vocab["sprints"] if s["state"] != "closed") or "none yet: atm sprints add"
+        raise AtmError(f"no sprint {name!r}; the open sprints: {known}", 2)
+    if sprint["state"] == "closed":
+        raise AtmError(f"the sprint {sprint['id']!r} is closed; a task can only go into a planned or active sprint", 2)
+    return sprint["id"]
+
+
+def check_with(value):
+    """`with`: who the work is done together with; `user` for now (SR-6.5)."""
+    if value != "user":
+        raise AtmError(f"with {value!r}: use user (work done together with the user)", 2)
+    return value
+
+
+def check_review(value):
+    if value not in REVIEW_MODES:
+        raise AtmError(f"review {value!r}: use one of {', '.join(REVIEW_MODES)}", 2)
+    return value
+
+
+def check_related(task_id, related, known):
+    for other in related:
+        if other == task_id:
+            raise AtmError(f"{task_id} can't be related to itself", 2)
+        if other not in known and not archived_task(other):
+            raise AtmError(f"{task_id} can't be related to {other}, which doesn't exist", 2)
+    return related
 
 
 def new_task(vocab, fields, actor, stamp):
     """A complete new task from the given fields, checked against the vocabularies."""
-    for key in ("name", "phase", "type"):
+    # Tasks go into sprints (or the backlog): phases became sprints (SR-5.5, SR-8.3); a "phase" given is ignored
+    for key in ("name", "type"):
         if fields.get(key) in (None, ""):
             raise AtmError(f"a new task needs a {key}", 2)
     types = [t["id"] for t in vocab["types"]]
@@ -85,12 +120,7 @@ def new_task(vocab, fields, actor, stamp):
     priorities = [p["id"] for p in vocab["priorities"]]
     if fields.get("priority") is not None and fields["priority"] not in priorities:
         raise AtmError(f"unknown priority {fields['priority']!r}; use one of {', '.join(priorities)}", 2)
-    task = {
-        "id": None,
-        "name": str(fields["name"]),
-        "phase": number(fields["phase"], "phase"),
-        "type": fields["type"],
-    }
+    task = {"id": None, "name": str(fields["name"]), "type": fields["type"]}
     if fields.get("priority") is not None:
         task["priority"] = fields["priority"]
     labels = check_labels(list(fields.get("labels") or []))
@@ -111,6 +141,21 @@ def new_task(vocab, fields, actor, stamp):
     if actor:
         task["created_by"] = actor
         task["updated_by"] = actor
+    if fields.get("sprint"):
+        set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
+    if fields.get("release"):
+        task["release"] = known_release(vocab, fields["release"])
+    # "auto" (--components auto): the components its files are in (SR-2.7)
+    requested = fields.get("components") or []
+    components = suggest_components(vocab, task["files"]) if requested == "auto" else component_ids(vocab, requested)
+    if components:
+        task["components"] = components
+    if fields.get("review"):
+        task["review"] = check_review(fields["review"])
+    if fields.get("with"):
+        task["with"] = check_with(fields["with"])
+    if fields.get("related"):
+        task["related"] = list(fields["related"])  # checked once the new IDs are known (add_tasks)
     return task
 
 
@@ -159,6 +204,8 @@ def add_tasks(data, entries, actor):
         missing = [d for d in task["dependencies"] if d not in existing and d not in ids]
         if missing:
             raise AtmError(f"{real} ({task['name']}) depends on {', '.join(missing)}, which doesn't exist", 2)
+        if task.get("related"):
+            task["related"] = check_related(real, [rename.get(r, r) for r in task["related"]], existing | set(ids))
     cycle = find_cycle(data["tasks"] + tasks)
     if cycle:
         raise AtmError("these dependencies would make a cycle: " + " -> ".join(cycle), 2)
@@ -188,7 +235,6 @@ def cmd_add(args):
         entries = [
             {
                 "name": args.name,
-                "phase": args.phase,
                 "type": args.type,
                 "priority": args.priority,
                 "labels": args.label,
@@ -196,6 +242,12 @@ def cmd_add(args):
                 "dependencies": args.dep,
                 "files": args.file,
                 "requirements": args.requirement,
+                "sprint": args.sprint,
+                "release": args.release,
+                "components": "auto" if args.components == "auto" else args.component,
+                "review": args.review,
+                "with": args.with_,
+                "related": args.related,
             }
         ]
     paths = find_paths(os.getcwd())
@@ -206,8 +258,12 @@ def cmd_add(args):
     if args.json:
         out(to_json(tasks))
     else:
+        vocab = vocabulary(data)
         for task in tasks:
             out(f"Added {task['id']} {task['name']}")
+            line = suggestion_line(vocab, task)
+            if line:
+                out(line)
 
 
 def edit_task(data, task, args):
@@ -236,8 +292,9 @@ def edit_task(data, task, args):
             description = f.read()
     if description is not None:
         set_field("description", description)
-    if args.phase is not None:
-        set_field("phase", number(args.phase, "phase"))
+    if args.sprint is not None or args.backlog:
+        if set_sprint(task, None if args.backlog else open_sprint(vocab, args.sprint), now_iso()):
+            changed.append("sprint")
     if args.type is not None:
         types = [t["id"] for t in vocab["types"]]
         if args.type not in types:
@@ -250,6 +307,25 @@ def edit_task(data, task, args):
         set_field("priority", args.priority)
     edit_list("files", args.add_file, args.remove_file)
     edit_list("labels", check_labels(args.add_label), args.remove_label)
+    for key, value, check in (
+        ("release", args.release, lambda v: known_release(vocab, v)),
+        ("review", args.review, check_review),
+        ("with", args.with_, check_with),
+    ):
+        if value == "":
+            if key in task:
+                del task[key]
+                changed.append(key)
+        elif value is not None:
+            set_field(key, check(value))
+    if args.components == "auto":
+        edit_list("components", suggest_components(vocab, task.get("files") or []), [])
+    edit_list("components", component_ids(vocab, args.add_component), args.remove_component)
+    known = {t.get("id") for t in data["tasks"]}
+    edit_list("related", check_related(task["id"], args.add_related, known), args.remove_related)
+    for key in ("components", "related"):
+        if key in task and not task[key]:
+            del task[key]
     ids = {t.get("id") for t in data["tasks"]}
     missing = [d for d in args.add_dep if d not in ids]
     if missing:
@@ -275,10 +351,37 @@ def cmd_edit(args):
             write_json_atomic(paths["tasks"], data)
     if args.json:
         out(to_json(task))
-    elif changed:
-        out(f"{task['id']}: changed {', '.join(changed)}")
+        return
+    out(f"{task['id']}: changed {', '.join(changed)}" if changed else f"{task['id']}: nothing changed")
+    # New files may put the task in components it isn't in yet (SR-2.7): suggested, not set
+    line = suggestion_line(vocabulary(data), task) if args.add_file else None
+    if line:
+        out(line)
+
+
+def check_resolution(vocab, task, known_ids, errors):
+    """A task's resolution, duplicate_of and related (SR-2.8): a resolution only on a done or skipped task, one of
+    RESOLUTIONS; duplicate_of only with the duplicate resolution, naming another task that exists (in either file)."""
+    task_id = task["id"]
+    resolution = task.get("resolution")
+    if "resolution" in task:
+        if resolution not in RESOLUTIONS:
+            errors.append(f"{task_id}: the resolution {resolution!r} is not one of {', '.join(RESOLUTIONS)}")
+        elif kind_of(vocab, task.get("status")) not in ("done", "skipped"):
+            errors.append(f"{task_id}: has a resolution ({resolution}) but isn't done or skipped")
+    if "duplicate_of" in task:
+        other = task["duplicate_of"]
+        if resolution != "duplicate":
+            errors.append(f"{task_id}: duplicate_of needs the resolution duplicate")
+        if other == task_id or other not in known_ids:
+            errors.append(f"{task_id}: duplicate_of {other!r} isn't another task")
+    related = task.get("related", [])
+    if not (isinstance(related, list) and all(isinstance(r, str) for r in related)):
+        errors.append(f"{task_id}: 'related' must be a list of task IDs")
     else:
-        out(f"{task['id']}: nothing changed")
+        for other in related:
+            if other == task_id or other not in known_ids:
+                errors.append(f"{task_id}: related to {other}, which isn't another task")
 
 
 def check_data(data, root, files=False, archived=()):
@@ -312,9 +415,6 @@ def check_data(data, root, files=False, archived=()):
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")
-        phase = task.get("phase")
-        if isinstance(phase, bool) or not isinstance(phase, (int, float)):
-            errors.append(f"{task_id}: needs a \"phase\" (a number)")
         if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
             errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
         if isinstance(task.get("type"), str) and task["type"] not in types:
@@ -324,6 +424,19 @@ def check_data(data, root, files=False, archived=()):
         for key in ("dependencies", "files", "labels", "requirements", "use_cases"):
             if key in task and not (isinstance(task[key], list) and all(isinstance(v, str) for v in task[key])):
                 errors.append(f"{task_id}: {key!r} must be a list of strings")
+        if "sprint" in task and find_sprint(vocab, task["sprint"]) is None:
+            errors.append(f"{task_id}: the sprint {task['sprint']!r} is not one of meta.sprints")
+        if "release" in task and find_release(vocab, task["release"]) is None:
+            errors.append(f"{task_id}: the release {task['release']!r} is not one of meta.releases")
+        if "sprint_history" in task and not (
+            isinstance(task["sprint_history"], list)
+            and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
+        ):
+            errors.append(f'{task_id}: "sprint_history" must be a list of {{"sprint", "from", "to"}}')
+        task_files = [f for f in task.get("files") or [] if isinstance(f, str)]
+        if vocab["components"] and task_files and not suggest_components(vocab, task_files):
+            warnings.append(f"{task_id}: its files match no component (meta.components' paths)")
+        check_resolution(vocab, task, known_ids, errors)
         for dep in task.get("dependencies") or []:
             if isinstance(dep, str) and dep not in known_ids:
                 errors.append(f"{task_id}: depends on {dep}, which doesn't exist")
@@ -335,10 +448,9 @@ def check_data(data, root, files=False, archived=()):
             for f in task.get("files") or []:
                 if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
                     warnings.append(f"{task_id}: the file {f} doesn't exist")
-    used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
-    for p in vocab["phases"]:
-        if p["id"] not in used:
-            warnings.append(f"phase {p['id']} is named ({p.get('name')!r}) but has no tasks (atm phases unname)")
+    for sprint in vocab["sprints"]:
+        if sprint.get("release") and find_release(vocab, sprint["release"]) is None:
+            errors.append(f"the sprint {sprint['id']!r}: the release {sprint['release']!r} is not one of meta.releases")
     well_formed = [t for t in tasks if isinstance(t, dict) and isinstance(t.get("dependencies", []), list)]
     cycle = find_cycle([{"id": t.get("id"), "dependencies": t.get("dependencies") or []} for t in well_formed])
     if cycle:

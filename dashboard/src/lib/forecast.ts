@@ -1,5 +1,8 @@
 // Completion estimates (docs/dashboard-v2-requirements.md, section 3). Agent work is bursty, so the model measures
-// working time per task instead of calendar throughput, and accumulates remaining work in the loop's phase order.
+// working time per task instead of calendar throughput, and accumulates remaining work in the loop's order: the
+// active sprint, then the planned ones, then the backlog (docs/sprints-and-releases-design.md SR-7.4).
+import { BACKLOG } from './filters';
+import { NO_SPRINTS, type Sprint, type SprintModel } from './sprints';
 import { completedAt } from './timeline';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, type StatusKind, type Vocabulary } from './vocab';
@@ -30,37 +33,50 @@ export interface Pace {
 }
 
 export interface Estimate {
-  /** Working minutes until the phase is done */
+  /** Working minutes until the sprint is done */
   minutes: { likely: number; low: number; high: number };
   /** Calendar time if the loop keeps running from `now` */
   finishAt: { likely: number; low: number; high: number };
 }
 
-export type PhaseState = 'done' | 'in_progress' | 'not_started';
+/** How far along a sprint's tasks are (not the sprint's own state: a planned sprint can have started tasks) */
+export type ProgressState = 'done' | 'in_progress' | 'not_started';
 
-export interface PhaseForecast {
-  phase: number;
+export interface SprintForecast {
+  /** The sprint's ID, or BACKLOG for the tasks in no sprint */
+  key: string;
+  /** The sprint; undefined for the backlog */
+  sprint?: Sprint;
   /** Tasks that count: all but the skipped ones */
   total: number;
   done: number;
   /** Skipped tasks: neither done nor left to do, shown apart */
   skipped: number;
-  /** Tasks in this phase that still need agent work (todo, active, unknown statuses); not blocked, in review or skipped */
+  /** Tasks that still need agent work (todo, active, unknown statuses); not blocked, in review or skipped */
   remaining: number;
   blocked: number;
   /** Unfinished, but waiting for a reviewer rather than for agent work */
   inReview: number;
-  state: PhaseState;
-  /** Last completion, for finished phases */
+  state: ProgressState;
+  /** Last completion, once all its tasks are finished */
   completedAt?: number;
-  /** Absent when the phase is done, nothing is left to work on, or there is too little history */
+  /** Absent when it is done or closed, nothing is left to work on, or there is too little history */
   estimate?: Estimate;
 }
 
 export interface Forecast {
   pace: Pace | null;
-  phases: PhaseForecast[];
+  /** The sprints with tasks, in the project's order, then the backlog */
+  sprints: SprintForecast[];
 }
+
+/** The key of the sprint a task is in: its sprint's ID, or BACKLOG */
+export const sprintKey = (model: SprintModel, task: Task): string => model.sprintOf(task) ?? BACKLOG;
+
+/** Where the loop takes a sprint's work: the active sprint first, then the planned ones, then the backlog; a closed
+ * sprint is not worked on */
+const loopRank = (row: SprintForecast) =>
+  !row.sprint ? 2 : row.sprint.state === 'active' ? 0 : row.sprint.state === 'planned' ? 1 : undefined;
 
 const time = (iso: string | undefined) => {
   const t = iso ? Date.parse(iso) : NaN;
@@ -116,108 +132,97 @@ export function pace(durations: TimedCompletion[]): Pace | null {
 const NO_AGENT_WORK = new Set<StatusKind | undefined>(['done', 'skipped', 'blocked', 'review']);
 
 /**
- * Per-phase progress and estimates; phases are worked in ascending order, like /atm:loop-tasks.
- * `history` is what the pace is measured on (all tasks), so filtering the view doesn't change the pace.
+ * Per-sprint progress and estimates, the work accumulating in the loop's order (the active sprint, the planned ones
+ * in order, the backlog), like /atm:loop-tasks --all. `history` is what the pace is measured on (all tasks), so
+ * filtering the view doesn't change the pace.
  */
-export function forecastPhases(
+export function forecastSprints(
   tasks: Task[],
   now: number,
   history: Task[] = tasks,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
+  model: SprintModel = NO_SPRINTS,
 ): Forecast {
   // Tasks done together with the user (labelled interactive) include the time spent waiting on them: they would slow
   // the pace agents keep when they work alone (docs/progress-tab-review.md §1.4, T-240)
   const interactive = new Set(history.filter((t) => t.labels?.includes(INTERACTIVE_LABEL)).map((t) => t.id));
   const p = pace(taskDurations(history, vocab).filter((d) => !interactive.has(d.id)));
-  const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
   const kind = (t: Task) => kindOf(vocab, t.status);
-  let cumulative = 0;
+  const groups = new Map<string, Task[]>();
+  for (const t of tasks) {
+    const key = sprintKey(model, t);
+    groups.set(key, [...(groups.get(key) ?? []), t]);
+  }
+  const keys = [...model.sprints.map((s) => s.id), BACKLOG].filter((key) => groups.has(key));
 
-  return {
-    pace: p,
-    phases: phases.map((phase) => {
-      const inPhase = tasks.filter((t) => t.phase === phase);
-      const done = inPhase.filter((t) => kind(t) === 'done');
-      const remaining = inPhase.filter((t) => !NO_AGENT_WORK.has(kind(t))).length;
-      const blocked = inPhase.filter((t) => kind(t) === 'blocked').length;
-      const inReview = inPhase.filter((t) => kind(t) === 'review').length;
-      cumulative += remaining;
+  const rows = keys.map((key): SprintForecast => {
+    const own = groups.get(key)!;
+    const done = own.filter((t) => kind(t) === 'done');
+    const skipped = own.filter((t) => kind(t) === 'skipped').length;
+    const finished = own.every((t) => kind(t) === 'done' || kind(t) === 'skipped');
+    // Started once something moved: done, active, in review or an unknown status. Blocked work hasn't begun.
+    const started = own.some((t) => !['todo', 'skipped', 'blocked'].includes(kind(t) ?? 'unknown'));
+    const row: SprintForecast = {
+      key,
+      sprint: model.sprints.find((s) => s.id === key),
+      total: own.length - skipped,
+      done: done.length,
+      skipped,
+      remaining: own.filter((t) => !NO_AGENT_WORK.has(kind(t))).length,
+      blocked: own.filter((t) => kind(t) === 'blocked').length,
+      inReview: own.filter((t) => kind(t) === 'review').length,
+      state: finished ? 'done' : started ? 'in_progress' : 'not_started',
+    };
+    if (finished) {
+      const ends = done.map((t) => time(completedAt(t))).filter((t): t is number => t !== undefined);
+      if (ends.length) row.completedAt = Math.max(...ends);
+    }
+    return row;
+  });
 
-      const finished = inPhase.every((t) => kind(t) === 'done' || kind(t) === 'skipped');
-      // Started once something moved: done, active, in review or an unknown status. Blocked work hasn't begun.
-      const started = inPhase.some((t) => !['todo', 'skipped', 'blocked'].includes(kind(t) ?? 'unknown'));
-      const state: PhaseState = finished ? 'done' : started ? 'in_progress' : 'not_started';
-
-      const skipped = inPhase.filter((t) => kind(t) === 'skipped').length;
-      const result: PhaseForecast = {
-        phase,
-        total: inPhase.length - skipped,
-        done: done.length,
-        skipped,
-        remaining,
-        blocked,
-        inReview,
-        state,
+  if (p) {
+    let cumulative = 0;
+    const order = rows
+      .filter((row) => loopRank(row) !== undefined && row.state !== 'done')
+      .sort((a, b) => loopRank(a)! - loopRank(b)!);
+    for (const row of order) {
+      cumulative += row.remaining;
+      if (row.remaining === 0) continue;
+      const minutes = { likely: cumulative * p.likely, low: cumulative * p.low, high: cumulative * p.high };
+      row.estimate = {
+        minutes,
+        finishAt: {
+          likely: now + minutes.likely * MINUTE,
+          low: now + minutes.low * MINUTE,
+          high: now + minutes.high * MINUTE,
+        },
       };
-      if (finished) {
-        const ends = done.map((t) => time(completedAt(t))).filter((t): t is number => t !== undefined);
-        if (ends.length) result.completedAt = Math.max(...ends);
-      } else if (p && remaining > 0) {
-        const minutes = { likely: cumulative * p.likely, low: cumulative * p.low, high: cumulative * p.high };
-        result.estimate = {
-          minutes,
-          finishAt: {
-            likely: now + minutes.likely * MINUTE,
-            low: now + minutes.low * MINUTE,
-            high: now + minutes.high * MINUTE,
-          },
-        };
-      }
-      return result;
-    }),
-  };
+    }
+  }
+  return { pace: p, sprints: rows };
 }
 
-/** Phase numbers as ranges: [0, 1, 2, 4, 6, 7] → "0–2, 4, 6–7" (the folded row of finished phases, T-241) */
-export function phaseRanges(phases: number[]): string {
-  const sorted = [...new Set(phases)].sort((a, b) => a - b);
-  const ranges: string[] = [];
-  for (let i = 0; i < sorted.length; i++) {
-    let j = i;
-    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
-    ranges.push(j > i ? `${sorted[i]}–${sorted[j]}` : `${sorted[i]}`);
-    i = j;
-  }
-  return ranges.join(', ');
+/** The row the loop works on first: the first unfinished one in the loop's order */
+export function nextInLoop(forecast: Forecast): SprintForecast | undefined {
+  return forecast.sprints
+    .filter((row) => loopRank(row) !== undefined && row.state !== 'done')
+    .sort((a, b) => loopRank(a)! - loopRank(b)!)[0];
 }
 
 /**
- * A filtered slice's phases with the whole project's estimates (T-239): the loop works through whole phases, so when
- * a phase finishes doesn't depend on the filter. The slice keeps its own counts and state; a phase the slice has
+ * A filtered slice's sprints with the whole project's estimates (T-239): the loop works through whole sprints, so when
+ * a sprint finishes doesn't depend on the filter. The slice keeps its own counts and state; a sprint the slice has
  * finished keeps no estimate.
  */
-export function withWholePhaseEstimates(slice: Forecast, whole: Forecast): Forecast {
-  const estimates = new Map(whole.phases.map((p) => [p.phase, p.estimate]));
+export function withWholeSprintEstimates(slice: Forecast, whole: Forecast): Forecast {
+  const estimates = new Map(whole.sprints.map((s) => [s.key, s.estimate]));
   return {
     pace: whole.pace,
-    phases: slice.phases.map((p) => {
-      const estimate = p.state === 'done' ? undefined : estimates.get(p.phase);
-      const rest = { ...p };
+    sprints: slice.sprints.map((s) => {
+      const estimate = s.state === 'done' ? undefined : estimates.get(s.key);
+      const rest = { ...s };
       delete rest.estimate;
       return estimate ? { ...rest, estimate } : rest;
     }),
   };
-}
-
-/**
- * The phases worth showing with "Active phases only": every unfinished phase, and the one that finished last (a
- * phase of only skipped tasks counts as finished). That is the phase with the latest completion, the higher one on a
- * tie; when no finished phase has completion times, the highest finished phase.
- */
-export function activePhases(phases: PhaseForecast[]): PhaseForecast[] {
-  const finished = phases.filter((p) => p.state === 'done');
-  const later = (a: PhaseForecast, b: PhaseForecast) =>
-    (a.completedAt ?? -Infinity) - (b.completedAt ?? -Infinity) || a.phase - b.phase;
-  const last = finished.length ? finished.reduce((best, p) => (later(p, best) > 0 ? p : best)) : undefined;
-  return phases.filter((p) => p.state !== 'done' || p === last);
 }

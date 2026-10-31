@@ -14,7 +14,7 @@ test.describe('archive', () => {
     tasksServer.archive('archive');
     await openDashboard(page, tasksServer, archivedProject(), { tab: 'list' });
     await expect(page.locator('#archived-count')).toHaveText('3 archived');
-    await expect(page.locator('#subtitle')).toContainText('12 tasks across 3 phases · 3 archived — loaded');
+    await expect(page.locator('#subtitle')).toContainText('12 tasks across 3 sprints · 3 archived — loaded');
     await expect(page.locator('.task-card')).toHaveCount(12);
     await page.getByRole('tab', { name: 'Kanban Board' }).click();
     await page.getByRole('tab', { name: 'Dependency Graph' }).click();

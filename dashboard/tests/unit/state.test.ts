@@ -156,9 +156,9 @@ describe('DashboardState', () => {
   it('filters', async () => {
     const s = new DashboardState();
     await s.load();
-    s.toggleFilter('phase', '1');
+    s.toggleFilter('sprint', 'Phase 1');
     expect(s.filtered.map((t) => t.id)).toEqual(['T-004', 'T-005', 'T-006', 'T-007']);
-    s.toggleFilter('phase', 'all');
+    s.toggleFilter('sprint', 'all');
     expect(s.filtered).toHaveLength(12);
   });
 
@@ -288,10 +288,10 @@ describe('DashboardState saved view', () => {
     s.toggleFilter('type', 'feature');
     s.query = 'login';
     s.selectTab('agents');
-    s.kanbanGroupByPhase = true;
+    s.kanbanGroupBySprint = true;
     s.kanbanShowSkipped = true;
     s.kanbanShowAllDone = true;
-    s.progressPhase = 1;
+    s.progressSprint = 'Phase 1';
     s.graphFiltered = 'dim';
     s.graphView = { k: 2, x: 10, y: 20 };
     s.agentsWindow = { start: 1000, end: 400_000, followEnd: true };

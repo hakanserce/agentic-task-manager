@@ -14,6 +14,7 @@ from .core import (
     git,
     in_git,
     is_tracked,
+    now_iso,
     out,
     read_json,
     rel,
@@ -23,7 +24,7 @@ from .core import (
 )
 from .lock import locked
 from .merge import ensure_merge_driver
-from .model import archive_hint, archive_path, kind_of, load_archive, load_tasks, vocabulary
+from .model import MAX_SPRINT_NAME, archive_hint, archive_path, kind_of, load_archive, load_tasks, vocabulary
 from .paths import find_paths
 from .registry import register
 
@@ -138,6 +139,166 @@ def backfill_finish_times(paths):
     return filled
 
 
+FINISHED_KINDS = ("done", "skipped")
+
+
+def task_phase(task):
+    """The task's phase (a number), or None: a task without one goes to the backlog."""
+    phase = task.get("phase") if isinstance(task, dict) else None
+    if not isinstance(phase, (int, float)) or isinstance(phase, bool):
+        return None
+    return int(phase) if float(phase).is_integer() else phase
+
+
+def phase_sprint_names(meta, tasks):
+    """{phase: sprint name} for every phase with tasks or a name, in phase order: its name, or "Phase n" when
+    unnamed, with " (phase n)" added to a name already taken (the names the dashboard shows for unmigrated projects,
+    dashboard/src/lib/sprints.ts)."""
+    named = {}
+    for p in meta.get("phases") or []:
+        if isinstance(p, dict) and task_phase({"phase": p.get("id")}) is not None:
+            name = p.get("name").strip()[:MAX_SPRINT_NAME].rstrip() if isinstance(p.get("name"), str) else ""
+            if name:
+                named[task_phase({"phase": p["id"]})] = name
+    phases = set(named) | {task_phase(t) for t in tasks} - {None}
+    names, taken = {}, set()
+    for phase in sorted(phases):
+        name = named.get(phase) or f"Phase {phase}"
+        if name.casefold() in taken:
+            suffix = f" (phase {phase})"
+            name = name[: MAX_SPRINT_NAME - len(suffix)].rstrip() + suffix
+        taken.add(name.casefold())
+        names[phase] = name
+    return names
+
+
+def sprint_from_phase(name, tasks, vocab):
+    """The sprint a phase becomes: closed when all its tasks are finished (start, end and report from them), else
+    planned (SR-8.1)."""
+    finished = bool(tasks) and all(kind_of(vocab, t.get("status")) in FINISHED_KINDS for t in tasks)
+    if not finished:
+        return {"id": name, "state": "planned"}
+    sprint = {"id": name, "state": "closed"}
+    starts = [t["started_at"] for t in tasks if isinstance(t.get("started_at"), str)]
+    ends = [
+        t.get("completed_at") or t.get("skipped_at") or t.get("updated_at")
+        for t in tasks
+        if isinstance(t.get("completed_at") or t.get("skipped_at") or t.get("updated_at"), str)
+    ]
+    if starts:
+        sprint["start"] = min(starts)
+    if ends:
+        sprint["end"] = max(ends)
+    sprint["report"] = {
+        "done": [t["id"] for t in tasks if kind_of(vocab, t.get("status")) == "done" and "id" in t],
+        "carried": [],
+    }
+    return sprint
+
+
+def phases_to_sprints(data, archived, vocab, stamp):
+    """Turn phases into sprints in tasks.json's data and the archive's tasks, in place (SR-8.1). A project that already
+    has meta.sprints only gets its leftover phases converted (a task merged in from an unmigrated branch, SR-8.5).
+    Returns the sprints it added, or [] when there was nothing to convert."""
+    meta = data.setdefault("meta", {})
+    tasks = [t for t in list(data["tasks"]) + list(archived) if isinstance(t, dict)]
+    if not meta.get("phases") and not any("phase" in t for t in tasks):
+        return []
+    names = phase_sprint_names(meta, tasks)
+    sprints = meta.get("sprints") if isinstance(meta.get("sprints"), list) else []
+    existing = {s["id"].casefold() for s in sprints if isinstance(s, dict) and isinstance(s.get("id"), str)}
+    added = []
+    for phase, name in names.items():
+        if name.casefold() in existing:
+            continue
+        sprint = sprint_from_phase(name, [t for t in tasks if task_phase(t) == phase], vocab)
+        sprints.append(sprint)
+        added.append(sprint)
+    meta["sprints"] = sprints
+    meta.pop("phases", None)
+    by_name = {s["id"].casefold(): s["id"] for s in sprints if isinstance(s, dict) and isinstance(s.get("id"), str)}
+    for task in tasks:
+        phase = task_phase(task)
+        task.pop("phase", None)
+        if phase is None or task.get("sprint"):
+            continue
+        task["sprint"] = by_name[names[phase].casefold()]
+        task.setdefault("sprint_history", []).append(
+            {"sprint": task["sprint"], "from": task.get("created_at") if isinstance(task.get("created_at"), str) else stamp}
+        )
+    return added
+
+
+def migrate_phases(paths):
+    """phases_to_sprints on the files under the lock, staging them in git (not committing). Returns the sprints it
+    added, or None when there was nothing to convert."""
+    archive = archive_path(paths)
+    try:
+        data = load_tasks(paths)
+        vocab = vocabulary(data)
+        archive_data = load_archive(paths)
+        if not data.get("meta", {}).get("phases") and not any(
+            isinstance(t, dict) and "phase" in t for t in list(data["tasks"]) + list(archive_data["tasks"])
+        ):
+            return None
+    except AtmError:
+        return None  # an unreadable file: the command the skill runs next reports the problem
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        archive_data = load_archive(paths)
+        added = phases_to_sprints(data, archive_data["tasks"], vocab, now_iso())
+        if isinstance(archive_data.get("meta"), dict):
+            archive_data["meta"].pop("phases", None)
+        vocabulary(data)
+        write_json_atomic(paths["tasks"], data)
+        written = [paths["tasks"]]
+        if os.path.isfile(archive):
+            write_json_atomic(archive, archive_data)
+            written.append(archive)
+    if in_git(paths["root"]):
+        git(["add", "--"] + [rel(paths["root"], p) for p in written], paths["root"])
+    return added
+
+
+WITH_USER_MIGRATION = "interactive-label"
+
+
+def migrate_interactive(paths):
+    """Tasks labelled `interactive` (work done with the user, T-240) get `with: user` (SR-6.5), once: the change is
+    recorded in meta.migrations, so a `with` taken off later isn't put back. The label stays. Only unfinished tasks in
+    tasks.json; nothing is written when none has the label. Returns how many tasks it changed."""
+    def todo(data):
+        meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+        if WITH_USER_MIGRATION in (meta.get("migrations") or []):
+            return []
+        vocab = vocabulary(data)
+        return [
+            t
+            for t in data["tasks"]
+            if isinstance(t, dict)
+            and "interactive" in (t.get("labels") or [])
+            and not t.get("with")
+            and kind_of(vocab, t.get("status")) not in ("done", "skipped")
+        ]
+
+    try:
+        if not todo(load_tasks(paths)):
+            return 0
+    except AtmError:
+        return 0  # an unreadable file: the command the skill runs next reports the problem
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        tasks = todo(data)
+        for task in tasks:
+            task["with"] = "user"
+        meta = data.setdefault("meta", {})
+        meta["migrations"] = list(meta.get("migrations") or []) + [WITH_USER_MIGRATION]
+        write_json_atomic(paths["tasks"], data)
+    if in_git(paths["root"]):
+        git(["add", "--", rel(paths["root"], paths["tasks"])], paths["root"])
+    return len(tasks)
+
+
 def ensure_gitignore(task_dir):
     """Add any missing runtime entries to the folder's .gitignore, keeping the user's lines. Returns True if changed."""
     p = os.path.join(task_dir, ".gitignore")
@@ -160,7 +321,7 @@ def ensure_gitignore(task_dir):
 
 
 def migrate(paths):
-    """Move a legacy tasks.json into the task folder and set the folder up. Never commits."""
+    """Move a legacy tasks.json into the task folder, set the folder up, and turn phases into sprints. Never commits."""
     root, task_dir, legacy = paths["root"], paths["dir"], paths["legacy"]
     result = {
         "moved": None,
@@ -170,6 +331,8 @@ def migrate(paths):
         "merge_driver_updated": False,
         "cleaned_up": None,
         "finish_times_filled": 0,
+        "sprints_from_phases": None,
+        "with_user_from_label": 0,
     }
     if legacy and paths["tasks_exists"]:
         result["warning"] = (
@@ -202,6 +365,8 @@ def migrate(paths):
         write_claims_snapshot(paths, read_store(paths)["claims"])
     result["cleaned_up"] = clean_up_old_dashboard(task_dir)
     result["finish_times_filled"] = backfill_finish_times(paths)
+    result["sprints_from_phases"] = migrate_phases(paths)
+    result["with_user_from_label"] = migrate_interactive(paths)
     try:
         hint = archive_hint(paths, load_tasks(paths))
     except AtmError:
@@ -209,6 +374,22 @@ def migrate(paths):
     if hint:
         result["suggest"] = {"archive": hint}
     return result
+
+
+def describe_sprints_from_phases(sprints):
+    """What the phase migration did, said once (it doesn't run again)."""
+    if not sprints:
+        return ["Moved the tasks' phases to their sprints (staged, not committed)."]
+    closed = [s["id"] for s in sprints if s["state"] == "closed"]
+    planned = [s["id"] for s in sprints if s["state"] == "planned"]
+    count = "1 phase" if len(sprints) == 1 else f"{len(sprints)} phases"
+    lines = [f"Phases are now sprints: turned {count} into sprints (staged, not committed)."]
+    if closed:
+        lines.append(f"Closed (all their tasks finished): {', '.join(closed)}.")
+    if planned:
+        lines.append(f"Planned: {', '.join(planned)}.")
+        lines.append("None is active yet: plan one with /atm:plan-sprint.")
+    return lines
 
 
 def describe_migration(r, paths):
@@ -234,6 +415,15 @@ def describe_migration(r, paths):
     if filled:
         tasks = "1 finished task" if filled == 1 else f"{filled} finished tasks"
         lines.append(f"Filled in the finish time of {tasks} that had none, from the last update (completed_at/skipped_at).")
+    sprints = r.get("sprints_from_phases")
+    if sprints is not None:
+        lines.extend(describe_sprints_from_phases(sprints))
+    together = r.get("with_user_from_label")
+    if together:
+        tasks = "1 task" if together == 1 else f"{together} tasks"
+        lines.append(
+            f"Gave {tasks} labelled interactive `with: user` (done together with you; unattended loops skip them)."
+        )
     if not lines:
         lines.append("Nothing to migrate.")
     if r.get("suggest"):

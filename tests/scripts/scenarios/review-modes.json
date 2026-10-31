@@ -1,0 +1,173 @@
+[
+  {
+    "name": "done by an agent is refused for a blocker task: it asks for the review (SR-3.8)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "in_progress", "review": "blocker" }]
+        }
+      }
+    },
+    "args": ["done", "T-1"],
+    "env": { "ATM_AGENT": "claude:abcd1234" },
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["T-1 is reviewed (blocker): ask for it with atm review T-1 --note '<what to check>'"]
+    }
+  },
+  {
+    "name": "async from the project's default, the same; a person may always finish it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "review": "async" },
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "in_progress" }]
+        }
+      },
+      "commands": [["sh", "-c", "ATM_AGENT=claude:abcd1234 \"$ATM\" done T-1 2> err.txt; true"]]
+    },
+    "args": ["done", "T-1"],
+    "env": { "ATM_AGENT": "Hakan" },
+    "expect": {
+      "stdoutIncludes": ["T-1: in_progress -> done"],
+      "files": { "err.txt": "atm: T-1 is reviewed (async): ask for it with atm review T-1 --note '<what to check>'\n" }
+    }
+  },
+  {
+    "name": "batch, from the task's component: done, its note a review note, waiting for the sprint review (SR-4.4)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "components": [{ "id": "ui", "paths": ["ui/**"], "review": "batch" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "in_progress", "components": ["ui"] }]
+        }
+      }
+    },
+    "args": ["done", "T-1", "--note", "Check the colours"],
+    "env": { "ATM_AGENT": "claude:abcd1234", "ATM_NOW": "2026-05-02T10:00:00Z" },
+    "expect": {
+      "stdoutIncludes": ["T-1: in_progress -> done"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "components": [{ "id": "ui", "paths": ["ui/**"], "review": "batch" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "type": "feature",
+              "status": "done",
+              "components": ["ui"],
+              "updated_at": "2026-05-02T10:00:00Z",
+              "updated_by": "claude:abcd1234",
+              "completed_at": "2026-05-02T10:00:00Z",
+              "completed_by": "claude:abcd1234",
+              "sprint_review": "pending",
+              "notes": [
+                { "at": "2026-05-02T10:00:00Z", "by": "claude:abcd1234", "kind": "review", "text": "Check the colours" }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "none: done as before",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "in_progress", "review": "none" }]
+        }
+      }
+    },
+    "args": ["done", "T-1"],
+    "env": { "ATM_AGENT": "claude:abcd1234" },
+    "expect": { "stdoutIncludes": ["T-1: in_progress -> done"] }
+  },
+  {
+    "name": "close refuses while batch tasks wait for the sprint review; --reviewed marks them reviewed",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "type": "feature",
+              "status": "done",
+              "sprint": "Now",
+              "sprint_review": "pending"
+            }
+          ]
+        }
+      },
+      "commands": [
+        [
+          "sh",
+          "-c",
+          "\"$ATM\" status > status.txt; \"$ATM\" sprints > sprints.txt; \"$ATM\" sprints close Now 2> err.txt; true"
+        ]
+      ]
+    },
+    "args": ["sprints", "close", "Now", "--reviewed"],
+    "env": { "ATM_NOW": "2026-05-10T18:00:00Z", "ATM_AGENT": "Hakan" },
+    "expect": {
+      "stdoutIncludes": ["Closed the sprint “Now”: 1 done."],
+      "files": {
+        "err.txt": "atm: T-1 waits for the end-of-sprint review: review it with the user (/atm:close-sprint), then close with --reviewed\n",
+        "sprints.txt": "Now · active: 1 task (done 1); 1 waiting for the sprint review\nbacklog: 0 tasks (atm backlog)\n",
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Now",
+                "state": "closed",
+                "end": "2026-05-10T18:00:00Z",
+                "report": { "done": ["T-1"], "carried": [], "added": [] }
+              }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "type": "feature",
+              "status": "done",
+              "sprint": "Now",
+              "sprint_review": "reviewed",
+              "updated_at": "2026-05-10T18:00:00Z",
+              "updated_by": "Hakan"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "status lists the tasks waiting for the sprint review",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "type": "feature",
+              "status": "done",
+              "sprint": "Now",
+              "sprint_review": "pending"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["status"],
+    "expect": {
+      "stdoutIncludes": [
+        "sprint: Now (active): 1 of 1 done\n  waiting for the sprint review: T-1 (/atm:close-sprint)\n"
+      ]
+    }
+  }
+]

@@ -59,6 +59,29 @@ export interface Task {
   notes?: Note[];
   /** Before v4: the last failed attempt (now a `failure` note; still read, see notes.ts) */
   last_failure?: { at?: string; reason?: string };
+  /** The sprint it is in (a sprint's name, meta.sprints); absent: the backlog (docs/sprints-and-releases-design.md) */
+  sprint?: string;
+  /** Each sprint it was in, from when to when; the open entry has no `to` (SR-2.5) */
+  sprint_history?: { sprint: string; from: string; to?: string }[];
+  /** The release it ships in; when absent, its sprint's (SR-2.6, lib/sprints.ts effectiveRelease) */
+  release?: string;
+  /** Component IDs (meta.components) */
+  components?: string[];
+  /** How it is reviewed: blocker, async, batch or none */
+  review?: string;
+  /** In the review kind: waiting, changes_requested or approved (SR-6.1) */
+  review_state?: string;
+  /** A batch task done by an agent: pending until the end-of-sprint review, then reviewed (SR-4.4) */
+  sprint_review?: string;
+  /** `user`: the work is done together with the user (SR-6.5) */
+  with?: string;
+  /** Related tasks (a link that doesn't block), stored on one side and shown on both (SR-2.8) */
+  related?: string[];
+  /** How a finished task ended, when it isn't the default (done; won't do for a skipped one): wont_do, duplicate,
+   * obsolete or done (SR-2.8, lib/relations.ts) */
+  resolution?: string;
+  /** The task this one duplicates (with the duplicate resolution) */
+  duplicate_of?: string;
 }
 
 export interface Note {
@@ -94,6 +117,14 @@ export interface TasksFile {
     archived?: number;
     /** Archive settings: threshold_kb, threshold_tasks, keep_days, auto (docs/v4/data-model.md §5) */
     archive?: unknown;
+    /** The sprints, in order (docs/sprints-and-releases-design.md §2.1); read leniently by lib/sprints.ts */
+    sprints?: unknown;
+    /** The releases, in order (§2.1); read leniently by lib/releases.ts */
+    releases?: unknown;
+    /** The components ({id, label, paths, review}); read leniently by lib/review.ts */
+    components?: unknown;
+    /** The project's default review mode */
+    review?: unknown;
   };
   tasks?: Task[];
 }

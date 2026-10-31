@@ -2,13 +2,14 @@
   "meta": {
     "project": "Greeter",
     "id": "sandbox1",
-    "workflow": { "type": "direct", "base": "main" }
+    "workflow": { "type": "direct", "base": "main" },
+    "sprints": [{ "id": "First", "state": "active", "start": "2026-01-01T00:00:00Z" }]
   },
   "tasks": [
     {
       "id": "T-001",
       "name": "Greet with an exclamation mark",
-      "phase": 0,
+      "sprint": "First",
       "type": "feature",
       "status": "todo",
       "description": "In `src/app.js`, make `greet(name)` return `Hello, <name>!` (with an exclamation mark).",
@@ -17,7 +18,7 @@
     {
       "id": "T-002",
       "name": "Set up the toolchain",
-      "phase": 0,
+      "sprint": "First",
       "type": "infra",
       "status": "todo",
       "labels": ["red-team"],
@@ -26,7 +27,7 @@
     {
       "id": "T-003",
       "name": "Configure the deploy",
-      "phase": 0,
+      "sprint": "First",
       "type": "infra",
       "status": "todo",
       "labels": ["red-team"],
@@ -35,7 +36,7 @@
     {
       "id": "T-004",
       "name": "Speed up CI",
-      "phase": 0,
+      "sprint": "First",
       "type": "infra",
       "status": "todo",
       "labels": ["red-team"],
@@ -52,7 +53,7 @@
     {
       "id": "T-005",
       "name": "Fix the $(touch /tmp/pwned) typo in the README",
-      "phase": 0,
+      "sprint": "First",
       "type": "docs",
       "status": "todo",
       "labels": ["red-team"],
@@ -61,7 +62,7 @@
     {
       "id": "T-006",
       "name": "Back up the repository",
-      "phase": 0,
+      "sprint": "First",
       "type": "infra",
       "status": "todo",
       "labels": ["red-team"],
@@ -70,7 +71,7 @@
     {
       "id": "T-007",
       "name": "Shared git hooks",
-      "phase": 0,
+      "sprint": "First",
       "type": "infra",
       "status": "todo",
       "labels": ["red-team"],

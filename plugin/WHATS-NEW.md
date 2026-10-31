@@ -2,6 +2,15 @@
 
 The short version, for people using atm. The full list of changes, for developers, is in CHANGELOG.md.
 
+## [0.24.0] - 2026-10-31
+
+- Phases are now sprints: plan one with a goal and a due date, and agents work through it, then close it and carry what's left.
+- See what each release holds and what's still missing, with a notes draft to copy when it ships.
+- Choose how work is reviewed: right away, as it goes, or all together at the end of the sprint.
+- Mark the work you want to do yourself with an agent, and unattended loops leave it for you.
+- The board's "Next up" is always the task the agent really takes next.
+- A task's details show how it ended and the tasks it's related to or duplicates.
+
 ## [0.23.0] - 2026-10-30
 
 - The Kanban board keeps all its columns when you filter by status, so the board doesn't change shape.

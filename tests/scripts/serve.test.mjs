@@ -167,23 +167,23 @@ describe('serve', () => {
     const atmHome = home();
     const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
     const atm = (args, cwd) => runAtm(args, cwd, env);
-    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const task = (id, status, extra = {}) => ({ id, name: id, type: 'feature', status, ...extra });
     const root = project({
-      meta: { id: 'abcd1234', project: 'Summary', phases: [{ id: 2, name: 'Two' }] },
+      meta: { id: 'abcd1234', project: 'Summary' },
       tasks: [
-        task('T-1', 1, 'done', { completed_at: '2026-03-15T10:00:00Z' }),
-        task('T-2', 1, 'done', { completed_at: '2026-03-13T10:00:00Z' }),
-        task('T-3', 1, 'skipped', { updated_at: '2026-03-14T09:00:00Z' }),
-        task('T-4', 2, 'done', { completed_at: '2026-02-01T10:00:00Z' }),
-        task('T-5', 2, 'in_review', { review_requested_at: '2026-03-15T09:00:00Z' }),
-        task('T-6', 2, 'blocked', { waiting_on: 'user', questions: ['?'], blocked_at: '2026-03-15T11:00:00Z' }),
-        task('T-7', 3, 'todo'),
+        task('T-1', 'done', { completed_at: '2026-03-15T10:00:00Z' }),
+        task('T-2', 'done', { completed_at: '2026-03-13T10:00:00Z' }),
+        task('T-3', 'skipped', { updated_at: '2026-03-14T09:00:00Z' }),
+        task('T-4', 'done', { completed_at: '2026-02-01T10:00:00Z' }),
+        task('T-5', 'in_review', { review_requested_at: '2026-03-15T09:00:00Z' }),
+        task('T-6', 'blocked', { waiting_on: 'user', questions: ['?'], blocked_at: '2026-03-15T11:00:00Z' }),
+        task('T-7', 'todo'),
         // Blocked on an agent: open, but it doesn't need the user
-        task('T-8', 3, 'blocked', { waiting_on: 'agent', questions: ['?'] }),
+        task('T-8', 'blocked', { waiting_on: 'agent', questions: ['?'] }),
       ],
     });
-    const card = (id, phase) => ({ id, name: id, type: 'feature', phase, priority: 'P2', labels: [] });
-    const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 0, 'skipped')] });
+    const card = (id) => ({ id, name: id, type: 'feature', sprint: null, priority: 'P2', labels: [] });
+    const skippedOnly = project({ meta: { id: 'eeee5555', project: 'Skipped' }, tasks: [task('T-1', 'skipped')] });
     const gone = project({ meta: { id: 'ffff6666', project: 'Gone' }, tasks: [] });
     const port = ports();
     for (const p of [root, skippedOnly, gone]) assert.equal(atm(['projects', 'add'], p).code, 0);
@@ -197,17 +197,13 @@ describe('serve', () => {
       done: 3,
       skipped: 1,
       percent: 43,
-      current_phase: { id: 2, name: 'Two', done: 1, total: 3 },
-      recent_phases: [
-        { id: 1, name: null, done: 2, total: 2, percent: 100 },
-        { id: 2, name: 'Two', done: 1, total: 3, percent: 33 },
-        { id: 3, name: null, done: 0, total: 2, percent: 0 },
-      ],
+      active_sprint: null,
+      recent_sprints: null,
       agents_working: 0,
       working: [],
       next: [{ id: 'T-7', name: 'T-7' }],
       last_done: { id: 'T-1', name: 'T-1', completed_at: '2026-03-15T10:00:00Z' },
-      needs_you: { review: 1, blocked_on_user: 1 },
+      needs_you: { review: 1, blocked_on_user: 1, together: 0 },
       needs_you_tasks: [
         { id: 'T-5', name: 'T-5', reason: 'review' },
         { id: 'T-6', name: 'T-6', reason: 'blocked' },
@@ -216,32 +212,27 @@ describe('serve', () => {
       description: null,
       last_activity: '2026-03-15T11:00:00Z',
       completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-      // The All projects board (T-257): nothing ready in phase 2 (the first unfinished); T-5 waits for a review; T-6
-      // blocked on the user before T-8 on an agent; T-1 the only one finished in the last 24 hours
+      // The All projects board (T-257): T-7 ready; T-5 waits for a review; T-6 blocked on the user before T-8 on an
+      // agent; T-1 the only one finished in the last 24 hours
       board: {
-        todo: { count: 0, cards: [] },
+        todo: { count: 1, cards: [card('T-7')] },
         active: { count: 0, cards: [] },
-        review: { count: 1, cards: [{ ...card('T-5', 2), since: '2026-03-15T09:00:00Z' }] },
+        review: { count: 1, cards: [{ ...card('T-5'), since: '2026-03-15T09:00:00Z' }] },
         blocked: {
           count: 2,
           cards: [
-            { ...card('T-6', 2), since: '2026-03-15T11:00:00Z', waiting_on: 'user', questions: 1 },
-            { ...card('T-8', 3), since: null, waiting_on: 'agent', questions: 1 },
+            { ...card('T-6'), since: '2026-03-15T11:00:00Z', waiting_on: 'user', questions: 1 },
+            { ...card('T-8'), since: null, waiting_on: 'agent', questions: 1 },
           ],
         },
-        done: { count: 1, cards: [{ ...card('T-1', 1), completed_at: '2026-03-15T10:00:00Z' }] },
+        done: { count: 1, cards: [{ ...card('T-1'), completed_at: '2026-03-15T10:00:00Z' }] },
       },
       // The card's line (T-255): no creation times, no work recorded
       stats: { started: null, tasks: 8, agent_minutes: 0 },
     });
     assert.deepEqual(
-      [
-        byId.eeee5555.summary.percent,
-        byId.eeee5555.summary.current_phase,
-        byId.eeee5555.summary.recent_phases,
-        byId.eeee5555.summary.last_activity,
-      ],
-      [100, null, [], null],
+      [byId.eeee5555.summary.percent, byId.eeee5555.summary.recent_sprints, byId.eeee5555.summary.last_activity],
+      [100, null, null],
     );
     assert.deepEqual([byId.ffff6666.missing, byId.ffff6666.summary], [true, null]);
 
@@ -264,23 +255,24 @@ describe('serve', () => {
     const atmHome = home();
     const atm = atmIn(atmHome);
     const long = 'A very long task name '.repeat(6);
-    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
+    const task = (id, status, extra = {}) => ({ id, name: id, type: 'feature', status, ...extra });
     const root = project({
       meta: { id: 'cccc3333', project: 'Next' },
       tasks: [
-        task('T-1', 2, 'todo'),
-        task('T-2', 1, 'todo', { priority: 'P3' }),
-        task('T-3', 1, 'todo', { priority: 'P0', name: long }),
-        task('T-4', 1, 'todo', { dependencies: ['T-1'] }),
-        task('T-5', 0, 'done', { completed_at: '2026-03-01T10:00:00Z' }),
-        task('T-6', 0, 'done', { completed_at: '2026-03-02T10:00:00Z' }),
+        task('T-1', 'todo', { priority: 'P3' }),
+        task('T-2', 'todo'),
+        task('T-3', 'todo', { priority: 'P0', name: long }),
+        task('T-4', 'todo', { dependencies: ['T-5'] }),
+        task('T-5', 'todo', { priority: 'P0', with: 'user' }),
+        task('T-6', 'done', { completed_at: '2026-03-02T10:00:00Z' }),
+        task('T-7', 'done', { completed_at: '2026-03-01T10:00:00Z' }),
       ],
     });
     const port = ports();
     assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
     const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
     const summary = api.projects.find((p) => p.id === 'cccc3333').summary;
-    // Phase 1 before phase 2, P0 before P3; T-4 waits on T-1
+    // P0 before P2 before P3; T-4 waits on T-5, which is done together with the user, so not next for an agent
     assert.deepEqual(
       summary.next.map((t) => t.id),
       ['T-3', 'T-2'],
@@ -295,7 +287,7 @@ describe('serve', () => {
     const atmHome = home();
     const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
     const atm = (args, cwd) => runAtm(args, cwd, env);
-    const task = (id, status, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status, ...extra });
+    const task = (id, status, extra = {}) => ({ id, name: id, type: 'feature', status, ...extra });
     const tasks = [
       // claude:x on two tasks at once, 10:00–11:00 (until the review request) and 10:30–11:30: 90 minutes
       task('A', 'done', {
@@ -356,14 +348,14 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
-  test('board: ready tasks of the first open phase (10 at most), the longest running first, 30 done today at most (T-257)', async () => {
+  test('board: ready tasks in the loop’s order (10 at most), the longest running first, 30 done today at most (T-257)', async () => {
     const atmHome = home();
     const env = { ATM_HOME: atmHome, ATM_NOW: '2026-03-15T12:00:00Z' };
     const atm = (args, cwd) => runAtm(args, cwd, env);
-    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
-    const ready = Array.from({ length: 12 }, (_, i) => task(`T-${String(i + 1).padStart(2, '0')}`, 0, 'todo'));
+    const task = (id, status, extra = {}) => ({ id, name: id, type: 'feature', status, ...extra });
+    const ready = Array.from({ length: 12 }, (_, i) => task(`T-${String(i + 1).padStart(2, '0')}`, 'todo'));
     const done = Array.from({ length: 31 }, (_, i) =>
-      task(`D-${String(i + 1).padStart(2, '0')}`, 0, 'done', {
+      task(`D-${String(i + 1).padStart(2, '0')}`, 'done', {
         completed_at: `2026-03-15T${String(Math.floor(i / 3)).padStart(2, '0')}:${String((i % 3) * 10).padStart(2, '0')}:00Z`,
       }),
     );
@@ -371,12 +363,12 @@ describe('serve', () => {
       meta: { id: 'bbbb2222', project: 'Board' },
       tasks: [
         ...ready,
-        // Phase 1 is not the first unfinished phase: not on the board
-        task('T-20', 1, 'todo'),
-        task('A', 0, 'in_progress', { started_by: 'claude:x', started_at: '2026-03-15T10:00:00Z' }),
-        task('B', 0, 'in_progress', { started_by: 'claude:y', started_at: '2026-03-15T09:00:00Z', labels: ['ux'] }),
+        // Waiting on a dependency: not ready, not on the board
+        task('T-20', 'todo', { dependencies: ['A'] }),
+        task('A', 'in_progress', { started_by: 'claude:x', started_at: '2026-03-15T10:00:00Z' }),
+        task('B', 'in_progress', { started_by: 'claude:y', started_at: '2026-03-15T09:00:00Z', labels: ['ux'] }),
         // Finished yesterday morning: more than 24 hours ago
-        task('OLD', 0, 'done', { completed_at: '2026-03-14T11:00:00Z' }),
+        task('OLD', 'done', { completed_at: '2026-03-14T11:00:00Z' }),
         ...done,
       ],
     });
@@ -394,7 +386,7 @@ describe('serve', () => {
         id: 'B',
         name: 'B',
         type: 'feature',
-        phase: 0,
+        sprint: null,
         priority: 'P2',
         labels: ['ux'],
         by: 'claude:y',
@@ -404,7 +396,7 @@ describe('serve', () => {
         id: 'A',
         name: 'A',
         type: 'feature',
-        phase: 0,
+        sprint: null,
         priority: 'P2',
         labels: [],
         by: 'claude:x',
@@ -421,7 +413,7 @@ describe('serve', () => {
   test('git: the branch and the latest PR recorded on the tasks; a branch switch changes the ETag', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);
-    const task = (id, extra = {}) => ({ id, name: id, phase: 0, type: 'feature', status: 'done', ...extra });
+    const task = (id, extra = {}) => ({ id, name: id, type: 'feature', status: 'done', ...extra });
     const url = (n) => `https://github.com/acme/demo/pull/${n}`;
     const root = project({
       meta: { id: 'dddd4444', project: 'Git', description: '  A tool for agents. '.repeat(20) },
@@ -450,66 +442,57 @@ describe('serve', () => {
     atm(['serve', 'stop'], root);
   });
 
-  test('recent_phases: the lowest open phases, then the most recently finished, up to four, in phase order', async () => {
+  test('a project with sprints: the active sprint with its progress, recent sprints for the rings, next from the active sprint (SR-7.7)', async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);
-    const task = (id, phase, status, extra = {}) => ({ id, name: id, phase, type: 'feature', status, ...extra });
-    const done = (id, phase, at) => task(id, phase, 'done', { completed_at: at });
-    const projects = {
-      // No tasks: no phases
-      empty1: [],
-      // All done: the four most recently finished (phase 2 last finished long ago, so it goes), shown in phase order
-      alldone: [
-        done('T-1', 1, '2026-03-05T00:00:00Z'),
-        done('T-2', 2, '2026-01-01T00:00:00Z'),
-        done('T-3', 3, '2026-03-02T00:00:00Z'),
-        done('T-4', 4, '2026-03-03T00:00:00Z'),
-        done('T-5', 5, '2026-03-04T00:00:00Z'),
-      ],
-      // One active phase, filled up with the finished ones; a phase of only skipped tasks has nothing to show
-      oneopen: [
-        done('T-1', 1, '2026-03-01T00:00:00Z'),
-        task('T-2', 2, 'skipped'),
-        done('T-3', 3, '2026-03-02T00:00:00Z'),
-        task('T-4', 3, 'skipped'),
-        task('T-5', 4, 'in_progress'),
-        done('T-6', 4, '2026-03-03T00:00:00Z'),
-      ],
-      // More than four open phases: the lowest four; finished phases don't get in
-      manyopen: [
-        done('T-1', 1, '2026-03-09T00:00:00Z'),
-        ...[2, 3, 4, 5, 6].map((phase) => task(`T-${phase}`, phase, 'todo')),
-      ],
-    };
-    const roots = Object.entries(projects).map(([id, tasks]) => project({ meta: { id, project: id }, tasks }));
-    for (const root of roots) assert.equal(atm(['projects', 'add'], root).code, 0);
+    const task = (id, status, sprint) => ({ id, name: id, type: 'feature', status, ...(sprint ? { sprint } : {}) });
+    const sprints = [
+      { id: 'Old', state: 'closed', end: '2026-01-01T00:00:00Z' },
+      { id: 'Older', state: 'closed', end: '2025-12-01T00:00:00Z' },
+      { id: 'Now', state: 'active', goal: 'Ship', due: '2026-04-01' },
+      { id: 'Next', state: 'planned' },
+      { id: 'Empty', state: 'planned' },
+    ];
+    const tasks = [
+      task('T-1', 'done', 'Old'),
+      task('T-2', 'done', 'Older'),
+      task('T-3', 'done', 'Now'),
+      task('T-4', 'skipped', 'Now'),
+      task('T-5', 'todo', 'Now'),
+      task('T-6', 'todo', 'Next'),
+      // In the backlog, and first by ID: the loop doesn't take it while a sprint is active
+      task('T-0', 'todo'),
+    ];
+    const root = project({ meta: { id: 'sprinted', project: 'sprinted', sprints }, tasks });
     const port = ports();
-    assert.equal(atm(['serve', '--port', String(port)], roots[0]).code, 0);
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
     const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
-    const recent = Object.fromEntries(
-      api.projects.map((p) => [p.id, p.summary.recent_phases.map((r) => [r.id, r.done, r.total, r.percent])]),
-    );
-    assert.deepEqual(recent, {
-      empty1: [],
-      alldone: [
-        [1, 1, 1, 100],
-        [3, 1, 1, 100],
-        [4, 1, 1, 100],
-        [5, 1, 1, 100],
-      ],
-      oneopen: [
-        [1, 1, 1, 100],
-        [3, 1, 1, 100],
-        [4, 1, 2, 50],
-      ],
-      manyopen: [
-        [2, 0, 1, 0],
-        [3, 0, 1, 0],
-        [4, 0, 1, 0],
-        [5, 0, 1, 0],
-      ],
+    const summary = api.projects.find((p) => p.id === 'sprinted').summary;
+    assert.deepEqual(summary.active_sprint, {
+      id: 'Now',
+      state: 'active',
+      due: '2026-04-01',
+      release: null,
+      done: 1,
+      total: 2,
+      percent: 50,
+      goal: 'Ship',
     });
-    atm(['serve', 'stop'], roots[0]);
+    // The open ones with tasks (Now, Next; Empty has none), filled up to four with the latest closed, in the project's order
+    assert.deepEqual(
+      summary.recent_sprints.map((s) => [s.id, s.state, s.done, s.total]),
+      [
+        ['Old', 'closed', 1, 1],
+        ['Older', 'closed', 1, 1],
+        ['Now', 'active', 1, 2],
+        ['Next', 'planned', 0, 1],
+      ],
+    );
+    assert.deepEqual(
+      summary.next.map((n) => n.id),
+      ['T-5'],
+    );
+    atm(['serve', 'stop'], root);
   });
 
   test('a project logo: served at p/<id>/logo with its type, listed in api/projects; none, outside or too large is 404', async () => {
@@ -587,7 +570,7 @@ describe('serve', () => {
     const apiEtag = (await fetch(apiUrl)).headers.get('etag');
     assert.equal((await fetch(apiUrl, { headers: { 'If-None-Match': apiEtag } })).status, 304);
     // An atm change right away (same second): new ETags and the new content
-    assert.equal(atm(['add', '--name', 'New', '--phase', '0', '--type', 'feature'], root).code, 0);
+    assert.equal(atm(['add', '--name', 'New', '--type', 'feature'], root).code, 0);
     const changed = await fetch(url, { headers: { 'If-None-Match': etag } });
     assert.equal(changed.status, 200);
     assert.notEqual(changed.headers.get('etag'), etag);
@@ -601,7 +584,7 @@ describe('serve', () => {
   test("a project's git worktrees: listed, their changed tasks in worktrees.json, their claims in claims.json", async () => {
     const atmHome = home();
     const atm = atmIn(atmHome);
-    const task = (id) => ({ id, name: id, phase: 0, type: 'feature', status: 'todo' });
+    const task = (id) => ({ id, name: id, type: 'feature', status: 'todo' });
     const root = makeProject({
       commit: true,
       files: {

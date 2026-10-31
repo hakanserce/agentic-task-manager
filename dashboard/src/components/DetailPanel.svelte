@@ -2,7 +2,10 @@
   import { tick } from 'svelte';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
-  import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
+  import { effectiveReview, REVIEW_STATE_LABELS } from '../lib/review';
+  import { carriedCount, effectiveRelease } from '../lib/sprints';
+  import { RESOLUTION_LABELS, relationsOf, resolutionOf } from '../lib/relations';
+  import { kindOf, statusLabel } from '../lib/vocab';
   import { actorsLine, earlierAttempts } from '../lib/actors';
   import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
@@ -39,9 +42,26 @@
   const review = $derived(task ? reviewWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const block = $derived(task ? blockWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const notes = $derived(task ? taskNotes(task) : []);
+  // Its sprint (or the backlog), its release (its own, else its sprint's), and the sprints it was carried through
+  // (SR-7.6, SR-4.5): shown when it was in more than one; flagged once carried twice or more
+  const sprint = $derived(task ? dashboard.sprints.sprintOf(task) : undefined);
+  const release = $derived(task ? effectiveRelease(dashboard.sprints, task) : undefined);
+  const history = $derived(task && Array.isArray(task.sprint_history) ? task.sprint_history : []);
+  const carried = $derived(task && sprint ? carriedCount(task, sprint) : 0);
+  const reviewMode = $derived(task ? effectiveReview(dashboard.meta, task) : 'none');
   const actors = $derived(task ? actorsLine(task) : '');
   const attempts = $derived(task ? earlierAttempts(task) : []);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
+  // How it ended, when not done, and its links that don't block, both ways (SR-2.8, SR-7.6)
+  const resolution = $derived(task ? resolutionOf(task, dashboard.vocab) : undefined);
+  const relations = $derived(task ? relationsOf(task, dashboard.tasks) : { related: [], duplicatedBy: [] });
+  const linked = $derived(
+    (task?.dependencies ?? []).length ||
+      requiredBy.length ||
+      relations.related.length ||
+      relations.duplicateOf ||
+      relations.duplicatedBy.length,
+  );
   // Created, started, sent for review, finished, how long the work took, last updated
   const times = $derived(task ? taskTimes(task, dashboard.loadedAt, dashboard.vocab) : []);
 
@@ -49,8 +69,7 @@
   const groups = $derived.by(() => {
     if (!task) return [];
     const list: { id: string; label: string; icon: IconName }[] = [{ id: 'info', label: 'Info', icon: 'file-text' }];
-    if ((task.dependencies ?? []).length || requiredBy.length)
-      list.push({ id: 'dependencies', label: 'Dependencies', icon: 'network' });
+    if (linked) list.push({ id: 'dependencies', label: 'Dependencies', icon: 'network' });
     if (notes.length) list.push({ id: 'notes', label: 'Notes', icon: 'message-square' });
     if (claim || actors || attempts.length || task.commit || times.length)
       list.push({ id: 'activity', label: 'Activity', icon: 'history' });
@@ -152,7 +171,8 @@
     {#if task}
       {@const ts = typeStyle(task.type)}
       {@const ss = statusStyle(task.status)}
-      {@const pc = phaseColor(task.phase)}
+      {@const sprintIndex = dashboard.sprints.sprints.findIndex((s) => s.id === sprint)}
+      {@const pc = sprintIndex < 0 ? 'var(--text-muted)' : phaseColor(sprintIndex)}
       <div class="detail-head">
         <h3>
           <span style="color:var(--text-muted)">{task.id}</span>
@@ -165,9 +185,33 @@
         <span class="badge" style="background:{ss.bg};color:{ss.color}"
           >{statusLabel(dashboard.vocab, task.status)}</span
         >
-        <span class="phase-badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
-          >{phaseLabel(dashboard.vocab, task.phase)}</span
+        <span
+          class="phase-badge"
+          id="detail-sprint"
+          title={sprint ? `Sprint ${sprint}` : 'In no sprint: the backlog'}
+          style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}">{sprint ?? 'Backlog'}</span
         >
+        {#if release}<span class="badge detail-release" id="detail-release" title="Release {release}"
+            >release {release}</span
+          >{/if}
+        {#if reviewMode !== 'none'}<span class="badge component-chip" id="detail-review-mode" title="How it is reviewed"
+            >review: {reviewMode}</span
+          >{/if}
+        {#if task.review_state}<span class="badge review-state-chip" data-review-state={task.review_state}
+            >{REVIEW_STATE_LABELS[task.review_state] ?? task.review_state}</span
+          >{/if}
+        {#if task.sprint_review === 'pending'}<span class="badge review-state-chip" id="detail-sprint-review"
+            >waits for the sprint review</span
+          >{/if}
+        {#if task.with === 'user'}<span class="badge with-user-chip" id="detail-with-user">with you</span>{/if}
+        {#if resolution && resolution !== 'done'}<span
+            class="badge resolution-chip"
+            id="detail-resolution"
+            data-resolution={resolution}
+            title="How it ended">{RESOLUTION_LABELS[resolution] ?? resolution}</span
+          >{/if}
+        {#each task.components ?? [] as component (component)}<span class="badge component-chip">{component}</span
+          >{/each}
         <PriorityBadge {task} />
         <StageChip {task} />
         <BranchChip {task} />
@@ -232,8 +276,29 @@
         <Markdown blocks={parseMarkdown(task.description ?? '')} idPrefix="desc-{task.id}-" />
       </div>
     </div>
+    {#if history.length > 1}
+      <div class="detail-section" id="detail-sprint-history">
+        <div class="label">
+          Sprint history{#if carried >= 2}<span class="detail-carried" title="Carried over {carried} times"
+              >&nbsp;· carried {carried} times</span
+            >{/if}
+        </div>
+        <ol class="detail-sprint-history">
+          {#each history as entry, i (i)}
+            <li>
+              <strong>{entry.sprint}</strong>
+              <span class="muted"
+                >{new Date(entry.from).toLocaleDateString()}{entry.to
+                  ? ` – ${new Date(entry.to).toLocaleDateString()}`
+                  : ' – now'}</span
+              >
+            </li>
+          {/each}
+        </ol>
+      </div>
+    {/if}
   </div>
-  {#if (task.dependencies ?? []).length || requiredBy.length}
+  {#if linked}
     <div class="detail-group" data-group="dependencies">
       {#if (task.dependencies ?? []).length}
         <div class="detail-section">
@@ -264,6 +329,28 @@
             {#each requiredBy as dep (dep.id)}
               {@render depItem('→', dep.id, dep.name, dep.status)}
             {/each}
+          </div>
+        </div>
+      {/if}
+      {#if relations.duplicateOf}
+        <div class="detail-section" id="detail-duplicate-of">
+          <div class="label">Duplicate Of</div>
+          <div class="detail-deps">{@render linkItem('=', relations.duplicateOf)}</div>
+        </div>
+      {/if}
+      {#if relations.duplicatedBy.length}
+        <div class="detail-section" id="detail-duplicated-by">
+          <div class="label">Duplicated By</div>
+          <div class="detail-deps">
+            {#each relations.duplicatedBy as id (id)}{@render linkItem('=', id)}{/each}
+          </div>
+        </div>
+      {/if}
+      {#if relations.related.length}
+        <div class="detail-section" id="detail-related">
+          <div class="label">Related</div>
+          <div class="detail-deps">
+            {#each relations.related as id (id)}{@render linkItem('~', id)}{/each}
           </div>
         </div>
       {/if}
@@ -398,6 +485,21 @@
         >{/each}
     </div>
   </div>
+{/snippet}
+
+<!-- A linked task by ID: in tasks.json (a link that opens it), archived (shown, not linked) or gone -->
+{#snippet linkItem(arrow: string, id: string)}
+  {@const other = dashboard.taskMap.get(id)}
+  {@const old = other ? undefined : dashboard.archiveMap.get(id)}
+  {#if other}
+    {@render depItem(arrow, id, other.name, other.status)}
+  {:else}
+    <div class="detail-dep-item archived" data-archived={id} title={old?.name ?? ''}>
+      <span class="detail-dep-arrow">{arrow}</span>
+      <strong>{id}</strong>
+      <span style="color:var(--text-muted)">· {old ? 'archived' : 'not found'}</span>
+    </div>
+  {/if}
 {/snippet}
 
 {#snippet depItem(arrow: string, id: string, name: string, status: string | undefined)}

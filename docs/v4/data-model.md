@@ -36,6 +36,11 @@ All in `.agentic-task-manager/` at the project root.
 | `workflow` | none (asked on first push) | `{type, base, verify, max_rounds, commit_template, trailers}` ([workflows](skills-and-workflows.md#1-workflows)) |
 | `archive` | `{threshold_kb: 1024, threshold_tasks: 500, keep_days: 14, auto: true}` | when to suggest archiving, and whether agents may do it (5) |
 | `next_id` | the highest ID in both files + 1 | the number the next new task gets |
+| `sprints` | none | `[{id, goal, state, release, start, end, due, report}]`, in order; the ID is the sprint's name; states `planned`, `active` (at most one), `closed` ([sprints design](../sprints-and-releases-design.md) SR-2.1, SR-2.3) |
+| `releases` | none | `[{id, name, state, target, pr, released_at}]`, in order; the ID is letters, digits, `.`, `-` and `_`; states `planned`, `released`, `archived`; `target` a date. A sprint's or a task's `release` must be one of them (`atm check`; SR-2.2) |
+| `components` | none | `[{id, label, paths, review}]`: the parts of the project; `paths` are globs over the files (`*` and `**` both cross folders), `review` its default review mode. A task's `components` must name them; `atm add` and `edit --add-file` suggest them from the task's files (`--components auto` sets them), and `atm check` warns about a task whose files match none (SR-2.7) |
+| `sprint_names` | `people` | how a sprint created without a name is named: `people` or `time` (SR-2.9) |
+| `review` | `none` | the project's default review mode: `blocker`, `async`, `batch` or `none` (SR-2.6) |
 
 | ID | P | Requirement |
 |---|---|---|
@@ -94,6 +99,12 @@ New fields, all optional:
 | `commit` | `commit`, `done --commit` | a return to `todo` | the SHA of the task's commit |
 | `pr` | `pr` | — | `{number, url}` of the PR that contains the task |
 | `merged_at` | `merged` | — | when that PR was merged |
+| `sprint` | `add --sprint`, `edit --sprint` | `edit --backlog` | the sprint the task is in; absent: the backlog ([sprints design](../sprints-and-releases-design.md) SR-2.5) |
+| `sprint_history` | atm-cli, when `sprint` changes | — | `[{sprint, from, to}]`: each sprint the task was in; the open entry has no `to` (SR-2.5) |
+| `with` | `add --with user`, `edit --with user` | `edit --with ''` | `user`: the work is done together with the user; `atm next` skips it unless `--with-user`, `atm start <id>` takes it. `atm migrate` gives unfinished tasks labelled `interactive` `with: user` once (`meta.migrations` records it) (SR-3.5, SR-6.5) |
+| `review_state` | `review` (`waiting`), `approve` (`approved`), `request-changes` (`changes_requested`) | leaving the review kind | the review's state beside the task's review status; `approved` and `changes_requested` make it work for an agent again: `atm next` offers it first (SR-6.1, SR-3.9) |
+| `reviewed_at` | `approve`, `request-changes` | leaving the review kind | when the review was decided: its agent gets the task back first for one lease length after it; the round then goes into `reviews` with its `outcome` |
+| `sprint_review` | `done` by an agent on a `batch` task | `sprints close --reviewed` (`reviewed`), `reopen` | `pending` until the end-of-sprint review, then `reviewed` (SR-4.4) |
 
 | ID | P | Requirement |
 |---|---|---|
@@ -189,3 +200,4 @@ replays it); one archive file per phase (many files over time).
 |---|---|---|
 | DM-6.1 | P1 | Files without the new `meta` fields or task fields behave as in 0.12.0, with `in_review` added to the default statuses. |
 | DM-6.2 | P1 | atm-cli versions older than v4 don't know the archive and would see a dependency on an archived task as missing. The changelog says to update every agent's plugin before the first `atm archive`. |
+| DM-6.3 | P1 | **Phases become sprints** ([sprints design](../sprints-and-releases-design.md) SR-8.1): `atm migrate` (which every skill runs first; `atm serve` leaves phases alone until T-320) converts a project with phases, in `tasks.json` and the archive, once. Each phase that has tasks or a name becomes a sprint, in phase order, named after the phase ("Phase n" when unnamed; " (phase n)" added to a name already taken); a sprint whose tasks are all finished is `closed` (`start` the earliest `started_at`, `end` the latest finish time, `report: {done, carried: []}`), the others `planned`, none active. A task's `phase` becomes `sprint` plus a `sprint_history` entry from its `created_at`; a task without a phase goes to the backlog; `phase` and `meta.phases` are removed. The files are staged, not committed. A task that still has a `phase` in a migrated project (merged in from an unmigrated branch, SR-8.5) is moved to its phase's sprint by the next `atm migrate`. Commands keep working on unmigrated files (no write guard, SR-8.3); atm-cli ≤ 0.23 reads a migrated file as tasks without phases (SR-8.4), so the changelog says to update every agent's plugin before the first run in a shared project. |

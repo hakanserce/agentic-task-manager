@@ -9,7 +9,8 @@ const DAY_MS = 24 * 3_600_000;
 
 /** Tasks that need the user: in review, or blocked on a question for the user */
 export function needsYou(p: ProjectEntry): number {
-  return p.summary ? p.summary.needs_you.review + p.summary.needs_you.blocked_on_user : 0;
+  const n = p.summary?.needs_you;
+  return n ? n.review + n.blocked_on_user + (n.together ?? 0) : 0;
 }
 
 /** Tasks still to do: neither done nor skipped */

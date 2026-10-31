@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { forecastPhases, phaseRanges } from '../lib/forecast';
+  import { BACKLOG } from '../lib/filters';
+  import { forecastSprints, type SprintForecast } from '../lib/forecast';
   import { formatWhen } from '../lib/format';
   import { progressBreakdown } from '../lib/insights';
+  import { notDone, RESOLUTION_LABELS } from '../lib/relations';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, statusLabel as vocabStatusLabel } from '../lib/vocab';
@@ -27,28 +29,29 @@
   const statusStyle = (status: string) => kindStyle(kindOf(dashboard.vocab, status));
   const statusLabel = (status: string) => vocabStatusLabel(dashboard.vocab, status);
 
-  // By phase (T-243): a ring for each unfinished phase; finished phases, which would be a row of full rings, are chips
-  // with consecutive phases merged (✓ 0–12). A chip opens the Progress tab on its last phase.
+  // By sprint (T-243, SR-7.4): a ring for each sprint not closed, and the backlog; the closed ones, which would be a row
+  // of full rings, are one chip (✓ 12 closed) that opens the Progress tab on the last of them.
   const source = $derived(dashboard.archiveLoaded ? dashboard.history : dashboard.tasks);
-  const phases = $derived(forecastPhases(source, Date.now(), source, dashboard.vocab).phases);
-  const finishedAt = $derived(new Map(phases.filter((f) => f.state === 'done').map((f) => [f.phase, f.completedAt])));
-  const openPhases = $derived(p.byPhase.filter((s) => !finishedAt.has(Number(s.key))));
-  const finishedRuns = $derived.by(() => {
-    const runs: number[][] = [];
-    for (const phase of [...finishedAt.keys()].sort((a, b) => a - b)) {
-      const last = runs.at(-1);
-      if (last && last.at(-1) === phase - 1) last.push(phase);
-      else runs.push([phase]);
-    }
-    return runs;
+  // The finished tasks that weren't done, by resolution (SR-2.8)
+  const ended = $derived(notDone(source, dashboard.vocab));
+  const rows = $derived(forecastSprints(source, Date.now(), source, dashboard.vocab, dashboard.sprints).sprints);
+  const openRows = $derived(rows.filter((r) => r.sprint?.state !== 'closed'));
+  const closedRows = $derived(rows.filter((r) => r.sprint?.state === 'closed'));
+  const closedTitle = $derived.by(() => {
+    const when = Math.max(...closedRows.map((r) => Date.parse(r.sprint?.end ?? '') || (r.completedAt ?? -Infinity)));
+    return (
+      `${closedRows.length === 1 ? closedRows[0].key : `${closedRows.length} sprints`}: closed` +
+      `${Number.isFinite(when) ? `, the last on ${formatWhen(when, Date.now())}` : ''} · open on the Progress tab`
+    );
   });
-  const runTitle = (run: number[]) => {
-    const when = Math.max(...run.map((phase) => finishedAt.get(phase) ?? -Infinity));
-    const label = run.length > 1 ? `Phases ${phaseRanges(run)}` : `Phase ${run[0]}`;
-    return `${label}: finished${Number.isFinite(when) ? `, the last on ${formatWhen(when, Date.now())}` : ''} · open on the Progress tab`;
+  const ratio = (r: SprintForecast) => (r.total ? r.done / r.total : r.skipped ? 1 : 0);
+  const ringColor = (key: string) => {
+    const index = dashboard.sprints.sprints.findIndex((s) => s.id === key);
+    return index < 0 ? 'var(--text-muted)' : phaseColor(index);
   };
-  function openPhase(phase: number) {
-    dashboard.progressPhase = phase;
+  const rowLabel = (key: string) => (key === BACKLOG ? 'Backlog' : key);
+  function openSprint(key: string) {
+    dashboard.progressSprint = key;
     dashboard.selectTab('progress');
     open = false;
   }
@@ -153,41 +156,46 @@
               </li>
             {/each}
           </ul>
+          {#if ended.length}
+            <!-- Finished without being done, apart from done (SR-2.8): won't do, obsolete, duplicate -->
+            <p class="skipped-note" id="progress-not-done">
+              Not done: {ended.map((e) => `${e.count} ${RESOLUTION_LABELS[e.resolution] ?? e.resolution}`).join(' · ')}
+            </p>
+          {/if}
         </div>
       </div>
 
-      <div class="insights-section ring-group" id="progress-by-phase">
-        <div class="ring-group-head"><div class="menu-label">By phase</div></div>
-        {#if openPhases.length}
+      <div class="insights-section ring-group" id="progress-by-sprint">
+        <div class="ring-group-head"><div class="menu-label">By sprint</div></div>
+        {#if openRows.length}
           <div class="ring-grid">
-            {#each openPhases as s (s.key)}
+            {#each openRows as r (r.key)}
               <button
                 class="ring-cell ring-cell-button"
-                title="{capitalize(s.label)}: {s.done} of {s.total} done{s.skipped
-                  ? `, ${s.skipped} skipped`
+                data-sprint={r.key}
+                title="{rowLabel(r.key)}: {r.done} of {r.total} done{r.skipped
+                  ? `, ${r.skipped} skipped`
                   : ''} · open on the Progress tab"
-                onclick={() => openPhase(Number(s.key))}
+                onclick={() => openSprint(r.key)}
               >
                 <Ring
-                  ratio={s.ratio}
-                  color={phaseColor(Number(s.key))}
-                  label={s.label}
-                  skipped={s.skipped}
-                  total={s.total}
+                  ratio={ratio(r)}
+                  color={ringColor(r.key)}
+                  label={rowLabel(r.key)}
+                  skipped={r.skipped}
+                  total={r.total}
                 />
-                <span class="ring-label">{capitalize(s.label)}</span>
-                <span class="ring-count">{s.done}/{s.total}</span>
+                <span class="ring-label">{rowLabel(r.key)}</span>
+                <span class="ring-count">{r.done}/{r.total}</span>
               </button>
             {/each}
           </div>
         {/if}
-        {#if finishedRuns.length}
-          <div class="finished-chips" id="progress-finished-chips">
-            {#each finishedRuns as run (run[0])}
-              <button class="finished-chip" title={runTitle(run)} onclick={() => openPhase(run.at(-1)!)}
-                >✓ {phaseRanges(run)}</button
-              >
-            {/each}
+        {#if closedRows.length}
+          <div class="finished-chips" id="progress-closed-chips">
+            <button class="finished-chip" title={closedTitle} onclick={() => openSprint(closedRows.at(-1)!.key)}
+              >✓ {closedRows.length === 1 ? closedRows[0].key : `${closedRows.length} closed`}</button
+            >
           </div>
         {/if}
       </div>

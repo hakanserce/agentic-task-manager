@@ -32,7 +32,7 @@ describe('Filters', () => {
     await openPanel(container);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect([...container.querySelectorAll('.filter-group')].map((g) => (g as HTMLElement).dataset.group)).toEqual([
-      'phase',
+      'sprint',
       'type',
       'status',
       'priority',
@@ -46,14 +46,15 @@ describe('Filters', () => {
       [...container.querySelectorAll(`.filter-btn[data-filter="${group}"]`)].map(
         (b) => (b as HTMLElement).dataset.value,
       );
-    expect(values('phase')).toEqual(['all', '0', '1', '2']);
+    // Phases read as sprints: the open ones, then Phase 0 (all done: closed)
+    expect(values('sprint')).toEqual(['all', 'Phase 1', 'Phase 2', 'Phase 0']);
     expect(values('status')).toEqual(['all', 'todo', 'in_progress', 'in_review', 'blocked', 'done', 'skipped']);
     // No task is in review: offered with a count of 0, and can be selected
     expect(button(container, 'status', 'in_review')).toHaveAttribute('aria-label', 'In Review, 0 tasks');
     expect(button(container, 'status', 'in_review')).toBeEnabled();
     expect(container.querySelectorAll('.filter-btn.active')).toHaveLength(4);
     expect(button(container, 'type', 'feature')).toHaveAttribute('aria-label', 'Feature, 3 tasks');
-    expect(button(container, 'phase', 'all')).toHaveAttribute('aria-label', 'All phases, 12 tasks');
+    expect(button(container, 'sprint', 'all')).toHaveAttribute('aria-label', 'All sprints, 12 tasks');
     // standard.json has no priorities: every task has the default
     expect(values('priority')).toEqual(['all', 'P2']);
     expect(button(container, 'priority', 'all')).toHaveAttribute('aria-label', 'All priorities, 12 tasks');

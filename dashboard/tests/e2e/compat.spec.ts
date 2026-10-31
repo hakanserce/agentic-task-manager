@@ -15,7 +15,7 @@ for (const fixture of ['standard', 'minimal', 'no-meta', 'edge-cases', 'empty'])
     await page.locator('#tab-progress').click();
     await expect(page.locator('#progress')).toBeVisible();
     if (fixture === 'empty') await expect(page.locator('#progress')).toContainText('No tasks match current filters');
-    else await expect(page.locator('#phase-table')).toBeVisible();
+    else await expect(page.locator('#sprint-table')).toBeVisible();
 
     await page.locator('#tab-graph').click();
     await expect(page.locator('#dep-graph')).toBeVisible();

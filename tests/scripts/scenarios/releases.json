@@ -1,0 +1,370 @@
+[
+  {
+    "name": "atm releases notes: done tasks by type in the project's order, with their outcome notes; what isn't done yet",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [{ "id": "A", "state": "active", "release": "1.0" }],
+            "releases": [{ "id": "1.0", "name": "First" }, { "id": "1.1" }]
+          },
+          "tasks": [
+            {
+              "id": "T-2",
+              "name": "Fix the login",
+              "type": "bugfix",
+              "status": "done",
+              "sprint": "A",
+              "notes": [
+                { "at": "2026-05-01T00:00:00Z", "kind": "note", "text": "not this one" },
+                { "at": "2026-05-02T00:00:00Z", "kind": "outcome", "text": "Sessions survive a restart" }
+              ]
+            },
+            { "id": "T-3", "name": "Sign-in page", "type": "feature", "status": "done", "sprint": "A" },
+            { "id": "T-4", "name": "Dark mode", "type": "feature", "status": "todo", "sprint": "A" },
+            { "id": "T-5", "name": "Later", "type": "feature", "status": "done", "release": "1.1" },
+            { "id": "T-6", "name": "Dropped", "type": "feature", "status": "skipped", "sprint": "A" }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [{ "id": "T-1", "name": "Repository", "type": "infra", "status": "done", "release": "1.0" }]
+        }
+      }
+    },
+    "args": ["releases", "notes", "1.0"],
+    "expect": {
+      "stdout": "# 1.0 “First”\n\n## Feature\n\n- **T-3** Sign-in page\n\n## Bugfix\n\n- **T-2** Fix the login: Sessions survive a restart\n\n## Infra\n\n- **T-1** Repository\n\n## Not done yet\n\n- T-4 Dark mode (todo)\n"
+    }
+  },
+  {
+    "name": "atm releases notes --json; a release with nothing done; an unknown release is refused",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "2.0" }] }, "tasks": [] } },
+      "commands": [["sh", "-c", "\"$ATM\" releases notes 2.0 > out.txt; \"$ATM\" releases notes 9.9 2> err.txt; true"]]
+    },
+    "args": ["releases", "notes", "2.0", "--json"],
+    "expect": {
+      "json": { "release": { "id": "2.0", "state": "planned" }, "groups": [], "open": [] },
+      "files": {
+        "out.txt": "# 2.0\n\nNothing done in it yet.\n",
+        "err.txt": "atm: no release '9.9'; the releases: 2.0\n"
+      }
+    }
+  },
+  {
+    "name": "atm releases lists the open releases with their tasks by kind and stage; a task's release is its own, else its sprint's",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [{ "id": "A", "state": "active", "release": "1.0" }],
+            "releases": [
+              { "id": "0.9", "state": "archived" },
+              { "id": "1.0", "name": "First", "target": "2026-06-01" },
+              { "id": "1.1" }
+            ]
+          },
+          "tasks": [
+            { "id": "T-1", "status": "done", "sprint": "A" },
+            { "id": "T-2", "status": "done", "sprint": "A", "pr": { "number": 4, "url": "https://x/pull/4" } },
+            { "id": "T-3", "status": "todo", "sprint": "A" },
+            { "id": "T-4", "status": "todo", "sprint": "A", "release": "1.1" }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            {
+              "id": "T-0",
+              "status": "done",
+              "release": "1.0",
+              "pr": { "number": 3, "url": "https://x/pull/3" },
+              "merged_at": "2026-05-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["releases"],
+    "expect": {
+      "stdout": "1.0 “First” · planned · target 2026-06-01: 4 tasks (todo 1, done 3); done 1, in pr 1, merged 1\n1.1 · planned: 1 task (todo 1)\n"
+    }
+  },
+  {
+    "name": "atm releases --all --json lists the archived ones too",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "releases": [{ "id": "0.9", "state": "archived" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["releases", "--all", "--json"],
+    "expect": { "json": [{ "id": "0.9", "state": "archived", "tasks": 0, "by_kind": {}, "by_stage": {} }] }
+  },
+  {
+    "name": "no releases yet says how to add one",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["releases"],
+    "expect": { "stdout": "No releases yet: atm releases add <R>.\n" }
+  },
+  {
+    "name": "atm releases add, with a name and a target date",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0" }] }, "tasks": [] } }
+    },
+    "args": ["releases", "add", "1.1", "--name", "Sprints", "--target", "2026-07-01"],
+    "expect": {
+      "stdout": "Added the release “1.1” (planned).\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "releases": [
+              { "id": "1.0" },
+              { "id": "1.1", "state": "planned", "name": "Sprints", "target": "2026-07-01" }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    }
+  },
+  {
+    "name": "atm releases add --pr gives it every task of that pull request, in both files (SR-8.2)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-2", "status": "done", "pr": { "number": 27, "url": "https://github.com/o/r/pull/27" } },
+            { "id": "T-3", "status": "done", "pr": { "number": 28, "url": "https://github.com/o/r/pull/28" } }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [{ "id": "T-1", "status": "done", "pr": { "number": 27, "url": "https://github.com/o/r/pull/27" } }]
+        }
+      }
+    },
+    "args": ["releases", "add", "0.22.0", "--pr", "27", "--json"],
+    "expect": {
+      "json": {
+        "release": {
+          "id": "0.22.0",
+          "state": "planned",
+          "pr": { "number": 27, "url": "https://github.com/o/r/pull/27" }
+        },
+        "tasks": ["T-2", "T-1"]
+      },
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "releases": [
+              { "id": "0.22.0", "state": "planned", "pr": { "number": 27, "url": "https://github.com/o/r/pull/27" } }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-2",
+              "status": "done",
+              "pr": { "number": 27, "url": "https://github.com/o/r/pull/27" },
+              "release": "0.22.0"
+            },
+            { "id": "T-3", "status": "done", "pr": { "number": 28, "url": "https://github.com/o/r/pull/28" } }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "pr": { "number": 27, "url": "https://github.com/o/r/pull/27" },
+              "release": "0.22.0"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "atm releases add with several --pr and --released-at: a release that shipped already, from all its PRs",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-3", "status": "done", "pr": { "number": 10, "url": "https://github.com/o/r/pull/10" } }]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            { "id": "T-1", "status": "done", "pr": { "number": 8, "url": "https://github.com/o/r/pull/8" } },
+            { "id": "T-2", "status": "done", "pr": { "number": 9, "url": "https://github.com/o/r/pull/9" } }
+          ]
+        }
+      }
+    },
+    "args": [
+      "releases",
+      "add",
+      "0.14.0",
+      "--pr",
+      "8",
+      "--pr",
+      "9",
+      "--pr",
+      "10",
+      "--released-at",
+      "2026-10-25T07:46:19Z"
+    ],
+    "expect": {
+      "stdout": "Added the release “0.14.0” (released), with the 3 tasks of PRs #8, #9, #10.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "releases": [
+              {
+                "id": "0.14.0",
+                "state": "released",
+                "pr": { "number": 10, "url": "https://github.com/o/r/pull/10" },
+                "released_at": "2026-10-25T07:46:19Z"
+              }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-3",
+              "status": "done",
+              "pr": { "number": 10, "url": "https://github.com/o/r/pull/10" },
+              "release": "0.14.0"
+            }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "pr": { "number": 8, "url": "https://github.com/o/r/pull/8" },
+              "release": "0.14.0"
+            },
+            {
+              "id": "T-2",
+              "status": "done",
+              "pr": { "number": 9, "url": "https://github.com/o/r/pull/9" },
+              "release": "0.14.0"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "add --released-at needs an ISO time",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["releases", "add", "1.0", "--released-at", "last week"],
+    "expect": { "exit": 2, "stderrIncludes": ["--released-at needs a time like"] }
+  },
+  {
+    "name": "add refuses a taken ID, an ID with other characters, a bad date and a PR with no tasks; nothing changes",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0" }] }, "tasks": [] } },
+      "commands": [
+        [
+          "sh",
+          "-c",
+          "\"$ATM\" releases add 1.0 2>> out.txt; \"$ATM\" releases add '1.0; rm -rf /' 2>> out.txt; \"$ATM\" releases add 1.1 --target 'July' 2>> out.txt; true"
+        ]
+      ]
+    },
+    "args": ["releases", "add", "1.2", "--pr", "9"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["no task is in pull request #9"],
+      "files": {
+        "out.txt": "atm: there is already a release '1.0'\natm: '1.0; rm -rf /': a release ID is letters, digits, '.', '-' and '_' (at most 64)\natm: --target 'July': use a date, YYYY-MM-DD\n",
+        ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0" }] }, "tasks": [] }
+      }
+    }
+  },
+  {
+    "name": "atm releases edit changes the name and removes the target with an empty value",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "releases": [{ "id": "1.0", "target": "2026-06-01" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["releases", "edit", "1.0", "--name", "First", "--target", ""],
+    "expect": {
+      "stdout": "1.0: changed name, target\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0", "name": "First" }] }, "tasks": [] }
+      }
+    }
+  },
+  {
+    "name": "atm releases archive; an archived release isn't archived again",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0" }] }, "tasks": [] } },
+      "commands": [["sh", "-c", "\"$ATM\" releases archive 1.0 > out.txt"]]
+    },
+    "args": ["releases", "archive", "1.0"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["the release '1.0' is already archived"],
+      "files": {
+        "out.txt": "Archived the release “1.0”.\n",
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "releases": [{ "id": "1.0", "state": "archived" }] },
+          "tasks": []
+        }
+      }
+    }
+  },
+  {
+    "name": "a sprint's release must be one of meta.releases",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "sprints": [{ "id": "A" }] }, "tasks": [] } }
+    },
+    "args": ["sprints", "edit", "A", "--release", "2.0"],
+    "expect": { "exit": 2, "stderrIncludes": ["no release '2.0'; the releases: none yet: atm releases add <R>"] }
+  },
+  {
+    "name": "list --release of a release that doesn't exist is refused",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0" }] }, "tasks": [] } }
+    },
+    "args": ["list", "--release", "2.0"],
+    "expect": { "exit": 2, "stderrIncludes": ["no release '2.0'; the releases: 1.0"] }
+  },
+  {
+    "name": "meta.releases is checked: states, dates and IDs",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "releases": [{ "id": "1.0", "state": "shipped" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["releases"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["meta.releases: '1.0' has the state 'shipped'; use one of planned, released, archived"]
+    }
+  },
+  {
+    "name": "atm check: a sprint's or task's release that meta.releases doesn't have",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "release": "1.0" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "todo", "release": "2.0" }]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": {
+      "exit": 1,
+      "stdout": "error: T-1: the release '2.0' is not one of meta.releases\nerror: the sprint 'A': the release '1.0' is not one of meta.releases\n"
+    }
+  }
+]

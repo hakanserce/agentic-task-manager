@@ -27,7 +27,7 @@ describe('KanbanBoard completion ring', () => {
 
   it('follows the filters and the search', async () => {
     const { container } = render(KanbanBoard);
-    dashboard.toggleFilter('phase', '1');
+    dashboard.toggleFilter('sprint', 'Phase 1');
     await tick();
     const phase1 = standard.tasks.filter((t) => t.phase === 1 && t.status !== 'skipped');
     const done = phase1.filter((t) => t.status === 'done').length;

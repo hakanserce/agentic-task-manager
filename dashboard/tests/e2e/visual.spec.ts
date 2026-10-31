@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { board, boardCard, expect, openDashboard, summary, test } from './helpers';
+import { board, boardCard, expect, openDashboard, sprintNumbers, summary, test } from './helpers';
 
 /**
  * Screenshot of the view under the title bar (#graph-section). The section is scrolled into view first, and the
@@ -62,7 +62,7 @@ test('visual: detail panel', async ({ page, tasksServer }) => {
 
 for (const fixture of ['standard', 'kanban']) {
   test(`visual: kanban board (${fixture})`, async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, fixture);
+    await openDashboard(page, tasksServer.withAtmSummary(), fixture);
     await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
     await sectionScreenshot(page, `${fixture}-kanban.png`);
@@ -145,7 +145,7 @@ test.describe('visual: light mode', () => {
   });
 
   test('kanban board', async ({ page, tasksServer }) => {
-    await openDashboard(page, tasksServer, 'kanban');
+    await openDashboard(page, tasksServer.withAtmSummary(), 'kanban');
     await page.locator('#tab-kanban').click();
     await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
     await sectionScreenshot(page, 'light-kanban.png');
@@ -200,7 +200,7 @@ for (const mode of ['dark', 'light'] as const) {
     });
 
     test('kanban board: review, blocked, stages in Done', async ({ page, tasksServer }) => {
-      await openDashboard(page, tasksServer, 'v4', { tab: 'kanban' });
+      await openDashboard(page, tasksServer.withAtmSummary(), 'v4', { tab: 'kanban' });
       await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
       await sectionScreenshot(page, `v4-${mode}-kanban.png`);
     });
@@ -274,7 +274,7 @@ for (const mode of ['dark', 'light'] as const) {
   test(`visual: update notice (${mode})`, async ({ page, tasksServer }) => {
     await page.emulateMedia({ colorScheme: mode });
     await tasksServer.serverBuild('newer-build');
-    await openDashboard(page, tasksServer, 'standard');
+    await openDashboard(page, tasksServer.withAtmSummary(), 'standard');
     await expect(page.locator('#subtitle')).toContainText('loaded from tasks.json');
     await expect(page.locator('#update-notice')).toBeVisible();
     await expect(page).toHaveScreenshot(`update-notice-${mode}.png`, {
@@ -310,7 +310,7 @@ for (const mode of ['dark', 'light'] as const) {
   });
 }
 
-// The overview of all projects: cards with progress, phase, agents, activity, a "needs you" and a gone project
+// The overview of all projects: cards with sprints or without, agents, activity, a "needs you" and a gone project
 for (const mode of ['dark', 'light'] as const) {
   test(`visual: projects overview (${mode})`, async ({ page, tasksServer }) => {
     await page.emulateMedia({ colorScheme: mode });
@@ -325,13 +325,13 @@ for (const mode of ['dark', 'light'] as const) {
           done: 9,
           skipped: 2,
           percent: 50,
-          current_phase: { id: 3, name: 'Polish', done: 1, total: 4 },
-          recent_phases: [
-            { id: 1, name: 'Setup', done: 5, total: 5, percent: 100 },
-            { id: 2, name: 'Core', done: 3, total: 7, percent: 43 },
-            { id: 3, name: 'Polish', done: 1, total: 4, percent: 25 },
-            { id: 4, name: null, done: 0, total: 2, percent: 0 },
+          recent_sprints: [
+            sprintNumbers('Setup', 5, 5, 'closed'),
+            sprintNumbers('Core', 3, 7, 'closed'),
+            sprintNumbers('Polish', 1, 4, 'active'),
+            sprintNumbers('Ada Lovelace', 0, 2),
           ],
+          active_sprint: { ...sprintNumbers('Polish', 1, 4, 'active'), due: '2026-01-04', goal: 'Card polish' },
           agents_working: 2,
           working: [
             { task: 'T-14', name: 'Kanban card polish', agent: 'claude:e5ea9db0', branch: 'dev/polish' },
@@ -354,7 +354,6 @@ for (const mode of ['dark', 'light'] as const) {
         'Waiting Project',
         summary({
           needs_you: { review: 1, blocked_on_user: 1 },
-          recent_phases: [{ id: 1, name: null, done: 2, total: 5, percent: 40 }],
           next: [{ id: 'T-3', name: 'Sign-in page' }],
         }),
       )
@@ -455,10 +454,33 @@ for (const theme of [
         ([t, m]) => localStorage.setItem('atm-dashboard', JSON.stringify({ theme: t, mode: m, autoRefresh: false })),
         [theme, mode],
       );
-      await openDashboard(page, tasksServer, 'kanban');
+      await openDashboard(page, tasksServer.withAtmSummary(), 'kanban');
       await page.locator('#tab-kanban').click();
       await expect(page.locator('#kanban .kanban-card').first()).toBeVisible();
       await sectionScreenshot(page, `theme-${theme}-${mode}.png`);
     });
   }
+}
+
+// The sprint header and the release view (SR-7.2, SR-7.5), in fixtures/sprints.json: "Ada Lovelace" is active, due
+// 2026-04-12, so two days overdue here
+for (const colorScheme of ['dark', 'light'] as const) {
+  test.describe(colorScheme, () => {
+    test.use({ colorScheme });
+
+    test(`visual: sprint header (${colorScheme})`, async ({ page, tasksServer }) => {
+      await page.clock.setFixedTime(new Date('2026-04-14T12:00:00Z'));
+      await openDashboard(page, tasksServer, 'sprints');
+      await expect(page.locator('#sprint-header')).toHaveScreenshot(`sprint-header-${colorScheme}.png`);
+    });
+
+    test(`visual: release view (${colorScheme})`, async ({ page, tasksServer }) => {
+      await page.clock.setFixedTime(new Date('2026-04-14T12:00:00Z'));
+      // Tall enough for the whole tab: scrolled down, the view would sit under the fixed status bar
+      await page.setViewportSize({ width: 1280, height: 1800 });
+      await openDashboard(page, tasksServer, 'sprints', { tab: 'progress' });
+      await page.locator('.release-row[data-release="1.0"] summary').click();
+      await expect(page.locator('#release-view')).toHaveScreenshot(`release-view-${colorScheme}.png`);
+    });
+  });
 }

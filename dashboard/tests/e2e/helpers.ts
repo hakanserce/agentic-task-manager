@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { test as base, expect, type Page } from '@playwright/test';
 import type { FilterGroup } from '../../src/lib/filters';
 import { PREFS_KEY } from '../../src/lib/prefs';
@@ -19,6 +22,28 @@ const SEARCH = /\/api\/search(\?.*)?$/;
 /** The id of the project the fixture serves by default */
 export const FIXTURE_PROJECT = 'fixture';
 
+/** This checkout's atm-cli */
+const ATM = path.resolve(import.meta.dirname, '../../../plugin/scripts/atm.py');
+
+/** What atm serve would list as the summary of a project holding `body` as its tasks.json: atm-cli's own
+ * (`atm summary`), so the dashboard's Next up is tested against atm's rule, not a copy of it (T-321) */
+function atmSummary(body: string): Record<string, unknown> {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'atm-summary-'));
+  try {
+    mkdirSync(path.join(dir, '.agentic-task-manager'));
+    writeFileSync(path.join(dir, '.agentic-task-manager/tasks.json'), body);
+    const r = spawnSync('python3', [ATM, 'summary'], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: { ...process.env, ATM_HOME: path.join(dir, '.atm-home'), GIT_CEILING_DIRECTORIES: path.dirname(dir) },
+    });
+    if (r.status !== 0) throw new Error(`atm summary failed: ${r.stderr}`);
+    return JSON.parse(r.stdout) as Record<string, unknown>;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 /** A project summary as api/projects gives it (docs/multi-project-api.md 3.2), with chosen fields */
 export function summary(fields: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -26,7 +51,8 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
     done: 4,
     skipped: 0,
     percent: 40,
-    current_phase: { id: 1, name: null, done: 2, total: 5 },
+    active_sprint: null,
+    recent_sprints: null,
     agents_working: 0,
     working: [],
     next: [],
@@ -35,14 +61,23 @@ export function summary(fields: Record<string, unknown> = {}): Record<string, un
     needs_you: { review: 0, blocked_on_user: 0 },
     last_activity: '2026-01-01T00:00:00Z',
     completions_14d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
-    recent_phases: [],
     ...fields,
   };
 }
 
+/** A sprint's numbers as a project's summary gives them (recent_sprints, active_sprint) */
+export function sprintNumbers(
+  id: string,
+  done: number,
+  total: number,
+  state: 'planned' | 'active' | 'closed' = 'planned',
+): Record<string, unknown> {
+  return { id, state, due: null, release: null, done, total, percent: Math.round((100 * done) / total) };
+}
+
 /** A board card as a project's summary gives it (docs/multi-project-api.md 3.3) */
 export function boardCard(id: string, name: string, fields: Record<string, unknown> = {}): Record<string, unknown> {
-  return { id, name, type: 'feature', phase: 1, priority: 'P2', labels: [], ...fields };
+  return { id, name, type: 'feature', sprint: null, priority: 'P2', labels: [], ...fields };
 }
 
 type BoardColumnId = 'todo' | 'active' | 'review' | 'blocked' | 'done';
@@ -85,6 +120,8 @@ export class TasksServer {
   /** Projects with a logo: the SVG served at p/<id>/logo, by id; null lists one that fails to load */
   private logos = new Map<string, string | null>();
   private listed = true;
+  /** Whether api/projects gives the default project atm's own summary of what it serves (withAtmSummary) */
+  private summarized = false;
   /** How many times tasks-archive.json was fetched (it is loaded only when a view needs it) */
   archiveRequests = 0;
   // Like atm serve: each version of the file has an ETag, and a request that already has it gets a 304 (D-5.1)
@@ -117,8 +154,9 @@ export class TasksServer {
       summary,
       logo: this.logos.has(id) ? `p/${id}/logo` : null,
     });
+    const own = this.summarized && this.body && this.status === 200 ? atmSummary(this.body) : null;
     return [
-      project(this.projectId, typeof this.meta.project === 'string' ? this.meta.project : this.projectId),
+      project(this.projectId, typeof this.meta.project === 'string' ? this.meta.project : this.projectId, own),
       ...[...this.others].map(([id, p]) => project(id, p.name, p.summary)),
       ...[...this.gone].map(([id, name]) => ({ ...project(id, name), missing: true })),
     ];
@@ -223,6 +261,13 @@ export class TasksServer {
    * (summary() makes one) for api/projects. */
   addProject(id: string, data: string | TasksData, name = id, summary: Record<string, unknown> | null = null) {
     this.others.set(id, { name, body: toBody(data), summary });
+    return this;
+  }
+
+  /** Give the default project the summary atm serve would: atm-cli's own, of what is served at each request (its
+   * `next` is the Kanban's Next up). Off by default, so the overview shows the default project without numbers. */
+  withAtmSummary() {
+    this.summarized = true;
     return this;
   }
 

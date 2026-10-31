@@ -299,7 +299,6 @@ test.describe('All projects board', () => {
       total: 5,
       done: 5,
       percent: 100,
-      current_phase: null,
       last_activity: '2026-01-01T00:00:00Z',
       board: board({ done: [boardCard('I-1', 'Old work', { completed_at: '2026-01-01T00:00:00Z' })] }),
     });

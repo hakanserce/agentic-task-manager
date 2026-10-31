@@ -1919,6 +1919,20 @@ button.repo-ref {
   font-size: 14px;
 }
 
+/* The sprints a task was in (SR-4.5): flagged once carried over twice */
+.detail-sprint-history {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.detail-sprint-history li {
+  display: flex;
+  gap: 8px;
+}
+.detail-carried {
+  color: var(--orange);
+  text-transform: none;
+}
 .detail-deps {
   display: flex;
   flex-direction: column;
@@ -2035,6 +2049,136 @@ button.repo-ref {
   border: 1px solid var(--border);
   border-radius: 10px;
   min-height: 420px;
+}
+/* Review states, work together, components (SR-6.6, SR-7.6) */
+.review-state-chip {
+  background: color-mix(in srgb, var(--orange) 15%, transparent);
+  color: var(--orange);
+}
+.review-state-chip[data-review-state='approved'] {
+  background: color-mix(in srgb, var(--green) 15%, transparent);
+  color: var(--green);
+}
+.with-user-chip {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+.component-chip {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+/* How a finished task ended when it wasn't done: won't do, obsolete, duplicate (SR-2.8) */
+.resolution-chip {
+  background: var(--surface2);
+  color: var(--text-muted);
+}
+/* The releases on the Progress tab (SR-7.5) */
+.release-view {
+  margin-top: 20px;
+}
+.release-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.release-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.release-counts {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+.release-notes summary {
+  margin-top: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.release-notes .link-button {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+}
+.release-notes pre {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--surface2);
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+/* The sprint header (SR-7.2): at the top of the Kanban, List and Graph panels */
+.sprint-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.sprint-title,
+.sprint-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-width: 0;
+}
+.sprint-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.sprint-name {
+  font-size: 15px;
+}
+.sprint-state {
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.sprint-goal,
+.sprint-release,
+.sprint-added,
+.sprint-carried {
+  color: var(--text-muted);
+}
+.sprint-review-pending {
+  color: var(--orange);
+}
+.sprint-due.overdue {
+  color: var(--red);
+  font-weight: 600;
+}
+.sprint-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sprint-bar {
+  display: inline-block;
+  width: 80px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.sprint-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
 }
 .view-panel {
   flex: 1;
@@ -2869,6 +3013,16 @@ svg.graph-minimap.hidden {
   stroke: var(--text-muted);
   stroke-width: 1;
   opacity: 0.6;
+}
+/* The focused (or current) sprint's due date (SR-7.4) */
+.burndown-due {
+  stroke: var(--red);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+}
+.burndown-due-label {
+  fill: var(--red);
 }
 .burndown-scope,
 .burndown-remaining {
@@ -3984,6 +4138,9 @@ svg.graph-minimap.hidden {
 }
 .project-card-phase-count {
   flex-shrink: 0;
+}
+.project-card-sprint .overdue {
+  color: var(--red);
 }
 .project-card-note code {
   color: var(--text);

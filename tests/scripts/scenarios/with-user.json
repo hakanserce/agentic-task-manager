@@ -1,0 +1,99 @@
+[
+  {
+    "name": "next skips work done together with the user, unless --with-user (SR-3.5)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "name": "Together", "type": "feature", "status": "todo", "with": "user", "priority": "P0" },
+            { "id": "T-2", "name": "Alone", "type": "feature", "status": "todo" }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "\"$ATM\" next --with-user > together.txt"]]
+    },
+    "args": ["next"],
+    "expect": {
+      "stdout": "Next: T-2 Alone (backlog, feature)\n",
+      "files": { "together.txt": "Next: T-1 Together (backlog, feature)\n" }
+    }
+  },
+  {
+    "name": "only work together left: next says so; start still takes it; list --with-user lists it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "name": "Together", "type": "feature", "status": "todo", "with": "user" }]
+        }
+      },
+      "commands": [
+        ["sh", "-c", "\"$ATM\" next > next.txt; \"$ATM\" list --with-user > list.txt; \"$ATM\" start T-1 > start.txt"]
+      ]
+    },
+    "args": ["show", "T-1", "--json"],
+    "expect": {
+      "stdoutIncludes": ["\"status\": \"in_progress\""],
+      "files": {
+        "next.txt": "No task available: only work done together with the user is left in the tasks: T-1 (--with-user takes it).\n",
+        "list.txt": "T-1  todo  P2  Together\n"
+      }
+    }
+  },
+  {
+    "name": "add --with user and edit --with '' set and remove it",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "tasks": [] }
+      },
+      "commands": [["sh", "-c", "\"$ATM\" add --name A --type docs --with user > add.txt"]]
+    },
+    "args": ["edit", "T-001", "--with", ""],
+    "expect": {
+      "stdout": "T-001: changed with\n",
+      "files": { "add.txt": "Added T-001 A\n" }
+    }
+  },
+  {
+    "name": "migrate gives unfinished tasks labelled interactive with: user, once; the label stays (SR-6.5)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "todo", "labels": ["interactive"] },
+            { "id": "T-2", "status": "done", "labels": ["interactive"] },
+            { "id": "T-3", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Gave 1 task labelled interactive `with: user` (done together with you; unattended loops skip them).\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "migrations": ["interactive-label"] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "labels": ["interactive"], "with": "user" },
+            { "id": "T-2", "status": "done", "labels": ["interactive"] },
+            { "id": "T-3", "status": "todo" }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "once migrated, a with taken off isn't put back",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "migrations": ["interactive-label"] },
+          "tasks": [{ "id": "T-1", "status": "todo", "labels": ["interactive"] }]
+        }
+      }
+    },
+    "args": ["migrate"],
+    "expect": { "stdout": "Nothing to migrate.\n" }
+  }
+]

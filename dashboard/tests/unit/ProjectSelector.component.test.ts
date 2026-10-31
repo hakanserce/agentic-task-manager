@@ -9,12 +9,10 @@ const summary = (percent: number, review = 0, blocked = 0): ProjectSummary => ({
   done: percent / 10,
   skipped: 0,
   percent,
-  current_phase: null,
   agents_working: 0,
   needs_you: { review, blocked_on_user: blocked },
   last_activity: null,
   completions_14d: [],
-  recent_phases: [],
 });
 const project = (id: string, name: string, s: ProjectSummary | null, missing = false): ProjectEntry => ({
   id,

@@ -1,0 +1,306 @@
+[
+  {
+    "name": "phases become sprints in tasks.json and the archive: named, unnamed, finished, open, a clash; staged",
+    "setup": {
+      "commit": true,
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/.gitattributes": "# 'atm' is defined in each clone's git config (merge.atm.driver), registered by the atm plugin on every run.\n# Without it, git merges tasks.json line by line as usual.\ntasks.json merge=atm\n",
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "id": "p",
+            "project": "P",
+            "phases": [
+              { "id": 0, "name": "Foundations" },
+              { "id": 2, "name": "Foundations" },
+              { "id": 3, "name": "Later" }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "phase": 0,
+              "status": "done",
+              "created_at": "2026-01-01T00:00:00Z",
+              "started_at": "2026-01-02T00:00:00Z",
+              "completed_at": "2026-01-03T00:00:00Z"
+            },
+            {
+              "id": "T-2",
+              "phase": 0,
+              "status": "skipped",
+              "created_at": "2026-01-01T00:00:00Z",
+              "skipped_at": "2026-01-04T00:00:00Z"
+            },
+            {
+              "id": "T-3",
+              "phase": 1,
+              "status": "done",
+              "created_at": "2026-01-05T00:00:00Z",
+              "started_at": "2026-01-06T00:00:00Z",
+              "completed_at": "2026-01-07T00:00:00Z"
+            },
+            {
+              "id": "T-4",
+              "phase": 1,
+              "status": "todo",
+              "created_at": "2026-01-05T00:00:00Z"
+            },
+            { "id": "T-5", "phase": 2, "status": "todo" },
+            {
+              "id": "T-6",
+              "status": "todo",
+              "created_at": "2026-01-08T00:00:00Z"
+            }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": { "phases": [{ "id": 0, "name": "Foundations" }] },
+          "tasks": [
+            {
+              "id": "T-0",
+              "phase": 0,
+              "status": "done",
+              "created_at": "2025-12-30T00:00:00Z",
+              "started_at": "2025-12-31T00:00:00Z",
+              "completed_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["migrate"],
+    "env": { "ATM_NOW": "2026-02-01T00:00:00Z" },
+    "expect": {
+      "stdout": "Phases are now sprints: turned 4 phases into sprints (staged, not committed).\nClosed (all their tasks finished): Foundations.\nPlanned: Phase 1, Foundations (phase 2), Later.\nNone is active yet: plan one with /atm:plan-sprint.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "id": "p",
+            "project": "P",
+            "sprints": [
+              {
+                "id": "Foundations",
+                "state": "closed",
+                "start": "2025-12-31T00:00:00Z",
+                "end": "2026-01-04T00:00:00Z",
+                "report": { "done": ["T-1", "T-0"], "carried": [] }
+              },
+              { "id": "Phase 1", "state": "planned" },
+              { "id": "Foundations (phase 2)", "state": "planned" },
+              { "id": "Later", "state": "planned" }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "created_at": "2026-01-01T00:00:00Z",
+              "started_at": "2026-01-02T00:00:00Z",
+              "completed_at": "2026-01-03T00:00:00Z",
+              "sprint": "Foundations",
+              "sprint_history": [{ "sprint": "Foundations", "from": "2026-01-01T00:00:00Z" }]
+            },
+            {
+              "id": "T-2",
+              "status": "skipped",
+              "created_at": "2026-01-01T00:00:00Z",
+              "skipped_at": "2026-01-04T00:00:00Z",
+              "sprint": "Foundations",
+              "sprint_history": [{ "sprint": "Foundations", "from": "2026-01-01T00:00:00Z" }]
+            },
+            {
+              "id": "T-3",
+              "status": "done",
+              "created_at": "2026-01-05T00:00:00Z",
+              "started_at": "2026-01-06T00:00:00Z",
+              "completed_at": "2026-01-07T00:00:00Z",
+              "sprint": "Phase 1",
+              "sprint_history": [{ "sprint": "Phase 1", "from": "2026-01-05T00:00:00Z" }]
+            },
+            {
+              "id": "T-4",
+              "status": "todo",
+              "created_at": "2026-01-05T00:00:00Z",
+              "sprint": "Phase 1",
+              "sprint_history": [{ "sprint": "Phase 1", "from": "2026-01-05T00:00:00Z" }]
+            },
+            {
+              "id": "T-5",
+              "status": "todo",
+              "sprint": "Foundations (phase 2)",
+              "sprint_history": [
+                {
+                  "sprint": "Foundations (phase 2)",
+                  "from": "2026-02-01T00:00:00Z"
+                }
+              ]
+            },
+            {
+              "id": "T-6",
+              "status": "todo",
+              "created_at": "2026-01-08T00:00:00Z"
+            }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "meta": {},
+          "tasks": [
+            {
+              "id": "T-0",
+              "status": "done",
+              "created_at": "2025-12-30T00:00:00Z",
+              "started_at": "2025-12-31T00:00:00Z",
+              "completed_at": "2026-01-01T00:00:00Z",
+              "sprint": "Foundations",
+              "sprint_history": [{ "sprint": "Foundations", "from": "2025-12-30T00:00:00Z" }]
+            }
+          ]
+        }
+      },
+      "git": {
+        "staged": ["M .agentic-task-manager/tasks.json", "M .agentic-task-manager/tasks-archive.json"]
+      }
+    }
+  },
+  {
+    "name": "--json lists the sprints made from phases",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "phase": 1.5,
+              "status": "todo",
+              "created_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["migrate", "--json"],
+    "expect": {
+      "json": {
+        "moved": null,
+        "removed_dashboard": null,
+        "warning": null,
+        "gitignore_updated": true,
+        "merge_driver_updated": false,
+        "cleaned_up": null,
+        "finish_times_filled": 0,
+        "sprints_from_phases": [{ "id": "Phase 1.5", "state": "planned" }],
+        "with_user_from_label": 0
+      }
+    }
+  },
+  {
+    "name": "running twice: the second run changes nothing",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "phases": [{ "id": 1, "name": "Core" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "phase": 1,
+              "status": "todo",
+              "created_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "\"$ATM\" migrate"]]
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Core", "state": "planned" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "created_at": "2026-01-01T00:00:00Z",
+              "sprint": "Core",
+              "sprint_history": [{ "sprint": "Core", "from": "2026-01-01T00:00:00Z" }]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "a migrated project: a task merged in with a phase joins its sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Phase 1",
+                "state": "active",
+                "start": "2026-01-01T00:00:00Z"
+              }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "phase": 1,
+              "status": "todo",
+              "created_at": "2026-01-02T00:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Moved the tasks' phases to their sprints (staged, not committed).\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Phase 1",
+                "state": "active",
+                "start": "2026-01-01T00:00:00Z"
+              }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "created_at": "2026-01-02T00:00:00Z",
+              "sprint": "Phase 1",
+              "sprint_history": [{ "sprint": "Phase 1", "from": "2026-01-02T00:00:00Z" }]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "a project without phases is untouched",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/.gitignore": "tasks-dashboard.html\n.server.json\n.server.log\nclaims.json\nclaims-store.json\n.lock/\n",
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["migrate"],
+    "expect": {
+      "stdout": "Nothing to migrate.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    }
+  }
+]

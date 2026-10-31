@@ -13,24 +13,24 @@ test.describe('saved view', () => {
   test('filters, search, tab and Kanban options come back after a reload', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, project('p1'));
     await openFilters(page);
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     await filterButton(page, 'type', 'feature').click();
     await page.locator('#task-search').fill('user');
-    await page.locator('#kanban-group-by-phase').check();
+    await page.locator('#kanban-group-by-sprint').check();
     await page.locator('#kanban-show-skipped').check();
     await page.locator('#tab-graph').click();
 
     await page.goto('tasks-dashboard.html'); // no #view=: the saved tab applies, the graph (not the default Kanban)
-    await expect(page.locator('.filter-chip')).toHaveText(['Phase: 1', 'Type: Feature']);
+    await expect(page.locator('.filter-chip')).toHaveText(['Sprint: Phase 1', 'Type: Feature']);
     await expect(page.locator('#task-search')).toHaveValue('user');
     await expect(matchCount(page)).toHaveText('1 of 12 tasks');
     await expect(page.locator('#tab-graph')).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/#view=graph$/);
     await page.locator('#tab-kanban').click();
-    await expect(page.locator('#kanban-group-by-phase')).toBeChecked();
+    await expect(page.locator('#kanban-group-by-sprint')).toBeChecked();
     await expect(page.locator('#kanban-show-skipped')).toBeChecked();
     await openFilters(page);
-    await expect(filterButton(page, 'phase', '1')).toHaveClass(/\bactive\b/);
+    await expect(filterButton(page, 'sprint', 'Phase 1')).toHaveClass(/\bactive\b/);
   });
 
   test('"Show all" in the Kanban done column is remembered', async ({ page, tasksServer }) => {
@@ -59,7 +59,7 @@ test.describe('saved view', () => {
     data.meta = { ...data.meta, id: 'prog' };
     await openDashboard(page, tasksServer, data);
     await page.locator('#tab-progress').click();
-    await page.locator('#phase-table tbody tr').nth(1).click();
+    await page.locator('#sprint-table tbody tr').nth(1).click();
     const focused = await page.locator('#burndown-focus').textContent();
     expect(focused).toMatch(/^Phase \d+$/);
     await page.reload();
@@ -69,13 +69,13 @@ test.describe('saved view', () => {
   test('each project keeps its own view on the same origin', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, project('p1'));
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     tasksServer.use(project('p2'));
     await page.reload();
     await expect(page.locator('.filter-chip')).toHaveCount(0);
     tasksServer.use(project('p1'));
     await page.reload();
-    await expect(page.locator('.filter-chip')).toHaveText(['Phase: 2']);
+    await expect(page.locator('.filter-chip')).toHaveText(['Sprint: Phase 2']);
   });
 
   test('a #view= link wins over the saved tab', async ({ page, tasksServer }) => {
@@ -90,12 +90,12 @@ test.describe('saved view', () => {
     await openDashboard(page, tasksServer, project('p1'));
     await openFilters(page);
     await filterButton(page, 'type', 'polish').click();
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     const data = project('p1');
     data.tasks = data.tasks.filter((t) => t.type !== 'polish');
     tasksServer.use(data);
     await page.reload();
-    await expect(page.locator('.filter-chip')).toHaveText(['Phase: 2']);
+    await expect(page.locator('.filter-chip')).toHaveText(['Sprint: Phase 2']);
     await expect(matchCount(page)).toHaveText('3 of 11 tasks');
   });
 
@@ -119,7 +119,7 @@ test.describe('saved view', () => {
   }) => {
     await openDashboard(page, tasksServer, 'standard'); // no meta.id: the server's id stands in
     await openFilters(page);
-    await filterButton(page, 'phase', '0').click();
+    await filterButton(page, 'sprint', 'Phase 0').click();
     const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.includes(':view:')));
     expect(stored).toEqual([`atm-dashboard:view:id:${tasksServer.projectId}`]);
   });

@@ -17,7 +17,13 @@
   const points = $derived(data.points);
   const forecast = $derived(data.forecast);
   const t0 = $derived(points[0]?.t ?? now);
-  const t1 = $derived(Math.max(now, forecast?.range.high ?? now, t0 + 60_000));
+  // A closed sprint's chart ends where it closed; otherwise at now, the forecast's end or the due date
+  const until = $derived(data.end ?? now);
+  const t1 = $derived(
+    data.end !== undefined
+      ? Math.max(data.end, t0 + 60_000)
+      : Math.max(now, forecast?.range.high ?? now, data.due ?? now, t0 + 60_000),
+  );
   const y = $derived(countTicks(Math.max(...points.map((p) => p.scope), 1)));
   const time = $derived(timeTicks(t0, t1));
 
@@ -49,7 +55,7 @@
     const rect = (e.currentTarget as SVGRectElement).getBoundingClientRect();
     const px = e.clientX - rect.left + M.left;
     const t = t0 + ((px - M.left) / innerW) * (t1 - t0);
-    if (t <= now) {
+    if (t <= until) {
       const p = [...points].reverse().find((q) => q.t <= t) ?? points[0];
       hover = { x: px, lines: [formatWhen(t, now), `Remaining ${p.remaining}`, `Scope ${p.scope}`] };
     } else if (forecast) {
@@ -88,8 +94,14 @@
         <text class="burndown-axis" x={x(t)} y={HEIGHT - 8} text-anchor="middle">{timeTickLabel(t, time.step)}</text>
       {/each}
 
-      <line class="burndown-now" x1={x(now)} x2={x(now)} y1={M.top} y2={M.top + innerH} />
-      <text class="burndown-axis" x={x(now) - 4} y={M.top + innerH - 4} text-anchor="end">now</text>
+      {#if data.end === undefined}
+        <line class="burndown-now" x1={x(now)} x2={x(now)} y1={M.top} y2={M.top + innerH} />
+        <text class="burndown-axis" x={x(now) - 4} y={M.top + innerH - 4} text-anchor="end">now</text>
+      {/if}
+      {#if data.due !== undefined && data.due >= t0}
+        <line class="burndown-due" id="burndown-due" x1={x(data.due)} x2={x(data.due)} y1={M.top} y2={M.top + innerH} />
+        <text class="burndown-axis burndown-due-label" x={x(data.due) + 4} y={M.top + 10}>due</text>
+      {/if}
 
       {#if forecast}
         <polygon

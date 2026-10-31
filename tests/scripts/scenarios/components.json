@@ -1,0 +1,162 @@
+[
+  {
+    "name": "add suggests components from its files, without setting them",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "components": [
+              { "id": "dashboard", "label": "Dashboard", "paths": ["dashboard/**", "plugin/templates/**"] },
+              { "id": "atm-cli", "paths": ["atm-cli/**", "tests/scripts/**"] }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": [
+      "add",
+      "--name",
+      "Both",
+      "--type",
+      "feature",
+      "--file",
+      "atm-cli/atm/x.py",
+      "--file",
+      "dashboard/src/a.ts"
+    ],
+    "expect": {
+      "stdout": "Added T-001 Both\n  T-001: its files suggest the components dashboard, atm-cli (atm edit T-001 --add-component dashboard --add-component atm-cli)\n"
+    }
+  },
+  {
+    "name": "add --components auto sets the components its files are in",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "components": [
+              { "id": "dashboard", "paths": ["dashboard/**"] },
+              { "id": "docs", "paths": ["docs/*"] }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": [
+      "add",
+      "--name",
+      "A",
+      "--type",
+      "feature",
+      "--file",
+      "dashboard/src/lib/x.ts",
+      "--components",
+      "auto",
+      "--json"
+    ],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": [
+        {
+          "id": "T-001",
+          "name": "A",
+          "type": "feature",
+          "description": "",
+          "requirements": [],
+          "use_cases": [],
+          "status": "todo",
+          "dependencies": [],
+          "files": ["dashboard/src/lib/x.ts"],
+          "created_at": "2026-05-02T10:00:00Z",
+          "updated_at": "2026-05-02T10:00:00Z",
+          "created_by": "alice",
+          "updated_by": "alice",
+          "components": ["dashboard"]
+        }
+      ]
+    }
+  },
+  {
+    "name": "edit --add-file suggests the components the new file is in; --components auto adds them",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "components": [
+              { "id": "dashboard", "paths": ["dashboard/**"] },
+              { "id": "docs", "paths": ["docs/*"] }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "name": "a",
+              "type": "feature",
+              "status": "todo",
+              "components": ["dashboard"],
+              "files": ["dashboard/a.ts"]
+            }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "\"$ATM\" edit T-1 --add-file docs/guide.md > out.txt"]]
+    },
+    "args": ["edit", "T-1", "--components", "auto"],
+    "expect": {
+      "stdout": "T-1: changed components\n",
+      "files": {
+        "out.txt": "T-1: changed files\n  T-1: its files suggest the component docs (atm edit T-1 --add-component docs)\n"
+      }
+    }
+  },
+  {
+    "name": "in a project with components, a task's component must be one of them",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "components": [{ "id": "dashboard", "paths": ["dashboard/**"] }] },
+          "tasks": [{ "id": "T-1", "name": "a", "type": "feature", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["edit", "T-1", "--add-component", "server"],
+    "expect": { "exit": 2, "stderrIncludes": ["no component 'server'; the components: dashboard"] }
+  },
+  {
+    "name": "atm check warns about a task whose files match no component",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "components": [{ "id": "dashboard", "paths": ["dashboard/**"] }] },
+          "tasks": [
+            { "id": "T-1", "name": "a", "type": "feature", "status": "todo", "files": ["README.md"] },
+            { "id": "T-2", "name": "b", "type": "feature", "status": "todo", "files": ["dashboard/x.ts"] },
+            { "id": "T-3", "name": "c", "type": "feature", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": {
+      "stdout": "warning: T-1: its files match no component (meta.components' paths)\ntasks.json is fine (3 tasks, 1 warnings)\n"
+    }
+  },
+  {
+    "name": "meta.components is checked: paths are globs, review a mode",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "components": [{ "id": "dashboard", "paths": "dashboard/**" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["status"],
+    "expect": {
+      "exit": 1,
+      "stderrIncludes": ["meta.components: 'dashboard''s paths must be a list of globs (strings)"]
+    }
+  }
+]

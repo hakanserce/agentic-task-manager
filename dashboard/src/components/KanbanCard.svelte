@@ -4,6 +4,7 @@
   import { dashboard } from '../lib/state.svelte';
   import { phaseColor, typeStyle } from '../lib/theme';
   import { markdownPlainText } from '../lib/markdown';
+  import { REVIEW_STATE_LABELS } from '../lib/review';
   import { kindOf, priorityOf } from '../lib/vocab';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
   import BranchChip from './BranchChip.svelte';
@@ -11,9 +12,13 @@
   import PriorityBadge from './PriorityBadge.svelte';
   import StageChip from './StageChip.svelte';
 
-  let { card }: { card: KanbanCard } = $props();
+  // `showSprint`: the board shows tasks of more than one sprint, so the card names its own (SR-7.3)
+  let { card, showSprint = false }: { card: KanbanCard; showSprint?: boolean } = $props();
   const task = $derived(card.task);
-  const pc = $derived(phaseColor(task.phase));
+  const sprint = $derived(dashboard.sprints.sprintOf(task));
+  // A sprint keeps its colour: by its place in the project's sprints; the backlog is muted
+  const sprintIndex = $derived(dashboard.sprints.sprints.findIndex((s) => s.id === sprint));
+  const pc = $derived(sprintIndex < 0 ? 'var(--text-muted)' : phaseColor(sprintIndex));
   const ts = $derived(typeStyle(task.type));
   const kind = $derived(kindOf(dashboard.vocab, task.status));
   const claim = $derived(kind === 'active' ? dashboard.claims.get(task.id) : undefined);
@@ -41,12 +46,23 @@
 >
   <div class="kanban-card-top">
     <span class="kanban-card-id">{task.id}</span>
-    <span class="badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
-      >Phase {task.phase}</span
-    >
+    {#if showSprint}
+      <span
+        class="badge kanban-card-sprint"
+        data-sprint={sprint ?? 'backlog'}
+        style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}">{sprint ?? 'Backlog'}</span
+      >
+    {/if}
     <span class="badge" style="background:{ts.bg};color:{ts.color}">{task.type}</span>
     <PriorityBadge {task} />
     <StageChip {task} />
+    {#if kind === 'review' && task.review_state && task.review_state !== 'waiting'}
+      <span class="badge review-state-chip" data-review-state={task.review_state}
+        >{REVIEW_STATE_LABELS[task.review_state] ?? task.review_state}</span
+      >
+    {/if}
+    {#if task.with === 'user'}<span class="badge with-user-chip" title="Done together with you">with you</span>{/if}
+    {#each task.components ?? [] as component (component)}<span class="badge component-chip">{component}</span>{/each}
     <BranchChip {task} />
     <LabelChips {task} compact />
     {#if card.nextUp}<span class="kanban-next-up">Next up</span>{/if}

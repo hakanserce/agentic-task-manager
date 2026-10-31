@@ -1,0 +1,228 @@
+[
+  {
+    "name": "valid sprints: planned, active and closed, a state left out means planned",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Testing together",
+                "state": "closed",
+                "start": "2026-10-26T09:00:00Z",
+                "end": "2026-10-27T23:00:00Z"
+              },
+              { "id": "Themes", "state": "active", "goal": "Two board themes", "due": "2026-11-02" },
+              { "id": "Ada Lovelace" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo", "sprint": "Themes" }]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "stdout": "tasks.json is fine (1 tasks)\n" }
+  },
+  {
+    "name": "only one sprint can be active",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "A", "state": "active" },
+              { "id": "B", "state": "active" }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "exit": 1, "stdoutIncludes": ["meta.sprints: only one sprint can be active, but A and B are"] }
+  },
+  {
+    "name": "sprint names are unique, compared case-insensitively",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Themes" }, { "id": "themes" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "exit": 1, "stdoutIncludes": ["meta.sprints: 'themes' is listed twice"] }
+  },
+  {
+    "name": "an unknown sprint state is an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Themes", "state": "finished" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "exit": 1, "stdoutIncludes": ["'Themes' has the state 'finished'; use one of planned, active, closed"] }
+  },
+  {
+    "name": "a due date must be YYYY-MM-DD",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Themes", "due": "next week" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "exit": 1, "stdoutIncludes": ["'Themes' has the due date 'next week'; use YYYY-MM-DD"] }
+  },
+  {
+    "name": "meta.sprint_names is people or time",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "sprint_names": "planets" }, "tasks": [] }
+      }
+    },
+    "args": ["check"],
+    "expect": { "exit": 1, "stdoutIncludes": ["meta.sprint_names must be one of people, time"] }
+  },
+  {
+    "name": "a task in a sprint that isn't listed is an error",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Themes" }] },
+          "tasks": [{ "id": "T-1", "name": "a", "phase": 1, "type": "feature", "status": "todo", "sprint": "Gone" }]
+        }
+      }
+    },
+    "args": ["check"],
+    "expect": { "exit": 1, "stdoutIncludes": ["T-1: the sprint 'Gone' is not one of meta.sprints"] }
+  },
+  {
+    "name": "moving a task to another sprint ends its history entry and starts one (the name matched case-insensitively)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Alpha", "state": "active" }, { "id": "Beta" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "sprint": "Alpha",
+              "sprint_history": [{ "sprint": "Alpha", "from": "2026-05-01T09:00:00Z" }]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["edit", "T-1", "--sprint", "beta", "--json"],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": {
+        "id": "T-1",
+        "status": "todo",
+        "sprint": "Beta",
+        "sprint_history": [
+          { "sprint": "Alpha", "from": "2026-05-01T09:00:00Z", "to": "2026-05-02T10:00:00Z" },
+          { "sprint": "Beta", "from": "2026-05-02T10:00:00Z" }
+        ],
+        "updated_at": "2026-05-02T10:00:00Z",
+        "updated_by": "alice"
+      }
+    }
+  },
+  {
+    "name": "edit --backlog takes a task out of its sprint and ends its history entry",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Alpha", "state": "active" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "sprint": "Alpha",
+              "sprint_history": [{ "sprint": "Alpha", "from": "2026-05-01T09:00:00Z" }]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["edit", "T-1", "--backlog", "--json"],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": {
+        "id": "T-1",
+        "status": "todo",
+        "sprint_history": [{ "sprint": "Alpha", "from": "2026-05-01T09:00:00Z", "to": "2026-05-02T10:00:00Z" }],
+        "updated_at": "2026-05-02T10:00:00Z",
+        "updated_by": "alice"
+      }
+    }
+  },
+  {
+    "name": "a task can't go into a closed sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Old", "state": "closed" }] },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["edit", "T-1", "--sprint", "Old"],
+    "expect": { "exit": 2, "stderrIncludes": ["the sprint 'Old' is closed"] }
+  },
+  {
+    "name": "a task can't go into a sprint that doesn't exist; the open ones are named",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Old", "state": "closed" }, { "id": "Next" }] },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["edit", "T-1", "--sprint", "Nope"],
+    "expect": { "exit": 2, "stderrIncludes": ["no sprint 'Nope'; the open sprints: Next"] }
+  },
+  {
+    "name": "add --sprint puts the new task in the sprint, with its history",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Themes", "state": "active" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["add", "--name", "a", "--type", "feature", "--sprint", "Themes", "--json"],
+    "env": { "ATM_NOW": "2026-05-02T10:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": [
+        {
+          "id": "T-001",
+          "name": "a",
+          "type": "feature",
+          "description": "",
+          "requirements": [],
+          "use_cases": [],
+          "status": "todo",
+          "dependencies": [],
+          "files": [],
+          "created_at": "2026-05-02T10:00:00Z",
+          "updated_at": "2026-05-02T10:00:00Z",
+          "created_by": "alice",
+          "updated_by": "alice",
+          "sprint": "Themes",
+          "sprint_history": [{ "sprint": "Themes", "from": "2026-05-02T10:00:00Z" }]
+        }
+      ]
+    }
+  }
+]

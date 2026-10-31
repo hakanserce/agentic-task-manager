@@ -1,52 +1,59 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BACKLOG,
   emptyFilters,
   facetCounts,
   filterOptions,
   filterTasks,
   isActive,
   searchTasks,
-  shownPhaseOptions,
+  shownSprintOptions,
   sortTasks,
   toggleFilter,
   type Filters,
 } from '../../src/lib/filters';
-
-describe('shownPhaseOptions (T-250)', () => {
-  const phases = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: String(i) }));
-  const values = (r: { shown: { value: string }[] }) => r.shown.map((o) => o.value);
-
-  it('lists every phase when there are few', () => {
-    const r = shownPhaseOptions(phases(6), new Set(['5']), new Set(), false);
-    expect(values(r)).toEqual(['0', '1', '2', '3', '4', '5']);
-    expect(r).toMatchObject({ finished: 0, hidden: 0 });
-  });
-
-  it('with many, only the active ones and any selected one; the toggle shows the rest', () => {
-    const active = new Set(['7', '8', '9']);
-    const r = shownPhaseOptions(phases(10), active, new Set(['2']), false);
-    expect(values(r)).toEqual(['2', '7', '8', '9']);
-    expect(r).toMatchObject({ finished: 7, hidden: 6 });
-    const all = shownPhaseOptions(phases(10), active, new Set(['2']), true);
-    expect(values(all)).toHaveLength(10);
-    expect(all).toMatchObject({ finished: 7, hidden: 0 });
-  });
-
-  it('nothing to toggle when every phase is active', () => {
-    const r = shownPhaseOptions(phases(8), new Set(phases(8).map((p) => p.value)), new Set(), false);
-    expect(values(r)).toHaveLength(8);
-    expect(r).toMatchObject({ finished: 0, hidden: 0 });
-  });
-});
-import type { Task } from '../../src/lib/types';
+import { sprintModel } from '../../src/lib/sprints';
+import type { Task, TasksFile } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
 import standardFile from '../fixtures/standard.json';
 import edgeFile from '../fixtures/edge-cases.json';
+import sprintsFile from '../fixtures/sprints.json';
+
+describe('shownSprintOptions (SR-7.1)', () => {
+  const sprints = (n: number) => Array.from({ length: n }, (_, i) => ({ value: `S${i}`, label: `S${i}` }));
+  const values = (r: { shown: { value: string }[] }) => r.shown.map((o) => o.value);
+
+  it('lists every sprint when there are few', () => {
+    const r = shownSprintOptions(sprints(6), new Set(['S0']), new Set(), false);
+    expect(values(r)).toEqual(['S0', 'S1', 'S2', 'S3', 'S4', 'S5']);
+    expect(r).toMatchObject({ closed: 0, hidden: 0 });
+  });
+
+  it('with many, only the open ones and any selected closed one; the toggle shows the rest', () => {
+    const closed = new Set(['S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9']);
+    const r = shownSprintOptions(sprints(10), closed, new Set(['S5']), false);
+    expect(values(r)).toEqual(['S0', 'S1', 'S2', 'S5']);
+    expect(r).toMatchObject({ closed: 7, hidden: 6 });
+    const all = shownSprintOptions(sprints(10), closed, new Set(['S5']), true);
+    expect(values(all)).toHaveLength(10);
+    expect(all).toMatchObject({ closed: 7, hidden: 0 });
+  });
+
+  it('nothing to toggle when no sprint is closed', () => {
+    const r = shownSprintOptions(sprints(8), new Set(), new Set(), false);
+    expect(values(r)).toHaveLength(8);
+    expect(r).toMatchObject({ closed: 0, hidden: 0 });
+  });
+});
 
 const standard = standardFile.tasks as Task[];
+// standard.json has phases 0-2 and no sprints: read as the sprints Phase 0 (all done: closed), Phase 1, Phase 2
+const model = sprintModel(standardFile.meta, standard, resolveVocabulary(standardFile.meta));
 const ids = (tasks: Task[]) => tasks.map((t) => t.id);
 const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
-  phase: new Set(f.phase),
+  sprint: new Set(f.sprint),
+  release: new Set(f.release),
+  component: new Set(f.component),
   type: new Set(f.type),
   status: new Set(f.status),
   priority: new Set(f.priority),
@@ -57,8 +64,8 @@ const filters = (f: Partial<Record<keyof Filters, string[]>>): Filters => ({
 
 describe('filterOptions', () => {
   it("derives options in the vocabulary's order, with its labels", () => {
-    const o = filterOptions(standard);
-    expect(o.phase.map((x) => x.label)).toEqual(['0', '1', '2']);
+    const o = filterOptions(standard, undefined, model);
+    expect(o.sprint.map((x) => x.label)).toEqual(['Phase 1', 'Phase 2', 'Phase 0']);
     expect(o.type.map((x) => x.value)).toEqual(['feature', 'bugfix', 'test', 'infra', 'docs', 'refactor', 'polish']);
     expect(o.type[1].label).toBe('Bugfix');
     expect(o.status).toEqual([
@@ -84,7 +91,7 @@ describe('filterOptions', () => {
   });
 
   it("uses a project's vocabulary: its order and labels, phase names; values it doesn't list come last", () => {
-    const vocab = resolveVocabulary({
+    const meta = {
       statuses: [
         { id: 'doing', label: 'Doing', kind: 'active' },
         { id: 'todo', label: 'Backlog', kind: 'todo' },
@@ -92,18 +99,21 @@ describe('filterOptions', () => {
       ],
       types: [{ id: 'test', label: 'Tests' }],
       phases: [{ id: 1, name: 'Core' }],
-    });
-    const o = filterOptions(standard, vocab);
+    };
+    const vocab = resolveVocabulary(meta);
+    const o = filterOptions(standard, vocab, sprintModel(meta, standard, vocab));
     // Doing has no task but is the project's: listed. Statuses it doesn't list but tasks use come last
     expect(o.status.map((x) => x.label)).toEqual(['Doing', 'Backlog', 'Shipped', 'Blocked', 'In Progress', 'Skipped']);
     expect(o.type.slice(0, 3).map((x) => x.label)).toEqual(['Tests', 'Bugfix', 'Docs']);
-    expect(o.phase.map((x) => x.label)).toEqual(['0', '1 · Core', '2']);
+    // A named phase reads as a sprint called after it
+    expect(o.sprint.map((x) => x.label)).toEqual(['Core', 'Phase 2', 'Phase 0']);
   });
 
-  it('sorts phases numerically, not as strings', () => {
+  it('lists sprints in their order (phases numerically, not as strings)', () => {
     const t = { name: 'x', type: 'feature', description: '', status: 'todo' };
-    const tasks = [10, 2, 1].map((phase, i) => ({ ...t, id: `T-${i}`, phase }));
-    expect(filterOptions(tasks).phase.map((x) => x.value)).toEqual(['1', '2', '10']);
+    const tasks = [10, 2, 1].map((phase, i) => ({ ...t, id: `T-${i}`, phase })) as Task[];
+    const m = sprintModel({}, tasks, resolveVocabulary({}));
+    expect(filterOptions(tasks, undefined, m).sprint.map((x) => x.value)).toEqual(['Phase 1', 'Phase 2', 'Phase 10']);
   });
 
   it('puts unknown statuses last', () => {
@@ -120,7 +130,9 @@ describe('filterOptions', () => {
 
   it('is empty for no tasks, except the statuses, which come from the vocabulary', () => {
     expect({ ...filterOptions([]), status: [] }).toEqual({
-      phase: [],
+      sprint: [],
+      release: [],
+      component: [],
       type: [],
       status: [],
       priority: [],
@@ -145,6 +157,42 @@ describe('filterOptions', () => {
     const p2 = filterTasks(tasks, filters({ priority: ['P2'] }));
     expect(ids(p2)).toEqual([standard[2].id, standard[3].id]);
     expect(facetCounts(tasks, filters({})).priority.values.get('P2')).toBe(2);
+  });
+});
+
+describe('sprints, releases and components (SR-7.1)', () => {
+  const file = sprintsFile as TasksFile;
+  const tasks = file.tasks as Task[];
+  const m = sprintModel(file.meta, tasks, resolveVocabulary(file.meta));
+  const withComponents = tasks.map((t, i) => (i < 2 ? { ...t, components: ['api', 'ui'] } : t));
+
+  it('the Sprint group: the active sprint, the planned ones, the backlog, then the closed ones', () => {
+    // Alan Turing (planned) has no task here: left out
+    expect(filterOptions(tasks, undefined, m).sprint).toEqual([
+      { value: 'Ada Lovelace', label: 'Ada Lovelace' },
+      { value: BACKLOG, label: 'Backlog' },
+      { value: 'Foundations', label: 'Foundations' },
+    ]);
+  });
+
+  it('filters by sprint (a name in any case) and by the backlog', () => {
+    expect(ids(filterTasks(tasks, filters({ sprint: ['Ada Lovelace'] }), undefined, m))).toEqual([
+      'T-002',
+      'T-003',
+      'T-004',
+    ]);
+    expect(ids(filterTasks(tasks, filters({ sprint: [BACKLOG] }), undefined, m))).toEqual(['T-005']);
+  });
+
+  it("a task's release is its own, else its sprint's; tasks without one match only All", () => {
+    expect(filterOptions(tasks, undefined, m).release.map((o) => o.value)).toEqual(['1.0', '1.1']);
+    expect(ids(filterTasks(tasks, filters({ release: ['1.0'] }), undefined, m))).toEqual(['T-001', 'T-002', 'T-003']);
+    expect(facetCounts(tasks, filters({}), undefined, m).release.values.get('1.1')).toBe(1);
+  });
+
+  it('components: a task matches any of its components', () => {
+    expect(filterOptions(withComponents, undefined, m).component.map((o) => o.value)).toEqual(['api', 'ui']);
+    expect(ids(filterTasks(withComponents, filters({ component: ['ui'] }), undefined, m))).toEqual(['T-001', 'T-002']);
   });
 });
 
@@ -178,7 +226,7 @@ describe('labels', () => {
     const c = facetCounts(withLabels, filters({}));
     expect(Object.fromEntries(c.label.values)).toEqual({ ux: 3, 'spike-2': 1, api: 1 });
     expect(c.label.all).toBe(4);
-    expect(facetCounts(withLabels, filters({ label: ['api'] })).phase.all).toBe(1);
+    expect(facetCounts(withLabels, filters({ label: ['api'] })).sprint.all).toBe(1);
   });
 
   it('search matches labels', () => {
@@ -252,11 +300,12 @@ describe('filterTasks', () => {
   });
 
   it('ORs values within a group', () => {
-    expect(filterTasks(standard, filters({ phase: ['1', '2'] }))).toHaveLength(8);
+    expect(filterTasks(standard, filters({ sprint: ['Phase 1', 'Phase 2'] }), undefined, model)).toHaveLength(8);
   });
 
   it('ANDs across groups', () => {
-    expect(ids(filterTasks(standard, filters({ phase: ['1', '2'], type: ['test'] })))).toEqual(['T-009']);
+    const f = filters({ sprint: ['Phase 1', 'Phase 2'], type: ['test'] });
+    expect(ids(filterTasks(standard, f, undefined, model))).toEqual(['T-009']);
     expect(ids(filterTasks(standard, filters({ type: ['feature'], status: ['done'] })))).toEqual(['T-004']);
   });
 
@@ -285,9 +334,9 @@ describe('toggleFilter / isActive', () => {
   });
 
   it('"all" clears only its group', () => {
-    const f = toggleFilter(toggleFilter(emptyFilters(), 'phase', '1'), 'type', 'test');
-    const cleared = toggleFilter(f, 'phase', 'all');
-    expect(cleared.phase.size).toBe(0);
+    const f = toggleFilter(toggleFilter(emptyFilters(), 'sprint', 'Phase 1'), 'type', 'test');
+    const cleared = toggleFilter(f, 'sprint', 'all');
+    expect(cleared.sprint.size).toBe(0);
     expect([...cleared.type]).toEqual(['test']);
   });
 
@@ -295,20 +344,21 @@ describe('toggleFilter / isActive', () => {
     const f = toggleFilter(emptyFilters(), 'status', 'done');
     expect(isActive(f, 'status', 'all')).toBe(false);
     expect(isActive(f, 'status', 'done')).toBe(true);
-    expect(isActive(f, 'phase', 'all')).toBe(true);
+    expect(isActive(f, 'sprint', 'all')).toBe(true);
   });
 });
 
 describe('facetCounts', () => {
-  // standard.json: 12 tasks, 4 per phase. Phase 0: infra×2, docs, test (all done). Phase 1: feature (done),
-  // feature (in_progress), bugfix (todo), refactor (blocked). Phase 2: polish, test, feature (todo), docs (skipped).
-  const counts = (f: Partial<Record<keyof Filters, string[]>>) => facetCounts(standard, filters(f));
+  // standard.json: 12 tasks, 4 per phase (read as sprints). Phase 0: infra×2, docs, test (all done). Phase 1: feature
+  // (done), feature (in_progress), bugfix (todo), refactor (blocked). Phase 2: polish, test, feature (todo), docs
+  // (skipped).
+  const counts = (f: Partial<Record<keyof Filters, string[]>>) => facetCounts(standard, filters(f), undefined, model);
   const asObject = (m: ReadonlyMap<string, number>) => Object.fromEntries([...m].sort());
 
   it('without selections: every value over all tasks', () => {
     const c = counts({});
-    expect(c.phase.all).toBe(12);
-    expect(asObject(c.phase.values)).toEqual({ 0: 4, 1: 4, 2: 4 });
+    expect(c.sprint.all).toBe(12);
+    expect(asObject(c.sprint.values)).toEqual({ 'Phase 0': 4, 'Phase 1': 4, 'Phase 2': 4 });
     expect(asObject(c.type.values)).toEqual({
       bugfix: 1,
       docs: 2,
@@ -322,24 +372,24 @@ describe('facetCounts', () => {
   });
 
   it("a group's own selection doesn't change its counts; the other groups count within it", () => {
-    const c = counts({ phase: ['1'] });
-    expect(c.phase.all).toBe(12);
-    expect(asObject(c.phase.values)).toEqual({ 0: 4, 1: 4, 2: 4 });
+    const c = counts({ sprint: ['Phase 1'] });
+    expect(c.sprint.all).toBe(12);
+    expect(asObject(c.sprint.values)).toEqual({ 'Phase 0': 4, 'Phase 1': 4, 'Phase 2': 4 });
     expect(c.type.all).toBe(4);
     expect(asObject(c.type.values)).toEqual({ bugfix: 1, feature: 2, refactor: 1 });
     expect(asObject(c.status.values)).toEqual({ blocked: 1, done: 1, in_progress: 1, todo: 1 });
   });
 
   it('selections in two groups: each group counts under the other two', () => {
-    const c = counts({ phase: ['1'], type: ['feature'] });
-    expect(asObject(c.phase.values)).toEqual({ 1: 2, 2: 1 }); // features by phase
-    expect(asObject(c.type.values)).toEqual({ bugfix: 1, feature: 2, refactor: 1 }); // phase 1 by type
+    const c = counts({ sprint: ['Phase 1'], type: ['feature'] });
+    expect(asObject(c.sprint.values)).toEqual({ 'Phase 1': 2, 'Phase 2': 1 }); // features by sprint
+    expect(asObject(c.type.values)).toEqual({ bugfix: 1, feature: 2, refactor: 1 }); // Phase 1 by type
     expect(c.status.all).toBe(2);
     expect(asObject(c.status.values)).toEqual({ done: 1, in_progress: 1 });
   });
 
   it('several values in one group combine with OR', () => {
-    const c = counts({ phase: ['1', '2'] });
+    const c = counts({ sprint: ['Phase 1', 'Phase 2'] });
     expect(c.type.all).toBe(8);
     expect(c.type.values.get('feature')).toBe(3);
     expect(c.type.values.get('infra')).toBeUndefined();
@@ -347,19 +397,20 @@ describe('facetCounts', () => {
 
   it('a selection that matches nothing leaves the other groups at zero', () => {
     const c = counts({ status: ['nonexistent'] });
-    expect(c.phase.all).toBe(0);
-    expect(c.phase.values.size).toBe(0);
+    expect(c.sprint.all).toBe(0);
+    expect(c.sprint.values.size).toBe(0);
     expect(c.status.all).toBe(12);
   });
 
   it("agrees with filterTasks: a value's count is what selecting only it would show", () => {
     const c = counts({ type: ['feature', 'test'] });
-    for (const [phase, n] of c.phase.values) {
-      const shown = filterTasks(standard, {
-        ...emptyFilters(),
-        type: new Set(['feature', 'test']),
-        phase: new Set([phase]),
-      });
+    for (const [sprint, n] of c.sprint.values) {
+      const shown = filterTasks(
+        standard,
+        { ...emptyFilters(), type: new Set(['feature', 'test']), sprint: new Set([sprint]) },
+        undefined,
+        model,
+      );
       expect(shown.length).toBe(n);
     }
   });

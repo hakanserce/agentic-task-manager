@@ -6,7 +6,7 @@ const card = (id: string, fields: Partial<BoardCard> = {}): BoardCard => ({
   id,
   name: id,
   type: 'feature',
-  phase: 1,
+  sprint: null,
   priority: 'P2',
   labels: [],
   ...fields,

@@ -13,7 +13,8 @@ async function openKanban(
   tasksServer: Parameters<typeof openDashboard>[1],
   data: Parameters<typeof openDashboard>[2],
 ) {
-  await openDashboard(page, tasksServer, data);
+  // Next up is atm's answer, from the project's summary in api/projects (T-321)
+  await openDashboard(page, tasksServer.withAtmSummary(), data);
   await page.locator('#tab-kanban').click();
   await expect(page.locator('#kanban')).toBeVisible();
 }
@@ -38,8 +39,8 @@ test.describe('Kanban board', () => {
 
   test('cards are ordered like the loop works', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
-    // Todo: ready first (by phase, then ID), then waiting
-    expect(await cardIds(page, 'todo')).toEqual(['T-029', 'T-028', 'T-032', 'T-030', 'T-031', 'T-033']);
+    // Todo: ready first (by priority, then ID; phases no longer count), then waiting
+    expect(await cardIds(page, 'todo')).toEqual(['T-028', 'T-029', 'T-032', 'T-030', 'T-031', 'T-033']);
     // In progress: most recently started first
     expect(await cardIds(page, 'in_progress')).toEqual(['T-027', 'T-025', 'T-026']);
     // Done: most recently completed first
@@ -99,15 +100,22 @@ test.describe('Kanban board', () => {
   test('Next up marks the task the loop would pick, and moves when it is done', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await expect(page.locator('.kanban-card.next-up')).toHaveCount(1);
-    await expect(card(page, 'T-029')).toHaveClass(/next-up/);
-    await expect(card(page, 'T-029').locator('.kanban-next-up')).toHaveText('Next up');
+    await expect(card(page, 'T-028')).toHaveClass(/next-up/);
+    await expect(card(page, 'T-028').locator('.kanban-next-up')).toHaveText('Next up');
 
     const data = loadFixture('kanban');
-    data.tasks.find((t) => t.id === 'T-029')!.status = 'done';
+    data.tasks.find((t) => t.id === 'T-028')!.status = 'done';
     tasksServer.use(data);
     await page.locator('#reload-btn').click();
-    await expect(card(page, 'T-028')).toHaveClass(/next-up/);
+    await expect(card(page, 'T-029')).toHaveClass(/next-up/);
     await expect(page.locator('.kanban-card.next-up')).toHaveCount(1);
+  });
+
+  test('no Next up without one from atm (a summary without next)', async ({ page, tasksServer }) => {
+    await openDashboard(page, tasksServer, 'kanban');
+    await page.locator('#tab-kanban').click();
+    await expect(card(page, 'T-028')).toBeVisible();
+    await expect(page.locator('.kanban-card.next-up')).toHaveCount(0);
   });
 
   test("a project's own statuses make the columns, by kind", async ({ page, tasksServer }) => {
@@ -246,13 +254,13 @@ test.describe('Kanban board', () => {
     await expect(column(page, 'in_progress').locator('.kanban-more')).toHaveCount(0);
   });
 
-  test('grouped by phase, the lanes scroll as one and the page still does not (T-262)', async ({
+  test('grouped by sprint, the lanes scroll as one and the page still does not (T-262)', async ({
     page,
     tasksServer,
   }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await openKanban(page, tasksServer, 'kanban');
-    await page.locator('#kanban-group-by-phase').check();
+    await page.locator('#kanban-group-by-sprint').check();
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(720);
     const kanban = page.locator('#kanban');
     expect(await kanban.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
@@ -293,10 +301,10 @@ test.describe('Kanban board', () => {
   test('filters apply; a status filter empties columns but keeps them', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(page.locator('.kanban-count')).toHaveText(['3', '1', '0', '1', '0', '1']);
     await expect(column(page, 'done').locator('.kanban-empty')).toHaveText('No tasks');
-    await filterButton(page, 'phase', 'all').click();
+    await filterButton(page, 'sprint', 'all').click();
     await filterButton(page, 'status', 'done').click();
     await filterButton(page, 'status', 'blocked').click();
     const columns = await page
@@ -314,20 +322,23 @@ test.describe('Kanban board', () => {
     await expect(completion.locator('svg.ring')).toHaveAttribute('aria-label', 'Tasks shown 67% done');
     await expect(completion).toHaveAttribute('title', 'Tasks shown: 24 of 36 done, 2 skipped');
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(page.locator('#kanban-completion-text')).toHaveText(/^0% · 0 of 6 done/);
     await expect(completion.locator('svg.ring')).toHaveAttribute('aria-label', 'Tasks shown 0% done');
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     await expect(completion.locator('.kanban-completion-pct')).not.toHaveText('0%');
   });
 });
 
-test.describe('Kanban: group by phase', () => {
+test.describe('Kanban: group by sprint', () => {
   const lanes = (page: Page) => page.locator('.kanban-lane');
 
-  test('one swimlane per phase, with progress and aligned columns; remembered', async ({ page, tasksServer }) => {
+  test('one swimlane per sprint (here its phases, read as sprints), with progress and aligned columns; remembered', async ({
+    page,
+    tasksServer,
+  }) => {
     await openKanban(page, tasksServer, 'kanban');
-    await page.locator('#kanban-group-by-phase').check();
+    await page.locator('#kanban-group-by-sprint').check();
     await expect(lanes(page)).toHaveCount(3);
     await expect(page.locator('.kanban-lane-header')).toHaveText([
       /Phase 0\s*16\/16 done/,
@@ -345,12 +356,52 @@ test.describe('Kanban: group by phase', () => {
       ]);
     }
     await expect(
-      page.locator('.kanban-lane[data-phase="1"] .kanban-column[data-status="todo"] .kanban-card'),
+      page.locator('.kanban-lane[data-sprint="Phase 1"] .kanban-column[data-status="todo"] .kanban-card'),
     ).toHaveCount(3);
+    // A lane names its sprint, so its cards don't
+    await expect(page.locator('.kanban-card-sprint')).toHaveCount(0);
 
     await page.reload();
     await page.locator('#tab-kanban').click();
-    await expect(page.locator('#kanban-group-by-phase')).toBeChecked();
+    await expect(page.locator('#kanban-group-by-sprint')).toBeChecked();
     await expect(lanes(page)).toHaveCount(3);
+  });
+
+  test('a migrated project: the sprints in order, the backlog last; cards name their sprint only when the board shows several', async ({
+    page,
+    tasksServer,
+  }) => {
+    await openKanban(page, tasksServer, 'sprints');
+    await expect(card(page, 'T-002').locator('.kanban-card-sprint')).toHaveText('Ada Lovelace');
+    await expect(card(page, 'T-005').locator('.kanban-card-sprint')).toHaveText('Backlog');
+    await openFilters(page);
+    await filterButton(page, 'sprint', 'Ada Lovelace').click();
+    await expect(page.locator('.kanban-card-sprint')).toHaveCount(0);
+    await filterButton(page, 'sprint', 'all').click();
+
+    await page.locator('#kanban-group-by-sprint').check();
+    expect(await lanes(page).evaluateAll((all) => all.map((lane) => (lane as HTMLElement).dataset.sprint))).toEqual([
+      'Foundations',
+      'Ada Lovelace',
+      ':backlog',
+    ]);
+    await expect(page.locator('.kanban-lane-header')).toHaveText([
+      /Foundations\s*1\/1 done/,
+      /Ada Lovelace\s*0\/3 done/,
+      /Backlog\s*0\/1 done/,
+    ]);
+  });
+
+  test('a view saved before sprints keeps its grouping', async ({ page, tasksServer }) => {
+    await openKanban(page, tasksServer, 'kanban');
+    await page.evaluate(() => {
+      for (const key of Object.keys(localStorage).filter((k) => k.startsWith('atm-dashboard:view:'))) {
+        const view = JSON.parse(localStorage.getItem(key)!);
+        localStorage.setItem(key, JSON.stringify({ ...view, kanban: { groupByPhase: true } }));
+      }
+    });
+    await page.reload();
+    await page.locator('#tab-kanban').click();
+    await expect(page.locator('#kanban-group-by-sprint')).toBeChecked();
   });
 });

@@ -16,6 +16,7 @@ import { dashboardBuild, dashboardVersion } from './release-notes';
 import { isModePref, knownTheme, resolveMode, type Mode, type ModePref } from './appearance';
 import {
   emptyFilters,
+  FILTER_GROUPS,
   filtersFrom,
   filterTasks,
   searchTasks,
@@ -32,6 +33,7 @@ import type { BurndownRange } from './burndown';
 import type { ActivityRange } from './insights';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
+import { sprintModel } from './sprints';
 import { DEFAULT_VOCABULARY, resolveVocabulary, type Vocabulary } from './vocab';
 import { loadWorktrees, mergeWorktrees, type Worktree, type WorktreesResult } from './worktrees';
 import { clearView, defaultView, projectKey, readView, sanitizeView, writeView, type SavedView } from './view-store';
@@ -109,6 +111,8 @@ export class DashboardState {
   history = $derived(
     this.archive.length ? [...this.tasks, ...this.archive.filter((t) => !this.taskMap.has(t.id))] : this.tasks,
   );
+  /** The project's sprints and which sprint each task is in (lib/sprints.ts); read from phases until it is migrated */
+  sprints = $derived(sprintModel(this.meta, this.history, this.vocab));
   // Archived tasks by ID, for dependency stubs in the detail panel
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   archiveMap = $derived<ReadonlyMap<string, Task>>(new Map(this.archive.map((t) => [t.id, t])));
@@ -124,7 +128,7 @@ export class DashboardState {
   /** The tasks the lists, the board and the graph start from: tasks.json's, plus the archive's with Include archived */
   base = $derived(this.includeArchived ? this.history : this.tasks);
   searched = $derived(searchTasks(this.base, this.query));
-  filtered = $derived(filterTasks(this.searched, this.filters, this.vocab));
+  filtered = $derived(filterTasks(this.searched, this.filters, this.vocab, this.sprints));
   /**
    * The Progress tab's tasks: the history (archived tasks too, once loaded) matching the search and filters, except
    * the status and stage filters. Progress *is* the split by status, so those would make it meaningless (T-239).
@@ -134,6 +138,7 @@ export class DashboardState {
       searchTasks(this.history, this.query),
       { ...this.filters, status: NO_VALUES, stage: NO_VALUES },
       this.vocab,
+      this.sprints,
     ),
   );
 
@@ -143,18 +148,18 @@ export class DashboardState {
 
   /** The selected view tab; mirrored in the URL hash ("#view=kanban") */
   tab = $state<ViewId>(parseViewHash(location.hash));
-  kanbanGroupByPhase = $state(false);
+  kanbanGroupBySprint = $state(false);
   kanbanShowSkipped = $state(false);
   /** The Kanban done column shows every card, not just the most recent */
   kanbanShowAllDone = $state(false);
   /** The List tab's order: as in the file, or by priority */
   listSort = $state<ListSort>('file');
-  /** The phase the Progress tab focuses on; null for all phases */
-  progressPhase = $state<number | null>(null);
-  /** The filter panel's Phase group lists the finished phases too (part of the saved view) */
-  filterFinishedPhases = $state(false);
+  /** The sprint the Progress tab focuses on (its ID, or BACKLOG); null for all of them */
+  progressSprint = $state<string | null>(null);
+  /** The filter panel's Sprint group lists the closed sprints too (part of the saved view) */
+  filterClosedSprints = $state(false);
   /** The Progress tab's burndown range (part of the saved view) */
-  progressRange = $state<BurndownRange>('phase');
+  progressRange = $state<BurndownRange>('sprint');
   /** Tasks outside the search and filters: left out of the graph, or greyed out in it */
   graphFiltered = $state<'hide' | 'dim'>('hide');
   /** The graph greys out done tasks, whatever the filters (part of the saved view) */
@@ -386,7 +391,8 @@ export class DashboardState {
       // Opened from an overview card's "needs you": only what waits for a review or a decision
       this.#pendingNeedsYou = false;
       const status = this.vocab.statuses.filter((s) => s.kind === 'review' || s.kind === 'blocked').map((s) => s.id);
-      this.filters = filtersFrom({ phase: [], type: [], status, priority: [], stage: [], label: [], agent: [] });
+      const none = Object.fromEntries(FILTER_GROUPS.map((g) => [g, []])) as unknown as Record<FilterGroup, string[]>;
+      this.filters = filtersFrom({ ...none, status });
     }
     this.loaded = true;
     if (this.#pendingTask) {
@@ -492,25 +498,17 @@ export class DashboardState {
   /** The current view, as saved per project. */
   currentView(): SavedView {
     return {
-      filters: {
-        phase: [...this.filters.phase],
-        type: [...this.filters.type],
-        status: [...this.filters.status],
-        priority: [...this.filters.priority],
-        stage: [...this.filters.stage],
-        label: [...this.filters.label],
-        agent: [...this.filters.agent],
-      },
+      filters: Object.fromEntries(FILTER_GROUPS.map((g) => [g, [...this.filters[g]]])) as SavedView['filters'],
       query: this.query,
       tab: this.tab,
       kanban: {
-        groupByPhase: this.kanbanGroupByPhase,
+        groupBySprint: this.kanbanGroupBySprint,
         showSkipped: this.kanbanShowSkipped,
         showAllDone: this.kanbanShowAllDone,
       },
       listSort: this.listSort,
-      progressPhase: this.progressPhase,
-      filterFinishedPhases: this.filterFinishedPhases,
+      progressSprint: this.progressSprint,
+      filterClosedSprints: this.filterClosedSprints,
       progressRange: this.progressRange,
       graphFiltered: this.graphFiltered,
       graphDimDone: this.graphDimDone,
@@ -536,18 +534,21 @@ export class DashboardState {
   private restoreView() {
     // The server's project id is meta.id (or stands in for it), so views saved before 0.15.0 are found again
     this.viewKey = projectKey(this.projectId ? { id: this.projectId } : this.meta);
-    this.applyView(sanitizeView(readView(this.viewKey), this.tasks, this.vocab), !hasViewHash(location.hash));
+    this.applyView(
+      sanitizeView(readView(this.viewKey), this.tasks, this.vocab, this.sprints),
+      !hasViewHash(location.hash),
+    );
   }
 
   private applyView(view: SavedView, includeTab: boolean) {
     this.filters = filtersFrom(view.filters);
     this.query = view.query;
-    this.kanbanGroupByPhase = view.kanban.groupByPhase;
+    this.kanbanGroupBySprint = view.kanban.groupBySprint;
     this.kanbanShowSkipped = view.kanban.showSkipped;
     this.kanbanShowAllDone = view.kanban.showAllDone;
     this.listSort = view.listSort;
-    this.progressPhase = view.progressPhase;
-    this.filterFinishedPhases = view.filterFinishedPhases;
+    this.progressSprint = view.progressSprint;
+    this.filterClosedSprints = view.filterClosedSprints;
     this.progressRange = view.progressRange;
     this.graphFiltered = view.graphFiltered;
     this.graphDimDone = view.graphDimDone;

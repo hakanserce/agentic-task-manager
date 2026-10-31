@@ -99,7 +99,7 @@ test.describe('view tabs', () => {
   test('the count of matching tasks stays next to the search on every tab', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
     await openFilters(page);
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     for (const id of ['graph', 'kanban', 'list', 'agents', 'progress']) {
       await tab(page, id).click();
       await expect(matchCount(page)).toHaveText('4 of 12 tasks');

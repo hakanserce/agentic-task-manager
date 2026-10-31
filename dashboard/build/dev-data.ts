@@ -1,9 +1,28 @@
 // Dev server only: play atm serve's API (docs/multi-project-api.md) for one or more task folders, so `npm run dev`
 // shows real data with hot reload. ATM_DEV_DATA picks the folders (.agentic-task-manager paths, separated like PATH);
 // the default is this repo's own .agentic-task-manager/.
+import { execFile } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
+
+/** This checkout's atm-cli, as the plugin ships it */
+const ATM = fileURLToPath(new URL('../../plugin/scripts/atm.py', import.meta.url));
+
+/** The project's summary from atm-cli itself (`atm summary`, what atm serve lists), so the dev server's numbers and
+ * Next up are atm's own (T-321); null when Python or the project can't give one, as atm serve does */
+function summary(root: string): Promise<unknown> {
+  return new Promise((resolve) => {
+    execFile('python3', [ATM, 'summary'], { cwd: root, timeout: 10_000 }, (error, stdout) => {
+      try {
+        resolve(error ? null : JSON.parse(stdout));
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
 
 // worktrees.json is never in a task folder, so it answers 404: the dev server shows no linked worktrees
 const FILES = new Set(['tasks.json', 'claims.json', 'tasks-archive.json', 'worktrees.json']);
@@ -89,13 +108,11 @@ export function devData(defaultDir: string): Plugin {
         if (url === '/api/projects') {
           const projects = await devProjects(dirs);
           const listed = await Promise.all(
-            projects.map(async (p) => ({
-              id: p.id,
-              name: p.name,
-              path: path.dirname(p.dir),
-              missing: !(await stat(path.join(p.dir, 'tasks.json')).catch(() => null)),
-              summary: null,
-            })),
+            projects.map(async (p) => {
+              const missing = !(await stat(path.join(p.dir, 'tasks.json')).catch(() => null));
+              const root = path.dirname(p.dir);
+              return { id: p.id, name: p.name, path: root, missing, summary: missing ? null : await summary(root) };
+            }),
           );
           json(200, { generated_at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'), projects: listed });
           return;

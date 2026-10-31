@@ -12,7 +12,7 @@ from .core import AtmError, now_iso, out, parse_iso, to_json, write_json_atomic
 from .edit import next_number
 from .lock import locked
 from .merge import ensure_archive_merge
-from .model import archivable, archive_path, load_archive, load_tasks
+from .model import archivable, archive_path, find_sprint, load_archive, load_tasks, vocabulary
 from .paths import find_paths
 
 
@@ -39,13 +39,21 @@ def cmd_archive(args):
             before = parse_iso(args.before if "T" in args.before else args.before + "T00:00:00Z")
         except ValueError:
             raise AtmError(f"--before {args.before}: use a date like 2026-05-01", 2)
-    phases = [float(p) for p in args.phase] if args.phase else None
     paths = find_paths(os.getcwd())
     with locked(paths["dir"]):
         data = load_tasks(paths)
         archive = load_archive(paths)
         dropped = drop_duplicates(data, archive)
-        moving = archivable(data, phases, before, args.keep_days)
+        moving = archivable(data, before, args.keep_days)
+        if args.sprint:
+            vocab = vocabulary(data)
+            names = set()
+            for name in args.sprint:
+                sprint = find_sprint(vocab, name)
+                if sprint is None:
+                    raise AtmError(f"no sprint {name!r}", 2)
+                names.add(sprint["id"])
+            moving = [t for t in moving if (find_sprint(vocab, t.get("sprint")) or {}).get("id") in names]
         ids = [t.get("id") for t in moving]
         if not args.dry_run and (moving or dropped):
             # New IDs must never come back to an archived ID (DM-2.3)

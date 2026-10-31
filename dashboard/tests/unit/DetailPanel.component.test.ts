@@ -5,6 +5,7 @@ import DetailPanel from '../../src/components/DetailPanel.svelte';
 import { dashboard } from '../../src/lib/state.svelte';
 import type { TasksFile } from '../../src/lib/types';
 import archiveFile from '../fixtures/archive.json';
+import sprints from '../fixtures/sprints.json';
 import standard from '../fixtures/standard.json';
 import { loadIntoDashboard } from './components.helpers';
 
@@ -28,6 +29,106 @@ describe('DetailPanel', () => {
     [...container.querySelectorAll<HTMLElement>('#detail-rail .detail-rail-item')].map((b) => b.dataset.group);
   const bodyGroups = (container: HTMLElement) =>
     [...container.querySelectorAll<HTMLElement>('#detail-body [data-group]')].map((g) => g.dataset.group);
+
+  it('shows its sprint and release, and the sprints it was carried through, flagged from twice (SR-7.6, SR-4.5)', () => {
+    loadIntoDashboard(sprints as TasksFile);
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-003');
+    flushSync();
+    expect(container.querySelector('#detail-sprint')).toHaveTextContent('Ada Lovelace');
+    expect(container.querySelector('#detail-release')).toHaveTextContent('release 1.0');
+    const items = [...container.querySelectorAll('#detail-sprint-history li strong')].map((s) => s.textContent);
+    expect(items).toEqual(['Foundations', 'Ada Lovelace']);
+    // Carried once: not flagged yet
+    expect(container.querySelector('.detail-carried')).toBeNull();
+
+    dashboard.showDetail('T-005');
+    flushSync();
+    expect(container.querySelector('#detail-sprint')).toHaveTextContent('Backlog');
+    expect(container.querySelector('#detail-release')).toBeNull();
+    expect(container.querySelector('#detail-sprint-history')).toBeNull();
+  });
+
+  it('shows the review mode and state, the sprint review, with you and components (SR-7.6)', () => {
+    const container = open({
+      status: 'in_review',
+      review: 'blocker',
+      review_state: 'changes_requested',
+      with: 'user',
+      components: ['ui', 'api'],
+      sprint_review: 'pending',
+    });
+    expect(container.querySelector('#detail-review-mode')).toHaveTextContent('review: blocker');
+    expect(container.querySelector('.task-meta [data-review-state]')).toHaveTextContent('Changes requested');
+    expect(container.querySelector('#detail-sprint-review')).toHaveTextContent('waits for the sprint review');
+    expect(container.querySelector('#detail-with-user')).toHaveTextContent('with you');
+    expect([...container.querySelectorAll('.task-meta .component-chip')].map((c) => c.textContent)).toEqual([
+      'review: blocker',
+      'ui',
+      'api',
+    ]);
+    const plain = open({});
+    expect(plain.querySelector('#detail-review-mode')).toBeNull();
+    expect(plain.querySelector('#detail-with-user')).toBeNull();
+  });
+
+  it('shows how it ended when not done, what it duplicates or is duplicated by, and related tasks both ways (SR-7.6)', () => {
+    const fields: Record<string, Record<string, unknown>> = {
+      'T-001': { related: ['T-002'] },
+      'T-003': { status: 'skipped', resolution: 'duplicate', duplicate_of: 'T-002' },
+      'T-004': { related: ['T-002', 'T-099'] },
+    };
+    loadIntoDashboard({ ...standard, tasks: standard.tasks.map((t) => ({ ...t, ...fields[t.id] })) });
+    const { container } = render(DetailPanel);
+    const ids = (selector: string) =>
+      [...container.querySelectorAll(`${selector} .detail-dep-item strong`)].map((s) => s.textContent);
+
+    dashboard.showDetail('T-002');
+    flushSync();
+    expect(ids('#detail-related')).toEqual(['T-001', 'T-004']);
+    expect(ids('#detail-duplicated-by')).toEqual(['T-003']);
+    expect(container.querySelector('#detail-resolution')).toBeNull(); // done: the default
+    expect(railGroups(container)).toContain('dependencies');
+
+    dashboard.showDetail('T-003');
+    flushSync();
+    expect(container.querySelector('#detail-resolution')).toHaveTextContent('duplicate');
+    expect(ids('#detail-duplicate-of')).toEqual(['T-002']);
+
+    // A related task that doesn't exist is shown, not linked; a link opens the other task
+    dashboard.showDetail('T-004');
+    flushSync();
+    expect(container.querySelector('#detail-related [data-archived="T-099"]')).toHaveTextContent('not found');
+    container.querySelector<HTMLElement>('#detail-related .detail-dep-item:not(.archived)')!.click();
+    flushSync();
+    expect(dashboard.detailId).toBe('T-002');
+  });
+
+  it('a skipped task shows won’t do, its default resolution', () => {
+    const container = open({ status: 'skipped' });
+    expect(container.querySelector('#detail-resolution')).toHaveTextContent("won't do");
+  });
+
+  it('a task carried twice or more is flagged', () => {
+    const data = sprints as TasksFile;
+    const tasks = (data.tasks ?? []).map((t) =>
+      t.id === 'T-003'
+        ? {
+            ...t,
+            sprint_history: [
+              { sprint: 'Old', from: '2026-03-01T09:00:00Z', to: '2026-03-20T09:00:00Z' },
+              { sprint: 'Foundations', from: '2026-04-01T09:00:00Z', to: '2026-04-05T18:00:00Z' },
+              { sprint: 'Ada Lovelace', from: '2026-04-05T18:00:00Z' },
+            ],
+          }
+        : t,
+    );
+    loadIntoDashboard({ ...data, tasks });
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-003');
+    flushSync();
+    expect(container.querySelector('.detail-carried')).toHaveTextContent('carried 2 times');
+  });
 
   it('has a rail entry per group, in the order of the groups, Notes only with notes', () => {
     const plain = open({ notes: [] });

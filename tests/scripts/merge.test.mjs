@@ -201,6 +201,154 @@ describe('merge driver (real git merges)', () => {
   });
 });
 
+// meta.sprints merges item by item, like tasks (docs/sprints-and-releases-design.md SR-2.4, SR-8.5)
+describe('merge driver: sprints', () => {
+  const sprint = (d, name) => d.meta.sprints.find((s) => s.id === name);
+  /** A repo whose committed base has two sprints, Alpha (active) and Beta (planned), and T-011 in Alpha. */
+  function withSprints(fn) {
+    withRepo((root) => {
+      const d = read(root);
+      d.meta.sprints = [
+        { id: 'Alpha', state: 'active', goal: 'First', start: '2026-05-01T09:00:00Z' },
+        { id: 'Beta', state: 'planned' },
+      ];
+      Object.assign(find(d, 'T-011'), {
+        sprint: 'Alpha',
+        sprint_history: [{ sprint: 'Alpha', from: '2026-05-01T09:00:00Z' }],
+      });
+      write(root, d);
+      git(['commit', '-q', '-am', 'sprints'], root);
+      fn(root);
+    });
+  }
+
+  test('a sprint added on one branch and another closed on the other: both kept', () => {
+    withSprints((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => d.meta.sprints.push({ id: 'Gamma', state: 'planned' }),
+        (d) => Object.assign(sprint(d, 'Alpha'), { state: 'closed', end: '2026-05-03T09:00:00Z' }),
+      );
+      assert.ok(r.clean, r.output);
+      assert.deepEqual(
+        r.merged.meta.sprints.map((s) => [s.id, s.state]),
+        [
+          ['Alpha', 'closed'],
+          ['Beta', 'planned'],
+          ['Gamma', 'planned'],
+        ],
+      );
+    });
+  });
+
+  test('one branch closes a sprint, the other changes its goal: closed, with the new goal', () => {
+    withSprints((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => (sprint(d, 'Alpha').goal = 'Sharper'),
+        (d) =>
+          Object.assign(sprint(d, 'Alpha'), { state: 'closed', end: '2026-05-03T09:00:00Z', report: { done: [] } }),
+      );
+      assert.ok(r.clean, r.output);
+      assert.deepEqual(sprint(r.merged, 'Alpha'), {
+        id: 'Alpha',
+        state: 'closed',
+        goal: 'Sharper',
+        start: '2026-05-01T09:00:00Z',
+        end: '2026-05-03T09:00:00Z',
+        report: { done: [] },
+      });
+    });
+  });
+
+  test('both branches change a sprint’s state: the further one wins, with its fields', () => {
+    withSprints((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => Object.assign(sprint(d, 'Beta'), { state: 'closed', end: '2026-05-04T09:00:00Z' }),
+        (d) => Object.assign(sprint(d, 'Beta'), { state: 'active', start: '2026-05-02T09:00:00Z' }),
+      );
+      assert.ok(r.clean, r.output);
+      assert.equal(sprint(r.merged, 'Beta').state, 'closed');
+      assert.equal(sprint(r.merged, 'Beta').end, '2026-05-04T09:00:00Z');
+    });
+  });
+
+  test('both branches change a sprint’s goal differently: the merge stops and says where', () => {
+    withSprints((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => (sprint(d, 'Alpha').goal = 'Theirs'),
+        (d) => (sprint(d, 'Alpha').goal = 'Ours'),
+      );
+      assert.equal(r.clean, false);
+      assert.match(r.output, /meta\.sprints: both branches changed 'Alpha' \(goal\)/);
+      assert.equal(sprint(r.merged, 'Alpha').goal, 'Ours');
+    });
+  });
+
+  test('two different sprints added with the same name (in any case) are a conflict', () => {
+    withSprints((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => d.meta.sprints.push({ id: 'gamma', state: 'planned', goal: 'Theirs' }),
+        (d) => d.meta.sprints.push({ id: 'Gamma', state: 'planned', goal: 'Ours' }),
+      );
+      assert.equal(r.clean, false);
+      assert.match(r.output, /meta\.sprints: 'Gamma' was added on both branches, differently/);
+    });
+  });
+
+  test('a task moved to another sprint on one branch and progressed on the other: moved, its history closed', () => {
+    withSprints((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => progress(find(d, 'T-011'), 'in_progress', '2026-05-02T10:00:00Z'),
+        (d) =>
+          Object.assign(find(d, 'T-011'), {
+            sprint: 'Beta',
+            sprint_history: [
+              { sprint: 'Alpha', from: '2026-05-01T09:00:00Z', to: '2026-05-02T09:00:00Z' },
+              { sprint: 'Beta', from: '2026-05-02T09:00:00Z' },
+            ],
+          }),
+      );
+      assert.ok(r.clean, r.output);
+      const t = find(r.merged, 'T-011');
+      assert.equal(t.sprint, 'Beta');
+      assert.equal(t.status, 'in_progress');
+      assert.deepEqual(t.sprint_history, [
+        { sprint: 'Alpha', from: '2026-05-01T09:00:00Z', to: '2026-05-02T09:00:00Z' },
+        { sprint: 'Beta', from: '2026-05-02T09:00:00Z' },
+      ]);
+    });
+  });
+
+  test('a branch migrated to sprints merged with one that still has phases: sprints win, phases go', () => {
+    withRepo((root) => {
+      const r = mergeBranches(
+        root,
+        (d) => {
+          d.meta.phases = [{ id: 1, name: 'Renamed on the old branch' }];
+          find(d, 'T-015').phase = 3;
+        },
+        (d) => {
+          d.meta.sprints = [{ id: 'Phase 1', state: 'planned' }];
+          for (const t of d.tasks) {
+            if (t.phase === 1) Object.assign(t, { sprint: 'Phase 1' });
+            delete t.phase;
+          }
+        },
+      );
+      assert.ok(r.clean, r.output);
+      assert.equal(r.merged.meta.phases, undefined);
+      const t = find(r.merged, 'T-015');
+      assert.equal(t.sprint, 'Phase 1');
+      assert.equal(t.phase, undefined);
+    });
+  });
+});
+
 describe('merge-driver command', () => {
   const files = (base, ours, theirs) => {
     const dir = tempDir();

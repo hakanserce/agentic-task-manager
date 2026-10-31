@@ -29,7 +29,7 @@
   let chip = $state<HTMLButtonElement>();
   let list = $state<HTMLElement>();
 
-  const REASONS = { review: 'in review', blocked: 'blocked on a question' } as const;
+  const REASONS = { review: 'in review', blocked: 'blocked on a question', together: 'to do with you' } as const;
   const rows = () => [...(list?.querySelectorAll<HTMLButtonElement>('.needs-you-row') ?? [])];
 
   async function onChip() {

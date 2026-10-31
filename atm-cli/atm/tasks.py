@@ -16,9 +16,19 @@ from .claims import (
     waiting_record,
     write_store,
 )
-from .core import now_iso, out, to_json, write_json_atomic
+from .core import AtmError, now_iso, out, to_json, write_json_atomic
 from .lock import locked
-from .model import add_note, archive_hint, change_status, find_task, kind_of, load_tasks, touch, vocabulary
+from .model import (
+    add_note,
+    archive_hint,
+    archived_task,
+    change_status,
+    find_task,
+    kind_of,
+    load_tasks,
+    touch,
+    vocabulary,
+)
 from .paths import find_paths
 from .query import describe_task, ready_tasks
 
@@ -70,6 +80,9 @@ def cmd_status_change(command):
                     write_store(paths, store)
                     raise own
             check_holder(claims, task_id, agent, command)
+            duplicate_of = getattr(args, "duplicate_of", None)
+            if duplicate_of and not any(t.get("id") == duplicate_of for t in data["tasks"]) and not archived_task(duplicate_of):
+                raise AtmError(f"{task_id} can't be a duplicate of {duplicate_of}, which doesn't exist", 2)
             waits_in = adopt_waiting(task, data, store, paths, command)
             previous = change_status(
                 task,
@@ -83,6 +96,8 @@ def cmd_status_change(command):
                 waiting_on=getattr(args, "on", None),
                 questions=getattr(args, "question", None) or [],
                 answers=getattr(args, "answer", None) or [],
+                resolution=getattr(args, "resolution", None),
+                duplicate_of=duplicate_of,
             )
             if command == "start":
                 claims[task_id] = new_claim(paths, data, task_id, agent)

@@ -21,6 +21,7 @@
         "started_at": "2026-05-01T10:00:00Z",
         "started_by": "alice",
         "review_requested_at": "2026-05-01T10:10:00Z",
+        "review_state": "waiting",
         "notes": [{ "at": "2026-05-01T10:10:00Z", "kind": "review", "text": "Check the column order", "by": "alice" }],
         "claim": null
       }

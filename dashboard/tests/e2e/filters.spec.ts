@@ -9,7 +9,8 @@ test.describe('filters', () => {
   test("buttons are generated from the data, in the vocabulary's order and with its labels", async ({ page }) => {
     const labels = (group: string) =>
       page.locator(`.filter-btn[data-filter="${group}"] .filter-label`).allTextContents();
-    expect(await labels('phase')).toEqual(['All', '0', '1', '2']);
+    // The project's phases, read as sprints (not migrated yet): the open ones, then the closed one (all done)
+    expect(await labels('sprint')).toEqual(['All', 'Phase 1', 'Phase 2', 'Phase 0']);
     expect(await labels('type')).toEqual(['All', 'Feature', 'Bugfix', 'Test', 'Infra', 'Docs', 'Refactor', 'Polish']);
     expect(await labels('status')).toEqual(['All', 'To Do', 'In Progress', 'In Review', 'Blocked', 'Done', 'Skipped']);
     expect(await labels('priority')).toEqual(['All', 'P2 Medium']);
@@ -17,28 +18,28 @@ test.describe('filters', () => {
   });
 
   test('selecting a value filters cards and updates the count', async ({ page }) => {
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     expect(await visibleCardIds(page)).toEqual(['T-004', 'T-005', 'T-006', 'T-007']);
     await expect(matchCount(page)).toHaveText('4 of 12 tasks');
   });
 
   test('values within a group are OR-ed', async ({ page }) => {
-    await filterButton(page, 'phase', '1').click();
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(matchCount(page)).toHaveText('8 of 12 tasks');
   });
 
   test('groups are AND-ed', async ({ page }) => {
-    await filterButton(page, 'phase', '1').click();
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await filterButton(page, 'type', 'test').click();
     expect(await visibleCardIds(page)).toEqual(['T-009']);
   });
 
   test('"All" clears only its own group', async ({ page }) => {
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await filterButton(page, 'type', 'test').click();
-    await filterButton(page, 'phase', 'all').click();
+    await filterButton(page, 'sprint', 'all').click();
     expect(await visibleCardIds(page)).toEqual(['T-003', 'T-009']);
   });
 
@@ -63,7 +64,7 @@ test.describe('filters', () => {
   });
 
   test('filters also apply to the dependency graph', async ({ page }) => {
-    await filterButton(page, 'phase', '0').click();
+    await filterButton(page, 'sprint', 'Phase 0').click();
     await page.locator('#tab-graph').click();
     await expect(page.locator('#dep-graph g.graph-node')).toHaveCount(4);
   });
@@ -98,11 +99,11 @@ test('the Status filter offers every status of the project, also when all tasks 
   await expect(matchCount(page)).toHaveText('0 of 2 tasks');
 });
 
-test('with many phases, the Phase filter lists the active ones; a toggle shows the finished ones (T-250)', async ({
+test('with many sprints, the Sprint filter lists the open ones; a toggle shows the closed ones (SR-7.1)', async ({
   page,
   tasksServer,
 }) => {
-  // Phases 0–7 finished, 8 in progress, 9 to do: active are 7 (finished last), 8 and 9
+  // Phases 0–7 finished (closed sprints), 8 in progress, 9 to do (planned)
   const status = (phase: number) => (phase < 8 ? 'done' : phase === 8 ? 'in_progress' : 'todo');
   const tasks = Array.from({ length: 10 }, (_, phase) => ({
     id: `T-${phase}`,
@@ -114,25 +115,25 @@ test('with many phases, the Phase filter lists the active ones; a toggle shows t
   }));
   await openDashboard(page, tasksServer, { meta: { project: 'Many phases' }, tasks });
   await openFilters(page);
-  const phases = page.locator('.filter-btn[data-filter="phase"]');
-  const toggle = page.locator('#filter-finished-phases');
-  await expect(phases).toHaveCount(4); // All, 7, 8, 9
-  await expect(toggle).toHaveText('+ 7 finished');
+  const sprints = page.locator('.filter-btn[data-filter="sprint"]');
+  const toggle = page.locator('#filter-closed-sprints');
+  await expect(sprints).toHaveCount(3); // All, Phase 8, Phase 9
+  await expect(toggle).toHaveText('+ 8 closed');
 
   await toggle.click();
-  await expect(phases).toHaveCount(11);
-  await expect(toggle).toHaveText('Hide finished');
-  await filterButton(page, 'phase', '2').click();
+  await expect(sprints).toHaveCount(11);
+  await expect(toggle).toHaveText('Hide closed');
+  await filterButton(page, 'sprint', 'Phase 2').click();
   await expect(matchCount(page)).toHaveText('1 of 10 tasks');
 
-  // Collapsed again, the selected finished phase stays; the choice is remembered
+  // Collapsed again, the selected closed sprint stays; the choice is remembered
   await toggle.click();
-  await expect(phases).toHaveCount(5);
-  await expect(toggle).toHaveText('+ 6 finished');
+  await expect(sprints).toHaveCount(4);
+  await expect(toggle).toHaveText('+ 7 closed');
   await page.reload();
   await openFilters(page);
-  await expect(phases).toHaveCount(5);
-  await expect(filterButton(page, 'phase', '2')).toHaveAttribute('aria-pressed', 'true');
+  await expect(sprints).toHaveCount(4);
+  await expect(filterButton(page, 'sprint', 'Phase 2')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test.describe('filter counts', () => {
@@ -141,26 +142,26 @@ test.describe('filter counts', () => {
     await openFilters(page);
   });
 
-  const count = (page: import('@playwright/test').Page, group: 'phase' | 'type' | 'status', value: string) =>
+  const count = (page: import('@playwright/test').Page, group: 'sprint' | 'type' | 'status', value: string) =>
     filterButton(page, group, value).locator('.filter-count');
 
   test('every button shows how many tasks it would show', async ({ page }) => {
-    await expect(count(page, 'phase', 'all')).toHaveText('12');
-    await expect(count(page, 'phase', '1')).toHaveText('4');
+    await expect(count(page, 'sprint', 'all')).toHaveText('12');
+    await expect(count(page, 'sprint', 'Phase 1')).toHaveText('4');
     await expect(count(page, 'type', 'feature')).toHaveText('3');
     await expect(count(page, 'status', 'done')).toHaveText('5');
   });
 
   test('counts follow the selections in the other groups, not their own', async ({ page }) => {
-    await filterButton(page, 'phase', '1').click();
-    await expect(count(page, 'phase', '2')).toHaveText('4'); // its own group: unchanged
+    await filterButton(page, 'sprint', 'Phase 1').click();
+    await expect(count(page, 'sprint', 'Phase 2')).toHaveText('4'); // its own group: unchanged
     await expect(count(page, 'type', 'all')).toHaveText('4');
     await expect(count(page, 'type', 'feature')).toHaveText('2');
     await expect(count(page, 'status', 'todo')).toHaveText('1');
   });
 
   test('values with no tasks are dimmed but can still be selected', async ({ page }) => {
-    await filterButton(page, 'phase', '0').click();
+    await filterButton(page, 'sprint', 'Phase 0').click();
     const feature = filterButton(page, 'type', 'feature');
     await expect(feature.locator('.filter-count')).toHaveText('0');
     await expect(feature).toHaveClass(/\bempty\b/);
@@ -172,7 +173,7 @@ test.describe('filter counts', () => {
 
   test('screen readers hear the count', async ({ page }) => {
     await expect(filterButton(page, 'type', 'feature')).toHaveAccessibleName('Feature, 3 tasks');
-    await expect(filterButton(page, 'phase', '1')).toHaveAccessibleName('Phase 1, 4 tasks');
+    await expect(filterButton(page, 'sprint', 'Phase 1')).toHaveAccessibleName('Phase 1, 4 tasks');
     await expect(filterButton(page, 'status', 'all')).toHaveAccessibleName('All statuses, 12 tasks');
     await expect(filterButton(page, 'status', 'blocked')).toHaveAccessibleName('Blocked, 1 task');
     await expect(filterButton(page, 'type', 'feature')).toHaveAttribute('aria-pressed', 'false');
@@ -184,7 +185,7 @@ test.describe('filter counts', () => {
     tasksServer.use(data);
     await page.locator('#reload-btn').click();
     await expect(count(page, 'type', 'feature')).toHaveText('4');
-    await expect(count(page, 'phase', 'all')).toHaveText('13');
+    await expect(count(page, 'sprint', 'all')).toHaveText('13');
   });
 });
 
@@ -201,17 +202,17 @@ test.describe('compact filter line', () => {
 
     await openFilters(page);
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.filter-group')).toHaveText([/^Phase/, /^Type/, /^Status/, /^Priority/]);
-    await filterButton(page, 'phase', '1').click();
-    await filterButton(page, 'phase', '2').click();
+    await expect(page.locator('.filter-group')).toHaveText([/^Sprint/, /^Type/, /^Status/, /^Priority/]);
+    await filterButton(page, 'sprint', 'Phase 1').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await filterButton(page, 'type', 'test').click();
     await toggle.click();
     await expect(page.locator('#filter-panel')).toHaveCount(0);
 
     const chips = page.locator('.filter-chip');
-    await expect(chips).toHaveText(['Phase: 1, 2', 'Type: Test']);
+    await expect(chips).toHaveText(['Sprint: Phase 1, Phase 2', 'Type: Test']);
     await expect(matchCount(page)).toHaveText('1 of 12 tasks');
-    await chips.filter({ hasText: 'Phase' }).getByRole('button', { name: 'Clear Phase filter' }).click();
+    await chips.filter({ hasText: 'Sprint' }).getByRole('button', { name: 'Clear Sprint filter' }).click();
     await expect(chips).toHaveText(['Type: Test']);
     await expect(matchCount(page)).toHaveText('2 of 12 tasks');
   });

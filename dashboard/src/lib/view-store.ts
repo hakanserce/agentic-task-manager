@@ -3,15 +3,15 @@
 // share localStorage, so each project's view lives under its own key. Theme, mode, auto-refresh and the last-seen
 // version stay per browser (prefs.ts).
 import { BURNDOWN_RANGES, type BurndownRange } from './burndown';
-import type { FilterGroup, ListSort } from './filters';
+import { FILTER_GROUPS, filterValues, type FilterGroup, type ListSort } from './filters';
+import { sprintKey } from './forecast';
 import { ACTIVITY_PRESETS, type ActivityRange } from './insights';
 import { getPref, readStored, writeStored } from './prefs';
+import { NO_SPRINTS, type SprintModel } from './sprints';
 import { DEFAULT_VIEW, VIEWS, type ViewId } from './tabs';
 import type { ViewWindow } from './time-window';
 import type { Task } from './types';
-import { DEFAULT_VOCABULARY, labelsOf, priorityOf, type Vocabulary } from './vocab';
-import { startedBy } from './work';
-import { stageOf, type Stage } from './stages';
+import { DEFAULT_VOCABULARY, type Vocabulary } from './vocab';
 
 export const VIEW_KEY_PREFIX = 'atm-dashboard:view:';
 
@@ -20,14 +20,14 @@ export interface SavedView {
   /** The keyword search */
   query: string;
   tab: ViewId;
-  kanban: { groupByPhase: boolean; showSkipped: boolean; showAllDone: boolean };
+  kanban: { groupBySprint: boolean; showSkipped: boolean; showAllDone: boolean };
   /** The List tab's order */
   listSort: ListSort;
-  /** The phase the Progress tab focuses on, or null for all phases */
-  progressPhase: number | null;
-  /** The filter panel's Phase group lists the finished phases too, not just the active ones */
-  filterFinishedPhases: boolean;
-  /** The Progress tab's burndown range: since the (focused or first unfinished) phase started, 14 days, or all time */
+  /** The sprint the Progress tab focuses on (its ID, or BACKLOG), or null for all of them */
+  progressSprint: string | null;
+  /** The filter panel's Sprint group lists the closed sprints too, not just the open ones */
+  filterClosedSprints: boolean;
+  /** The Progress tab's burndown range: since the (focused or current) sprint started, 14 days, or all time */
   progressRange: BurndownRange;
   /** Tasks outside the search and filters: left out of the graph, or shown greyed out */
   graphFiltered: 'hide' | 'dim';
@@ -57,15 +57,15 @@ export function projectKey(meta: ProjectMeta | undefined): string {
 
 export function defaultView(): SavedView {
   return {
-    filters: { phase: [], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
+    filters: Object.fromEntries(FILTER_GROUPS.map((g) => [g, []])) as unknown as SavedView['filters'],
     query: '',
     tab: DEFAULT_VIEW,
     // Before 0.12.0 "group by phase" was remembered per browser; it still seeds projects without a saved view
-    kanban: { groupByPhase: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
+    kanban: { groupBySprint: getPref('kanbanGroupByPhase', false), showSkipped: false, showAllDone: false },
     listSort: 'file',
-    progressPhase: null,
-    filterFinishedPhases: false,
-    progressRange: 'phase',
+    progressSprint: null,
+    filterClosedSprints: false,
+    progressRange: 'sprint',
     graphFiltered: 'hide',
     graphDimDone: false,
     graph: null,
@@ -111,28 +111,28 @@ export function readView(key: string): SavedView {
   // Views saved before 0.20.0 also have progressActive ("Active phases only", replaced by folding finished phases,
   // T-241, T-243): ignored
   return {
-    filters: {
-      phase: strings(filters.phase),
-      type: strings(filters.type),
-      status: strings(filters.status),
-      priority: strings(filters.priority),
-      stage: strings(filters.stage),
-      label: strings(filters.label),
-      agent: strings(filters.agent),
-    },
+    // Views saved before sprints also have a phase filter: dropped (SR-7.1)
+    filters: Object.fromEntries(FILTER_GROUPS.map((g) => [g, strings(filters[g])])) as SavedView['filters'],
     query: typeof stored.query === 'string' ? stored.query : '',
     tab: (VIEWS as readonly unknown[]).includes(stored.tab) ? (stored.tab as ViewId) : view.tab,
     kanban: {
-      groupByPhase: bool(kanban.groupByPhase, view.kanban.groupByPhase),
+      // groupByPhase, its name before sprints (SR-7.3), meant the same
+      groupBySprint: bool(kanban.groupBySprint, bool(kanban.groupByPhase, view.kanban.groupBySprint)),
       showSkipped: bool(kanban.showSkipped, view.kanban.showSkipped),
       showAllDone: bool(kanban.showAllDone, view.kanban.showAllDone),
     },
     listSort: stored.listSort === 'priority' ? 'priority' : 'file',
-    progressPhase: typeof stored.progressPhase === 'number' ? stored.progressPhase : null,
-    filterFinishedPhases: stored.filterFinishedPhases === true,
-    progressRange: (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
-      ? (stored.progressRange as BurndownRange)
-      : view.progressRange,
+    // A focused phase (progressPhase, before sprints) is dropped: phases are no longer a unit of the Progress tab
+    progressSprint: typeof stored.progressSprint === 'string' ? stored.progressSprint : null,
+    // filterFinishedPhases, its name before sprints, meant the same
+    filterClosedSprints: stored.filterClosedSprints === true || stored.filterFinishedPhases === true,
+    // "phase", the range's name before sprints, is now "sprint"
+    progressRange:
+      stored.progressRange === 'phase'
+        ? 'sprint'
+        : (BURNDOWN_RANGES as readonly unknown[]).includes(stored.progressRange)
+          ? (stored.progressRange as BurndownRange)
+          : view.progressRange,
     graphFiltered: stored.graphFiltered === 'dim' ? 'dim' : 'hide',
     graphDimDone: stored.graphDimDone === true,
     graph: graphView(stored.graph),
@@ -151,32 +151,23 @@ export function clearView(key: string): void {
 }
 
 /**
- * Drop what the tasks no longer have: filter values for removed phases, types, statuses, priorities or labels, a
- * removed phase.
+ * Drop what the tasks no longer have: filter values for removed sprints, releases, components, types, statuses,
+ * priorities or labels, a focused sprint that has no tasks.
  */
-export function sanitizeView(view: SavedView, tasks: Task[], vocab: Vocabulary = DEFAULT_VOCABULARY): SavedView {
-  const present: Record<FilterGroup, Set<string>> = {
-    phase: new Set(tasks.map((t) => String(t.phase))),
-    type: new Set(tasks.map((t) => t.type)),
-    status: new Set(tasks.map((t) => t.status)),
-    priority: new Set(tasks.map((t) => priorityOf(vocab, t))),
-    stage: new Set(tasks.map((t) => stageOf(t, vocab)).filter((s): s is Stage => !!s)),
-    label: new Set(tasks.flatMap((t) => labelsOf(vocab, t))),
-    agent: new Set(tasks.map(startedBy).filter((a): a is string => !!a)),
+export function sanitizeView(
+  view: SavedView,
+  tasks: Task[],
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+  model: SprintModel = NO_SPRINTS,
+): SavedView {
+  const keep = (group: FilterGroup) => {
+    const present = new Set(tasks.flatMap((t) => filterValues(group, t, vocab, model)));
+    return view.filters[group].filter((v) => present.has(v));
   };
-  const keep = (group: FilterGroup) => view.filters[group].filter((v) => present[group].has(v));
+  const sprints = new Set(tasks.map((t) => sprintKey(model, t)));
   return {
     ...view,
-    filters: {
-      phase: keep('phase'),
-      type: keep('type'),
-      status: keep('status'),
-      priority: keep('priority'),
-      stage: keep('stage'),
-      label: keep('label'),
-      agent: keep('agent'),
-    },
-    progressPhase:
-      view.progressPhase !== null && present.phase.has(String(view.progressPhase)) ? view.progressPhase : null,
+    filters: Object.fromEntries(FILTER_GROUPS.map((g) => [g, keep(g)])) as SavedView['filters'],
+    progressSprint: view.progressSprint !== null && sprints.has(view.progressSprint) ? view.progressSprint : null,
   };
 }

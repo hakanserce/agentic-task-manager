@@ -2,11 +2,12 @@
 name: loop-tasks
 description: >
   Loop through available tasks in tasks.json, executing them one by one
-  until all are done or no more can be started. Supports flags for auto-commit,
-  push strategies, phase/type filters, and pause-between-tasks mode.
+  until all are done or no more can be started. Works through the active sprint by
+  default, or a chosen sprint, tasks, the backlog or everything; supports flags for
+  auto-commit, push strategies, a type filter, and pause-between-tasks mode.
   Use when the user says "loop tasks", "do all tasks", "run the loop",
   "Ralph Wiggum it", or "automate the tasks".
-allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*)
+allowed-tools: Bash(atm migrate:*), Bash(atm status:*), Bash(atm sprints:*), Bash(atm show:*), Bash(atm deps:*), Bash(atm list:*), Bash(atm next:*), Bash(atm start:*), Bash(atm heartbeat:*), Bash(atm edit:*), Bash(atm note:*), Bash(atm commit:*), Bash(atm done:*), Bash(atm review:*), Bash(atm block:*), Bash(atm unblock:*), Bash(atm reject:*), Bash(atm approve:*), Bash(atm reopen:*), Bash(atm fail:*), Bash(atm release:*), Bash(atm archive:*)
 ---
 
 # Loop Tasks — Ralph Wiggum Mode 🫠
@@ -22,7 +23,12 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 
 | Flag | Default | Description |
 |---|---|---|
-| `--phase <N>` | all | Only work on tasks in phase N |
+| `--sprint <S>` | the active sprint | Work on sprint S's tasks (repeatable) |
+| `--tasks <T-1,T-5>` | | Work on these tasks, in this order |
+| `--all` | | Every task: the active sprint, then the planned sprints in order, then the backlog |
+| `--backlog` | | Only the tasks in no sprint |
+| `--continue` | off | When the sprint is finished, go on to the next planned sprint (never closes one) |
+| `--with-user` | off | Also take tasks done together with the user (`with: user`): only when the user is watching |
 | `--type <type>` | all | Only work on tasks of a specific type |
 | `--max <N>` | unlimited | Stop after completing N tasks |
 | `--dry-run` | off | Show what would be executed without doing it |
@@ -34,7 +40,15 @@ Parse `$ARGUMENTS` for optional flags (all are optional):
 | `--no-watch` | off | With a push flag: don't watch CI after the last push either |
 | `--yes` | off | With a push flag in a `direct` project: don't ask before the loop starts |
 
-If no arguments are provided, run all available tasks with no pausing and auto-commit after each task (default behavior).
+If no arguments are provided, run the active sprint's tasks (every task, in a project without sprints) with no pausing
+and auto-commit after each task (default behavior).
+
+**The selection.** `--sprint`, `--tasks`, `--all` and `--backlog` choose which tasks the loop takes (at most one of
+them; `--sprint` may be given more than once). Pass the selection, as given, to every `atm next` below: written
+`[selection]` there, together with `--with-user` when the loop has it. Without it, `atm next` skips tasks marked
+`with: user` (work done together with the user): an unattended loop never takes them. A project with sprints but none active has no default selection: `atm next` says so, and the
+loop stops (`/atm:plan-sprint` plans one; `--all` or `--backlog` work without one). `--phase <N>` is gone: phases are
+sprints now (`atm migrate` names each after its phase, "Phase N" when it had no name), so use `--sprint` instead.
 
 **Pushing goes through `/atm:push`** (the plugin's push skill: it follows the project's workflow, `direct` or
 `pull-request`, opens or updates the PR, records it on the tasks, and watches CI). Pushes in the middle of the loop
@@ -82,8 +96,9 @@ the move is staged but not committed.
 
 If `--dry-run` is set, do NOT execute any tasks. Instead:
 
-1. `atm next --json [--phase N] [--type T]` shows the first task the loop would take; `atm list --ready` and
-   `atm list --blocked` show what is ready and what waits (with `atm deps <id>` for a task's chain)
+1. `atm next --json [selection] [--type T]` shows the first task the loop would take; `atm list --ready` and
+   `atm list --blocked` (with `--sprint S` or `--backlog` to match the selection) show what is ready and what waits
+   (with `atm deps <id>` for a task's chain)
 2. Walk through the selection logic and list tasks in the order they would execute
 3. Show the dependency chain and estimated execution order
 4. Report total count and exit
@@ -98,7 +113,8 @@ errors (the message says what).
 **Rules:**
 1. **Never read or edit `tasks.json` or `tasks-archive.json` directly** (no Read, cat, grep, jq or scripts on them);
    every read and change goes through `atm`: `atm status` (the overview), `atm show <id>...` (tasks in full),
-   `atm deps <id>`, `atm list [--status S] [--phase N] [--ready] [--blocked]`, `atm edit <id> ...` (a later task's
+   `atm deps <id>`, `atm list [--status S] [--sprint S] [--backlog] [--ready] [--blocked]`, `atm sprints`,
+   `atm edit <id> ...` (a later task's
    definition), and the status commands. Every command takes `--json`.
 2. Get work only from `atm next --claim` (or `atm start <id>`).
 3. Your claim's lease (30 minutes by default) is renewed by the plugin's hook while you work; if you stop, it runs
@@ -109,7 +125,7 @@ errors (the message says what).
 4. **Commit first, then finish.** Commit with `atm commit <id> --file <path> ...` while the task is still in
    progress, naming every file you changed for the task: it commits exactly those plus `tasks.json`. Never
    `git add -A` or `git add .`: another agent's unfinished work may be in the same working tree. Only then finish with
-   `atm done <id> --note '<one-line outcome>'`, or `atm review <id> --note '...'` when a review is asked for, or
+   `atm done <id> --note '<one-line outcome>'`, or `atm review <id> --note '...'` when its review mode asks for one, or
    `atm block <id> --on user|agent --question '...'` when you can't go on without a decision (steps 5 and 6 below).
    A task is never done with its work uncommitted.
 5. Give up with `atm fail <id> --reason '...'`; stop early with `atm release <id> --note '<handoff>'`. A task marked
@@ -139,17 +155,24 @@ while true:
     1. If --max is set and completed_count >= max → EXIT the loop
 
     2. GET the next task:
-       - Without --pause: `atm next --claim --json [--phase N] [--type T]`
-         This picks the next task by the loop's rule (to do, all dependencies done, not claimed by another
-         agent; lowest phase, then the most urgent priority, then lowest task ID; a task without a priority counts
-         as the default, P2) and starts and claims it in one step, so no other agent can take it. The JSON has the
-         task under "task".
-       - With --pause: `atm next --json [--phase N] [--type T]` (looks without claiming), then show it and ask:
+       - Without --pause: `atm next --claim --json [selection] [--type T]`
+         This picks the next task of the selection by the loop's rule (to do, all dependencies done, not claimed
+         by another agent; with --all the active sprint first, then the planned sprints in order, then the
+         backlog; then the most urgent priority, then lowest task ID; a task without a priority counts as the
+         default, P2; with --tasks, in the order given) and starts and claims it in one step, so no other agent
+         can take it. The JSON has the task under "task".
+       - With --pause: `atm next --json [selection] [--type T]` (looks without claiming), then show it and ask:
          "About to start $TASK_ID: $TASK_NAME. Proceed? (y/n/skip/quit)"
          - 'n' or 'quit' → EXIT the loop
          - 'skip' → leave it, remember to skip it, and continue with the next iteration
          - 'y' → `atm start $TASK_ID`; if that fails (another agent was faster), continue with the next iteration
-       - Exit code 3 means no task is available ("reason" says why) → EXIT the loop
+       - Exit code 3 means the selection has nothing ready; "reason" says why: finished (everything in it is
+         done), the rest waiting (on dependencies, a review, a decision, the user), or empty. Relay the reason.
+         - The sprint is finished and --continue is set: take the next planned sprint after it (`atm sprints
+           --json`, the first `planned` one after it in order), make `--sprint <that one>` the selection, say so,
+           and continue with the next iteration. Never close or start a sprint: closing is `/atm:close-sprint`,
+           with the user. No planned sprint left → EXIT the loop.
+         - Otherwise → EXIT the loop
 
     3. EXECUTE the task:
        - Read the task description carefully (read other tasks with `atm show <id>` / `atm deps <id>` when you need
@@ -187,20 +210,24 @@ while true:
             saying no is the project telling the user something.
 
     6. FINISH the task, once its commit is in:
-       - If a review is asked for (by the task's description, the project's instructions or the user; by the user
-         or by another agent): `atm review $TASK_ID --note '<what the reviewer should check>'` (with `--status`
-         when one of several review statuses fits). The claim is released and the tasks that depend on it keep
-         waiting; the loop goes on with other ready tasks. Count it as waiting for review, not completed.
+       - By its review mode (/atm:do-task Step 7b): `atm done $TASK_ID --note '...'`. For a `none` or `batch`
+         task it is done (`batch`: the note says what the end-of-sprint review should check); completed_count += 1.
+         For a `blocker` or `async` task atm refuses: ask for the review, `atm review $TASK_ID --note '<what the
+         reviewer should check>'` (with `--status` when one of several review statuses fits). The claim is
+         released and the tasks that depend on it keep waiting. Count it as waiting for review, not completed.
+         `async`: the loop goes on with other ready tasks. `blocker`: the review comes first: with the user
+         watching, ask them to review it now; unattended, stop the loop and say what waits for the review.
          A review held with the user (a draft or proposal the task says to review with them): `atm review` as soon
          as the draft is committed, *before* opening the review, so the dashboard shows it waiting on them; address
          their comments while it stays in review. Once they approve, check what the task still asks for; if
-         anything is left, take it back to in progress (`atm reject` with 'Approved; continuing with …', then
-         `atm start`) and carry on; only when nothing is left, `atm done` it (/atm:do-task Step 7b).
+         anything is left, record the approval and take it back to in progress (`atm approve` with a note on
+         what is left, then `atm start`) and carry on; only when nothing is left, `atm done` it (/atm:do-task
+         Step 7b). `atm next` hands tasks back from review (approved, or with changes asked for) before new
+         ones: read the latest `rejection` or approval note first.
        - If it needs a decision: `atm block $TASK_ID --on user --question '<question>' [--question ...]`
          (`--on agent` when the project or the user hands such decisions to a reviewer agent). The claim is
          released and its dependents wait; the loop goes on with other ready tasks. Count it as blocked. Whoever
          decides answers with `atm unblock <id> --answer '...'` (one per question), which puts it back to to do.
-       - Otherwise: `atm done $TASK_ID --note '<one-line outcome>'`, then completed_count += 1
        (The status change goes in with the next commit, like the commit's SHA.)
 
     7. BETWEEN TASKS:
@@ -244,6 +271,13 @@ review, blocked or waiting, and what's next) and output a final summary:
 > `atm unblock <id> --answer '...'` (one per question).
 >
 > **Next steps:** (list tasks that are now available to work on, if any)
+
+**Why it stopped** goes first, from the last `atm next`'s reason (or the max, or the user quitting). When the sprint
+it worked on is **finished**, say what it got done and what's left in it (`atm list --sprint S`), and that
+`/atm:close-sprint` closes it, with the user, and `/atm:plan-sprint` plans the next one. The loop never closes a
+sprint itself. When the selection's rest is **waiting**, say on what (dependencies, reviews, decisions). Without
+`--with-user`, list the tasks **waiting for you**: `atm list --with-user --status todo` ("waiting for you: T-…"),
+done together with the user, e.g. with `/atm:do-task <id>` or `/atm:loop-tasks --with-user`.
 
 If any push flag was set (`--push`, `--batch-push`, `--push-every`), push the rest now with `/atm:push` (or
 `/atm:push --no-watch` if the loop has `--no-watch`): it watches CI and fixes failures, and its report goes into the

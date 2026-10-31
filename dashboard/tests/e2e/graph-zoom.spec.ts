@@ -203,9 +203,10 @@ test.describe('view persistence', () => {
     await page.keyboard.press('+');
     await expect(zoomLabel(page)).toHaveText('75%');
     await openFilters(page);
-    await filterButton(page, 'phase', '1').click();
+    await page.locator('#filter-closed-sprints').click(); // phase 1 is finished, a closed sprint: listed once shown
+    await filterButton(page, 'sprint', 'Phase 1').click();
     await expect(zoomLabel(page)).toHaveText('75%');
-    await filterButton(page, 'phase', 'all').click();
+    await filterButton(page, 'sprint', 'all').click();
     await expect(zoomLabel(page)).toHaveText('75%');
   });
 
@@ -215,7 +216,7 @@ test.describe('view persistence', () => {
     const initial = await zoomLabel(page).textContent();
     expect(initial).not.toBe('100%');
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(zoomLabel(page)).toHaveText(initial!);
     await expect(page.locator('#dep-graph g')).toHaveCount(4);
     expect(await visibleNodes(page)).toBeGreaterThan(0);
@@ -230,8 +231,8 @@ test.describe('view persistence', () => {
     const mm = (await minimap(page).boundingBox())!;
     await page.mouse.click(mm.x + mm.width * 0.97, mm.y + mm.height / 2);
     await openFilters(page);
-    await page.locator('#filter-finished-phases').click(); // phase 0 is finished: listed once shown (T-250)
-    await filterButton(page, 'phase', '0').click();
+    await page.locator('#filter-closed-sprints').click(); // phase 0 is finished, a closed sprint: listed once shown
+    await filterButton(page, 'sprint', 'Phase 0').click();
     await expect(page.locator('#dep-graph g')).toHaveCount(14);
     await expect(zoomLabel(page)).toHaveText(zoom!);
     await expect.poll(() => visibleNodes(page)).toBeGreaterThan(0);

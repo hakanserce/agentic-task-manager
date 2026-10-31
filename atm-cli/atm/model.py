@@ -33,12 +33,16 @@ WORKFLOW_TYPES = ("direct", "pull-request")
 
 # command: (kinds a task may be in, kind it moves to)
 STATUS_CHANGES = {
-    "start": (("todo",), "active"),
+    # From review only once the review asked for rework or approved it (SR-3.9)
+    "start": (("todo", "review"), "active"),
     "review": (("active",), "review"),
     "done": (("active", "review"), "done"),
     "fail": (("active",), "todo"),
     "release": (("active",), "todo"),
     "reject": (("review",), "todo"),
+    # The review's outcome; the task stays in review until an agent takes it back (SR-6.1)
+    "approve": (("review",), "review"),
+    "request-changes": (("review",), "review"),
     "block": (("todo", "active"), "blocked"),
     "unblock": (("blocked",), "todo"),
     # Undo a done (or skipped) by mistake, or work that turns out unfinished; the reason is kept as a note
@@ -47,6 +51,12 @@ STATUS_CHANGES = {
     "skip": (("todo", "blocked"), "skipped"),
 }
 WAITING_ON = ("user", "agent")
+# Review states that make a task in review work for an agent again (SR-3.9)
+REWORK_STATES = ("changes_requested", "approved")
+# How a finished task ended (SR-2.8): stored only when it isn't the default, `done` for a done task and `wont_do` for
+# a skipped one
+RESOLUTIONS = ("done", "wont_do", "duplicate", "obsolete")
+SKIP_RESOLUTIONS = ("wont_do", "obsolete", "duplicate")
 
 
 def _terms(meta, key, defaults, need_kind=False):
@@ -125,6 +135,130 @@ def check_workflow(workflow):
             raise AtmError(f"meta.workflow.{key} must be {expected}")
 
 
+SPRINT_STATES = ("planned", "active", "closed")
+SPRINT_NAMING = ("people", "time")
+REVIEW_MODES = ("blocker", "async", "batch", "none")
+MAX_SPRINT_NAME = 48
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def check_sprints(meta):
+    """meta.sprints (docs/sprints-and-releases-design.md SR-2.1, SR-2.3) as a list of sprints, in order; [] when
+    absent. A sprint's ID is its name: unique (compared case-insensitively), at most 48 characters, no space at either
+    end. A sprint without a state is planned. Raises AtmError naming the problem."""
+    sprints = meta.get("sprints", [])
+    if not isinstance(sprints, list):
+        raise AtmError("meta.sprints must be a list of sprints")
+    seen, active = set(), []
+    for sprint in sprints:
+        if not isinstance(sprint, dict) or not isinstance(sprint.get("id"), str) or not sprint["id"].strip():
+            raise AtmError('meta.sprints: every sprint needs an "id", its name (a non-empty string)')
+        name = sprint["id"]
+        if name != name.strip() or len(name) > MAX_SPRINT_NAME:
+            raise AtmError(f"meta.sprints: {name!r} is not a sprint name (at most {MAX_SPRINT_NAME} characters, no "
+                           "space at either end)")
+        if name.casefold() in seen:
+            raise AtmError(f"meta.sprints: {name!r} is listed twice")
+        seen.add(name.casefold())
+        state = sprint.get("state", "planned")
+        if state not in SPRINT_STATES:
+            raise AtmError(f"meta.sprints: {name!r} has the state {state!r}; use one of {', '.join(SPRINT_STATES)}")
+        if state == "active":
+            active.append(name)
+        if "due" in sprint and not (isinstance(sprint["due"], str) and DATE.fullmatch(sprint["due"])):
+            raise AtmError(f"meta.sprints: {name!r} has the due date {sprint['due']!r}; use YYYY-MM-DD")
+        for key in ("goal", "release", "start", "end"):
+            if key in sprint and not isinstance(sprint[key], str):
+                raise AtmError(f"meta.sprints: {name!r}'s {key} must be a string")
+    if len(active) > 1:
+        raise AtmError(f"meta.sprints: only one sprint can be active, but {' and '.join(active)} are")
+    return [{**s, "state": s.get("state", "planned")} for s in sprints]
+
+
+RELEASE_STATES = ("planned", "released", "archived")
+# A release ID is any string of these (Q5): agents put it in shell commands, so no spaces or quotes
+RELEASE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def check_releases(meta):
+    """meta.releases (docs/sprints-and-releases-design.md SR-2.2) as a list, in order; [] when absent. A release
+    without a state is planned. Raises AtmError naming the problem."""
+    releases = meta.get("releases", [])
+    if not isinstance(releases, list):
+        raise AtmError("meta.releases must be a list of releases")
+    seen = set()
+    for release in releases:
+        if not isinstance(release, dict) or not isinstance(release.get("id"), str) or not RELEASE_ID.fullmatch(
+            release["id"]
+        ):
+            raise AtmError(
+                'meta.releases: every release needs an "id" of letters, digits, ".", "-" and "_" (at most 64)'
+            )
+        if release["id"] in seen:
+            raise AtmError(f"meta.releases: {release['id']!r} is listed twice")
+        seen.add(release["id"])
+        state = release.get("state", "planned")
+        if state not in RELEASE_STATES:
+            raise AtmError(
+                f"meta.releases: {release['id']!r} has the state {state!r}; use one of {', '.join(RELEASE_STATES)}"
+            )
+        if "target" in release and not (isinstance(release["target"], str) and DATE.fullmatch(release["target"])):
+            raise AtmError(f"meta.releases: {release['id']!r} has the target {release['target']!r}; use YYYY-MM-DD")
+        for key in ("name", "released_at"):
+            if key in release and not isinstance(release[key], str):
+                raise AtmError(f"meta.releases: {release['id']!r}'s {key} must be a string")
+    return [{**r, "state": r.get("state", "planned")} for r in releases]
+
+
+def check_components(meta):
+    """meta.components (docs/sprints-and-releases-design.md §2, SR-2.7) as a list, in order; [] when absent: each
+    {id, label, paths (globs matched against a task's files), review}. Raises AtmError naming the problem."""
+    components = meta.get("components", [])
+    if not isinstance(components, list):
+        raise AtmError("meta.components must be a list of components")
+    seen = set()
+    for component in components:
+        if not isinstance(component, dict) or not isinstance(component.get("id"), str) or not RELEASE_ID.fullmatch(
+            component["id"]
+        ):
+            raise AtmError(
+                'meta.components: every component needs an "id" of letters, digits, ".", "-" and "_" (at most 64)'
+            )
+        name = component["id"]
+        if name in seen:
+            raise AtmError(f"meta.components: {name!r} is listed twice")
+        seen.add(name)
+        paths = component.get("paths", [])
+        if not isinstance(paths, list) or not all(isinstance(p, str) and p for p in paths):
+            raise AtmError(f"meta.components: {name!r}'s paths must be a list of globs (strings)")
+        if "review" in component and component["review"] not in REVIEW_MODES:
+            raise AtmError(f"meta.components: {name!r} has the review {component['review']!r}; use one of "
+                           f"{', '.join(REVIEW_MODES)}")
+        if "label" in component and not isinstance(component["label"], str):
+            raise AtmError(f"meta.components: {name!r}'s label must be a string")
+    return [{**c, "paths": c.get("paths", [])} for c in components]
+
+
+def find_release(vocab, release_id):
+    """The release with this ID, or None."""
+    return next((r for r in vocab["releases"] if r["id"] == release_id), None)
+
+
+def known_release(vocab, release_id):
+    """`release_id`, when meta.releases has it; else an AtmError naming the releases."""
+    if find_release(vocab, release_id) is None:
+        known = ", ".join(r["id"] for r in vocab["releases"]) or "none yet: atm releases add <R>"
+        raise AtmError(f"no release {release_id!r}; the releases: {known}", 2)
+    return release_id
+
+
+def check_setting(meta, key, choices, default):
+    value = meta.get(key, default)
+    if value not in choices:
+        raise AtmError(f"meta.{key} must be one of {', '.join(choices)}")
+    return value
+
+
 def workflow_of(data):
     """The project's workflow with its defaults filled in, or None when it has none."""
     meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
@@ -151,20 +285,69 @@ def vocabulary(data):
     )
     if default_priority not in ids:
         raise AtmError(f"meta.default_priority {default_priority!r} is not one of meta.priorities")
-    phases = meta.get("phases", [])
-    if not isinstance(phases, list) or any(
-        not isinstance(p, dict) or not isinstance(p.get("id"), (int, float)) or isinstance(p.get("id"), bool)
-        for p in phases
-    ):
-        raise AtmError('meta.phases must be a list of {"id": <number>, "name": "..."}')
+    # meta.phases, from before sprints, isn't read: atm migrate turns it into sprints (SR-8.1, SR-8.3)
     check_workflow(meta.get("workflow"))
     return {
         "statuses": statuses,
         "types": _terms(meta, "types", DEFAULT_TYPES),
         "priorities": priorities,
         "default_priority": default_priority,
-        "phases": phases,
+        "sprints": check_sprints(meta),
+        "releases": check_releases(meta),
+        "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
+        "review": check_setting(meta, "review", REVIEW_MODES, "none"),
+        "components": check_components(meta),
     }
+
+
+def find_sprint(vocab, name):
+    """The sprint with this name (compared case-insensitively), or None."""
+    if not isinstance(name, str):
+        return None
+    for sprint in vocab["sprints"]:
+        if sprint["id"].casefold() == name.casefold():
+            return sprint
+    return None
+
+
+def set_sprint(task, sprint, stamp):
+    """Put `task` in `sprint` (a sprint ID), or in the backlog (None). Every change ends the open sprint_history entry
+    and, for a sprint, starts a new one (SR-2.5). Returns whether anything changed."""
+    if task.get("sprint") == sprint:
+        return False
+    history = task.setdefault("sprint_history", [])
+    for entry in history:
+        if isinstance(entry, dict) and "to" not in entry:
+            entry["to"] = stamp
+    if sprint is None:
+        task.pop("sprint", None)
+    else:
+        task["sprint"] = sprint
+        history.append({"sprint": sprint, "from": stamp})
+    if not history:
+        task.pop("sprint_history")
+    return True
+
+
+def effective_release(vocab, task):
+    """A task's release: its own, else its sprint's (SR-2.6), or None."""
+    if task.get("release"):
+        return task["release"]
+    sprint = find_sprint(vocab, task.get("sprint"))
+    return sprint.get("release") if sprint else None
+
+
+def effective_review(vocab, task):
+    """A task's review mode: its own, else its first component's that has one, else the project's (meta.review),
+    else none (SR-2.6)."""
+    if task.get("review") in REVIEW_MODES:
+        return task["review"]
+    components = {c.get("id"): c for c in vocab["components"] if isinstance(c, dict)}
+    for component in task.get("components") or []:
+        mode = components.get(component, {}).get("review")
+        if mode in REVIEW_MODES:
+            return mode
+    return vocab["review"]
 
 
 def kind_of(vocab, status):
@@ -252,16 +435,14 @@ def finished_at(task):
     return None
 
 
-def archivable(data, phases=None, before=None, keep=None):
+def archivable(data, before=None, keep=None):
     """The tasks `atm archive` would move (DM-5.1): done- and skipped-kind, not finished in the last `keep` days
-    (default meta.archive.keep_days), not in an open PR; only `phases` and those finished before `before`, if given."""
+    (default meta.archive.keep_days), not in an open PR; only those finished before `before`, if given."""
     vocab = vocabulary(data)
     recent = now() - timedelta(days=archive_settings(data)["keep_days"] if keep is None else keep)
     result = []
     for t in data["tasks"]:
         if not isinstance(t, dict) or kind_of(vocab, t.get("status")) not in ("done", "skipped"):
-            continue
-        if phases and phase_of(t) not in phases:
             continue
         if isinstance(t.get("pr"), dict) and not t.get("merged_at"):
             continue  # still in an open PR
@@ -362,10 +543,6 @@ def natural_key(task_id):
     return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", str(task_id))]
 
 
-def phase_of(task):
-    return task.get("phase") if isinstance(task.get("phase"), (int, float)) else 0
-
-
 MAX_NOTE = 500
 
 
@@ -380,9 +557,10 @@ def check_note(text):
     return text
 
 
-def add_note(task, kind, text, by, stamp):
-    """Append a note (DM-4): handoff, outcome, review, rejection, failure, answer or note."""
-    note = {"at": stamp, "kind": kind, "text": check_note(text)}
+def add_note(task, kind, text, by, stamp, checked=True):
+    """Append a note (DM-4): handoff, outcome, review, rejection, failure, answer or note. `checked=False` for a note
+    built from parts already checked one by one (an unblock's questions and answers)."""
+    note = {"at": stamp, "kind": kind, "text": check_note(text) if checked else text}
     if by:
         note["by"] = by
     task.setdefault("notes", []).append(note)
@@ -411,17 +589,23 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         "waiting_on",
         "questions",
         "blocked_at",
+        "sprint_review",
+        "resolution",
+        "duplicate_of",
     ):
         task.pop(field, None)
     if not keep_commit:
         task.pop("commit", None)
 
 
-def add_interval(task, field, start, end, on=None):
-    """Append {from, to[, on]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`."""
+def add_interval(task, field, start, end, on=None, outcome=None):
+    """Append {from, to[, on][, outcome]} to the task's list `field`: `blocks` (with who it waited on) or `reviews`
+    (with what the review decided, when it sent the task back to an agent)."""
     interval = {"from": start, "to": end}
     if on:
         interval["on"] = on
+    if outcome:
+        interval["outcome"] = outcome
     task.setdefault(field, []).append(interval)
 
 
@@ -447,19 +631,37 @@ def change_status(
     waiting_on=None,
     questions=(),
     answers=(),
+    resolution=None,
+    duplicate_of=None,
 ):
     """Apply one status command to `task` (in `data`); raises AtmError if the transition isn't allowed. `status`
     picks the new status when its kind has several; `agent` is who runs it. `start` records them as started_by,
     `done` as completed_by (both kept when it is done, so the dashboard can show who did what); `note` and `reason`
     become notes, `commit` the task's commit. `block` records who it waits on and the open questions; `unblock`
-    turns them, with the answers, into an answer note."""
+    turns them, with the answers, into an answer note. `done` and `skip` record a `resolution` (SR-2.8), `skip` also
+    `duplicate_of` (the caller checks that task exists, in either file)."""
     vocab = vocabulary(data)
+    if command in ("done", "skip"):
+        resolution = resolution or ("done" if command == "done" else "wont_do")
+        allowed_resolutions = RESOLUTIONS if command == "done" else SKIP_RESOLUTIONS
+        if resolution not in allowed_resolutions:
+            raise AtmError(f"--resolution must be one of {', '.join(allowed_resolutions)}", 2)
+        if duplicate_of is not None and resolution != "duplicate":
+            raise AtmError("--duplicate-of goes with --resolution duplicate", 2)
+        if duplicate_of == task["id"]:
+            raise AtmError(f"{task['id']} can't be a duplicate of itself", 2)
     allowed, new_kind = STATUS_CHANGES[command]
     current = task.get("status")
     if kind_of(vocab, current) not in allowed:
         expected = [s for kind in allowed for s in statuses_of(vocab, kind)]
         raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(expected)}")
+    if command == "done":
+        check_review_mode(task, data, agent)
+    if command == "start" and kind_of(vocab, current) == "review" and task.get("review_state") not in REWORK_STATES:
+        raise AtmError(f"can't start {task['id']}: it waits for its review (atm approve or request-changes decides it)")
     new = status_for(vocab, new_kind, status)
+    if command in ("approve", "request-changes") and status is None:
+        new = current  # it stays in its review status (a project may have several)
     if command == "start":
         blocking = unfinished_dependencies(data, task)
         if blocking:
@@ -475,22 +677,29 @@ def change_status(
             raise AtmError(f"--on must be {' or '.join(WAITING_ON)}", 2)
         if not questions and not reason:
             raise AtmError("say what it waits for: --question (repeatable) or --reason", 2)
+    for answer in answers:
+        check_note(answer)
     asked = list(task.get("questions") or [])
+    # Each question was checked when the task was blocked, each answer just now: together they may be longer than one
+    # note, and must still be recordable, or the task could never be unblocked
     answered = answer_note(asked, list(answers)) if command == "unblock" and (asked or answers) else None
-    if answered is not None:
-        check_note(answered)
     stamp = now_iso()
     # A block's or a review's start goes when the task moves on: keep each interval, so waiting time can be measured
     old_kind = kind_of(vocab, current)
     if old_kind == "blocked" and task.get("blocked_at"):
         add_interval(task, "blocks", task["blocked_at"], stamp, on=task.get("waiting_on"))
-    elif old_kind == "review" and task.get("review_requested_at"):
-        add_interval(task, "reviews", task["review_requested_at"], stamp)
+    elif old_kind == "review" and new_kind != "review" and task.get("review_requested_at"):
+        # The round ends when the reviewer decided, with its outcome (SR-3.9)
+        outcome = task.get("review_state") if task.get("review_state") in REWORK_STATES else None
+        add_interval(task, "reviews", task["review_requested_at"], task.get("reviewed_at") or stamp, outcome=outcome)
+    if new_kind != "review":
+        task.pop("review_state", None)
+        task.pop("reviewed_at", None)
     if new_kind == "todo":
         # Reopening, rejecting or failing a task undoes its work; releasing or unblocking it doesn't
         back_to_todo(task, vocab, agent, stamp, keep_commit=command not in ("reopen", "reject", "fail"))
         if answered:
-            add_note(task, "answer", answered, agent, stamp)
+            add_note(task, "answer", answered, agent, stamp, checked=False)
         if command == "fail":
             add_note(task, "failure", reason or "verification failed", agent, stamp)
         elif command == "reject":
@@ -512,15 +721,29 @@ def change_status(
     elif command == "review":
         # The work ends here: the review isn't agent work (DM-4.1); done keeps this timestamp
         task["review_requested_at"] = stamp
+        task["review_state"] = "waiting"
         if note:
             add_note(task, "review", note, agent, stamp)
+    elif command in ("approve", "request-changes"):
+        # The task stays in review until an agent takes it back (`atm next` offers it first, SR-3.9)
+        task["review_state"] = "approved" if command == "approve" else "changes_requested"
+        task["reviewed_at"] = stamp
+        if command == "request-changes":
+            add_note(task, "rejection", reason, agent, stamp)
+        else:
+            add_note(task, "note", f"Approved: {note}" if note else "Approved", agent, stamp)
     elif command == "skip":
         for field in ("waiting_on", "questions", "blocked_at"):
             task.pop(field, None)
         task["skipped_at"] = stamp
+        if resolution != "wont_do":
+            task["resolution"] = resolution  # none means the default, won't do
+        if duplicate_of:
+            task["duplicate_of"] = duplicate_of
         add_note(task, "note", f"Skipped: {reason}", agent, stamp)
     elif command == "start":
         task["started_at"] = stamp
+        task.pop("review_requested_at", None)  # taken back from review: a new round of work
         task.pop("completed_at", None)
         task.pop("completed_by", None)
         task.pop("agent", None)  # the old name of started_by
@@ -528,10 +751,32 @@ def change_status(
             task["started_by"] = agent
     elif command == "done":
         task["completed_at"] = stamp
+        if resolution != "done":
+            task["resolution"] = resolution  # none means the default, done
         if agent:
             task["completed_by"] = agent
         if commit:
             task["commit"] = commit
+        # A batch task an agent finishes waits for the end-of-sprint review (SR-4.4): its note is what to check
+        batch = old_kind == "active" and is_agent(agent) and effective_review(vocab, task) == "batch"
+        if batch:
+            task["sprint_review"] = "pending"
         if note:
-            add_note(task, "outcome", note, agent, stamp)
+            add_note(task, "review" if batch else "outcome", note, agent, stamp)
     return current
+
+
+def is_agent(actor):
+    """Whether an actor is an agent (a Claude Code session, "claude:…"); anyone else is a person."""
+    return isinstance(actor, str) and actor.startswith("claude:")
+
+
+def check_review_mode(task, data, agent):
+    """`atm done` by review mode (SR-3.8): an agent finishing an active task whose mode is `blocker` or `async` must
+    ask for the review instead. A person may always finish a task."""
+    vocab = vocabulary(data)
+    mode = effective_review(vocab, task)
+    if mode in ("blocker", "async") and is_agent(agent) and kind_of(vocab, task.get("status")) == "active":
+        raise AtmError(
+            f"{task['id']} is reviewed ({mode}): ask for it with atm review {task['id']} --note '<what to check>'", 2
+        )

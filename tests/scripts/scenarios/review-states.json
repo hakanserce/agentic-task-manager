@@ -1,0 +1,165 @@
+[
+  {
+    "name": "request-changes: stays in review with changes_requested and a rejection note (SR-6.1)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "in_review",
+              "started_by": "claude:aaaa1111",
+              "review_requested_at": "2026-05-01T09:00:00Z",
+              "review_state": "waiting"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["request-changes", "T-1", "--reason", "Name the columns", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "Hakan" },
+    "expect": {
+      "json": {
+        "id": "T-1",
+        "status": "in_review",
+        "started_by": "claude:aaaa1111",
+        "review_requested_at": "2026-05-01T09:00:00Z",
+        "review_state": "changes_requested",
+        "updated_at": "2026-05-01T10:00:00Z",
+        "updated_by": "Hakan",
+        "reviewed_at": "2026-05-01T10:00:00Z",
+        "notes": [{ "at": "2026-05-01T10:00:00Z", "by": "Hakan", "kind": "rejection", "text": "Name the columns" }],
+        "claim": null
+      }
+    }
+  },
+  {
+    "name": "next --claim takes the task back from review first, its own agent; the round goes into reviews with its outcome (SR-3.9)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-0", "status": "todo", "priority": "P0" },
+            {
+              "id": "T-1",
+              "status": "in_review",
+              "started_by": "claude:aaaa1111",
+              "review_requested_at": "2026-05-01T09:00:00Z",
+              "review_state": "changes_requested",
+              "reviewed_at": "2026-05-01T10:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--claim", "--json"],
+    "env": { "ATM_NOW": "2026-05-01T10:05:00Z", "ATM_AGENT": "claude:aaaa1111" },
+    "expect": {
+      "stdoutIncludes": ["\"id\": \"T-1\"", "\"status\": \"in_progress\""],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-0", "status": "todo", "priority": "P0" },
+            {
+              "id": "T-1",
+              "status": "in_progress",
+              "started_by": "claude:aaaa1111",
+              "reviews": [
+                { "from": "2026-05-01T09:00:00Z", "to": "2026-05-01T10:00:00Z", "outcome": "changes_requested" }
+              ],
+              "updated_at": "2026-05-01T10:05:00Z",
+              "updated_by": "claude:aaaa1111",
+              "started_at": "2026-05-01T10:05:00Z"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "another agent doesn't get it within a lease length of the review, and does after",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-0", "status": "todo" },
+            {
+              "id": "T-1",
+              "status": "in_review",
+              "started_by": "claude:aaaa1111",
+              "review_requested_at": "2026-05-01T09:00:00Z",
+              "review_state": "approved",
+              "reviewed_at": "2026-05-01T10:00:00Z"
+            }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "ATM_NOW=2026-05-01T10:05:00Z ATM_AGENT=claude:bbbb2222 \"$ATM\" next > early.txt"]]
+    },
+    "args": ["next"],
+    "env": { "ATM_NOW": "2026-05-01T10:31:00Z", "ATM_AGENT": "claude:bbbb2222" },
+    "expect": {
+      "stdoutIncludes": ["Next: T-1"],
+      "files": { "early.txt": "Next: T-0  (backlog, None)\n" }
+    }
+  },
+  {
+    "name": "approve: approved, with a note; a task still waiting for its review can't be started",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "in_review", "review_state": "waiting" },
+            { "id": "T-2", "status": "in_review", "review_state": "waiting" }
+          ]
+        }
+      },
+      "commands": [["sh", "-c", "\"$ATM\" start T-2 2> err.txt; true"]]
+    },
+    "args": ["approve", "T-1", "--note", "Ship it after the docs"],
+    "env": { "ATM_NOW": "2026-05-01T10:00:00Z", "ATM_AGENT": "Hakan" },
+    "expect": {
+      "stdout": "T-1: in_review -> in_review\n",
+      "files": {
+        "err.txt": "atm: can't start T-2: it waits for its review (atm approve or request-changes decides it)\n",
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "in_review",
+              "review_state": "approved",
+              "updated_at": "2026-05-01T10:00:00Z",
+              "updated_by": "Hakan",
+              "reviewed_at": "2026-05-01T10:00:00Z",
+              "notes": [
+                {
+                  "at": "2026-05-01T10:00:00Z",
+                  "by": "Hakan",
+                  "kind": "note",
+                  "text": "Approved: Ship it after the docs"
+                }
+              ]
+            },
+            { "id": "T-2", "status": "in_review", "review_state": "waiting" }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "dependents keep waiting in every review state (SR-6.2)",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-1", "status": "in_review", "review_state": "approved", "started_by": "claude:aaaa1111" },
+            { "id": "T-2", "status": "todo", "dependencies": ["T-1"] }
+          ]
+        }
+      }
+    },
+    "args": ["next", "--json"],
+    "env": { "ATM_AGENT": "claude:cccc3333", "ATM_NOW": "2026-05-01T10:00:00Z" },
+    "expect": { "stdoutIncludes": ["\"task\": {", "\"id\": \"T-1\""] }
+  }
+]

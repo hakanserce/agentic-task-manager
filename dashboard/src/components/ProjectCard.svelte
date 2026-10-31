@@ -4,6 +4,7 @@
   import type { ProjectEntry } from '../lib/load';
   import { needsYou, statsLine } from '../lib/projects';
   import { dashboard } from '../lib/state.svelte';
+  import { daysUntil, dueText } from '../lib/sprints';
   import { phaseColor } from '../lib/theme';
   import { safeUrl } from '../lib/url';
   import Icon from './Icon.svelte';
@@ -17,10 +18,10 @@
   const need = $derived(needsYou(project));
   const needItems = $derived(project.missing ? [] : (s?.needs_you_tasks ?? []));
   const counted = $derived(s ? s.total - s.skipped : 0);
-  const phase = $derived(s?.current_phase);
-  // An older server sends no recent_phases: no rings then, but the count and current phase lines of before
-  const hasRings = $derived(s?.recent_phases !== undefined);
-  const phases = $derived(s?.recent_phases ?? []);
+  // A project with sprints (SR-7.7): rings for its recent sprints, and the active sprint's line
+  const sprints = $derived(s?.recent_sprints ?? null);
+  const active = $derived(s?.active_sprint ?? null);
+  const dueIn = $derived(active?.due ? daysUntil(active.due, dashboard.loadedAt) : undefined);
   // The whole project's count, in the rings' tooltip
   const overall = $derived(
     s ? `${s.done} / ${counted} done${s.skipped ? ` · ${s.skipped} skipped` : ''} (${s.percent}%)` : '',
@@ -88,53 +89,65 @@
   {:else if !s}
     <p class="project-card-note">No numbers yet</p>
   {:else}
-    {#if hasRings}
-      <!-- The approved layout (T-209): one ring per recent phase, always on one line (the rings shrink to fit the
-           card), in a row of the same height on every card; the whole project's count is in its tooltip -->
+    {#if sprints}
+      <!-- The same layout with sprints: a ring per recent sprint, then the active sprint's progress and due date -->
       <div class="project-card-progress" title={overall}>
-        {#if phases.length}
-          <ul class="project-card-rings" aria-label="Recent phases; {overall}">
-            {#each phases as p (p.id)}
-              {@const name = `Phase ${p.id}${p.name ? ` · ${p.name}` : ''}`}
-              <li class="project-card-ring" title="{name}: {p.done} / {p.total} done">
+        {#if sprints.length}
+          <ul class="project-card-rings" aria-label="Recent sprints; {overall}">
+            {#each sprints as sp, i (sp.id)}
+              <li
+                class="project-card-ring"
+                data-sprint={sp.id}
+                title="{sp.id} ({sp.state}): {sp.done} / {sp.total} done"
+              >
                 <Ring
-                  ratio={p.total ? p.done / p.total : 0}
-                  color={phaseColor(p.id)}
+                  ratio={sp.total ? sp.done / sp.total : 0}
+                  color={phaseColor(i)}
                   size={48}
                   stroke={5}
-                  ariaLabel="{name}: {p.done} of {p.total} done"
+                  ariaLabel="{sp.id}: {sp.done} of {sp.total} done"
                 />
-                <span class="project-card-ring-label">Phase {p.id}</span>
+                <span class="project-card-ring-label">{sp.id}</span>
               </li>
             {/each}
+          </ul>
+        {:else}
+          <p class="project-card-note">No tasks in a sprint yet</p>
+        {/if}
+      </div>
+      <p class="project-card-phase project-card-sprint" title={active?.goal ?? null}>
+        {#if active}
+          <span class="project-card-phase-name">{active.id}</span><span class="project-card-phase-count"
+            >&nbsp;— {active.done} / {active.total}{#if dueIn !== undefined}&nbsp;<span
+                class="muted"
+                class:overdue={dueIn < 0}>· {dueText(dueIn)}</span
+              >{/if}</span
+          >
+        {:else}
+          <span class="muted">No active sprint</span>
+        {/if}
+      </p>
+    {:else}
+      <!-- A project without sprints: one ring for all its tasks, in the same rows, so the cards of a row line up -->
+      <div class="project-card-progress" title={overall}>
+        {#if counted}
+          <ul class="project-card-rings" aria-label="All tasks; {overall}">
+            <li class="project-card-ring" title="All tasks: {s.done} / {counted} done">
+              <Ring
+                ratio={s.done / counted}
+                color={phaseColor(0)}
+                size={48}
+                stroke={5}
+                ariaLabel="All tasks: {s.done} of {counted} done"
+              />
+              <span class="project-card-ring-label">All tasks</span>
+            </li>
           </ul>
         {:else}
           <p class="project-card-note">No tasks yet</p>
         {/if}
       </div>
-    {:else}
-      <!-- A server before 0.17 (no recent_phases): the whole project's count and the current phase, as before -->
-      <div class="project-card-counts">
-        <span class="project-card-done"
-          >{s.done} / {counted} done{#if s.skipped}&nbsp;· {s.skipped} skipped{/if}</span
-        >
-        <span class="project-card-percent">{s.percent}%</span>
-      </div>
-      <!-- One line: a long phase name is cut off (the full one in the title), its counts stay visible -->
-      <p
-        class="project-card-phase"
-        title={phase
-          ? `Phase ${phase.id}${phase.name ? ` · ${phase.name}` : ''} — ${phase.done} / ${phase.total}`
-          : null}
-      >
-        {#if phase}
-          <span class="project-card-phase-name"
-            >Phase {phase.id}{#if phase.name}&nbsp;<span class="muted">· {phase.name}</span>{/if}</span
-          ><span class="project-card-phase-count">&nbsp;— {phase.done} / {phase.total}</span>
-        {:else}
-          Every phase is finished
-        {/if}
-      </p>
+      <p class="project-card-phase"><span class="muted">No sprints yet</span></p>
     {/if}
 
     {#if s.stats}

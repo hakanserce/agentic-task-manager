@@ -1,3 +1,5 @@
+import { BACKLOG } from './filters';
+import { NO_SPRINTS, type SprintModel } from './sprints';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, priorityOf, priorityRank, type StatusKind, type Vocabulary } from './vocab';
 
@@ -11,7 +13,7 @@ export interface KanbanCard {
   task: Task;
   /** Only for todo-kind tasks */
   readiness?: Readiness;
-  /** The task /atm:loop-tasks would pick next */
+  /** The task /atm:loop-tasks would pick next (atm's answer, BoardOptions.nextUp) */
   nextUp: boolean;
 }
 
@@ -29,6 +31,10 @@ export interface BoardOptions {
   statusFilter: ReadonlySet<string>;
   /** The project's vocabularies; the defaults when absent */
   vocab?: Vocabulary;
+  /** The project's sprints, for the lanes */
+  sprints?: SprintModel;
+  /** The task the loop takes next, as atm says it: the project summary's `next` from api/projects (T-321) */
+  nextUp?: string | null;
 }
 
 const byId = (a: Task, b: Task) => a.id.localeCompare(b.id, undefined, { numeric: true });
@@ -46,22 +52,10 @@ export function readiness(task: Task, taskMap: ReadonlyMap<string, Task>, vocab 
   return waitingOn.length ? { ready: false, waitingOn } : { ready: true };
 }
 
-/** The loop's order: lowest phase first, then the most urgent priority, then lowest ID (atm next) */
-const loopOrder = (vocab: Vocabulary) => (a: Task, b: Task) =>
-  a.phase - b.phase ||
-  priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) ||
-  byId(a, b);
-
-/**
- * The task /atm:loop-tasks picks next (`atm next`): a todo-kind status, all dependencies done, in the loop's order.
- * Uses all tasks, not just the filtered ones.
- */
-export function nextUp(allTasks: Task[], vocab = DEFAULT_VOCABULARY): Task | undefined {
-  const taskMap = new Map(allTasks.map((t) => [t.id, t]));
-  return allTasks
-    .filter((t) => kindOf(vocab, t.status) === 'todo' && readiness(t, taskMap, vocab).ready)
-    .sort(loopOrder(vocab))[0];
-}
+/** The To Do column's order after ready-first: the most urgent priority, then lowest ID. Only for reading the column;
+ * which task the loop takes next is atm's to say (`nextUp`, T-321) */
+const byPriorityThenId = (vocab: Vocabulary) => (a: Task, b: Task) =>
+  priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) || byId(a, b);
 
 const ORDER: Partial<Record<StatusKind, (a: Task, b: Task) => number>> = {
   // todo: ready-first is applied on top, see buildBoard
@@ -76,11 +70,10 @@ const ORDER: Partial<Record<StatusKind, (a: Task, b: Task) => number>> = {
 export function buildBoard(
   tasks: Task[],
   allTasks: Task[],
-  { showSkipped, statusFilter, vocab = DEFAULT_VOCABULARY }: BoardOptions,
+  { showSkipped, statusFilter, vocab = DEFAULT_VOCABULARY, nextUp = null }: BoardOptions,
   columns?: ColumnId[],
 ): KanbanColumn[] {
   const taskMap = new Map(allTasks.map((t) => [t.id, t]));
-  const next = nextUp(allTasks, vocab)?.id;
   const known = new Map(vocab.statuses.map((s) => [s.id, s]));
   const columnOf = (status: string) => (known.has(status) ? status : OTHER_COLUMN);
   const grouped = new Map<ColumnId, Task[]>();
@@ -100,10 +93,10 @@ export function buildBoard(
     const cards = (grouped.get(id) ?? []).map((task) => ({
       task,
       ...(kind === 'todo' ? { readiness: readiness(task, taskMap, vocab) } : {}),
-      nextUp: task.id === next,
+      nextUp: nextUp !== null && task.id === nextUp,
     }));
-    // To Do in the loop's order (ready first, see below), so the column reads like the loop works
-    const order = kind === 'todo' ? loopOrder(vocab) : ((kind && ORDER[kind]) ?? byPhaseThenId);
+    // To Do: ready first (see below), then by priority and ID
+    const order = kind === 'todo' ? byPriorityThenId(vocab) : ((kind && ORDER[kind]) ?? byPhaseThenId);
     cards.sort((a, b) => {
       if (kind === 'todo') {
         const ready = Number(b.readiness!.ready) - Number(a.readiness!.ready);
@@ -116,24 +109,32 @@ export function buildBoard(
 }
 
 export interface KanbanLane {
-  phase: number;
+  /** The sprint's ID, or BACKLOG */
+  key: string;
+  /** Its place in the project's sprints (for its colour); -1 for the backlog */
+  index: number;
   done: number;
   total: number;
   columns: KanbanColumn[];
 }
 
-/** One swimlane per phase (FR-3.7), all with the same columns as the ungrouped board so they line up. */
+/** One swimlane per sprint with tasks, in the project's order, the backlog last (FR-3.7, SR-7.3); all with the
+ * same columns as the ungrouped board so they line up. */
 export function buildLanes(tasks: Task[], allTasks: Task[], options: BoardOptions): KanbanLane[] {
   const vocab = options.vocab ?? DEFAULT_VOCABULARY;
+  const model = options.sprints ?? NO_SPRINTS;
   const columns = buildBoard(tasks, allTasks, options).map((c) => c.id);
-  const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
-  return phases.map((phase) => {
-    const inPhase = tasks.filter((t) => t.phase === phase);
+  const keyOf = (t: Task) => model.sprintOf(t) ?? BACKLOG;
+  const present = new Set(tasks.map(keyOf));
+  const keys = [...model.sprints.map((s) => s.id), BACKLOG].filter((key) => present.has(key));
+  return keys.map((key) => {
+    const own = tasks.filter((t) => keyOf(t) === key);
     return {
-      phase,
-      done: inPhase.filter((t) => kindOf(vocab, t.status) === 'done').length,
-      total: inPhase.length,
-      columns: buildBoard(inPhase, allTasks, options, columns),
+      key,
+      index: model.sprints.findIndex((s) => s.id === key),
+      done: own.filter((t) => kindOf(vocab, t.status) === 'done').length,
+      total: own.length,
+      columns: buildBoard(own, allTasks, options, columns),
     };
   });
 }

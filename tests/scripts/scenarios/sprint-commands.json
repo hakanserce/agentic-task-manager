@@ -1,0 +1,371 @@
+[
+  {
+    "name": "atm sprints lists open sprints in order with counts by kind, and the backlog",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "Old", "state": "closed" },
+              { "id": "Themes", "state": "active", "release": "0.23.0", "due": "2026-11-02", "goal": "Two themes" },
+              { "id": "Next" }
+            ]
+          },
+          "tasks": [
+            { "id": "T-1", "status": "done", "sprint": "Old" },
+            { "id": "T-2", "status": "done", "sprint": "Themes" },
+            { "id": "T-3", "status": "todo", "sprint": "Themes" },
+            { "id": "T-4", "status": "todo" },
+            { "id": "T-5", "status": "done" }
+          ]
+        }
+      }
+    },
+    "args": ["sprints"],
+    "expect": {
+      "stdout": "Themes · active · release 0.23.0 · due 2026-11-02: 2 tasks (todo 1, done 1)\n  goal: Two themes\nNext · planned: 0 tasks\nbacklog: 1 task (atm backlog)\n"
+    }
+  },
+  {
+    "name": "atm sprints --all lists the closed ones too",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Old", "state": "closed" }] },
+          "tasks": [{ "id": "T-1", "status": "done", "sprint": "Old" }]
+        }
+      }
+    },
+    "args": ["sprints", "--all"],
+    "expect": { "stdout": "Old · closed: 1 task (done 1)\nbacklog: 0 tasks (atm backlog)\n" }
+  },
+  {
+    "name": "atm sprints add, with a goal, release and due date, after a given sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A" }, { "id": "C" }], "releases": [{ "id": "1.0" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["sprints", "add", "B", "--goal", "The middle", "--release", "1.0", "--due", "2026-06-01", "--after", "A"],
+    "expect": {
+      "stdout": "Added the sprint “B” (planned).\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "A" },
+              { "id": "B", "state": "planned", "goal": "The middle", "release": "1.0", "due": "2026-06-01" },
+              { "id": "C" }
+            ],
+            "releases": [{ "id": "1.0" }]
+          },
+          "tasks": []
+        }
+      }
+    }
+  },
+  {
+    "name": "a sprint name that's taken (in any case) is refused",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "sprints": [{ "id": "Themes" }] }, "tasks": [] } }
+    },
+    "args": ["sprints", "add", "THEMES"],
+    "expect": { "exit": 2, "stderrIncludes": ["there is already a sprint 'Themes'"] }
+  },
+  {
+    "name": "a due date that isn't YYYY-MM-DD is refused",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["sprints", "add", "A", "--due", "Friday"],
+    "expect": { "exit": 2, "stderrIncludes": ["--due 'Friday': use a date, YYYY-MM-DD"] }
+  },
+  {
+    "name": "time names: the creation time in local time",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "sprint_names": "time" }, "tasks": [] } }
+    },
+    "args": ["sprints", "add", "--json"],
+    "env": { "ATM_NOW": "2026-05-12T22:38:00Z", "TZ": "UTC" },
+    "expect": { "json": { "id": "May 12-10:38pm", "state": "planned" } }
+  },
+  {
+    "name": "time names: a second sprint in the same minute gets -2",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprint_names": "time", "sprints": [{ "id": "May 12-10:38pm" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["sprints", "add", "--json"],
+    "env": { "ATM_NOW": "2026-05-12T22:38:30Z", "TZ": "UTC" },
+    "expect": { "json": { "id": "May 12-10:38pm-2", "state": "planned" } }
+  },
+  {
+    "name": "time names: a morning time",
+    "setup": {
+      "files": { ".agentic-task-manager/tasks.json": { "meta": { "sprint_names": "time" }, "tasks": [] } }
+    },
+    "args": ["sprints", "add", "--json"],
+    "env": { "ATM_NOW": "2026-01-03T00:05:00Z", "TZ": "UTC" },
+    "expect": { "json": { "id": "Jan 3-12:05am", "state": "planned" } }
+  },
+  {
+    "name": "atm sprints edit changes the goal and removes the due date with an empty value",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "planned", "due": "2026-06-01" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["sprints", "edit", "a", "--goal", "Ship it", "--due", ""],
+    "expect": { "stdout": "A: changed goal, due\n" }
+  },
+  {
+    "name": "atm sprints start makes a planned sprint active and records its start",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "Old", "state": "closed" },
+              { "id": "Next", "state": "planned" }
+            ]
+          },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["sprints", "start", "Next", "--json"],
+    "env": { "ATM_NOW": "2026-05-12T09:00:00Z" },
+    "expect": { "json": { "id": "Next", "state": "active", "start": "2026-05-12T09:00:00Z" } }
+  },
+  {
+    "name": "a sprint can't start while another is active",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }, { "id": "Next" }] },
+          "tasks": []
+        }
+      }
+    },
+    "args": ["sprints", "start", "Next"],
+    "expect": { "exit": 2, "stderrIncludes": ["the sprint 'Now' is active; close it first"] }
+  },
+  {
+    "name": "a closed sprint isn't started again",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": { "meta": { "sprints": [{ "id": "Old", "state": "closed" }] }, "tasks": [] }
+      }
+    },
+    "args": ["sprints", "start", "Old"],
+    "expect": { "exit": 2, "stderrIncludes": ["the sprint 'Old' is closed"] }
+  },
+  {
+    "name": "atm move moves tasks into a sprint, keeping their history",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "sprint": "A",
+              "sprint_history": [{ "sprint": "A", "from": "2026-05-01T09:00:00Z" }]
+            },
+            { "id": "T-2", "status": "blocked" }
+          ]
+        }
+      }
+    },
+    "args": ["move", "T-1", "T-2", "--to", "B"],
+    "env": { "ATM_NOW": "2026-05-02T09:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdout": "T-1: A -> B\nT-2: backlog -> B\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "sprint": "B",
+              "sprint_history": [
+                { "sprint": "A", "from": "2026-05-01T09:00:00Z", "to": "2026-05-02T09:00:00Z" },
+                { "sprint": "B", "from": "2026-05-02T09:00:00Z" }
+              ],
+              "updated_at": "2026-05-02T09:00:00Z",
+              "updated_by": "alice"
+            },
+            {
+              "id": "T-2",
+              "status": "blocked",
+              "sprint_history": [{ "sprint": "B", "from": "2026-05-02T09:00:00Z" }],
+              "sprint": "B",
+              "updated_at": "2026-05-02T09:00:00Z",
+              "updated_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "atm move --to next: the planned sprint after the task's own",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "Old", "state": "closed" }, { "id": "C" }] },
+          "tasks": [{ "id": "T-1", "status": "todo", "sprint": "A" }]
+        }
+      }
+    },
+    "args": ["move", "T-1", "--to", "next"],
+    "expect": { "stdout": "T-1: A -> C\n" }
+  },
+  {
+    "name": "atm move --to next with no planned sprint after it says to add one, and moves nothing",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [{ "id": "T-1", "status": "todo", "sprint": "A" }]
+        }
+      }
+    },
+    "args": ["move", "T-1", "--to", "next"],
+    "expect": { "exit": 2, "stderrIncludes": ["T-1: no planned sprint after A; add one with atm sprints add"] }
+  },
+  {
+    "name": "atm move --to active",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo" },
+            { "id": "T-2", "status": "todo", "sprint": "A" }
+          ]
+        }
+      }
+    },
+    "args": ["move", "T-1", "--to", "active"],
+    "expect": { "stdout": "T-1: backlog -> A\n" }
+  },
+  {
+    "name": "atm move --to backlog takes a task out of its sprint; one already there says so",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "sprint": "A" },
+            { "id": "T-2", "status": "todo" }
+          ]
+        }
+      }
+    },
+    "args": ["move", "T-1", "T-2", "--to", "backlog"],
+    "expect": { "stdout": "T-1: A -> backlog\nT-2: already in backlog\n" }
+  },
+  {
+    "name": "atm move --to active with no active sprint is refused",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A" }] },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
+    "args": ["move", "T-1", "--to", "active"],
+    "expect": { "exit": 2, "stderrIncludes": ["no sprint is active"] }
+  },
+  {
+    "name": "claimed and finished tasks aren't moved, and nothing is moved when one is refused",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "sprint": "A" },
+            { "id": "T-2", "status": "in_progress", "sprint": "A" }
+          ]
+        }
+      }
+    },
+    "args": ["move", "T-1", "T-2", "--to", "B"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["T-2 is in progress (claimed)"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }, { "id": "B" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "sprint": "A" },
+            { "id": "T-2", "status": "in_progress", "sprint": "A" }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "a done task stays in the sprint it was done in",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [{ "id": "T-1", "status": "done", "sprint": "A" }]
+        }
+      }
+    },
+    "args": ["move", "T-1", "--to", "backlog"],
+    "expect": { "exit": 2, "stderrIncludes": ["T-1 is done: finished work stays in the sprint it was done in"] }
+  },
+  {
+    "name": "atm backlog lists unfinished tasks with no sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "phase": 1, "name": "Planned", "sprint": "A" },
+            { "id": "T-2", "status": "todo", "phase": 1, "name": "Unplanned" },
+            { "id": "T-3", "status": "done", "phase": 1, "name": "Old work" }
+          ]
+        }
+      }
+    },
+    "args": ["backlog"],
+    "expect": { "stdout": "T-2  todo  P2  Unplanned\n" }
+  },
+  {
+    "name": "atm backlog --all adds the finished tasks with no sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [
+            { "id": "T-2", "status": "todo", "phase": 1, "name": "Unplanned" },
+            { "id": "T-3", "status": "done", "phase": 1, "name": "Old work" }
+          ]
+        }
+      }
+    },
+    "args": ["backlog", "--all"],
+    "expect": { "stdout": "T-2  todo  P2  Unplanned\nT-3  done  P2  Old work\n" }
+  },
+  {
+    "name": "an empty backlog says so",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["backlog"],
+    "expect": { "stdout": "The backlog is empty.\n" }
+  }
+]

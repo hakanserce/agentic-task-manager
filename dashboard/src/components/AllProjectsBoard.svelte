@@ -6,7 +6,7 @@
   import { formatAgo, shortAgent } from '../lib/claims';
   import { searchProjects, type ProjectEntry } from '../lib/load';
   import { dashboard } from '../lib/state.svelte';
-  import { kindStyle, phaseColor, priorityStyle, typeStyle } from '../lib/theme';
+  import { kindStyle, priorityStyle, typeStyle } from '../lib/theme';
   import { DEFAULT_VOCABULARY, priorityRank } from '../lib/vocab';
   import { blockSummary, reviewSummary } from '../lib/waiting';
   import KanbanScroll from './KanbanScroll.svelte';
@@ -122,12 +122,6 @@
                 >
               {/if}
               <span class="kanban-card-id">{card.id}</span>
-              {#if card.phase !== null}
-                {@const pc = phaseColor(card.phase)}
-                <span class="badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
-                  >Phase {card.phase}</span
-                >
-              {/if}
               <span class="badge" style="background:{ts.bg};color:{ts.color}">{card.type}</span>
               {#if card.priority}
                 {@const ps = priorityStyle(priorityRank(DEFAULT_VOCABULARY, card.priority))}

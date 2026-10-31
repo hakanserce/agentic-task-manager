@@ -72,6 +72,43 @@ describe('DetailPanel', () => {
     expect(plain.querySelector('#detail-with-user')).toBeNull();
   });
 
+  it('shows how it ended when not done, what it duplicates or is duplicated by, and related tasks both ways (SR-7.6)', () => {
+    const fields: Record<string, Record<string, unknown>> = {
+      'T-001': { related: ['T-002'] },
+      'T-003': { status: 'skipped', resolution: 'duplicate', duplicate_of: 'T-002' },
+      'T-004': { related: ['T-002', 'T-099'] },
+    };
+    loadIntoDashboard({ ...standard, tasks: standard.tasks.map((t) => ({ ...t, ...fields[t.id] })) });
+    const { container } = render(DetailPanel);
+    const ids = (selector: string) =>
+      [...container.querySelectorAll(`${selector} .detail-dep-item strong`)].map((s) => s.textContent);
+
+    dashboard.showDetail('T-002');
+    flushSync();
+    expect(ids('#detail-related')).toEqual(['T-001', 'T-004']);
+    expect(ids('#detail-duplicated-by')).toEqual(['T-003']);
+    expect(container.querySelector('#detail-resolution')).toBeNull(); // done: the default
+    expect(railGroups(container)).toContain('dependencies');
+
+    dashboard.showDetail('T-003');
+    flushSync();
+    expect(container.querySelector('#detail-resolution')).toHaveTextContent('duplicate');
+    expect(ids('#detail-duplicate-of')).toEqual(['T-002']);
+
+    // A related task that doesn't exist is shown, not linked; a link opens the other task
+    dashboard.showDetail('T-004');
+    flushSync();
+    expect(container.querySelector('#detail-related [data-archived="T-099"]')).toHaveTextContent('not found');
+    container.querySelector<HTMLElement>('#detail-related .detail-dep-item:not(.archived)')!.click();
+    flushSync();
+    expect(dashboard.detailId).toBe('T-002');
+  });
+
+  it('a skipped task shows won’t do, its default resolution', () => {
+    const container = open({ status: 'skipped' });
+    expect(container.querySelector('#detail-resolution')).toHaveTextContent("won't do");
+  });
+
   it('a task carried twice or more is flagged', () => {
     const data = sprints as TasksFile;
     const tasks = (data.tasks ?? []).map((t) =>

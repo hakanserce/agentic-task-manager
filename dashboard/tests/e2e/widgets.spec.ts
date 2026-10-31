@@ -40,6 +40,25 @@ test.describe('Progress widget', () => {
     ]);
   });
 
+  test("finished tasks that weren't done are counted apart from done, by resolution (SR-2.8)", async ({
+    page,
+    tasksServer,
+  }) => {
+    const panel = page.locator('#progress-panel');
+    await progressPill(page).click();
+    await expect(panel.locator('#progress-not-done')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
+    const data = loadFixture('agents');
+    const todo = data.tasks.filter((t) => t.status === 'todo');
+    todo[0].status = 'skipped';
+    data.tasks.push({ ...todo[0], id: 'T-990', status: 'skipped', resolution: 'obsolete' });
+    tasksServer.use(data);
+    await page.locator('#reload-btn').click();
+    await progressPill(page).click();
+    await expect(panel.locator('#progress-not-done')).toHaveText("Not done: 1 won't do · 1 obsolete");
+  });
+
   test('Go to: the Progress tab, or the Kanban filtered to a status (T-243)', async ({ page }) => {
     const panel = page.locator('#progress-panel');
     await progressPill(page).click();

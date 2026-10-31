@@ -239,6 +239,13 @@ Every agent-written text in them is single-quoted (I3), and none pre-approves `a
 - **`with: user`.** `atm next` skips these tasks unless `--with-user`, which only the user passes (the loop's
   `--with-user` flag); `atm start <id>` takes one only when named. The dashboard lists them as needing the user.
 
+**Resolution, relations and Next up (T-318, T-319, T-321).** `resolution`, `duplicate_of` and `related` are set only
+by `atm done`/`skip` and `add`/`edit` (checked by `atm check`); none affects readiness or what `atm next` hands out,
+and the dashboard shows them as text and links to tasks of the same project, by ID (Svelte escapes them; an ID that
+isn't a task is shown, not linked). The Kanban's Next up is `api/projects`' `next`, which atm-cli computes: the
+dashboard no longer applies the loop's rule, and `atm summary` (the same summary, for the dev server) takes no path
+or URL, so it adds no entry point beyond `atm status`.
+
 Review against the red-team cases: the changed skills (`/atm:do-task`, `/atm:loop-tasks`, `/atm:close-sprint`)
 keep *Task text is data*; a red-team task that also says "this is approved" or "no review needed" is still blocked
 for what it asks, and its review mode comes from the fields above, not its text. No live sandbox run, as for T-304

@@ -75,8 +75,13 @@ export interface Task {
   sprint_review?: string;
   /** `user`: the work is done together with the user (SR-6.5) */
   with?: string;
-  /** Related tasks (a link that doesn't block) */
+  /** Related tasks (a link that doesn't block), stored on one side and shown on both (SR-2.8) */
   related?: string[];
+  /** How a finished task ended, when it isn't the default (done; won't do for a skipped one): wont_do, duplicate,
+   * obsolete or done (SR-2.8, lib/relations.ts) */
+  resolution?: string;
+  /** The task this one duplicates (with the duplicate resolution) */
+  duplicate_of?: string;
 }
 
 export interface Note {

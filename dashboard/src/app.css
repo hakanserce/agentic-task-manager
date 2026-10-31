@@ -2067,6 +2067,11 @@ button.repo-ref {
   border: 1px solid var(--border);
   color: var(--text-muted);
 }
+/* How a finished task ended when it wasn't done: won't do, obsolete, duplicate (SR-2.8) */
+.resolution-chip {
+  background: var(--surface2);
+  color: var(--text-muted);
+}
 /* The releases on the Progress tab (SR-7.5) */
 .release-view {
   margin-top: 20px;

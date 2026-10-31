@@ -3,6 +3,7 @@
   import { forecastSprints, type SprintForecast } from '../lib/forecast';
   import { formatWhen } from '../lib/format';
   import { progressBreakdown } from '../lib/insights';
+  import { notDone, RESOLUTION_LABELS } from '../lib/relations';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
   import { kindOf, statusLabel as vocabStatusLabel } from '../lib/vocab';
@@ -31,6 +32,8 @@
   // By sprint (T-243, SR-7.4): a ring for each sprint not closed, and the backlog; the closed ones, which would be a row
   // of full rings, are one chip (✓ 12 closed) that opens the Progress tab on the last of them.
   const source = $derived(dashboard.archiveLoaded ? dashboard.history : dashboard.tasks);
+  // The finished tasks that weren't done, by resolution (SR-2.8)
+  const ended = $derived(notDone(source, dashboard.vocab));
   const rows = $derived(forecastSprints(source, Date.now(), source, dashboard.vocab, dashboard.sprints).sprints);
   const openRows = $derived(rows.filter((r) => r.sprint?.state !== 'closed'));
   const closedRows = $derived(rows.filter((r) => r.sprint?.state === 'closed'));
@@ -153,6 +156,12 @@
               </li>
             {/each}
           </ul>
+          {#if ended.length}
+            <!-- Finished without being done, apart from done (SR-2.8): won't do, obsolete, duplicate -->
+            <p class="skipped-note" id="progress-not-done">
+              Not done: {ended.map((e) => `${e.count} ${RESOLUTION_LABELS[e.resolution] ?? e.resolution}`).join(' · ')}
+            </p>
+          {/if}
         </div>
       </div>
 

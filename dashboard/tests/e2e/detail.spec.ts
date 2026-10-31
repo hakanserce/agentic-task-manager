@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, openDashboard, test } from './helpers';
+import { expect, loadFixture, openDashboard, test } from './helpers';
 
 const overlay = (page: Page) => page.locator('#detail-overlay');
 const panel = (page: Page) => page.locator('#detail-panel');
@@ -51,6 +51,27 @@ test.describe('detail panel', () => {
     await section(page, 'Required By').locator('.detail-dep-item', { hasText: 'T-005' }).click();
     await expect(panel(page).locator('h3')).toHaveText('T-005 Post editor');
     await section(page, 'Depends On').locator('.detail-dep-item', { hasText: 'T-004' }).click();
+    await expect(panel(page).locator('h3')).toHaveText('T-004 User login');
+  });
+
+  test('how it ended, duplicates and related tasks, both ways and linked (SR-7.6)', async ({ page, tasksServer }) => {
+    const data = loadFixture('standard');
+    const set = (id: string, fields: Record<string, unknown>) =>
+      Object.assign(
+        data.tasks.find((t) => t.id === id)!,
+        fields,
+      );
+    set('T-001', { related: ['T-004'] });
+    set('T-009', { status: 'skipped', resolution: 'duplicate', duplicate_of: 'T-004' });
+    tasksServer.use(data);
+    await page.locator('#reload-btn').click();
+    await openFromCard(page, 'T-004');
+    await expect(section(page, 'Related').locator('.detail-dep-item')).toContainText(['T-001 Set up repository']);
+    await expect(section(page, 'Duplicated By').locator('.detail-dep-item')).toContainText(['T-009']);
+    await section(page, 'Duplicated By').locator('.detail-dep-item').click();
+    await expect(panel(page).locator('h3')).toHaveText(/^T-009 /);
+    await expect(panel(page).locator('#detail-resolution')).toHaveText('duplicate');
+    await section(page, 'Duplicate Of').locator('.detail-dep-item').click();
     await expect(panel(page).locator('h3')).toHaveText('T-004 User login');
   });
 

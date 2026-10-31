@@ -143,6 +143,14 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
   the closed sprints.
 
+### Added (T-319)
+- **Resolution and relations on the dashboard** (SR-7.6): the detail panel shows how a finished task ended when it
+  wasn't done (`#detail-resolution`: won't do, obsolete, duplicate), what it duplicates and what duplicates it
+  (`#detail-duplicate-of`, `#detail-duplicated-by`) and its related tasks both ways (`#detail-related`), each linked
+  (a task that isn't in `tasks.json` is shown, not linked), in the Dependencies group. The Progress panel counts the
+  finished tasks that weren't done apart from done, by resolution ("Not done: 2 won't do · 1 obsolete",
+  `#progress-not-done`). The rules are in `lib/relations.ts` (`resolutionOf`, `relationsOf`, `notDone`).
+
 ### Added (T-318)
 - **Resolution and relations** (SR-2.8): `atm done --resolution done|wont_do|duplicate|obsolete` and
   `atm skip --resolution wont_do|obsolete|duplicate [--duplicate-of ID]` record how a task ended; only a resolution

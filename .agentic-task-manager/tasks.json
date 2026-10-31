@@ -15197,7 +15197,7 @@
         "SR-7.6"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-318",
         "T-293"
@@ -15207,7 +15207,7 @@
         "dashboard/src/lib/insights.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T08:10:33Z",
+      "updated_at": "2026-10-31T08:20:20Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -15218,7 +15218,18 @@
         }
       ],
       "started_at": "2026-10-31T08:10:33Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "ee73a7dd54ae8f7d8449ca72f35b56158fea047f",
+      "completed_at": "2026-10-31T08:20:20Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T08:20:20Z",
+          "kind": "outcome",
+          "text": "Detail panel shows the resolution, duplicate of / duplicated by and related tasks both ways, linked; the Progress panel counts finished-but-not-done tasks by resolution. Rules in `lib/relations.ts`.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-320",
@@ -15343,7 +15354,7 @@
       "description": "Ship the sprint *Sprints and releases* as 0.24.0, the way CLAUDE.md's *Versions* and *CI* sections describe.\n\n## Change\n- Bump `plugin/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` to `0.24.0` (they must match).\n- Turn `plugin/CHANGELOG.md`'s `[Unreleased]` into `[0.24.0]` with today's date; merge its repeated `### Changed` / `### Added` sections into one of each (keep the upgrade note at the top).\n- Write the `plugin/WHATS-NEW.md` entry from the changelog: 3–6 short plain-language bullets about what a user notices (sprints instead of phases, releases, review modes, work done together, the Kanban's Next up), no flags or file names.\n- Release security checklist (`docs/security-architecture.md` §3): the skills changed in this release keep their written review in §3.3 (no live sandbox run, no API key); check every new entry point and field of the release is documented there.\n- Run the full verify (`npm run verify` in `dashboard/`).\n\n## Push\nPush with `/atm:push`: it opens (or updates) the release PR to `main` and watches CI. CI fails until the missing `-linux.png` screenshot baselines are committed: take them from this branch's run artifact as CLAUDE.md's *CI* section says, check one, and commit them. Merging the PR is the user's.",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-319"
       ],
@@ -15355,9 +15366,9 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-31T08:19:50Z",
-      "updated_at": "2026-10-31T08:19:50Z",
+      "updated_at": "2026-10-31T08:20:29Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce",
+      "updated_by": "claude:9fec227a",
       "sprint_history": [
         {
           "sprint": "Sprints and releases",
@@ -15365,7 +15376,9 @@
         }
       ],
       "sprint": "Sprints and releases",
-      "release": "0.24.0"
+      "release": "0.24.0",
+      "started_at": "2026-10-31T08:20:29Z",
+      "started_by": "claude:9fec227a"
     }
   ]
 }

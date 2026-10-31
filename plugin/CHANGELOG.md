@@ -4,7 +4,7 @@ All notable changes to the atm plugin and its task dashboard. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 The dashboard comes with the plugin: updating the plugin updates it everywhere.
 
-## [Unreleased]
+## [0.24.0] - 2026-10-31
 
 **Before the first run in a shared project, update every agent's plugin:** this version turns the project's phases
 into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks without phases (`atm next` would order by
@@ -41,8 +41,7 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   ready and says why; for a finished sprint, what it got done and what's left, and that `/atm:close-sprint` closes
   it. `--continue` goes on to the next planned sprint (`--sprint` of it); the loop never closes or starts a sprint.
   It pre-approves `atm sprints` to read them. `/atm:do-task` without an ID takes the next task of the active sprint.
-  The Kanban's **Next up** follows the same rule (`nextUp` in `lib/kanban.ts` takes the sprints): the active sprint's
-  next task, none while no sprint is active, every task in a project without sprints (`next-up-parity.test.ts`).
+  The Kanban's **Next up** follows the same selection (since T-321 it is `atm next`'s own answer, below).
 - **Phases become sprints** (T-292, `docs/sprints-and-releases-design.md` SR-8.1): `atm migrate`, which every skill
   runs first, converts a project with phases once, in `tasks.json` and `tasks-archive.json`. Each phase with tasks or
   a name becomes a sprint named after it ("Phase n" when unnamed, " (phase n)" added to a taken name), in phase order;
@@ -50,8 +49,27 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   active (it says to plan one with `/atm:plan-sprint`). A task's `phase` becomes `sprint` with a `sprint_history`
   entry from its `created_at`; `phase` and `meta.phases` are removed. The files are staged, not committed, and
   `atm migrate --json` lists the new sprints as `sprints_from_phases`. A task with a phase merged into a migrated
-  project joins its phase's sprint at the next `atm migrate`. `atm serve` leaves phases alone for now. Commands keep
-  working on files not yet migrated.
+  project joins its phase's sprint at the next `atm migrate`. `atm serve` migrates the projects it serves too.
+- **Progress tab by sprint** (T-297, SR-7.4): the phase table is a sprint table (`SprintTable.svelte`, `#sprint-table`,
+  rows `data-sprint`): one row per sprint with tasks, in the project's order, then the backlog; a sprint's state and
+  due date next to its name; a closed sprint shows when it closed and its report (carried to, added mid-sprint), and
+  two or more fold into one row. Estimates add up in the loop's order: the active sprint, the planned ones, the
+  backlog (`forecastSprints`, `nextInLoop` in `lib/forecast.ts`; `forecastPhases`, `phaseRanges` and `activePhases`
+  are gone). The burndown focuses on a sprint; its default range is since that sprint (or the one the loop works on)
+  started; a closed sprint's chart ends where it closed, and the due date of an open one is marked. The saved view
+  keeps the focused sprint (`progressSprint`; a saved `progressPhase` is dropped, a `phase` range reads as
+  `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
+  the closed sprints.
+- **The Kanban's Next up comes from atm** (T-321): the project's Kanban marks the first task of its summary's `next`
+  in `api/projects` instead of applying the loop's rule itself, so it is always the task `atm next` hands out, also
+  when the browser can't see why another isn't (a claim, a task done or waiting in another worktree). The summary's
+  `next` now follows `atm next` exactly, tasks back from review first (`loop_order` in `claims.py`, shared by both).
+  The dashboard's `nextUp()` and `next-up-parity.test.ts` are gone; the To Do column orders ready tasks by priority,
+  then ID, for reading only.
+- **Releases recovered from past PRs** (T-310, SR-8.2): `atm releases add` takes `--pr` more than once (a release
+  shipped in several PRs gets all their tasks, the release records the last PR) and `--released-at TIME`, which adds
+  it as released at that time. This repository's releases 0.5.0–0.23.0 were recovered that way, each released at its
+  PR's merge; 0.5.0–0.12.0 have no tasks, as their PRs weren't recorded on tasks yet.
 
 ### Added
 - **Review states, components and work together on the dashboard** (T-316, SR-6.6, SR-7.6): cards show a task back
@@ -59,8 +77,7 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   also its effective review mode (`lib/review.ts`) and whether it waits for the sprint review. *Needs you* counts
   `with: user` tasks to do ("to do with you") and no longer a task back from review (an agent's work again), in
   the dashboard (`needsYouReason`) and in `atm serve`'s summary (`needs_you.together`). The sprint header says how
-  many done tasks wait for the end-of-sprint review. The Kanban's Next up takes tasks back from review first and
-  skips `with: user`, as `atm next` does.
+  many done tasks wait for the end-of-sprint review.
 - **`with: user`** (T-314, SR-3.5, SR-5.3, SR-6.5, SR-6.6): a task done together with the user (`atm add` / `edit
   --with user`, removed with `--with ''`). `atm next` skips it unless `--with-user`, and says when only such work is
   left; `atm start <id>` takes it; `atm list --with-user` lists them. `/atm:loop-tasks --with-user` takes them;
@@ -130,53 +147,21 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   ("due in 3 days", "2 days overdue" in red), release, progress (done of the tasks not skipped) and, from
   `sprint_history`, how many tasks were added mid-sprint and carried in (`headerSprint`, `sprintSummary` in
   `lib/sprints.ts`).
-
-### Changed
-- **Progress tab by sprint** (T-297, SR-7.4): the phase table is a sprint table (`SprintTable.svelte`, `#sprint-table`,
-  rows `data-sprint`): one row per sprint with tasks, in the project's order, then the backlog; a sprint's state and
-  due date next to its name; a closed sprint shows when it closed and its report (carried to, added mid-sprint), and
-  two or more fold into one row. Estimates add up in the loop's order: the active sprint, the planned ones, the
-  backlog (`forecastSprints`, `nextInLoop` in `lib/forecast.ts`; `forecastPhases`, `phaseRanges` and `activePhases`
-  are gone). The burndown focuses on a sprint; its default range is since that sprint (or the one the loop works on)
-  started; a closed sprint's chart ends where it closed, and the due date of an open one is marked. The saved view
-  keeps the focused sprint (`progressSprint`; a saved `progressPhase` is dropped, a `phase` range reads as
-  `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
-  the closed sprints.
-
-### Added (T-319)
-- **Resolution and relations on the dashboard** (SR-7.6): the detail panel shows how a finished task ended when it
-  wasn't done (`#detail-resolution`: won't do, obsolete, duplicate), what it duplicates and what duplicates it
-  (`#detail-duplicate-of`, `#detail-duplicated-by`) and its related tasks both ways (`#detail-related`), each linked
-  (a task that isn't in `tasks.json` is shown, not linked), in the Dependencies group. The Progress panel counts the
-  finished tasks that weren't done apart from done, by resolution ("Not done: 2 won't do · 1 obsolete",
+- **Resolution and relations on the dashboard** (T-319, SR-7.6): the detail panel shows how a finished task ended
+  when it wasn't done (`#detail-resolution`: won't do, obsolete, duplicate), what it duplicates and what duplicates
+  it (`#detail-duplicate-of`, `#detail-duplicated-by`) and its related tasks both ways (`#detail-related`), each
+  linked (a task that isn't in `tasks.json` is shown, not linked), in the Dependencies group. The Progress panel
+  counts the finished tasks that weren't done apart from done, by resolution ("Not done: 2 won't do · 1 obsolete",
   `#progress-not-done`). The rules are in `lib/relations.ts` (`resolutionOf`, `relationsOf`, `notDone`).
-
-### Added (T-318)
-- **Resolution and relations** (SR-2.8): `atm done --resolution done|wont_do|duplicate|obsolete` and
+- **Resolution and relations** (T-318, SR-2.8): `atm done --resolution done|wont_do|duplicate|obsolete` and
   `atm skip --resolution wont_do|obsolete|duplicate [--duplicate-of ID]` record how a task ended; only a resolution
   other than the default (`done`, or `wont_do` for a skipped task) is stored. `--duplicate-of` needs `duplicate` and
   a task that exists in either file; `atm reopen` clears both. `atm show` prints the resolution, the task's
   `related` tasks on both sides ("related: T-4, T-1") and "duplicated by: T-2". `atm check` checks them; the merge
   driver merges `related` as a set. None of it affects readiness.
-
-### Fixed (T-318)
-- `atm check` warned about every finished task's missing files without `--files` (since components, T-311): the
-  option was hidden by a variable of the same name.
-
-### Changed (T-310)
-- **Releases recovered from past PRs** (SR-8.2): `atm releases add` takes `--pr` more than once (a release shipped
-  in several PRs gets all their tasks, the release records the last PR) and `--released-at TIME`, which adds it as
-  released at that time. This repository's releases 0.5.0–0.23.0 were recovered that way, each released at its PR's
-  merge; 0.5.0–0.12.0 have no tasks, as their PRs weren't recorded on tasks yet.
-
-### Changed (T-321)
-- **The Kanban's Next up comes from atm**: the project's Kanban marks the first task of its summary's `next` in
-  `api/projects` instead of applying the loop's rule itself, so it is always the task `atm next` hands out, also
-  when the browser can't see why another isn't (a claim, a task done or waiting in another worktree). The summary's
-  `next` now follows `atm next` exactly, tasks back from review first (`loop_order` in `claims.py`, shared by both).
-  The dashboard's `nextUp()` and `next-up-parity.test.ts` are gone; the To Do column orders ready tasks by priority,
-  then ID, for reading only. New `atm summary` prints the summary for the project it runs in; the Vite dev server
-  serves it (projects there now have their numbers too), and the e2e fixture with `withAtmSummary()`.
+- **`atm summary`** (T-321): the project's summary as `atm serve` lists it in `api/projects`, JSON, for the project it
+  runs in. The Vite dev server serves it (its projects now have their numbers too), and the e2e fixture with
+  `withAtmSummary()`.
 
 ### Removed
 - **Phases leave atm-cli** (T-320, SR-8.3): `atm phases` (and `phases name`/`unname`), `--phase` on `next`, `list`,
@@ -192,6 +177,8 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
 ### Fixed
 - `atm unblock` refused to record the answers when the questions and answers together were longer than 500
   characters; the limit now applies to each question and answer.
+- `atm check` warned about every finished task's missing files without `--files` (since components, T-311): the
+  option was hidden by a variable of the same name (T-318).
 
 ## [0.23.0] - 2026-10-30
 

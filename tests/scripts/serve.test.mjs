@@ -203,6 +203,8 @@ describe('serve', () => {
         { id: 2, name: 'Two', done: 1, total: 3, percent: 33 },
         { id: 3, name: null, done: 0, total: 2, percent: 0 },
       ],
+      active_sprint: null,
+      recent_sprints: null,
       agents_working: 0,
       working: [],
       next: [{ id: 'T-7', name: 'T-7' }],
@@ -510,6 +512,59 @@ describe('serve', () => {
       ],
     });
     atm(['serve', 'stop'], roots[0]);
+  });
+
+  test('a project with sprints: the active sprint with its progress, recent sprints for the rings, next from the active sprint (SR-7.7)', async () => {
+    const atmHome = home();
+    const atm = atmIn(atmHome);
+    const task = (id, status, sprint) => ({ id, name: id, type: 'feature', status, ...(sprint ? { sprint } : {}) });
+    const sprints = [
+      { id: 'Old', state: 'closed', end: '2026-01-01T00:00:00Z' },
+      { id: 'Older', state: 'closed', end: '2025-12-01T00:00:00Z' },
+      { id: 'Now', state: 'active', goal: 'Ship', due: '2026-04-01' },
+      { id: 'Next', state: 'planned' },
+      { id: 'Empty', state: 'planned' },
+    ];
+    const tasks = [
+      task('T-1', 'done', 'Old'),
+      task('T-2', 'done', 'Older'),
+      task('T-3', 'done', 'Now'),
+      task('T-4', 'skipped', 'Now'),
+      task('T-5', 'todo', 'Now'),
+      task('T-6', 'todo', 'Next'),
+      // In the backlog, and first by ID: the loop doesn't take it while a sprint is active
+      task('T-0', 'todo'),
+    ];
+    const root = project({ meta: { id: 'sprinted', project: 'sprinted', sprints }, tasks });
+    const port = ports();
+    assert.equal(atm(['serve', '--port', String(port)], root).code, 0);
+    const api = await (await fetch(`http://localhost:${port}/api/projects`)).json();
+    const summary = api.projects.find((p) => p.id === 'sprinted').summary;
+    assert.deepEqual(summary.active_sprint, {
+      id: 'Now',
+      state: 'active',
+      due: '2026-04-01',
+      release: null,
+      done: 1,
+      total: 2,
+      percent: 50,
+      goal: 'Ship',
+    });
+    // The open ones with tasks (Now, Next; Empty has none), filled up to four with the latest closed, in the project's order
+    assert.deepEqual(
+      summary.recent_sprints.map((s) => [s.id, s.state, s.done, s.total]),
+      [
+        ['Old', 'closed', 1, 1],
+        ['Older', 'closed', 1, 1],
+        ['Now', 'active', 1, 2],
+        ['Next', 'planned', 0, 1],
+      ],
+    );
+    assert.deepEqual(
+      summary.next.map((n) => n.id),
+      ['T-5'],
+    );
+    atm(['serve', 'stop'], root);
   });
 
   test('a project logo: served at p/<id>/logo with its type, listed in api/projects; none, outside or too large is 404', async () => {

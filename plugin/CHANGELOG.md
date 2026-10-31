@@ -11,6 +11,14 @@ into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks witho
 priority alone, `--phase` would select nothing; nothing is lost or rewritten).
 
 ### Changed
+- **Sprints in the detail panel, the header and the overview** (T-298, SR-7.6, SR-7.7, SR-4.5): the detail panel's
+  phase badge is the task's sprint (or *Backlog*, `#detail-sprint`), with its effective release
+  (`#detail-release`), and a *Sprint history* when it was in more than one, flagged once carried twice. The header
+  counts sprints and the backlog ("12 tasks across 3 sprints · 2 in the backlog"). `atm serve`'s project summary adds
+  `active_sprint` (with progress, due date and goal) and `recent_sprints` (up to four: the open ones, then the latest
+  closed), and its `next` follows the loop's default selection (the active sprint); a project card with sprints
+  shows rings for them and the active sprint's line ("Ada Lovelace — 1 / 3 · due in 3 days", or "No active
+  sprint"). Projects without sprints keep the phase rings until phases leave atm-cli (T-320).
 - **Kanban: Group by sprint** (T-296, SR-7.3) replaces *Group by phase* (`#kanban-group-by-sprint`): one lane per
   sprint with tasks, in the project's order, the backlog last (`buildLanes` in `lib/kanban.ts`, lanes
   `data-sprint`). A card names its sprint (`.kanban-card-sprint`, coloured by the sprint's place in the list) only

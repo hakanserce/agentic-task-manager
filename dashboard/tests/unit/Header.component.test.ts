@@ -2,6 +2,8 @@ import { fireEvent, render } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it } from 'vitest';
 import Header from '../../src/components/Header.svelte';
 import { dashboard } from '../../src/lib/state.svelte';
+import type { TasksFile } from '../../src/lib/types';
+import sprints from '../fixtures/sprints.json';
 import standard from '../fixtures/standard.json';
 import { loadIntoDashboard } from './components.helpers';
 
@@ -16,8 +18,15 @@ describe('Header', () => {
   it('shows how many tasks are archived, from meta.archived, without the archive loaded', () => {
     loadIntoDashboard({ ...standard, meta: { ...standard.meta, archived: 600 } });
     const { container } = render(Header);
-    expect(container.querySelector('#subtitle')).toHaveTextContent('12 tasks across 3 phases · 600 archived —');
+    // Its phases read as sprints (not migrated)
+    expect(container.querySelector('#subtitle')).toHaveTextContent('12 tasks across 3 sprints · 600 archived —');
     expect(dashboard.archiveLoaded).toBe(false);
+  });
+
+  it('counts the sprints and the backlog in a migrated project (SR-7.6)', () => {
+    loadIntoDashboard(sprints as TasksFile);
+    const { container } = render(Header);
+    expect(container.querySelector('#subtitle')).toHaveTextContent('5 tasks across 2 sprints · 1 in the backlog');
   });
 
   it('counts tasks in review and tasks blocked on the user, and lists them', async () => {

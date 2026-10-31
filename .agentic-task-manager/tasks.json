@@ -11445,7 +11445,7 @@
         "SR-7.3"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-293"
       ],
@@ -11456,11 +11456,27 @@
         "dashboard/tests/e2e/kanban.spec.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T02:02:40Z",
+      "updated_at": "2026-10-31T04:31:40Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
-      "started_at": "2026-10-31T02:02:40Z",
-      "started_by": "claude:9fec227a"
+      "commit": "4fdf20ad5497a17fdaa7578b0184eab01d084dc4",
+      "notes": [
+        {
+          "at": "2026-10-31T04:31:35Z",
+          "kind": "failure",
+          "text": "lease expired (claude:9fec227a)"
+        },
+        {
+          "at": "2026-10-31T04:31:40Z",
+          "kind": "outcome",
+          "text": "Group by sprint: one lane per sprint, backlog last; cards name their sprint only when the board shows several; saved view `groupBySprint` (old `groupByPhase` kept). Graph reload hit 459 ms once under load avg 9.7; standalone 63–86 ms over 9 runs.",
+          "by": "claude:9fec227a"
+        }
+      ],
+      "started_at": "2026-10-31T04:31:40Z",
+      "started_by": "claude:9fec227a",
+      "completed_at": "2026-10-31T04:31:40Z",
+      "completed_by": "claude:9fec227a"
     },
     {
       "id": "T-297",
@@ -11522,7 +11538,7 @@
         "SR-4.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-293"
       ],
@@ -11533,9 +11549,11 @@
         "dashboard/src/lib/projectstats.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T04:31:47Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T04:31:47Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-299",

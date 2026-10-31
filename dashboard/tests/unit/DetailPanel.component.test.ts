@@ -5,6 +5,7 @@ import DetailPanel from '../../src/components/DetailPanel.svelte';
 import { dashboard } from '../../src/lib/state.svelte';
 import type { TasksFile } from '../../src/lib/types';
 import archiveFile from '../fixtures/archive.json';
+import sprints from '../fixtures/sprints.json';
 import standard from '../fixtures/standard.json';
 import { loadIntoDashboard } from './components.helpers';
 
@@ -28,6 +29,46 @@ describe('DetailPanel', () => {
     [...container.querySelectorAll<HTMLElement>('#detail-rail .detail-rail-item')].map((b) => b.dataset.group);
   const bodyGroups = (container: HTMLElement) =>
     [...container.querySelectorAll<HTMLElement>('#detail-body [data-group]')].map((g) => g.dataset.group);
+
+  it('shows its sprint and release, and the sprints it was carried through, flagged from twice (SR-7.6, SR-4.5)', () => {
+    loadIntoDashboard(sprints as TasksFile);
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-003');
+    flushSync();
+    expect(container.querySelector('#detail-sprint')).toHaveTextContent('Ada Lovelace');
+    expect(container.querySelector('#detail-release')).toHaveTextContent('release 1.0');
+    const items = [...container.querySelectorAll('#detail-sprint-history li strong')].map((s) => s.textContent);
+    expect(items).toEqual(['Foundations', 'Ada Lovelace']);
+    // Carried once: not flagged yet
+    expect(container.querySelector('.detail-carried')).toBeNull();
+
+    dashboard.showDetail('T-005');
+    flushSync();
+    expect(container.querySelector('#detail-sprint')).toHaveTextContent('Backlog');
+    expect(container.querySelector('#detail-release')).toBeNull();
+    expect(container.querySelector('#detail-sprint-history')).toBeNull();
+  });
+
+  it('a task carried twice or more is flagged', () => {
+    const data = sprints as TasksFile;
+    const tasks = (data.tasks ?? []).map((t) =>
+      t.id === 'T-003'
+        ? {
+            ...t,
+            sprint_history: [
+              { sprint: 'Old', from: '2026-03-01T09:00:00Z', to: '2026-03-20T09:00:00Z' },
+              { sprint: 'Foundations', from: '2026-04-01T09:00:00Z', to: '2026-04-05T18:00:00Z' },
+              { sprint: 'Ada Lovelace', from: '2026-04-05T18:00:00Z' },
+            ],
+          }
+        : t,
+    );
+    loadIntoDashboard({ ...data, tasks });
+    const { container } = render(DetailPanel);
+    dashboard.showDetail('T-003');
+    flushSync();
+    expect(container.querySelector('.detail-carried')).toHaveTextContent('carried 2 times');
+  });
 
   it('has a rail entry per group, in the order of the groups, Notes only with notes', () => {
     const plain = open({ notes: [] });

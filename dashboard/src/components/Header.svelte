@@ -20,8 +20,15 @@
         ? 'Projects Overview'
         : 'Task Dashboard',
   );
-  const phaseCount = $derived(new Set(dashboard.tasks.map((t) => t.phase)).size);
-  const counts = $derived(`${dashboard.tasks.length} tasks across ${phaseCount} phase${phaseCount !== 1 ? 's' : ''}`);
+  // The sprints the tasks are in (an unmigrated project's phases, read as sprints) and the backlog (SR-7.6)
+  const inSprint = $derived(dashboard.tasks.map((t) => dashboard.sprints.sprintOf(t)));
+  const sprintCount = $derived(new Set(inSprint.filter(Boolean)).size);
+  const backlogCount = $derived(inSprint.filter((s) => !s).length);
+  const counts = $derived(
+    `${dashboard.tasks.length} tasks` +
+      (sprintCount ? ` across ${sprintCount} sprint${sprintCount !== 1 ? 's' : ''}` : '') +
+      (backlogCount && sprintCount ? ` · ${backlogCount} in the backlog` : ''),
+  );
   // Tasks that need the user: in review, or blocked on a question for the user (D-3.3)
   const needYou = $derived(needsYouItems(dashboard.tasks, dashboard.vocab));
   const present = $derived(dashboard.projects.filter((p) => !p.missing));

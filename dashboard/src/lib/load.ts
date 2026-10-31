@@ -13,6 +13,17 @@ export function projectFileUrl(project: string, file: ProjectFile): string {
   return `p/${encodeURIComponent(project)}/${file}`;
 }
 
+/** A sprint as the server's summary gives it */
+export interface SprintNumbers {
+  id: string;
+  state: 'planned' | 'active' | 'closed';
+  due: string | null;
+  release: string | null;
+  done: number;
+  total: number;
+  percent: number;
+}
+
 /** A project's numbers for the overview and the project selector, computed by the server */
 export interface ProjectSummary {
   total: number;
@@ -22,6 +33,10 @@ export interface ProjectSummary {
   current_phase: { id: number; name: string | null; done: number; total: number } | null;
   /** Up to 4 phases, in phase order: the lowest with open work, then the most recently finished */
   recent_phases: { id: number; name: string | null; done: number; total: number; percent: number }[];
+  /** The active sprint with its progress (SR-7.7); null when none is active; absent from servers before 0.24 */
+  active_sprint?: (SprintNumbers & { goal: string | null }) | null;
+  /** Up to 4 sprints with tasks, in the project's order: the open ones, then the latest closed; null without sprints */
+  recent_sprints?: SprintNumbers[] | null;
   agents_working: number;
   /** Live claims, oldest first: who works on what (absent from servers before 0.18; names capped at 80 characters) */
   working?: { task: string; name: string; agent: string; branch: string | null }[];

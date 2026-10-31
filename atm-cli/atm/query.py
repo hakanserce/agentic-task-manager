@@ -8,7 +8,7 @@ import json
 import os
 import re
 
-from .claims import next_task, read_store, ready_in_order
+from .claims import Selection, next_task, read_store, ready_in_order, select
 from .core import AtmError, now, out, parse_iso, to_json
 from .model import (
     archive_hint,
@@ -291,6 +291,46 @@ def recent_phases(tasks, kinds, open_phases, names):
     return result
 
 
+def sprint_numbers(sprint, own_kinds):
+    """A sprint as the overview shows it: its name, state, due date and release, and done of its tasks but the skipped."""
+    done, total = own_kinds.count("done"), len(own_kinds) - own_kinds.count("skipped")
+    return {
+        "id": sprint["id"],
+        "state": sprint["state"],
+        "due": sprint.get("due"),
+        "release": sprint.get("release"),
+        "done": done,
+        "total": total,
+        "percent": round(100 * done / total) if total else 100,
+    }
+
+
+def recent_sprints(vocab, tasks, kinds):
+    """Up to four sprints with tasks for the overview's rings (SR-7.7), in the project's order: the active one and the
+    planned ones first, then the most recently closed (by their end) to fill up. None for a project without sprints."""
+    if not vocab["sprints"]:
+        return None
+    own = {s["id"]: [] for s in vocab["sprints"]}
+    for t, k in zip(tasks, kinds):
+        sprint = find_sprint(vocab, t.get("sprint"))
+        if sprint:
+            own[sprint["id"]].append(k)
+    with_tasks = [s for s in vocab["sprints"] if own[s["id"]]]
+    chosen = [s["id"] for s in with_tasks if s["state"] != "closed"][:RECENT_PHASES]
+    closed = sorted((s for s in with_tasks if s["state"] == "closed"), key=lambda s: s.get("end") or "", reverse=True)
+    chosen += [s["id"] for s in closed[: RECENT_PHASES - len(chosen)]]
+    return [sprint_numbers(s, own[s["id"]]) for s in with_tasks if s["id"] in chosen]
+
+
+def active_sprint_numbers(vocab, tasks, kinds):
+    """The active sprint for the overview's cards (SR-7.7), with its progress; None when none is active."""
+    active = next((s for s in vocab["sprints"] if s["state"] == "active"), None)
+    if active is None:
+        return None
+    own = [k for t, k in zip(tasks, kinds) if (find_sprint(vocab, t.get("sprint")) or {}).get("id") == active["id"]]
+    return {**sprint_numbers(active, own), "goal": active.get("goal")}
+
+
 DESCRIPTION_CAP = 200
 
 
@@ -505,7 +545,11 @@ def project_summary(paths):
         }
         for c in live
     ]
-    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready_in_order(data, store)[:NEXT_TASKS]]
+    # What the loop takes next with its default selection: the active sprint's tasks in a project with sprints (SR-5.1)
+    candidates, rank, _, reason = select(data, Selection())
+    todo = [t for t in candidates if kind_of(vocab, t.get("status")) == "todo"]
+    ready = [] if reason else ready_in_order(data, store, todo, rank)
+    next_up = [{"id": t.get("id"), "name": capped(t.get("name"))} for t in ready[:NEXT_TASKS]]
     finished = [(t.get("completed_at"), t) for t, k in zip(tasks, kinds) if k == "done" and parse_time(t.get("completed_at"))]
     last_task = max(finished, key=lambda f: f[0])[1] if finished else None
     last_done = (
@@ -542,6 +586,8 @@ def project_summary(paths):
         "percent": percent,
         "current_phase": current_phase,
         "recent_phases": recent_phases(tasks, kinds, open_phases, names),
+        "active_sprint": active_sprint_numbers(vocab, tasks, kinds),
+        "recent_sprints": recent_sprints(vocab, tasks, kinds),
         "agents_working": agents_working,
         "working": working,
         "next": next_up,

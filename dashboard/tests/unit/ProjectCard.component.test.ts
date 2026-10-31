@@ -2,6 +2,7 @@ import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import ProjectCard from '../../src/components/ProjectCard.svelte';
 import type { ProjectEntry, ProjectSummary } from '../../src/lib/load';
+import { dashboard } from '../../src/lib/state.svelte';
 
 type RecentPhase = ProjectSummary['recent_phases'][number];
 
@@ -78,6 +79,46 @@ describe('ProjectCard: rings for the recent phases', () => {
       '0%',
     ]);
     expect(rings(container)[2].querySelector('svg')).toHaveAttribute('aria-label', 'Phase 16: 4 of 13 done');
+  });
+});
+
+describe('ProjectCard: a project with sprints (SR-7.7)', () => {
+  const sprint = (id: string, state: 'planned' | 'active' | 'closed', done: number, total: number) => ({
+    id,
+    state,
+    due: null,
+    release: null,
+    done,
+    total,
+    percent: Math.round((100 * done) / total),
+  });
+  const withSprints = (summary: Partial<ProjectSummary>): ProjectEntry => {
+    const base = card([]);
+    return { ...base, summary: { ...base.summary!, ...summary } };
+  };
+
+  it('rings for the recent sprints instead of phases, and the active sprint with its progress and due date', () => {
+    dashboard.loadedAt = new Date('2026-04-09T12:00:00').getTime();
+    const { container } = render(ProjectCard, {
+      project: withSprints({
+        recent_sprints: [sprint('Foundations', 'closed', 4, 4), sprint('Ada Lovelace', 'active', 1, 3)],
+        active_sprint: { ...sprint('Ada Lovelace', 'active', 1, 3), due: '2026-04-12', goal: 'Sign-in' },
+      }),
+    });
+    expect(rings(container).map((r) => r.querySelector('.project-card-ring-label')?.textContent)).toEqual([
+      'Foundations',
+      'Ada Lovelace',
+    ]);
+    const line = container.querySelector('.project-card-sprint')!;
+    expect(line).toHaveTextContent('Ada Lovelace — 1 / 3 · due in 3 days');
+    expect(line).toHaveAttribute('title', 'Sign-in');
+  });
+
+  it('no active sprint says so', () => {
+    const { container } = render(ProjectCard, {
+      project: withSprints({ recent_sprints: [sprint('Next', 'planned', 0, 2)], active_sprint: null }),
+    });
+    expect(container.querySelector('.project-card-sprint')).toHaveTextContent('No active sprint');
   });
 });
 

@@ -2,7 +2,8 @@
   import { tick } from 'svelte';
   import { dashboard } from '../lib/state.svelte';
   import { kindStyle, phaseColor, typeStyle } from '../lib/theme';
-  import { kindOf, phaseLabel, statusLabel } from '../lib/vocab';
+  import { carriedCount, effectiveRelease } from '../lib/sprints';
+  import { kindOf, statusLabel } from '../lib/vocab';
   import { actorsLine, earlierAttempts } from '../lib/actors';
   import { noteKindLabel, shortSha, taskNotes } from '../lib/notes';
   import { blockSummary, blockWait, reviewSummary, reviewWait } from '../lib/waiting';
@@ -39,6 +40,12 @@
   const review = $derived(task ? reviewWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const block = $derived(task ? blockWait(task, dashboard.loadedAt, dashboard.vocab) : null);
   const notes = $derived(task ? taskNotes(task) : []);
+  // Its sprint (or the backlog), its release (its own, else its sprint's), and the sprints it was carried through
+  // (SR-7.6, SR-4.5): shown when it was in more than one; flagged once carried twice or more
+  const sprint = $derived(task ? dashboard.sprints.sprintOf(task) : undefined);
+  const release = $derived(task ? effectiveRelease(dashboard.sprints, task) : undefined);
+  const history = $derived(task && Array.isArray(task.sprint_history) ? task.sprint_history : []);
+  const carried = $derived(task && sprint ? carriedCount(task, sprint) : 0);
   const actors = $derived(task ? actorsLine(task) : '');
   const attempts = $derived(task ? earlierAttempts(task) : []);
   const requiredBy = $derived(task ? dashboard.tasks.filter((t) => (t.dependencies ?? []).includes(task.id)) : []);
@@ -152,7 +159,8 @@
     {#if task}
       {@const ts = typeStyle(task.type)}
       {@const ss = statusStyle(task.status)}
-      {@const pc = phaseColor(task.phase)}
+      {@const sprintIndex = dashboard.sprints.sprints.findIndex((s) => s.id === sprint)}
+      {@const pc = sprintIndex < 0 ? 'var(--text-muted)' : phaseColor(sprintIndex)}
       <div class="detail-head">
         <h3>
           <span style="color:var(--text-muted)">{task.id}</span>
@@ -165,9 +173,15 @@
         <span class="badge" style="background:{ss.bg};color:{ss.color}"
           >{statusLabel(dashboard.vocab, task.status)}</span
         >
-        <span class="phase-badge" style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}"
-          >{phaseLabel(dashboard.vocab, task.phase)}</span
+        <span
+          class="phase-badge"
+          id="detail-sprint"
+          title={sprint ? `Sprint ${sprint}` : 'In no sprint: the backlog'}
+          style="background:color-mix(in srgb, {pc} 12.5%, transparent);color:{pc}">{sprint ?? 'Backlog'}</span
         >
+        {#if release}<span class="badge detail-release" id="detail-release" title="Release {release}"
+            >release {release}</span
+          >{/if}
         <PriorityBadge {task} />
         <StageChip {task} />
         <BranchChip {task} />
@@ -232,6 +246,27 @@
         <Markdown blocks={parseMarkdown(task.description ?? '')} idPrefix="desc-{task.id}-" />
       </div>
     </div>
+    {#if history.length > 1}
+      <div class="detail-section" id="detail-sprint-history">
+        <div class="label">
+          Sprint history{#if carried >= 2}<span class="detail-carried" title="Carried over {carried} times"
+              >&nbsp;· carried {carried} times</span
+            >{/if}
+        </div>
+        <ol class="detail-sprint-history">
+          {#each history as entry, i (i)}
+            <li>
+              <strong>{entry.sprint}</strong>
+              <span class="muted"
+                >{new Date(entry.from).toLocaleDateString()}{entry.to
+                  ? ` – ${new Date(entry.to).toLocaleDateString()}`
+                  : ' – now'}</span
+              >
+            </li>
+          {/each}
+        </ol>
+      </div>
+    {/if}
   </div>
   {#if (task.dependencies ?? []).length || requiredBy.length}
     <div class="detail-group" data-group="dependencies">

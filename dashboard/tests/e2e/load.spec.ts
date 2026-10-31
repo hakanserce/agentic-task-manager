@@ -7,14 +7,14 @@ test.describe('loading tasks.json', () => {
     await expect(page.locator('#dashboard-title')).toHaveText('Standard Project');
   });
 
-  test('subtitle counts tasks and phases', async ({ page, tasksServer }) => {
+  test('subtitle counts tasks and sprints (here the phases, read as sprints)', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard');
-    await expect(page.locator('#subtitle')).toHaveText('12 tasks across 3 phases — loaded from tasks.json');
+    await expect(page.locator('#subtitle')).toHaveText('12 tasks across 3 sprints — loaded from tasks.json');
   });
 
-  test('subtitle uses singular "phase" (but always "tasks")', async ({ page, tasksServer }) => {
+  test('subtitle uses singular "sprint" (but always "tasks")', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'minimal');
-    await expect(page.locator('#subtitle')).toHaveText('1 tasks across 1 phase — loaded from tasks.json');
+    await expect(page.locator('#subtitle')).toHaveText('1 tasks across 1 sprint — loaded from tasks.json');
   });
 
   test('falls back to "Task Dashboard" without meta', async ({ page, tasksServer }) => {
@@ -42,7 +42,7 @@ test.describe('loading tasks.json', () => {
     await openDashboard(page, tasksServer, 'minimal');
     await projects;
     await tasks;
-    await expect(page.locator('#subtitle')).toContainText('1 tasks across 1 phase');
+    await expect(page.locator('#subtitle')).toContainText('1 tasks across 1 sprint');
   });
 
   test('shows how to start the server when tasks.json is missing', async ({ page, tasksServer }) => {

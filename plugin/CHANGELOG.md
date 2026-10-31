@@ -143,6 +143,12 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   `sprint`). The Progress panel's *By phase* is *By sprint*: a ring per open sprint and the backlog, one chip for
   the closed sprints.
 
+### Changed (T-310)
+- **Releases recovered from past PRs** (SR-8.2): `atm releases add` takes `--pr` more than once (a release shipped
+  in several PRs gets all their tasks, the release records the last PR) and `--released-at TIME`, which adds it as
+  released at that time. This repository's releases 0.5.0–0.23.0 were recovered that way, each released at its PR's
+  merge; 0.5.0–0.12.0 have no tasks, as their PRs weren't recorded on tasks yet.
+
 ### Changed (T-321)
 - **The Kanban's Next up comes from atm**: the project's Kanban marks the first task of its summary's `next` in
   `api/projects` instead of applying the loop's rule itself, so it is always the task `atm next` hands out, also

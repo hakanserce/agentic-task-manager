@@ -593,6 +593,135 @@
         "id": "0.24.0",
         "state": "planned",
         "name": "Sprints and releases"
+      },
+      {
+        "id": "0.5.0",
+        "state": "released",
+        "released_at": "2026-10-22T21:40:06Z"
+      },
+      {
+        "id": "0.6.0",
+        "state": "released",
+        "released_at": "2026-10-22T22:17:42Z"
+      },
+      {
+        "id": "0.9.0",
+        "state": "released",
+        "released_at": "2026-10-23T00:55:28Z"
+      },
+      {
+        "id": "0.10.0",
+        "state": "released",
+        "released_at": "2026-10-23T22:37:01Z"
+      },
+      {
+        "id": "0.11.0",
+        "state": "released",
+        "released_at": "2026-10-24T00:58:19Z"
+      },
+      {
+        "id": "0.12.0",
+        "state": "released",
+        "released_at": "2026-10-24T07:59:02Z"
+      },
+      {
+        "id": "0.13.0",
+        "state": "released",
+        "pr": {
+          "number": 7,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/7"
+        },
+        "released_at": "2026-10-25T05:11:57Z"
+      },
+      {
+        "id": "0.14.0",
+        "state": "released",
+        "pr": {
+          "number": 9,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/9"
+        },
+        "released_at": "2026-10-25T07:46:19Z"
+      },
+      {
+        "id": "0.15.0",
+        "state": "released",
+        "pr": {
+          "number": 11,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/11"
+        },
+        "released_at": "2026-10-26T00:09:14Z"
+      },
+      {
+        "id": "0.16.0",
+        "state": "released",
+        "pr": {
+          "number": 12,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/12"
+        },
+        "released_at": "2026-10-26T04:44:50Z"
+      },
+      {
+        "id": "0.17.0",
+        "state": "released",
+        "pr": {
+          "number": 13,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/13"
+        },
+        "released_at": "2026-10-26T08:21:59Z"
+      },
+      {
+        "id": "0.18.0",
+        "state": "released",
+        "pr": {
+          "number": 14,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/14"
+        },
+        "released_at": "2026-10-26T09:11:52Z"
+      },
+      {
+        "id": "0.19.0",
+        "state": "released",
+        "pr": {
+          "number": 15,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/15"
+        },
+        "released_at": "2026-10-26T16:17:02Z"
+      },
+      {
+        "id": "0.20.0",
+        "state": "released",
+        "pr": {
+          "number": 16,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/16"
+        },
+        "released_at": "2026-10-27T05:45:46Z"
+      },
+      {
+        "id": "0.21.0",
+        "state": "released",
+        "pr": {
+          "number": 24,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/24"
+        },
+        "released_at": "2026-10-27T08:19:10Z"
+      },
+      {
+        "id": "0.22.0",
+        "state": "released",
+        "pr": {
+          "number": 27,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/27"
+        },
+        "released_at": "2026-10-27T22:15:20Z"
+      },
+      {
+        "id": "0.23.0",
+        "state": "released",
+        "pr": {
+          "number": 28,
+          "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
+        },
+        "released_at": "2026-10-30T22:54:23Z"
       }
     ],
     "migrations": [
@@ -3865,7 +3994,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T00:13:54Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-097",
@@ -3914,7 +4044,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-098",
@@ -3954,7 +4085,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-099",
@@ -3998,7 +4130,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-100",
@@ -4045,7 +4178,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-101",
@@ -4091,7 +4225,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-102",
@@ -4135,7 +4270,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-103",
@@ -4177,7 +4313,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-104",
@@ -4259,7 +4396,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-106",
@@ -4334,7 +4472,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-108",
@@ -4377,7 +4516,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-109",
@@ -4430,7 +4570,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-110",
@@ -4473,7 +4614,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T07:23:07Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-111",
@@ -4516,7 +4658,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-112",
@@ -4561,7 +4704,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-113",
@@ -4604,7 +4748,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-114",
@@ -4649,7 +4794,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-115",
@@ -4695,7 +4841,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-116",
@@ -4736,7 +4883,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-117",
@@ -4779,7 +4927,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-118",
@@ -4829,7 +4978,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-119",
@@ -4872,7 +5022,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-120",
@@ -4917,7 +5068,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-121",
@@ -4958,7 +5110,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-122",
@@ -5002,7 +5155,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-123",
@@ -5044,7 +5198,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-124",
@@ -5088,7 +5243,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-125",
@@ -5131,7 +5287,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-126",
@@ -5174,7 +5331,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-127",
@@ -5220,7 +5378,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-128",
@@ -5261,7 +5420,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-129",
@@ -5302,7 +5462,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-130",
@@ -5342,7 +5503,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-131",
@@ -5385,7 +5547,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-132",
@@ -5420,7 +5583,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-133",
@@ -5459,7 +5623,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-134",
@@ -5501,7 +5666,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-135",
@@ -5543,7 +5709,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-136",
@@ -5584,7 +5751,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-137",
@@ -5629,7 +5797,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-138",
@@ -5674,7 +5843,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-139",
@@ -5713,7 +5883,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-140",
@@ -5758,7 +5929,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-141",
@@ -5805,7 +5977,8 @@
           "sprint": "Phase 13",
           "from": "2026-10-24T21:48:53Z"
         }
-      ]
+      ],
+      "release": "0.13.0"
     },
     {
       "id": "T-142",
@@ -5862,7 +6035,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-24T22:03:56Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-143",
@@ -5910,7 +6084,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-24T22:03:56Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-144",
@@ -5983,7 +6158,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-145",
@@ -6033,7 +6209,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-146",
@@ -6086,7 +6263,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-147",
@@ -6133,7 +6311,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-148",
@@ -6190,7 +6369,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-149",
@@ -6241,7 +6421,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-150",
@@ -6377,7 +6558,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:46:06Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-153",
@@ -6444,7 +6626,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:55:52Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-154",
@@ -6493,7 +6676,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T05:55:53Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-155",
@@ -6543,7 +6727,8 @@
           "sprint": "Phase 14",
           "from": "2026-10-25T06:57:56Z"
         }
-      ]
+      ],
+      "release": "0.14.0"
     },
     {
       "id": "T-156",
@@ -6592,7 +6777,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T08:01:19Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-157",
@@ -6643,7 +6829,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T08:01:20Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-158",
@@ -6698,7 +6885,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T08:07:39Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-159",
@@ -6747,7 +6935,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T08:07:39Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-160",
@@ -6799,7 +6988,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T08:21:58Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-161",
@@ -6849,7 +7039,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T08:22:05Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-162",
@@ -6915,7 +7106,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T19:31:28Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-163",
@@ -6966,7 +7158,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T19:31:28Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-164",
@@ -7015,7 +7208,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T19:36:02Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-165",
@@ -7064,7 +7258,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-166",
@@ -7118,7 +7313,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-167",
@@ -7172,7 +7368,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-168",
@@ -7225,7 +7422,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-169",
@@ -7276,7 +7474,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-170",
@@ -7330,7 +7529,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-171",
@@ -7388,7 +7588,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-172",
@@ -7442,7 +7643,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-173",
@@ -7494,7 +7696,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-174",
@@ -7545,7 +7748,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-175",
@@ -7597,7 +7801,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-176",
@@ -7648,7 +7853,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-177",
@@ -7707,7 +7913,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-178",
@@ -7760,7 +7967,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-179",
@@ -7819,7 +8027,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T20:34:31Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-180",
@@ -7874,7 +8083,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T21:18:54Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-181",
@@ -7929,7 +8139,8 @@
           "sprint": "One dashboard for all projects",
           "from": "2026-10-25T21:35:18Z"
         }
-      ]
+      ],
+      "release": "0.15.0"
     },
     {
       "id": "T-182",
@@ -7977,7 +8188,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T21:49:53Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-183",
@@ -8026,7 +8238,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-25T21:49:53Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-184",
@@ -8079,7 +8292,8 @@
           "sprint": "Dashboard polish and worktrees",
           "from": "2026-10-26T00:24:09Z"
         }
-      ]
+      ],
+      "release": "0.16.0"
     },
     {
       "id": "T-185",
@@ -8127,7 +8341,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-186",
@@ -8177,7 +8392,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-187",
@@ -8228,7 +8444,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-188",
@@ -8277,7 +8494,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-189",
@@ -8329,7 +8547,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-190",
@@ -8378,7 +8597,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-191",
@@ -8431,7 +8651,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-192",
@@ -8483,7 +8704,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-193",
@@ -8536,7 +8758,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-194",
@@ -8592,7 +8815,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-195",
@@ -8666,7 +8890,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-196",
@@ -8716,7 +8941,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-197",
@@ -8770,7 +8996,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-198",
@@ -8822,7 +9049,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:54:01Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-199",
@@ -8872,7 +9100,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:59:38Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-200",
@@ -8928,7 +9157,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T00:59:38Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-201",
@@ -8980,7 +9210,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T05:00:29Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-202",
@@ -9032,7 +9263,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T05:13:52Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-203",
@@ -9086,7 +9318,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T05:27:57Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-204",
@@ -9140,7 +9373,8 @@
           "sprint": "Overview polish and project identity",
           "from": "2026-10-26T06:27:17Z"
         }
-      ]
+      ],
+      "release": "0.17.0"
     },
     {
       "id": "T-205",
@@ -9192,7 +9426,8 @@
           "sprint": "Project cards",
           "from": "2026-10-26T06:44:16Z"
         }
-      ]
+      ],
+      "release": "0.18.0"
     },
     {
       "id": "T-206",
@@ -9245,7 +9480,8 @@
           "sprint": "Project cards",
           "from": "2026-10-26T06:44:16Z"
         }
-      ]
+      ],
+      "release": "0.18.0"
     },
     {
       "id": "T-207",
@@ -9297,7 +9533,8 @@
           "sprint": "Project cards",
           "from": "2026-10-26T06:44:16Z"
         }
-      ]
+      ],
+      "release": "0.18.0"
     },
     {
       "id": "T-208",
@@ -9350,7 +9587,8 @@
           "sprint": "Project cards",
           "from": "2026-10-26T06:44:16Z"
         }
-      ]
+      ],
+      "release": "0.18.0"
     },
     {
       "id": "T-209",
@@ -9409,7 +9647,8 @@
           "sprint": "Project cards",
           "from": "2026-10-26T06:44:16Z"
         }
-      ]
+      ],
+      "release": "0.18.0"
     },
     {
       "id": "T-210",
@@ -9458,7 +9697,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T16:07:30Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-211",
@@ -9510,7 +9750,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T16:07:30Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-212",
@@ -9559,7 +9800,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T16:07:30Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-213",
@@ -9610,7 +9852,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T16:07:30Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-214",
@@ -9658,7 +9901,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T16:07:30Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-215",
@@ -9707,7 +9951,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T16:07:30Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-216",
@@ -9754,7 +9999,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T19:13:32Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-217",
@@ -9802,7 +10048,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T19:14:58Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-218",
@@ -9852,7 +10099,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T19:19:57Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-219",
@@ -9901,7 +10149,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T19:19:57Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-220",
@@ -9952,7 +10201,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-221",
@@ -10003,7 +10253,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-222",
@@ -10055,7 +10306,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-223",
@@ -10103,7 +10355,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-224",
@@ -10155,7 +10408,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-225",
@@ -10207,7 +10461,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-226",
@@ -10257,7 +10512,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-227",
@@ -10307,7 +10563,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-228",
@@ -10360,7 +10617,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-229",
@@ -10408,7 +10666,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-230",
@@ -10457,7 +10716,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-231",
@@ -10523,7 +10783,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-232",
@@ -10583,7 +10844,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-233",
@@ -10644,7 +10906,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-234",
@@ -10694,7 +10957,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-235",
@@ -10744,7 +11008,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-236",
@@ -10808,7 +11073,8 @@
           "sprint": "Security fixes",
           "from": "2026-10-26T20:44:53Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-237",
@@ -10856,7 +11122,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T20:46:34Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-238",
@@ -10905,7 +11172,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:09:17Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-239",
@@ -10956,7 +11224,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:09:17Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-240",
@@ -11009,7 +11278,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:09:17Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-241",
@@ -11059,7 +11329,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:09:17Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-242",
@@ -11110,7 +11381,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:09:17Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-243",
@@ -11160,7 +11432,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:09:17Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-244",
@@ -11210,7 +11483,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:28:23Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-245",
@@ -11262,7 +11536,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:28:23Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-246",
@@ -11314,7 +11589,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:28:23Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-247",
@@ -11365,7 +11641,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:28:23Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-248",
@@ -11415,7 +11692,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:28:23Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-249",
@@ -11466,7 +11744,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:28:23Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-250",
@@ -11516,7 +11795,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T21:31:20Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-251",
@@ -11565,7 +11845,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:41:48Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-252",
@@ -11616,7 +11897,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:41:48Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-253",
@@ -11668,7 +11950,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:41:48Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-254",
@@ -11718,7 +12001,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:41:48Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-255",
@@ -11769,7 +12053,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:41:48Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-256",
@@ -11818,7 +12103,8 @@
           "sprint": "Insights, stats and security review",
           "from": "2026-10-26T21:48:16Z"
         }
-      ]
+      ],
+      "release": "0.19.0"
     },
     {
       "id": "T-257",
@@ -11869,7 +12155,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:57:05Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-258",
@@ -11920,7 +12207,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:57:05Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-259",
@@ -11978,7 +12266,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:57:05Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-260",
@@ -12028,7 +12317,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:57:05Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-261",
@@ -12081,7 +12371,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-26T21:57:05Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-262",
@@ -12131,7 +12422,8 @@
           "sprint": "Progress and insights",
           "from": "2026-10-27T00:52:28Z"
         }
-      ]
+      ],
+      "release": "0.20.0"
     },
     {
       "id": "T-263",
@@ -12179,7 +12471,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-264",
@@ -12229,7 +12522,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-265",
@@ -12280,7 +12574,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-266",
@@ -12328,7 +12623,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-267",
@@ -12377,7 +12673,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-268",
@@ -12427,7 +12724,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-269",
@@ -12480,7 +12778,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-270",
@@ -12531,7 +12830,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:27:05Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-271",
@@ -12578,7 +12878,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:56:17Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-272",
@@ -12627,7 +12928,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T06:59:00Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-273",
@@ -12676,7 +12978,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T07:01:35Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-274",
@@ -12723,7 +13026,8 @@
           "sprint": "Org move and fixes",
           "from": "2026-10-27T07:06:50Z"
         }
-      ]
+      ],
+      "release": "0.21.0"
     },
     {
       "id": "T-275",
@@ -12771,7 +13075,8 @@
           "sprint": "Maintenance",
           "from": "2026-10-27T08:23:41Z"
         }
-      ]
+      ],
+      "release": "0.22.0"
     },
     {
       "id": "T-276",
@@ -12819,7 +13124,8 @@
           "sprint": "Maintenance",
           "from": "2026-10-27T08:23:41Z"
         }
-      ]
+      ],
+      "release": "0.22.0"
     },
     {
       "id": "T-277",
@@ -12901,7 +13207,8 @@
           "sprint": "Testing together",
           "from": "2026-10-27T16:41:57Z"
         }
-      ]
+      ],
+      "release": "0.23.0"
     },
     {
       "id": "T-279",
@@ -12986,7 +13293,8 @@
           "sprint": "Testing together",
           "from": "2026-10-27T21:17:37Z"
         }
-      ]
+      ],
+      "release": "0.22.0"
     },
     {
       "id": "T-281",
@@ -13033,7 +13341,8 @@
           "sprint": "Testing together",
           "from": "2026-10-27T22:13:42Z"
         }
-      ]
+      ],
+      "release": "0.23.0"
     },
     {
       "id": "T-282",
@@ -13087,7 +13396,8 @@
           "sprint": "Testing together",
           "from": "2026-10-27T22:25:47Z"
         }
-      ]
+      ],
+      "release": "0.22.0"
     },
     {
       "id": "T-283",
@@ -13139,7 +13449,8 @@
           "sprint": "Themes",
           "from": "2026-10-27T22:34:40Z"
         }
-      ]
+      ],
+      "release": "0.23.0"
     },
     {
       "id": "T-284",
@@ -14432,23 +14743,25 @@
         "SR-8.2"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-306",
         "T-292"
       ],
       "files": [],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T07:47:40Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce",
+      "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
       "sprint_history": [
         {
           "sprint": "Sprints and releases",
           "from": "2026-10-31T00:07:18Z"
         }
-      ]
+      ],
+      "started_at": "2026-10-31T07:47:40Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-311",
@@ -14953,7 +15266,7 @@
       "description": "The project Kanban marks *Next up* with the dashboard's own `nextUp()` (`dashboard/src/lib/kanban.ts`), a copy of `atm next`'s rules that has to be kept in step by hand (`next-up-parity.test.ts`). `atm serve` already computes the answer with atm-cli's own `next_up`: the project's summary in `api/projects` has `next` (up to two tasks, in the loop's order). Use that instead, so the dashboard and the loop can't disagree; it also knows what the browser can't see (claims, tasks done or waiting in another worktree).\n\n## Change\n- The Kanban's Next up marker is the open project's `summary.next[0]` from `api/projects`, which the project page already loads and polls (`dashboard.projects`); no marker when the summary has no `next` or it is empty.\n- Remove the dashboard's copy of the loop rules: `nextUp()` and what only it uses (the sprint selection, rework first, skipping `with: user`). The to-do column keeps a plain display order: ready first, then priority, then ID.\n- Delete `tests/unit/next-up-parity.test.ts`; move what still applies into `kanban.test.ts` and the Kanban e2e spec (the marker follows `next`).\n- The Vite dev server (`build/dev-data.ts`) and the e2e `tasksServer` fixture already play `api/projects`: make sure their summaries carry `next` for the project (the dev server from atm-cli, as `atm serve` does).\n- Update `docs/multi-project-api.md` (§3.2 `next`: the Kanban reads it too) and the CHANGELOG.\n\n## Tests\n`npm run verify` in `dashboard/`; screenshot baselines change only if the marked card does.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-320"
       ],
@@ -14969,7 +15282,7 @@
         "plugin/CHANGELOG.md"
       ],
       "created_at": "2026-10-31T07:31:08Z",
-      "updated_at": "2026-10-31T07:32:57Z",
+      "updated_at": "2026-10-31T07:47:35Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint_history": [
@@ -14980,7 +15293,18 @@
       ],
       "sprint": "Sprints and releases",
       "started_at": "2026-10-31T07:32:57Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "dfeffc2bd9929c077dce4053b25e7a50c7e1b6da",
+      "completed_at": "2026-10-31T07:47:35Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T07:47:35Z",
+          "kind": "outcome",
+          "text": "Kanban Next up is the project summary’s `next[0]`; `atm next` and the summary share `loop_order` (rework first); dashboard `nextUp()` and parity test removed; new `atm summary` feeds the dev server and the e2e fixture.",
+          "by": "claude:9fec227a"
+        }
+      ]
     }
   ]
 }

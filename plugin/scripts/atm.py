@@ -4137,8 +4137,14 @@ def releases_add(paths, args):
     release_id = args.id
     if not RELEASE_ID.fullmatch(release_id):
         raise AtmError(f"{release_id!r}: a release ID is letters, digits, '.', '-' and '_' (at most 64)", 2)
-    if args.pr is not None and args.pr <= 0:
+    prs = args.pr or []
+    if any(n <= 0 for n in prs):
         raise AtmError("--pr needs a pull request number", 2)
+    if args.released_at is not None:
+        try:
+            parse_iso(args.released_at)
+        except ValueError:
+            raise AtmError(f"--released-at needs a time like 2026-10-24T18:00:00Z, not {args.released_at!r}", 2)
     archive = archive_path(paths)
     with locked(paths["dir"]):
         data = load_tasks(paths)
@@ -4149,17 +4155,24 @@ def releases_add(paths, args):
         release = {"id": release_id, "state": "planned"}
         release_fields(release, args)
         given = []
-        if args.pr is not None:
-            # A release recovered from a pull request (SR-8.2): the PR's tasks, in both files, go into it
+        # A release recovered from pull requests (SR-8.2): their tasks, in both files, go into it; the release records
+        # the last PR given (the one that shipped it)
+        for number in prs:
+            own = []
             for task in list(data["tasks"]) + list(archive_data["tasks"]):
                 pr = task.get("pr") if isinstance(task, dict) and isinstance(task.get("pr"), dict) else None
-                if pr and pr.get("number") == args.pr:
+                if pr and pr.get("number") == number:
                     task["release"] = release_id
-                    given.append(task["id"])
+                    own.append(task["id"])
                     if isinstance(pr.get("url"), str):
-                        release["pr"] = {"number": args.pr, "url": pr["url"]}
-            if not given:
-                raise AtmError(f"no task is in pull request #{args.pr}", 2)
+                        release["pr"] = {"number": number, "url": pr["url"]}
+            if not own:
+                raise AtmError(f"no task is in pull request #{number}", 2)
+            given += own
+        if args.released_at is not None:
+            # One that shipped already: released at that time (its PR's merge, for one recovered from PRs)
+            release["state"] = "released"
+            release["released_at"] = args.released_at
         meta = data.setdefault("meta", {})
         meta["releases"] = list(meta.get("releases") or []) + [release]
         vocabulary(data)
@@ -4169,9 +4182,10 @@ def releases_add(paths, args):
     if args.json:
         out(to_json({"release": release, "tasks": given}))
         return
-    line = f"Added the release “{release_id}” (planned)"
+    line = f"Added the release “{release_id}” ({release['state']})"
     if given:
-        line += f", with the {len(given)} task{'' if len(given) == 1 else 's'} of PR #{args.pr}"
+        numbers = ", ".join(f"#{n}" for n in prs)
+        line += f", with the {len(given)} task{'' if len(given) == 1 else 's'} of PR{'s' if len(prs) > 1 else ''} {numbers}"
     out(line + ".")
 
 
@@ -4273,6 +4287,8 @@ def cmd_releases(args):
         raise AtmError(f"atm releases {args.action} needs a release ID", 2)
     if args.pr is not None and args.action != "add":
         raise AtmError("--pr is for atm releases add", 2)
+    if args.released_at is not None and args.action != "add":
+        raise AtmError("--released-at is for atm releases add", 2)
     actions = {"add": releases_add, "edit": releases_edit, "archive": releases_archive, "notes": releases_notes}
     actions[args.action](paths, args)
 
@@ -6250,10 +6266,11 @@ commands:
                  generated without one), change one, make one active (one at a time), or close one: its
                  unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
                  keeps a report of what was done, carried and added mid-sprint
-  releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N] | releases edit <R> [--name] [--target]
-          | releases archive <R> | releases notes <R>
+  releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N]... [--released-at TIME]
+          | releases edit <R> [--name] [--target] | releases archive <R> | releases notes <R>
                  the releases in order with their tasks by kind and stage (archived ones with --all); add one
-                 (--pr gives it every task of that pull request), change one, archive it, or print a Markdown
+                 (--pr gives it every task of those pull requests, --released-at records one that already shipped),
+                 change one, archive it, or print a Markdown
                  draft of its changes (done tasks by type, with their outcome notes; what isn't done yet). A
                  sprint's or a task's release must be one of them
   move <id>... --to <sprint>|next|active|backlog
@@ -6612,7 +6629,12 @@ def build_parser():
     releases.add_argument("--all", action="store_true", help="list: the archived releases too")
     releases.add_argument("--name", dest="title", help="add, edit: a name besides its ID (empty: remove it)")
     releases.add_argument("--target", metavar="DATE", help="add, edit: the planned date, YYYY-MM-DD (empty: remove it)")
-    releases.add_argument("--pr", type=int, metavar="N", help="add: give it the tasks of pull request N")
+    releases.add_argument(
+        "--pr", type=int, action="append", metavar="N", help="add: give it the tasks of pull request N (repeatable)"
+    )
+    releases.add_argument(
+        "--released-at", metavar="TIME", help="add: it shipped already, at this time (e.g. its PR's merge)"
+    )
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

@@ -118,10 +118,11 @@ commands:
                  generated without one), change one, make one active (one at a time), or close one: its
                  unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
                  keeps a report of what was done, carried and added mid-sprint
-  releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N] | releases edit <R> [--name] [--target]
-          | releases archive <R> | releases notes <R>
+  releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N]... [--released-at TIME]
+          | releases edit <R> [--name] [--target] | releases archive <R> | releases notes <R>
                  the releases in order with their tasks by kind and stage (archived ones with --all); add one
-                 (--pr gives it every task of that pull request), change one, archive it, or print a Markdown
+                 (--pr gives it every task of those pull requests, --released-at records one that already shipped),
+                 change one, archive it, or print a Markdown
                  draft of its changes (done tasks by type, with their outcome notes; what isn't done yet). A
                  sprint's or a task's release must be one of them
   move <id>... --to <sprint>|next|active|backlog
@@ -480,7 +481,12 @@ def build_parser():
     releases.add_argument("--all", action="store_true", help="list: the archived releases too")
     releases.add_argument("--name", dest="title", help="add, edit: a name besides its ID (empty: remove it)")
     releases.add_argument("--target", metavar="DATE", help="add, edit: the planned date, YYYY-MM-DD (empty: remove it)")
-    releases.add_argument("--pr", type=int, metavar="N", help="add: give it the tasks of pull request N")
+    releases.add_argument(
+        "--pr", type=int, action="append", metavar="N", help="add: give it the tasks of pull request N (repeatable)"
+    )
+    releases.add_argument(
+        "--released-at", metavar="TIME", help="add: it shipped already, at this time (e.g. its PR's merge)"
+    )
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

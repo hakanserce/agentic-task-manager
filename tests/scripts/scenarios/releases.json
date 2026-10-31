@@ -185,6 +185,82 @@
     }
   },
   {
+    "name": "atm releases add with several --pr and --released-at: a release that shipped already, from all its PRs",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "tasks": [{ "id": "T-3", "status": "done", "pr": { "number": 10, "url": "https://github.com/o/r/pull/10" } }]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            { "id": "T-1", "status": "done", "pr": { "number": 8, "url": "https://github.com/o/r/pull/8" } },
+            { "id": "T-2", "status": "done", "pr": { "number": 9, "url": "https://github.com/o/r/pull/9" } }
+          ]
+        }
+      }
+    },
+    "args": [
+      "releases",
+      "add",
+      "0.14.0",
+      "--pr",
+      "8",
+      "--pr",
+      "9",
+      "--pr",
+      "10",
+      "--released-at",
+      "2026-10-25T07:46:19Z"
+    ],
+    "expect": {
+      "stdout": "Added the release “0.14.0” (released), with the 3 tasks of PRs #8, #9, #10.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "releases": [
+              {
+                "id": "0.14.0",
+                "state": "released",
+                "pr": { "number": 10, "url": "https://github.com/o/r/pull/10" },
+                "released_at": "2026-10-25T07:46:19Z"
+              }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-3",
+              "status": "done",
+              "pr": { "number": 10, "url": "https://github.com/o/r/pull/10" },
+              "release": "0.14.0"
+            }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "pr": { "number": 8, "url": "https://github.com/o/r/pull/8" },
+              "release": "0.14.0"
+            },
+            {
+              "id": "T-2",
+              "status": "done",
+              "pr": { "number": 9, "url": "https://github.com/o/r/pull/9" },
+              "release": "0.14.0"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "add --released-at needs an ISO time",
+    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [] } } },
+    "args": ["releases", "add", "1.0", "--released-at", "last week"],
+    "expect": { "exit": 2, "stderrIncludes": ["--released-at needs a time like"] }
+  },
+  {
     "name": "add refuses a taken ID, an ID with other characters, a bad date and a PR with no tasks; nothing changes",
     "setup": {
       "files": { ".agentic-task-manager/tasks.json": { "meta": { "releases": [{ "id": "1.0" }] }, "tasks": [] } },

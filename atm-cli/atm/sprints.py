@@ -15,6 +15,7 @@ from .model import (
     find_sprint,
     find_task,
     kind_of,
+    known_release,
     load_archive,
     load_tasks,
     set_sprint,
@@ -70,10 +71,12 @@ def check_due(due):
     return due
 
 
-def apply_fields(sprint, args):
-    """--goal, --release and --due on a sprint; an empty value removes the field. Returns the names changed."""
+def apply_fields(sprint, args, vocab):
+    """--goal, --release and --due on a sprint; an empty value removes the field; a release must be one of
+    meta.releases (SR-2.2). Returns the names changed."""
     changed = []
-    for key, value in (("goal", args.goal), ("release", args.release), ("due", check_due(args.due))):
+    release = known_release(vocab, args.release) if args.release else args.release
+    for key, value in (("goal", args.goal), ("release", release), ("due", check_due(args.due))):
         if value is None:
             continue
         if value == "":
@@ -122,7 +125,7 @@ def sprints_add(paths, args):
         if len(name) > MAX_SPRINT_NAME:
             raise AtmError(f"a sprint name is at most {MAX_SPRINT_NAME} characters", 2)
         sprint = {"id": name, "state": "planned"}
-        apply_fields(sprint, args)
+        apply_fields(sprint, args, vocab)
         meta = data.setdefault("meta", {})
         sprints = list(meta.get("sprints") or [])
         position = len(sprints)
@@ -152,7 +155,7 @@ def sprints_edit(paths, args):
     with locked(paths["dir"]):
         data = load_tasks(paths)
         sprint = stored_sprint(data, args.name)
-        changed = apply_fields(sprint, args)
+        changed = apply_fields(sprint, args, vocabulary(data))
         if changed:
             vocabulary(data)
             write_json_atomic(paths["tasks"], data)

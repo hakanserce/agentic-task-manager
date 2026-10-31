@@ -165,6 +165,54 @@ def check_sprints(meta):
     return [{**s, "state": s.get("state", "planned")} for s in sprints]
 
 
+RELEASE_STATES = ("planned", "released", "archived")
+# A release ID is any string of these (Q5): agents put it in shell commands, so no spaces or quotes
+RELEASE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def check_releases(meta):
+    """meta.releases (docs/sprints-and-releases-design.md SR-2.2) as a list, in order; [] when absent. A release
+    without a state is planned. Raises AtmError naming the problem."""
+    releases = meta.get("releases", [])
+    if not isinstance(releases, list):
+        raise AtmError("meta.releases must be a list of releases")
+    seen = set()
+    for release in releases:
+        if not isinstance(release, dict) or not isinstance(release.get("id"), str) or not RELEASE_ID.fullmatch(
+            release["id"]
+        ):
+            raise AtmError(
+                'meta.releases: every release needs an "id" of letters, digits, ".", "-" and "_" (at most 64)'
+            )
+        if release["id"] in seen:
+            raise AtmError(f"meta.releases: {release['id']!r} is listed twice")
+        seen.add(release["id"])
+        state = release.get("state", "planned")
+        if state not in RELEASE_STATES:
+            raise AtmError(
+                f"meta.releases: {release['id']!r} has the state {state!r}; use one of {', '.join(RELEASE_STATES)}"
+            )
+        if "target" in release and not (isinstance(release["target"], str) and DATE.fullmatch(release["target"])):
+            raise AtmError(f"meta.releases: {release['id']!r} has the target {release['target']!r}; use YYYY-MM-DD")
+        for key in ("name", "released_at"):
+            if key in release and not isinstance(release[key], str):
+                raise AtmError(f"meta.releases: {release['id']!r}'s {key} must be a string")
+    return [{**r, "state": r.get("state", "planned")} for r in releases]
+
+
+def find_release(vocab, release_id):
+    """The release with this ID, or None."""
+    return next((r for r in vocab["releases"] if r["id"] == release_id), None)
+
+
+def known_release(vocab, release_id):
+    """`release_id`, when meta.releases has it; else an AtmError naming the releases."""
+    if find_release(vocab, release_id) is None:
+        known = ", ".join(r["id"] for r in vocab["releases"]) or "none yet: atm releases add <R>"
+        raise AtmError(f"no release {release_id!r}; the releases: {known}", 2)
+    return release_id
+
+
 def check_setting(meta, key, choices, default):
     value = meta.get(key, default)
     if value not in choices:
@@ -212,6 +260,7 @@ def vocabulary(data):
         "default_priority": default_priority,
         "phases": phases,
         "sprints": check_sprints(meta),
+        "releases": check_releases(meta),
         "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
         "review": check_setting(meta, "review", REVIEW_MODES, "none"),
         "components": meta.get("components") if isinstance(meta.get("components"), list) else [],

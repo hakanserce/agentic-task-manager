@@ -18,6 +18,7 @@ from .model import (
     find_sprint,
     find_task,
     kind_of,
+    known_release,
     load_archive,
     load_tasks,
     natural_key,
@@ -67,6 +68,8 @@ def scope_filter(vocab, args):
         if sprint is None:
             raise AtmError(f"no sprint {name!r}; the sprints: {', '.join(s['id'] for s in vocab['sprints']) or 'none'}", 2)
         names.append(sprint["id"])
+    if getattr(args, "release", None):
+        known_release(vocab, args.release)
 
     def keep(task):
         sprint = (find_sprint(vocab, task.get("sprint")) or {}).get("id")

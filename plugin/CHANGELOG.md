@@ -30,6 +30,13 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **Releases** (T-306, SR-2.2, §3.3): `meta.releases` (`[{id, name, state, target, pr, released_at}]`, states
+  `planned`, `released`, `archived`, checked with `meta`) and `atm releases [--all]` (each release's tasks by kind and
+  stage, by their own release or their sprint's), `atm releases add <R> [--name] [--target DATE] [--pr N]` (`--pr`
+  gives it every task of that PR, in `tasks.json` and the archive), `atm releases edit`, `atm releases archive`. A
+  sprint's and a task's `--release`, and the `--release` filters of `list` and `status`, must name a release
+  (`no release '2.0'; the releases: …`); `atm check` reports one that doesn't exist. `atm check` no longer asks
+  for a `phase`: migrated tasks have none (a `phase` that is there must still be a number).
 - **`/atm:close-sprint`** (T-301, `skills/close-sprint/SKILL.md`, §4.3): closes a sprint with the user: reviews the
   done tasks with their outcome notes (follow-ups through `/atm:create-tasks`); decides each unfinished task (carried
   over by default, back to the backlog with `atm move`, or skipped with `atm skip`); chooses where carried tasks go

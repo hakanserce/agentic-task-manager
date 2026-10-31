@@ -34,6 +34,7 @@ MODULES = [
     "tasks",
     "edit",
     "sprints",
+    "releases",
     "phases",
     "merge",
     "archive",

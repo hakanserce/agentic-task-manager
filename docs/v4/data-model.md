@@ -37,6 +37,7 @@ All in `.agentic-task-manager/` at the project root.
 | `archive` | `{threshold_kb: 1024, threshold_tasks: 500, keep_days: 14, auto: true}` | when to suggest archiving, and whether agents may do it (5) |
 | `next_id` | the highest ID in both files + 1 | the number the next new task gets |
 | `sprints` | none | `[{id, goal, state, release, start, end, due, report}]`, in order; the ID is the sprint's name; states `planned`, `active` (at most one), `closed` ([sprints design](../sprints-and-releases-design.md) SR-2.1, SR-2.3) |
+| `releases` | none | `[{id, name, state, target, pr, released_at}]`, in order; the ID is letters, digits, `.`, `-` and `_`; states `planned`, `released`, `archived`; `target` a date. A sprint's or a task's `release` must be one of them (`atm check`; SR-2.2) |
 | `sprint_names` | `people` | how a sprint created without a name is named: `people` or `time` (SR-2.9) |
 | `review` | `none` | the project's default review mode: `blocker`, `async`, `batch` or `none` (SR-2.6) |
 

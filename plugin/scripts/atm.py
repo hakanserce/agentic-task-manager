@@ -872,6 +872,54 @@ def check_sprints(meta):
     return [{**s, "state": s.get("state", "planned")} for s in sprints]
 
 
+RELEASE_STATES = ("planned", "released", "archived")
+# A release ID is any string of these (Q5): agents put it in shell commands, so no spaces or quotes
+RELEASE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def check_releases(meta):
+    """meta.releases (docs/sprints-and-releases-design.md SR-2.2) as a list, in order; [] when absent. A release
+    without a state is planned. Raises AtmError naming the problem."""
+    releases = meta.get("releases", [])
+    if not isinstance(releases, list):
+        raise AtmError("meta.releases must be a list of releases")
+    seen = set()
+    for release in releases:
+        if not isinstance(release, dict) or not isinstance(release.get("id"), str) or not RELEASE_ID.fullmatch(
+            release["id"]
+        ):
+            raise AtmError(
+                'meta.releases: every release needs an "id" of letters, digits, ".", "-" and "_" (at most 64)'
+            )
+        if release["id"] in seen:
+            raise AtmError(f"meta.releases: {release['id']!r} is listed twice")
+        seen.add(release["id"])
+        state = release.get("state", "planned")
+        if state not in RELEASE_STATES:
+            raise AtmError(
+                f"meta.releases: {release['id']!r} has the state {state!r}; use one of {', '.join(RELEASE_STATES)}"
+            )
+        if "target" in release and not (isinstance(release["target"], str) and DATE.fullmatch(release["target"])):
+            raise AtmError(f"meta.releases: {release['id']!r} has the target {release['target']!r}; use YYYY-MM-DD")
+        for key in ("name", "released_at"):
+            if key in release and not isinstance(release[key], str):
+                raise AtmError(f"meta.releases: {release['id']!r}'s {key} must be a string")
+    return [{**r, "state": r.get("state", "planned")} for r in releases]
+
+
+def find_release(vocab, release_id):
+    """The release with this ID, or None."""
+    return next((r for r in vocab["releases"] if r["id"] == release_id), None)
+
+
+def known_release(vocab, release_id):
+    """`release_id`, when meta.releases has it; else an AtmError naming the releases."""
+    if find_release(vocab, release_id) is None:
+        known = ", ".join(r["id"] for r in vocab["releases"]) or "none yet: atm releases add <R>"
+        raise AtmError(f"no release {release_id!r}; the releases: {known}", 2)
+    return release_id
+
+
 def check_setting(meta, key, choices, default):
     value = meta.get(key, default)
     if value not in choices:
@@ -919,6 +967,7 @@ def vocabulary(data):
         "default_priority": default_priority,
         "phases": phases,
         "sprints": check_sprints(meta),
+        "releases": check_releases(meta),
         "sprint_names": check_setting(meta, "sprint_names", SPRINT_NAMING, "people"),
         "review": check_setting(meta, "review", REVIEW_MODES, "none"),
         "components": meta.get("components") if isinstance(meta.get("components"), list) else [],
@@ -2242,6 +2291,8 @@ def scope_filter(vocab, args):
         if sprint is None:
             raise AtmError(f"no sprint {name!r}; the sprints: {', '.join(s['id'] for s in vocab['sprints']) or 'none'}", 2)
         names.append(sprint["id"])
+    if getattr(args, "release", None):
+        known_release(vocab, args.release)
 
     def keep(task):
         sprint = (find_sprint(vocab, task.get("sprint")) or {}).get("id")
@@ -3067,7 +3118,7 @@ TERM_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 
 
 def check_term(value, what):
-    """A release or component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
+    """A component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
     if not isinstance(value, str) or not TERM_ID.fullmatch(value):
         raise AtmError(f"{what} {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
     return value
@@ -3134,7 +3185,7 @@ def new_task(vocab, fields, actor, stamp):
     if fields.get("sprint"):
         set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
     if fields.get("release"):
-        task["release"] = check_term(fields["release"], "release")
+        task["release"] = known_release(vocab, fields["release"])
     components = [check_term(c, "component") for c in fields.get("components") or []]
     if components:
         task["components"] = components
@@ -3292,7 +3343,7 @@ def edit_task(data, task, args):
     edit_list("files", args.add_file, args.remove_file)
     edit_list("labels", check_labels(args.add_label), args.remove_label)
     for key, value, check in (
-        ("release", args.release, lambda v: check_term(v, "release")),
+        ("release", args.release, lambda v: known_release(vocab, v)),
         ("review", args.review, check_review),
     ):
         if value == "":
@@ -3369,9 +3420,10 @@ def check_data(data, root, files=False, archived=()):
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")
+        # A task without a phase is fine: atm migrate turns phases into sprints (SR-8.1)
         phase = task.get("phase")
-        if isinstance(phase, bool) or not isinstance(phase, (int, float)):
-            errors.append(f"{task_id}: needs a \"phase\" (a number)")
+        if "phase" in task and (isinstance(phase, bool) or not isinstance(phase, (int, float))):
+            errors.append(f"{task_id}: \"phase\" must be a number")
         if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
             errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
         if isinstance(task.get("type"), str) and task["type"] not in types:
@@ -3383,6 +3435,8 @@ def check_data(data, root, files=False, archived=()):
                 errors.append(f"{task_id}: {key!r} must be a list of strings")
         if "sprint" in task and find_sprint(vocab, task["sprint"]) is None:
             errors.append(f"{task_id}: the sprint {task['sprint']!r} is not one of meta.sprints")
+        if "release" in task and find_release(vocab, task["release"]) is None:
+            errors.append(f"{task_id}: the release {task['release']!r} is not one of meta.releases")
         if "sprint_history" in task and not (
             isinstance(task["sprint_history"], list)
             and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
@@ -3399,6 +3453,9 @@ def check_data(data, root, files=False, archived=()):
             for f in task.get("files") or []:
                 if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
                     warnings.append(f"{task_id}: the file {f} doesn't exist")
+    for sprint in vocab["sprints"]:
+        if sprint.get("release") and find_release(vocab, sprint["release"]) is None:
+            errors.append(f"the sprint {sprint['id']!r}: the release {sprint['release']!r} is not one of meta.releases")
     used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
     for p in vocab["phases"]:
         if p["id"] not in used:
@@ -3490,10 +3547,12 @@ def check_due(due):
     return due
 
 
-def apply_fields(sprint, args):
-    """--goal, --release and --due on a sprint; an empty value removes the field. Returns the names changed."""
+def apply_fields(sprint, args, vocab):
+    """--goal, --release and --due on a sprint; an empty value removes the field; a release must be one of
+    meta.releases (SR-2.2). Returns the names changed."""
     changed = []
-    for key, value in (("goal", args.goal), ("release", args.release), ("due", check_due(args.due))):
+    release = known_release(vocab, args.release) if args.release else args.release
+    for key, value in (("goal", args.goal), ("release", release), ("due", check_due(args.due))):
         if value is None:
             continue
         if value == "":
@@ -3542,7 +3601,7 @@ def sprints_add(paths, args):
         if len(name) > MAX_SPRINT_NAME:
             raise AtmError(f"a sprint name is at most {MAX_SPRINT_NAME} characters", 2)
         sprint = {"id": name, "state": "planned"}
-        apply_fields(sprint, args)
+        apply_fields(sprint, args, vocab)
         meta = data.setdefault("meta", {})
         sprints = list(meta.get("sprints") or [])
         position = len(sprints)
@@ -3572,7 +3631,7 @@ def sprints_edit(paths, args):
     with locked(paths["dir"]):
         data = load_tasks(paths)
         sprint = stored_sprint(data, args.name)
-        changed = apply_fields(sprint, args)
+        changed = apply_fields(sprint, args, vocabulary(data))
         if changed:
             vocabulary(data)
             write_json_atomic(paths["tasks"], data)
@@ -3795,6 +3854,193 @@ def cmd_backlog(args):
     else:
         for line in list_lines(vocab, tasks):
             out(line)
+
+
+# ==== releases.py ====
+# Releases (docs/sprints-and-releases-design.md §3.3, SR-2.2): `atm releases` lists them with their tasks by kind
+# and stage, adds one (with --pr, giving it the tasks of a pull request), edits and archives one. A task's release is
+# its own, else its sprint's. Every write is under the lock.
+
+STAGES = ("done", "in_pr", "merged")
+
+
+def stage_of(vocab, task):
+    """A done task's stage (DM-4.3): merged once its PR merged, in_pr while its PR is open, else done; None when it
+    isn't done."""
+    if kind_of(vocab, task.get("status")) != "done":
+        return None
+    pr = task.get("pr") if isinstance(task.get("pr"), dict) else None
+    if pr and task.get("merged_at"):
+        return "merged"
+    return "in_pr" if pr else "done"
+
+
+def release_overview(data, archived, include_archived):
+    """The releases in order, each with its tasks (by effective release, both files) by kind and by stage."""
+    vocab = vocabulary(data)
+    counts = {r["id"]: ({k: 0 for k in KINDS}, {s: 0 for s in STAGES}) for r in vocab["releases"]}
+    for task in list(data["tasks"]) + list(archived):
+        if not isinstance(task, dict):
+            continue
+        release = effective_release(vocab, task)
+        if release not in counts:
+            continue
+        by_kind, by_stage = counts[release]
+        kind = kind_of(vocab, task.get("status"))
+        if kind in by_kind:
+            by_kind[kind] += 1
+        stage = stage_of(vocab, task)
+        if stage:
+            by_stage[stage] += 1
+    return [
+        {
+            **r,
+            "tasks": sum(counts[r["id"]][0].values()),
+            "by_kind": {k: n for k, n in counts[r["id"]][0].items() if n},
+            "by_stage": {s: n for s, n in counts[r["id"]][1].items() if n},
+        }
+        for r in vocab["releases"]
+        if include_archived or r["state"] != "archived"
+    ]
+
+
+def describe_release(r):
+    details = [r["state"]] + ([f"target {r['target']}"] if r.get("target") else [])
+    if r.get("released_at"):
+        details.append(f"released {r['released_at'][:10]}")
+    if isinstance(r.get("pr"), dict) and r["pr"].get("number"):
+        details.append(f"PR #{r['pr']['number']}")
+    title = r["id"] + (f" “{r['name']}”" if r.get("name") else "")
+    kinds = ", ".join(f"{k} {n}" for k, n in r["by_kind"].items())
+    stages = ", ".join(f"{s.replace('_', ' ')} {n}" for s, n in r["by_stage"].items())
+    line = f"{title} · {' · '.join(details)}: {r['tasks']} task{'' if r['tasks'] == 1 else 's'}"
+    return line + (f" ({kinds})" if kinds else "") + (f"; {stages}" if stages else "")
+
+
+def releases_list(paths, include_archived, as_json):
+    data = load_tasks(paths)
+    releases = release_overview(data, load_archive(paths)["tasks"], include_archived)
+    if as_json:
+        out(to_json(releases))
+        return
+    if not releases:
+        has_any = bool(vocabulary(data)["releases"])
+        out("No open releases (--all lists the archived ones)." if has_any else "No releases yet: atm releases add <R>.")
+    for r in releases:
+        out(describe_release(r))
+
+
+def check_target(target):
+    if target and not DATE.fullmatch(target):
+        raise AtmError(f"--target {target!r}: use a date, YYYY-MM-DD", 2)
+    return target
+
+
+def release_fields(release, args):
+    """--name and --target on a release; an empty value removes the field. Returns the names changed."""
+    changed = []
+    for key, value in (("name", args.title), ("target", check_target(args.target))):
+        if value is None:
+            continue
+        if value == "":
+            if key in release:
+                del release[key]
+                changed.append(key)
+        elif release.get(key) != value:
+            release[key] = value
+            changed.append(key)
+    return changed
+
+
+def stored_release(data, release_id):
+    """The release as stored in meta.releases (to change it), or an error naming the releases."""
+    vocab = vocabulary(data)
+    if find_release(vocab, release_id) is None:
+        known = ", ".join(r["id"] for r in vocab["releases"]) or "none yet: atm releases add <R>"
+        raise AtmError(f"no release {release_id!r}; the releases: {known}", 2)
+    return next(r for r in data["meta"]["releases"] if r.get("id") == release_id)
+
+
+def releases_add(paths, args):
+    release_id = args.id
+    if not RELEASE_ID.fullmatch(release_id):
+        raise AtmError(f"{release_id!r}: a release ID is letters, digits, '.', '-' and '_' (at most 64)", 2)
+    if args.pr is not None and args.pr <= 0:
+        raise AtmError("--pr needs a pull request number", 2)
+    archive = archive_path(paths)
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        archive_data = load_archive(paths)
+        vocab = vocabulary(data)
+        if find_release(vocab, release_id):
+            raise AtmError(f"there is already a release {release_id!r}", 2)
+        release = {"id": release_id, "state": "planned"}
+        release_fields(release, args)
+        given = []
+        if args.pr is not None:
+            # A release recovered from a pull request (SR-8.2): the PR's tasks, in both files, go into it
+            for task in list(data["tasks"]) + list(archive_data["tasks"]):
+                pr = task.get("pr") if isinstance(task, dict) and isinstance(task.get("pr"), dict) else None
+                if pr and pr.get("number") == args.pr:
+                    task["release"] = release_id
+                    given.append(task["id"])
+                    if isinstance(pr.get("url"), str):
+                        release["pr"] = {"number": args.pr, "url": pr["url"]}
+            if not given:
+                raise AtmError(f"no task is in pull request #{args.pr}", 2)
+        meta = data.setdefault("meta", {})
+        meta["releases"] = list(meta.get("releases") or []) + [release]
+        vocabulary(data)
+        write_json_atomic(paths["tasks"], data)
+        if any(t.get("id") in given for t in archive_data["tasks"] if isinstance(t, dict)):
+            write_json_atomic(archive, archive_data)
+    if args.json:
+        out(to_json({"release": release, "tasks": given}))
+        return
+    line = f"Added the release “{release_id}” (planned)"
+    if given:
+        line += f", with the {len(given)} task{'' if len(given) == 1 else 's'} of PR #{args.pr}"
+    out(line + ".")
+
+
+def releases_edit(paths, args):
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        release = stored_release(data, args.id)
+        changed = release_fields(release, args)
+        if changed:
+            vocabulary(data)
+            write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json(release))
+    else:
+        out(f"{release['id']}: changed {', '.join(changed)}" if changed else f"{release['id']}: nothing changed")
+
+
+def releases_archive(paths, args):
+    """Archive a release: it leaves `atm releases` and the dashboard's open releases (--all shows it)."""
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        release = stored_release(data, args.id)
+        if release.get("state") == "archived":
+            raise AtmError(f"the release {release['id']!r} is already archived", 2)
+        release["state"] = "archived"
+        write_json_atomic(paths["tasks"], data)
+    out(to_json(release) if args.json else f"Archived the release “{release['id']}”.")
+
+
+def cmd_releases(args):
+    paths = find_paths(os.getcwd())
+    if args.action in (None, "list"):
+        if args.id is not None:
+            raise AtmError(f"unexpected argument '{args.id}'", 2)
+        releases_list(paths, args.all, args.json)
+        return
+    if not args.id:
+        raise AtmError(f"atm releases {args.action} needs a release ID", 2)
+    if args.pr is not None and args.action != "add":
+        raise AtmError("--pr is for atm releases add", 2)
+    {"add": releases_add, "edit": releases_edit, "archive": releases_archive}[args.action](paths, args)
 
 
 # ==== phases.py ====
@@ -5779,6 +6025,11 @@ commands:
                  generated without one), change one, make one active (one at a time), or close one: its
                  unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
                  keeps a report of what was done, carried and added mid-sprint
+  releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N] | releases edit <R> [--name] [--target]
+          | releases archive <R>
+                 the releases in order with their tasks by kind and stage (archived ones with --all); add one
+                 (--pr gives it every task of that pull request), change one, or archive it. A sprint's or a
+                 task's release must be one of them
   move <id>... --to <sprint>|next|active|backlog
                  move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
                  the backlog (claimed and finished tasks stay where they are)
@@ -6114,6 +6365,13 @@ def build_parser():
     agent_option(move)
     backlog = command("backlog", cmd_backlog, "the tasks with no sprint (not finished ones, unless --all)")
     backlog.add_argument("--all", action="store_true", help="also the finished tasks with no sprint")
+    releases = command("releases", cmd_releases, "the releases with their tasks; add, edit or archive one")
+    releases.add_argument("action", nargs="?", choices=["list", "add", "edit", "archive"], help="what to do")
+    releases.add_argument("id", nargs="?", help="the release's ID (letters, digits, '.', '-', '_')")
+    releases.add_argument("--all", action="store_true", help="list: the archived releases too")
+    releases.add_argument("--name", dest="title", help="add, edit: a name besides its ID (empty: remove it)")
+    releases.add_argument("--target", metavar="DATE", help="add, edit: the planned date, YYYY-MM-DD (empty: remove it)")
+    releases.add_argument("--pr", type=int, metavar="N", help="add: give it the tasks of pull request N")
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

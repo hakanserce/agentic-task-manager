@@ -176,7 +176,10 @@
     "setup": {
       "files": {
         ".agentic-task-manager/tasks.json": {
-          "meta": { "sprints": [{ "id": "A", "state": "active", "release": "1.0" }, { "id": "B" }] },
+          "meta": {
+            "sprints": [{ "id": "A", "state": "active", "release": "1.0" }, { "id": "B" }],
+            "releases": [{ "id": "1.0" }]
+          },
           "tasks": [
             { "id": "T-1", "status": "todo", "phase": 1, "name": "In A", "sprint": "A" },
             { "id": "T-2", "status": "todo", "phase": 1, "name": "In B, for 1.0", "sprint": "B", "release": "1.0" },
@@ -244,7 +247,12 @@
   {
     "name": "add sets release, components, review and related",
     "setup": {
-      "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-001", "status": "todo" }] } }
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "releases": [{ "id": "1.0" }] },
+          "tasks": [{ "id": "T-001", "status": "todo" }]
+        }
+      }
     },
     "args": [
       "add",
@@ -319,10 +327,17 @@
     "expect": { "exit": 2, "stderrIncludes": ["T-1 can't be related to itself"] }
   },
   {
-    "name": "a release ID is letters, digits, dots, dashes and underscores",
-    "setup": { "files": { ".agentic-task-manager/tasks.json": { "tasks": [{ "id": "T-1", "status": "todo" }] } } },
+    "name": "a task's release must be one of meta.releases",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "releases": [{ "id": "1.0" }] },
+          "tasks": [{ "id": "T-1", "status": "todo" }]
+        }
+      }
+    },
     "args": ["edit", "T-1", "--release", "1.0; rm -rf /"],
-    "expect": { "exit": 2, "stderrIncludes": ["release '1.0; rm -rf /': use letters, digits"] }
+    "expect": { "exit": 2, "stderrIncludes": ["no release '1.0; rm -rf /'; the releases: 1.0"] }
   },
   {
     "name": "archive --sprint: only that sprint's finished tasks",

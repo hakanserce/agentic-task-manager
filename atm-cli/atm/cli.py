@@ -15,6 +15,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .phases import cmd_phases
+from .releases import cmd_releases
 from .sprints import cmd_backlog, cmd_move, cmd_sprints
 from .logo import cmd_logo
 from .registry import cmd_projects
@@ -113,6 +114,11 @@ commands:
                  generated without one), change one, make one active (one at a time), or close one: its
                  unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
                  keeps a report of what was done, carried and added mid-sprint
+  releases [--all] | releases add <R> [--name N] [--target DATE] [--pr N] | releases edit <R> [--name] [--target]
+          | releases archive <R>
+                 the releases in order with their tasks by kind and stage (archived ones with --all); add one
+                 (--pr gives it every task of that pull request), change one, or archive it. A sprint's or a
+                 task's release must be one of them
   move <id>... --to <sprint>|next|active|backlog
                  move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
                  the backlog (claimed and finished tasks stay where they are)
@@ -448,6 +454,13 @@ def build_parser():
     agent_option(move)
     backlog = command("backlog", cmd_backlog, "the tasks with no sprint (not finished ones, unless --all)")
     backlog.add_argument("--all", action="store_true", help="also the finished tasks with no sprint")
+    releases = command("releases", cmd_releases, "the releases with their tasks; add, edit or archive one")
+    releases.add_argument("action", nargs="?", choices=["list", "add", "edit", "archive"], help="what to do")
+    releases.add_argument("id", nargs="?", help="the release's ID (letters, digits, '.', '-', '_')")
+    releases.add_argument("--all", action="store_true", help="list: the archived releases too")
+    releases.add_argument("--name", dest="title", help="add, edit: a name besides its ID (empty: remove it)")
+    releases.add_argument("--target", metavar="DATE", help="add, edit: the planned date, YYYY-MM-DD (empty: remove it)")
+    releases.add_argument("--pr", type=int, metavar="N", help="add: give it the tasks of pull request N")
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

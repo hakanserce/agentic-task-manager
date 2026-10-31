@@ -43,7 +43,10 @@
     "name": "atm sprints add, with a goal, release and due date, after a given sprint",
     "setup": {
       "files": {
-        ".agentic-task-manager/tasks.json": { "meta": { "sprints": [{ "id": "A" }, { "id": "C" }] }, "tasks": [] }
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "A" }, { "id": "C" }], "releases": [{ "id": "1.0" }] },
+          "tasks": []
+        }
       }
     },
     "args": ["sprints", "add", "B", "--goal", "The middle", "--release", "1.0", "--due", "2026-06-01", "--after", "A"],
@@ -56,7 +59,8 @@
               { "id": "A" },
               { "id": "B", "state": "planned", "goal": "The middle", "release": "1.0", "due": "2026-06-01" },
               { "id": "C" }
-            ]
+            ],
+            "releases": [{ "id": "1.0" }]
           },
           "tasks": []
         }

@@ -11,10 +11,12 @@ from .lock import locked
 from .model import (
     REVIEW_MODES,
     archived_task,
+    find_release,
     find_sprint,
     find_task,
     set_sprint,
     kind_of,
+    known_release,
     load_archive,
     load_tasks,
     phase_of,
@@ -87,7 +89,7 @@ TERM_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 
 
 def check_term(value, what):
-    """A release or component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
+    """A component ID: letters, digits, `.`, `-` and `_` (agents put them in shell commands)."""
     if not isinstance(value, str) or not TERM_ID.fullmatch(value):
         raise AtmError(f"{what} {value!r}: use letters, digits, '.', '-' and '_' (at most 64)", 2)
     return value
@@ -154,7 +156,7 @@ def new_task(vocab, fields, actor, stamp):
     if fields.get("sprint"):
         set_sprint(task, open_sprint(vocab, fields["sprint"]), stamp)
     if fields.get("release"):
-        task["release"] = check_term(fields["release"], "release")
+        task["release"] = known_release(vocab, fields["release"])
     components = [check_term(c, "component") for c in fields.get("components") or []]
     if components:
         task["components"] = components
@@ -312,7 +314,7 @@ def edit_task(data, task, args):
     edit_list("files", args.add_file, args.remove_file)
     edit_list("labels", check_labels(args.add_label), args.remove_label)
     for key, value, check in (
-        ("release", args.release, lambda v: check_term(v, "release")),
+        ("release", args.release, lambda v: known_release(vocab, v)),
         ("review", args.review, check_review),
     ):
         if value == "":
@@ -389,9 +391,10 @@ def check_data(data, root, files=False, archived=()):
         for key, kind in (("name", str), ("type", str), ("status", str)):
             if not isinstance(task.get(key), kind):
                 errors.append(f"{task_id}: needs a {key!r} (a string)")
+        # A task without a phase is fine: atm migrate turns phases into sprints (SR-8.1)
         phase = task.get("phase")
-        if isinstance(phase, bool) or not isinstance(phase, (int, float)):
-            errors.append(f"{task_id}: needs a \"phase\" (a number)")
+        if "phase" in task and (isinstance(phase, bool) or not isinstance(phase, (int, float))):
+            errors.append(f"{task_id}: \"phase\" must be a number")
         if isinstance(task.get("status"), str) and kind_of(vocab, task["status"]) is None:
             errors.append(f"{task_id}: the status {task['status']!r} is not one of the project's statuses")
         if isinstance(task.get("type"), str) and task["type"] not in types:
@@ -403,6 +406,8 @@ def check_data(data, root, files=False, archived=()):
                 errors.append(f"{task_id}: {key!r} must be a list of strings")
         if "sprint" in task and find_sprint(vocab, task["sprint"]) is None:
             errors.append(f"{task_id}: the sprint {task['sprint']!r} is not one of meta.sprints")
+        if "release" in task and find_release(vocab, task["release"]) is None:
+            errors.append(f"{task_id}: the release {task['release']!r} is not one of meta.releases")
         if "sprint_history" in task and not (
             isinstance(task["sprint_history"], list)
             and all(isinstance(e, dict) and isinstance(e.get("sprint"), str) for e in task["sprint_history"])
@@ -419,6 +424,9 @@ def check_data(data, root, files=False, archived=()):
             for f in task.get("files") or []:
                 if isinstance(f, str) and not os.path.exists(os.path.join(root, f)):
                     warnings.append(f"{task_id}: the file {f} doesn't exist")
+    for sprint in vocab["sprints"]:
+        if sprint.get("release") and find_release(vocab, sprint["release"]) is None:
+            errors.append(f"the sprint {sprint['id']!r}: the release {sprint['release']!r} is not one of meta.releases")
     used = {phase_of(t) for t in list(tasks) + list(archived) if isinstance(t, dict)}
     for p in vocab["phases"]:
         if p["id"] not in used:

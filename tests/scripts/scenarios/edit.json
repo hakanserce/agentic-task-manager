@@ -179,7 +179,7 @@
     "args": ["check"],
     "expect": {
       "exit": 1,
-      "stdout": "error: T-4: the ID is used by 2 tasks\nerror: T-2: needs a \"phase\" (a number)\nerror: T-2: the status 'waiting' is not one of the project's statuses\nerror: T-2: the label 'Bad Label' isn't lowercase letters, digits, - and _\nerror: T-3: depends on T-404, which doesn't exist\nerror: dependency cycle: T-1 -> T-3 -> T-1\nwarning: T-2: the type 'spike' is not one of the project's types\nwarning: T-2: the priority 'P9' is not one of the project's priorities\n"
+      "stdout": "error: T-4: the ID is used by 2 tasks\nerror: T-2: \"phase\" must be a number\nerror: T-2: the status 'waiting' is not one of the project's statuses\nerror: T-2: the label 'Bad Label' isn't lowercase letters, digits, - and _\nerror: T-3: depends on T-404, which doesn't exist\nerror: dependency cycle: T-1 -> T-3 -> T-1\nwarning: T-2: the type 'spike' is not one of the project's types\nwarning: T-2: the priority 'P9' is not one of the project's priorities\n"
     }
   },
   {

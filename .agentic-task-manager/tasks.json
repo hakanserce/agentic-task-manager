@@ -11082,7 +11082,7 @@
         "SR-2.9"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-287"
       ],
@@ -11092,9 +11092,11 @@
         "tests/scripts/scenarios/sprints.json"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:23:24Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T00:23:24Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-289",
@@ -11112,7 +11114,7 @@
         "SR-8.5"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-287"
       ],
@@ -11121,11 +11123,22 @@
         "tests/scripts/merge.test.mjs"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:21:40Z",
+      "updated_at": "2026-10-31T00:23:23Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T00:21:40Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "8acecdc1d9190912924428575dcd2c3160c0a138",
+      "completed_at": "2026-10-31T00:23:23Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T00:23:23Z",
+          "kind": "outcome",
+          "text": "meta sprints, releases and components merge item by item (further state wins; same name added twice is a conflict); `sprint_history` keeps closed entries; a migrated side’s sprint replaces the other side’s phase, and `meta.phases` goes",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-290",
@@ -11137,7 +11150,7 @@
         "sprints",
         "cli"
       ],
-      "description": "The sprint commands of `docs/sprints-and-releases-design.md` §3.1, under the lock like every write.\n\n## Change\n- `atm sprints [--all]`: ID, state, release, due, counts by kind; closed ones only with `--all`.\n- `atm sprints add [\"<name>\"] [--goal] [--release] [--due] [--after S]` (generated name without one), `atm sprints edit <S> …`, `atm sprints start <S>` (refused while another is active; sets `start`).\n- `atm move <id>... --to <S>|next|active|backlog`: refuses claimed and finished tasks; `next` without a planned sprint after the current one names `atm sprints add` (SR-3.1).\n- `atm backlog`: the tasks with no sprint.\n- All take `--json`; `atm help` lists them; `docs/v4/atm-cli.md` documents them.\n\n## Tests\nScenarios for each command, including the refusals.",
+      "description": "The sprint commands of `docs/sprints-and-releases-design.md` §3.1, under the lock like every write.\n\n## Change\n- `atm sprints [--all]`: ID, state, release, due, counts by kind; closed ones only with `--all`.\n- `atm sprints add [\"<name>\"] [--goal] [--release] [--due] [--after S]` (generated name without one: `generate_sprint_name` in `atm-cli/atm/sprint_names.py`, from T-288, with every sprint name in both files as taken), `atm sprints edit <S> …`, `atm sprints start <S>` (refused while another is active; sets `start`).\n- `atm move <id>... --to <S>|next|active|backlog`: refuses claimed and finished tasks; `next` without a planned sprint after the current one names `atm sprints add` (SR-3.1). Use `set_sprint` from `model.py` (T-287) so the history is kept.\n- `atm backlog`: the tasks with no sprint.\n- All take `--json`; `atm help` lists them; `docs/v4/atm-cli.md` documents them.\n\n## Tests\nScenarios for each command, including the refusals, and for generated names (moved here from T-288, which has no command of its own): with `ATM_SEED` a `people` name is picked and isn't one already used (in either file, any case); with `meta.sprint_names: time`, `ATM_NOW` and `TZ=UTC` the name is `May 12-10:38pm`, and a second sprint in the same minute gets `-2`.\n",
       "requirements": [
         "SR-3.1"
       ],
@@ -11155,9 +11168,9 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:25:09Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a"
     },
     {
       "id": "T-291",

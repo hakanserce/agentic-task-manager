@@ -14722,7 +14722,7 @@
         "SR-7.6"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-313",
         "T-314",
@@ -14735,7 +14735,7 @@
         "dashboard/src/components/SprintHeader.svelte"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:37:47Z",
+      "updated_at": "2026-10-31T06:47:05Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14751,10 +14751,19 @@
           "kind": "note",
           "text": "From T-313: `atm next` now hands tasks back from review (`review_state` approved or changes_requested) before new ones, their own agent first for a lease length. The Kanban’s Next up (`nextUp` in `lib/kanban.ts`) should follow, and `next-up-parity.test.ts` cover it.",
           "by": "claude:9fec227a"
+        },
+        {
+          "at": "2026-10-31T06:47:05Z",
+          "kind": "outcome",
+          "text": "Cards and details show review state, with you, components and review mode; needs you counts with: user and drops tasks back from review (dashboard and server); sprint header counts pending sprint reviews; Next up follows atm next.",
+          "by": "claude:9fec227a"
         }
       ],
       "started_at": "2026-10-31T06:37:47Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "10b095daf9cb886346af1ed97c6017a978d3a9ee",
+      "completed_at": "2026-10-31T06:47:05Z",
+      "completed_by": "claude:9fec227a"
     },
     {
       "id": "T-317",
@@ -14768,7 +14777,7 @@
       "description": "Review modes, review states, `sprint_review` and `with: user` are fields agents act on, so update `docs/security-architecture.md` (§3.3 and, if needed, an invariant with its check): that a task can't make an agent skip its review or claim to be approved (only the commands set these, and `atm done` refuses by mode), and what `with: user` keeps unattended loops from doing.\n\n**No live sandbox run:** no API key is used for the sandbox (Hakan, 2026-10-30, T-304). As in T-304, write a review of the changed skills against the red-team cases into §3.3 instead, and add `skills.test.ts` checks for the new rules. Don't ask for a key or look for one.\n",
       "requirements": [],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-315",
         "T-314"
@@ -14777,7 +14786,7 @@
         "docs/security-architecture.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T05:46:57Z",
+      "updated_at": "2026-10-31T06:47:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14786,7 +14795,9 @@
           "sprint": "Sprints and releases",
           "from": "2026-10-31T00:07:18Z"
         }
-      ]
+      ],
+      "started_at": "2026-10-31T06:47:11Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-318",

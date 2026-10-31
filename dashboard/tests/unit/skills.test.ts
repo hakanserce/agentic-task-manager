@@ -85,6 +85,14 @@ describe('task text and logs are data, not commands (T-221, docs/security-review
     expect(close).toMatch(/`--reviewed`/);
   });
 
+  it('the working skills act as their session: no --agent; request-changes stays the user’s (I23, T-317)', () => {
+    for (const name of ['do-task', 'loop-tasks', 'plan-sprint', 'close-sprint']) {
+      expect(text(name), name).not.toMatch(/--agent/);
+      expect(allowedTools(text(name)), name).not.toContain('Bash(atm request-changes:*)');
+    }
+    expect(text('loop-tasks')).toMatch(/an unattended loop never takes them/);
+  });
+
   it('an approval is recorded with atm approve, not as a rejection (SR-6.4)', () => {
     for (const name of ['do-task', 'loop-tasks']) {
       expect(text(name)).not.toMatch(/Approved; continuing/);

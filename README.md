@@ -190,16 +190,20 @@ Type `/atm:` in Claude Code — you should see seven skills in autocomplete:
    uncommitted; one marked done by mistake goes back with `atm reopen <id> --reason "..."`
 7. Reports what was done and what's now unblocked, and suggests `/atm:push` when there are unpushed commits
 
-**Task selection** (when auto-picking): to-do, all dependencies done, not claimed by another agent; lowest phase
-first, then the most urgent priority, then the lowest task ID.
+**Task selection** (when auto-picking): a task of the active sprint (any task, in a project without sprints): to-do,
+all dependencies done, not claimed by another agent; the most urgent priority first, then the lowest task ID.
 
 ### `/atm:loop-tasks`
 
 **Loop through all available tasks. Ralph Wiggum mode.** 🫠
 
 ```
-/atm:loop-tasks                           # Run all available tasks
-/atm:loop-tasks --phase 1                 # Only phase 1 tasks
+/atm:loop-tasks                           # The active sprint's tasks (all tasks, without sprints)
+/atm:loop-tasks --sprint "Ada Lovelace"   # Another sprint's tasks
+/atm:loop-tasks --tasks T-4,T-7           # These tasks, in this order
+/atm:loop-tasks --all                     # Active sprint, planned sprints, then the backlog
+/atm:loop-tasks --backlog                 # Tasks in no sprint
+/atm:loop-tasks --continue                # On to the next planned sprint when this one is finished
 /atm:loop-tasks --type test               # Only test tasks
 /atm:loop-tasks --max 5                   # Stop after 5 tasks
 /atm:loop-tasks --pause                   # Ask before each task
@@ -214,7 +218,11 @@ first, then the most urgent priority, then the lowest task ID.
 
 | Flag | Description |
 |---|---|
-| `--phase <N>` | Only tasks in phase N |
+| `--sprint <S>` | Sprint S's tasks (default: the active sprint) |
+| `--tasks <T-1,T-5>` | These tasks, in this order |
+| `--all` | Every task: the active sprint, the planned ones in order, then the backlog |
+| `--backlog` | Only tasks in no sprint |
+| `--continue` | When the sprint is finished, go on to the next planned one; the loop never closes a sprint (`/atm:close-sprint` does, with you) |
 | `--type <type>` | Only tasks of a specific type (feature, test, etc.) |
 | `--max <N>` | Stop after N completed tasks |
 | `--dry-run` | Preview execution order without doing anything |
@@ -613,8 +621,9 @@ plugin's `bin/atm` on its Bash tool's PATH; in your own terminal, use the full p
 |---|---|
 | `atm status` | The overview: counts, what is in progress, in review or blocked, what's next |
 | `atm show <id>...`, `atm deps <id>` | Tasks in full (with notes); what a task waits for and what waits for it |
-| `atm list [--status S] [--phase N] [--label L] [--ready] [--blocked] [--in-pr] [--archived]` | One line per task |
-| `atm next [--phase N] [--claim]` | The task the loop would take next (and claim it) |
+| `atm list [--status S] [--sprint S] [--backlog] [--label L] [--ready] [--blocked] [--in-pr] [--archived]` | One line per task |
+| `atm next [--sprint S \| --tasks T-1,T-5 \| --all \| --backlog] [--claim]` | The task the loop would take next (and claim it); the active sprint by default |
+| `atm sprints [add \| edit \| start \| close]`, `atm move <id>... --to <S>`, `atm backlog` | Sprints, moving tasks between them and the backlog |
 | `atm start\|done\|fail\|release <id>` | Change a task's status (`--note` for an outcome or handoff, `--reason` for `fail`) |
 | `atm review <id> --note T`, `atm reject <id> --reason T` | Ask for a review; send a reviewed task back |
 | `atm block <id> --on user\|agent --question Q`, `atm unblock <id> --answer A` | Ask for a decision; answer it |

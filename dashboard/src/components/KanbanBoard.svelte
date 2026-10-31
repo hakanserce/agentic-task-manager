@@ -12,7 +12,12 @@
   const groupByPhase = $derived(dashboard.kanbanGroupByPhase);
   const showSkipped = $derived(dashboard.kanbanShowSkipped);
 
-  const options = $derived({ showSkipped, statusFilter: dashboard.filters.status, vocab: dashboard.vocab });
+  const options = $derived({
+    showSkipped,
+    statusFilter: dashboard.filters.status,
+    vocab: dashboard.vocab,
+    sprints: dashboard.sprints,
+  });
   const board = $derived(groupByPhase ? [] : buildBoard(dashboard.filtered, dashboard.tasks, options));
   const lanes = $derived(groupByPhase ? buildLanes(dashboard.filtered, dashboard.tasks, options) : []);
   // Completion of the tasks the search and filters leave, counted as everywhere else: skipped ones apart (T-162)

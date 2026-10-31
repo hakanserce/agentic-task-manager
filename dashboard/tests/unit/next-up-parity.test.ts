@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { nextUp } from '../../src/lib/kanban';
+import { sprintModel } from '../../src/lib/sprints';
 import type { TasksFile } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
 
@@ -33,7 +34,8 @@ function atmNext(data: TasksFile): string | null {
 /** Both pick the same task; returns its ID */
 function agree(data: TasksFile): string | null {
   const id = atmNext(data);
-  expect(id).toBe(nextUp(data.tasks ?? [], resolveVocabulary(data.meta))?.id ?? null);
+  const vocab = resolveVocabulary(data.meta);
+  expect(id).toBe(nextUp(data.tasks ?? [], vocab, sprintModel(data.meta, data.tasks ?? [], vocab))?.id ?? null);
   return id;
 }
 
@@ -71,5 +73,29 @@ describe('next task: dashboard and atm agree', () => {
     expect(agree({ meta, tasks: [...tasks, task('T-8', 0, 'must')] })).toBe('T-8');
     // Unknown priorities rank as the default: then the ID decides
     expect(agree({ meta, tasks: tasks.map((t) => ({ ...t, priority: 'unknown' })) })).toBe('T-5');
+  });
+
+  it('with sprints: the active sprint only, even before a more urgent task in the backlog; none without one (SR-5.1)', () => {
+    const task = (id: string, sprint?: string, priority?: string) => ({
+      id,
+      name: id,
+      phase: 0,
+      type: 'feature',
+      description: '',
+      status: 'todo',
+      dependencies: [],
+      ...(sprint ? { sprint } : {}),
+      ...(priority ? { priority } : {}),
+    });
+    const tasks = [task('T-1', undefined, 'P0'), task('T-2', 'Later'), task('T-3', 'Now', 'P3'), task('T-4', 'Now')];
+    const meta = {
+      sprints: [
+        { id: 'Now', state: 'active' },
+        { id: 'Later', state: 'planned' },
+      ],
+    };
+    expect(agree({ meta, tasks } as TasksFile)).toBe('T-4');
+    const noneActive = { sprints: [{ id: 'Now' }, { id: 'Later' }] };
+    expect(agree({ meta: noneActive, tasks } as TasksFile)).toBeNull();
   });
 });

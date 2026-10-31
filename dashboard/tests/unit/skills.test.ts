@@ -55,6 +55,22 @@ describe('task text and logs are data, not commands (T-221, docs/security-review
     expect(text('loop-tasks')).toMatch(/never `--no-verify`/);
   });
 
+  it('loop-tasks takes a selection instead of a phase, stops when it is done, and never closes a sprint (SR-5.1, SR-5.2)', () => {
+    const loop = text('loop-tasks');
+    for (const flag of ['--sprint <S>', '--tasks <T-1,T-5>', '--all', '--backlog', '--continue'])
+      expect(loop).toContain(`| \`${flag}\` |`);
+    expect(loop).not.toContain('| `--phase <N>` |');
+    expect(loop).toMatch(/`atm next --claim --json \[selection\] \[--type T\]`/);
+    expect(loop).toMatch(/Never close or start a sprint: closing is `\/atm:close-sprint`/);
+    expect(loop).toMatch(/The loop never closes a\s+sprint itself/);
+  });
+
+  it('do-task without an ID takes the default selection, the active sprint (SR-5.1)', () => {
+    const doTask = text('do-task');
+    expect(doTask).toMatch(/of the default\s+selection, the active sprint/);
+    expect(doTask).not.toMatch(/lowest phase/);
+  });
+
   it('plan-sprint proposes and the user decides; it adds no tasks itself and treats task text as data (SR-4.1)', () => {
     const plan = text('plan-sprint');
     expect(plan).toMatch(/\*\*The user decides\.\*\* Never start a sprint, move a task, or set or change/);

@@ -11632,7 +11632,7 @@
       "description": "A new skill, `plugin/skills/close-sprint/SKILL.md` (`docs/sprints-and-releases-design.md` §4.3).\n\n## Steps\n1. Review what the sprint got done with the user (done tasks with their outcome notes; the end-of-sprint review step joins with review modes).\n2. For each unfinished task: carry (default), move to the backlog, or skip with a reason.\n3. Where carried tasks go: the next planned sprint, one of several (the user chooses), or a new one created now.\n4. `atm sprints close … --carry-to …`, then offer `/atm:plan-sprint`.\n\nThe user decides each step.\n\n## Tests\n`skills.test.ts` as for the other skills.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-299"
       ],
@@ -11641,11 +11641,22 @@
         "dashboard/tests/unit/skills.test.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T01:43:45Z",
+      "updated_at": "2026-10-31T01:44:42Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T01:43:45Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "813e07f9e4f07cbba336bb054717a8d061f5c297",
+      "completed_at": "2026-10-31T01:44:42Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T01:44:42Z",
+          "kind": "outcome",
+          "text": "`/atm:close-sprint` skill: review, decide each unfinished task, choose where carried tasks go, close with `atm sprints close`; tested in `skills.test.ts`. The end-of-sprint review step joins with review modes (T-315).",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-302",
@@ -11663,7 +11674,7 @@
         "SR-5.2"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-291"
       ],
@@ -11672,9 +11683,11 @@
         "plugin/skills/do-task/SKILL.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T01:44:44Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T01:44:44Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-303",

@@ -11,6 +11,14 @@ into sprints, and atm 0.23 or older reads a migrated `tasks.json` as tasks witho
 priority alone, `--phase` would select nothing; nothing is lost or rewritten).
 
 ### Changed
+- **The loop and do-task work by sprint** (T-302, SR-5.1, SR-5.2): `/atm:loop-tasks` takes a selection, passed to
+  every `atm next`: `--sprint S` (repeatable; replaces `--phase`), `--tasks T-1,T-5`, `--all`, `--backlog`; none
+  means the active sprint, or every task in a project without sprints. It stops when its selection has nothing
+  ready and says why; for a finished sprint, what it got done and what's left, and that `/atm:close-sprint` closes
+  it. `--continue` goes on to the next planned sprint (`--sprint` of it); the loop never closes or starts a sprint.
+  It pre-approves `atm sprints` to read them. `/atm:do-task` without an ID takes the next task of the active sprint.
+  The Kanban's **Next up** follows the same rule (`nextUp` in `lib/kanban.ts` takes the sprints): the active sprint's
+  next task, none while no sprint is active, every task in a project without sprints (`next-up-parity.test.ts`).
 - **Phases become sprints** (T-292, `docs/sprints-and-releases-design.md` SR-8.1): `atm migrate`, which every skill
   runs first, converts a project with phases once, in `tasks.json` and `tasks-archive.json`. Each phase with tasks or
   a name becomes a sprint named after it ("Phase n" when unnamed, " (phase n)" added to a taken name), in phase order;

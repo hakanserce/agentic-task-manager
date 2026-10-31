@@ -1,3 +1,4 @@
+import { activeSprint, NO_SPRINTS, type SprintModel } from './sprints';
 import type { Task } from './types';
 import { DEFAULT_VOCABULARY, kindOf, priorityOf, priorityRank, type StatusKind, type Vocabulary } from './vocab';
 
@@ -29,6 +30,8 @@ export interface BoardOptions {
   statusFilter: ReadonlySet<string>;
   /** The project's vocabularies; the defaults when absent */
   vocab?: Vocabulary;
+  /** The project's sprints: Next up is taken from the active one, as `atm next` does */
+  sprints?: SprintModel;
 }
 
 const byId = (a: Task, b: Task) => a.id.localeCompare(b.id, undefined, { numeric: true });
@@ -46,20 +49,30 @@ export function readiness(task: Task, taskMap: ReadonlyMap<string, Task>, vocab 
   return waitingOn.length ? { ready: false, waitingOn } : { ready: true };
 }
 
-/** The loop's order: lowest phase first, then the most urgent priority, then lowest ID (atm next) */
+/** The loop's order: lowest phase first (none counts as 0: a project with sprints has none), then the most urgent
+ * priority, then lowest ID (atm next) */
 const loopOrder = (vocab: Vocabulary) => (a: Task, b: Task) =>
-  a.phase - b.phase ||
+  (a.phase ?? 0) - (b.phase ?? 0) ||
   priorityRank(vocab, priorityOf(vocab, a)) - priorityRank(vocab, priorityOf(vocab, b)) ||
   byId(a, b);
 
 /**
- * The task /atm:loop-tasks picks next (`atm next`): a todo-kind status, all dependencies done, in the loop's order.
+ * The task /atm:loop-tasks picks next (`atm next` with its default selection): a todo-kind status, all dependencies
+ * done, in the loop's order; in a project with sprints, from the active sprint only (none when no sprint is active).
  * Uses all tasks, not just the filtered ones.
  */
-export function nextUp(allTasks: Task[], vocab = DEFAULT_VOCABULARY): Task | undefined {
+export function nextUp(allTasks: Task[], vocab = DEFAULT_VOCABULARY, sprints = NO_SPRINTS): Task | undefined {
   const taskMap = new Map(allTasks.map((t) => [t.id, t]));
+  // Phases read as sprints (an unmigrated project) aren't a selection: atm next takes every task there
+  const selected = sprints.derived || !sprints.sprints.length ? undefined : (activeSprint(sprints)?.id ?? null);
+  if (selected === null) return undefined;
   return allTasks
-    .filter((t) => kindOf(vocab, t.status) === 'todo' && readiness(t, taskMap, vocab).ready)
+    .filter(
+      (t) =>
+        (selected === undefined || sprints.sprintOf(t) === selected) &&
+        kindOf(vocab, t.status) === 'todo' &&
+        readiness(t, taskMap, vocab).ready,
+    )
     .sort(loopOrder(vocab))[0];
 }
 
@@ -76,11 +89,11 @@ const ORDER: Partial<Record<StatusKind, (a: Task, b: Task) => number>> = {
 export function buildBoard(
   tasks: Task[],
   allTasks: Task[],
-  { showSkipped, statusFilter, vocab = DEFAULT_VOCABULARY }: BoardOptions,
+  { showSkipped, statusFilter, vocab = DEFAULT_VOCABULARY, sprints = NO_SPRINTS }: BoardOptions,
   columns?: ColumnId[],
 ): KanbanColumn[] {
   const taskMap = new Map(allTasks.map((t) => [t.id, t]));
-  const next = nextUp(allTasks, vocab)?.id;
+  const next = nextUp(allTasks, vocab, sprints)?.id;
   const known = new Map(vocab.statuses.map((s) => [s.id, s]));
   const columnOf = (status: string) => (known.has(status) ? status : OTHER_COLUMN);
   const grouped = new Map<ColumnId, Task[]>();

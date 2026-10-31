@@ -20,7 +20,7 @@ every read and every change goes through `atm`, which knows the archive, the pro
 | see the overview: counts, what's in progress, in review or blocked, what's next | `atm status` |
 | read tasks in full (description, dependencies, files, notes) | `atm show <id>...` |
 | see what a task waits for, and what waits for it | `atm deps <id>` |
-| find tasks | `atm list [--status S] [--phase N] [--ready] [--blocked] [--label L]` |
+| find tasks | `atm list [--status S] [--sprint S] [--backlog] [--ready] [--blocked] [--label L]` |
 | change a later task's definition | `atm edit <id> ...` |
 | change a status | `atm start`, `done`, `review`, `block`, `fail`, `release` (below) |
 
@@ -69,18 +69,23 @@ when the task isn't to do, when a dependency isn't done yet (it lists them), or 
 >
 > Complete the blocking tasks first, or pick a different task.
 
-If no task ID is given, run `atm next --claim --json`. It picks the **next available task** (to do, all
-dependencies done, not claimed by another agent; lowest phase first, then the most urgent priority — `P0` before `P3`,
-a task without one counting as the default `P2` — then lowest task ID), starts it and claims it in one step. The JSON
-has the task under `"task"`.
+If no task ID is given, run `atm next --claim --json`. It picks the **next available task** of the default
+selection, the active sprint (every task, in a project without sprints): to do, all dependencies done, not claimed
+by another agent; the most urgent priority first — `P0` before `P3`, a task without one counting as the default
+`P2` — then lowest task ID. It starts and claims it in one step. The JSON has the task under `"task"`. If the user
+named a sprint or asked for the backlog, pass `--sprint '<name>'` or `--backlog`.
 
 If the task has notes (`"notes"`), read them first: a `rejection` says what a reviewer wants changed, a `handoff` what
 the previous agent left unfinished, a `failure` why an earlier attempt failed.
 
-If it exits with code 3, no task is available; its `"reason"` says why. Run `atm status` and report clearly:
+If it exits with code 3, no task is available; its `"reason"` says why (the sprint is finished, the rest is waiting,
+or no sprint is active). Run `atm status` and report clearly:
 > **No tasks available.** (the reason)
 >
 > (what `atm status` says is in progress, in review, blocked or waiting, and on what)
+
+A finished sprint is closed with the user by `/atm:close-sprint`; with no active sprint, `/atm:plan-sprint` plans one.
+Never close or start a sprint here.
 
 The dashboard shows the change immediately.
 

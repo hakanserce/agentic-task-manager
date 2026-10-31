@@ -14166,14 +14166,14 @@
       "description": "Once phases are migrated (this repository's phases become sprints when the new atm first runs here) and `/atm:plan-sprint` exists: run it with Hakan to plan the first sprint: which of the remaining tasks go in (the rest of this phase's work, T-277, T-279, the CompMD tasks), its name, goal, release and due date. Done live, with the user; nothing is decided without him. Notes from the session (what was unclear or missing in the skill) go to follow-up tasks.",
       "requirements": [],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-292",
         "T-300"
       ],
       "files": [],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:07:03Z",
+      "updated_at": "2026-10-31T06:11:50Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "blocks": [
@@ -14189,6 +14189,12 @@
           "kind": "answer",
           "text": "When should we plan this repo’s first sprint together? Running the new `atm migrate` here turns the phases into sprints, which ends a `--phase 27` loop and needs every agent on the new plugin (0.24). Suggestion: after the rest of phase 27 is done and the release is installed, run `/atm:plan-sprint` with you then. → Now, live with Hakan: migrate this repo with the built atm and run the repo’s /atm:plan-sprint steps.",
           "by": "claude:9fec227a"
+        },
+        {
+          "at": "2026-10-31T06:11:50Z",
+          "kind": "outcome",
+          "text": "Planned with Hakan: phases migrated to sprints; “Sprints and releases” is active (goal: sprints, releases, components and review modes as 0.24.0; due 2026-10-31; release 0.24.0), P3 tasks kept, T-309 unblocked (limit to 500 KiB). Finding noted on T-320.",
+          "by": "claude:9fec227a"
         }
       ],
       "started_at": "2026-10-31T06:07:03Z",
@@ -14199,7 +14205,9 @@
           "sprint": "Sprints and releases",
           "from": "2026-10-31T00:07:18Z"
         }
-      ]
+      ],
+      "completed_at": "2026-10-31T06:11:50Z",
+      "completed_by": "claude:9fec227a"
     },
     {
       "id": "T-306",
@@ -14359,7 +14367,7 @@
         "SR-7.5"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-306",
         "T-293"
@@ -14369,7 +14377,7 @@
         "dashboard/src/lib/releases.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T06:10:17Z",
+      "updated_at": "2026-10-31T06:11:58Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14393,7 +14401,9 @@
           "text": "The dashboard file is 459,194 bytes; its limit (`guardrails.spec.ts`) is 450 KiB = 460,800, so 1.6 kB is left and a release view needs several (T-316 and T-319 too). Raise the limit (e.g. to 500 KiB), or should I first look for size to cut (e.g. drop the frozen legacy test page, trim themes, lazy pieces) before adding views? → Raise the limit to 500 KiB and keep T-309 in this sprint (Hakan, sprint planning).",
           "by": "claude:9fec227a"
         }
-      ]
+      ],
+      "started_at": "2026-10-31T06:11:58Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-310",
@@ -14820,7 +14830,7 @@
         "atm-cli/atm/server.py"
       ],
       "created_at": "2026-10-31T00:54:44Z",
-      "updated_at": "2026-10-31T01:12:03Z",
+      "updated_at": "2026-10-31T06:11:50Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "sprint": "Sprints and releases",
@@ -14828,6 +14838,14 @@
         {
           "sprint": "Sprints and releases",
           "from": "2026-10-31T00:54:44Z"
+        }
+      ],
+      "notes": [
+        {
+          "at": "2026-10-31T06:11:50Z",
+          "kind": "note",
+          "text": "From planning the first sprint (T-305): after the migration `atm list` prints `None` in its phase column for every task; dropping the column here fixes it.",
+          "by": "claude:9fec227a"
         }
       ]
     }

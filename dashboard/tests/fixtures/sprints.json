@@ -19,6 +19,11 @@
         "due": "2026-04-12"
       },
       { "id": "Alan Turing", "state": "planned" }
+    ],
+    "releases": [
+      { "id": "1.0", "name": "First", "target": "2026-04-12" },
+      { "id": "1.1" },
+      { "id": "0.9", "state": "archived" }
     ]
   },
   "tasks": [

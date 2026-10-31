@@ -2050,6 +2050,47 @@ button.repo-ref {
   border-radius: 10px;
   min-height: 420px;
 }
+/* The releases on the Progress tab (SR-7.5) */
+.release-view {
+  margin-top: 20px;
+}
+.release-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.release-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+.release-counts {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+.release-notes summary {
+  margin-top: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.release-notes .link-button {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+}
+.release-notes pre {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--surface2);
+  white-space: pre-wrap;
+  font-size: 12px;
+}
 /* The sprint header (SR-7.2): at the top of the Kanban, List and Graph panels */
 .sprint-header {
   display: flex;

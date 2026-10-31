@@ -108,6 +108,8 @@ export interface TasksFile {
     archive?: unknown;
     /** The sprints, in order (docs/sprints-and-releases-design.md §2.1); read leniently by lib/sprints.ts */
     sprints?: unknown;
+    /** The releases, in order (§2.1); read leniently by lib/releases.ts */
+    releases?: unknown;
   };
   tasks?: Task[];
 }

@@ -313,6 +313,31 @@ test.describe('Progress tab: a sprint on the burndown (SR-7.4)', () => {
   });
 });
 
+test.describe('Progress tab: releases (SR-7.5)', () => {
+  test('each open release with its sprints, its tasks by stage, and a notes draft to copy', async ({
+    page,
+    tasksServer,
+  }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openProgress(page, tasksServer, 'sprints');
+    const rows = page.locator('#release-view .release-row');
+    await expect(rows).toHaveCount(2);
+    const first = page.locator('.release-row[data-release="1.0"]');
+    await expect(first.locator('.release-sprints')).toHaveText('Foundations, Ada Lovelace');
+    await expect(first.locator('.release-counts')).toHaveText('1 of 3 done · 0 in PR · 0 merged');
+    await first.locator('summary').click();
+    await expect(first.locator('pre')).toContainText('## Not done yet');
+    await first.getByRole('button', { name: 'Copy' }).click();
+    await expect(first.getByRole('button', { name: 'Copied' })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^# 1\.0 “First”/);
+  });
+
+  test('a project without releases shows none', async ({ page, tasksServer }) => {
+    await openProgress(page, tasksServer, 'progress');
+    await expect(page.locator('#release-view')).toHaveCount(0);
+  });
+});
+
 test.describe('Progress tab: burndown title, info and range (T-240)', () => {
   test('the title names the scope; the ⓘ explains the chart and closes on Escape', async ({ page, tasksServer }) => {
     await openProgress(page, tasksServer, 'progress');

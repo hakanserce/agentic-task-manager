@@ -6,6 +6,7 @@
   import { timeUse } from '../lib/timeuse';
   import BurndownChart from './BurndownChart.svelte';
   import InfoTip from './InfoTip.svelte';
+  import ReleaseView from './ReleaseView.svelte';
   import SprintTable from './SprintTable.svelte';
   import TimeSplitBar from './TimeSplitBar.svelte';
 
@@ -135,6 +136,7 @@
       <BurndownChart data={chart} {now} />
     {/if}
     <SprintTable {forecast} {now} selected={focus} onselect={toggle} />
+    <ReleaseView />
     {#if use}
       <section class="progress-time-use" aria-label="Where the time went">
         <TimeSplitBar {use} id="progress-time-use" />

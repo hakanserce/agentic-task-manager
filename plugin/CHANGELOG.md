@@ -47,6 +47,10 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **Release view** (T-309, SR-7.5, `ReleaseView.svelte`, `lib/releases.ts`): on the Progress tab, each release not
+  archived with its state, PR, target, the sprints that deliver to it, its tasks by stage (done, in PR, merged), and
+  the notes draft (`atm releases notes`' grouping) to copy. The dashboard file's size limit (`guardrails.spec.ts`)
+  goes from 450 to 500 KiB for the sprint and release views.
 - **Review modes** (T-312, SR-3.8, SR-4.4): a task's effective mode (its own `review`, else its first component's,
   else `meta.review`) decides how `atm done` ends it. An agent's `atm done` on an active `blocker` or `async` task is
   refused (`atm review` instead); a `batch` task is done with its note as a `review` note and `sprint_review:

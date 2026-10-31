@@ -130,8 +130,9 @@ claude --plugin-dir /path/to/agentic-task-manager/plugin
 
 ### Verify installation
 
-Type `/atm:` in Claude Code — you should see five skills in autocomplete:
+Type `/atm:` in Claude Code — you should see six skills in autocomplete:
 - `/atm:create-tasks`
+- `/atm:plan-sprint`
 - `/atm:do-task`
 - `/atm:loop-tasks`
 - `/atm:push`
@@ -229,6 +230,21 @@ one watches CI and fixes failures.
 **Commit message format:** `feat(T-001): Short task name`
 
 **The loop re-reads tasks.json every iteration**, so you can edit tasks, change priorities, or mark tasks as done/skipped from the dashboard or another editor while the agent runs.
+
+### `/atm:plan-sprint`
+
+**Plan a sprint with you.** A sprint is a named set of tasks the agents work through next; tasks in no sprint are
+the backlog.
+
+1. Shows the active sprint and what's left in it, the planned sprints, the backlog by label and component, and what
+   the last sprint carried over
+2. Agrees with you on the sprint: a new or planned one, its name, goal, release and due date
+3. Goes through the candidates with you: what to pull in from the backlog, what to push back, and tasks whose
+   dependencies come later
+4. Starts it when you say so; `/atm:loop-tasks` then works through it
+
+It proposes and you decide: nothing is moved, started or dated without your yes, and new tasks go through
+`/atm:create-tasks`.
 
 ### `/atm:push`
 

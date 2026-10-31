@@ -11551,7 +11551,7 @@
         "SR-4.5"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-290"
       ],
@@ -11560,11 +11560,22 @@
         "tests/scripts/scenarios/sprints.json"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T01:36:59Z",
+      "updated_at": "2026-10-31T01:41:51Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T01:36:59Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "29e5a7481a665c8193c7ab18fd96ee66f27cb3ac",
+      "completed_at": "2026-10-31T01:41:51Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T01:41:51Z",
+          "kind": "outcome",
+          "text": "`atm sprints close <S> --carry-to <S2>|new [--name]|backlog`: refuses claimed tasks, carries unfinished ones keeping status and history, writes `end` and the report; scenarios in `sprint-close.json`.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-300",
@@ -11582,7 +11593,7 @@
         "SR-4.2"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-290"
       ],
@@ -11591,9 +11602,11 @@
         "dashboard/tests/unit/skills.test.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T01:41:54Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T01:41:54Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-301",

@@ -87,6 +87,7 @@ atm-cli writes these fields; this is for reading `atm show --json` output, not f
 
 ## Available Skills
 - `/atm:create-tasks` — Analyze requirements and create tasks.json
+- `/atm:plan-sprint` — Plan a sprint with the user: its goal and tasks from the backlog; start it when they say so
 - `/atm:do-task` — Execute a single task and update its status
 - `/atm:loop-tasks` — Loop through all available tasks automatically
 - `/atm:push` — Push (direct) or open/update the PR (pull-request), watch CI and fix failures until it's green

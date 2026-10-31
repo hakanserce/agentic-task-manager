@@ -11245,7 +11245,7 @@
     },
     {
       "id": "T-292",
-      "name": "Phases become sprints in atm migrate; phase options removed",
+      "name": "Phases become sprints in atm migrate",
       "phase": 27,
       "type": "feature",
       "priority": "P0",
@@ -11253,7 +11253,7 @@
         "sprints",
         "cli"
       ],
-      "description": "The automatic migration (`docs/sprints-and-releases-design.md` §8, decision 11).\n\n## Change\n- `atm migrate`, once per project (a project with `meta.sprints` is migrated), in `tasks.json` and the archive: each phase with tasks or a name becomes a sprint named after it (\"Phase n\" when unnamed; \" (phase n)\" added to a taken name), in phase order; `phase` becomes `sprint` plus a `sprint_history` entry from `created_at`; `phase` and `meta.phases` removed. All-finished sprints are `closed` (start, end and report from their tasks); the others `planned`; none active, and it says to plan one. Staged, not committed (SR-8.1).\n- Writing an unmigrated file without migrating is refused (SR-8.3).\n- `--phase` and `atm phases` are removed; `atm check` no longer warns about phases.\n- Changelog: update every agent's plugin before the first run in a shared project (SR-8.4). Help, `plugin/CLAUDE.md` and the v4 docs stop describing phases.\n\n## Tests\nScenarios: a file with named, unnamed, finished and open phases, and an archive; running twice changes nothing the second time.",
+      "description": "The automatic migration (`docs/sprints-and-releases-design.md` §8, decision 11). Scope settled with Hakan (see the answer note): the migration only; removing phases from atm-cli is a separate task, and there is no write guard.\n\n## Change\n- `atm migrate`, once per project (a project with `meta.sprints` is migrated), in `tasks.json` and the archive: each phase with tasks or a name becomes a sprint named after it (\"Phase n\" when unnamed; \" (phase n)\" added to a taken name: the same names the dashboard already shows for unmigrated projects, `dashboard/src/lib/sprints.ts`), in phase order; `phase` becomes `sprint` plus a `sprint_history` entry from `created_at`; `phase` and `meta.phases` removed. All-finished sprints are `closed` (start, end and report from their tasks); the others `planned`; none active, and it says to plan one. Staged, not committed (SR-8.1).\n- No write guard: commands keep working on files not yet migrated (SR-8.3 is dropped; the design doc says so).\n- `atm migrate` reports what it converted, once.\n- Changelog: update every agent's plugin before the first run in a shared project (SR-8.4). The data-model doc describes the migration.\n\n## Tests\nScenarios: a file with named, unnamed, finished and open phases, and an archive; a name clash; running twice changes nothing the second time; a project without phases is untouched.\n",
       "requirements": [
         "SR-8.1",
         "SR-8.3",
@@ -11261,31 +11261,35 @@
         "SR-8.6"
       ],
       "use_cases": [],
-      "status": "blocked",
+      "status": "todo",
       "dependencies": [
         "T-289",
         "T-291"
       ],
       "files": [
         "atm-cli/atm/migrate.py",
-        "atm-cli/atm/phases.py",
-        "atm-cli/atm/cli.py",
         "tests/scripts/scenarios/migrate.json",
-        "plugin/CLAUDE.md",
-        "docs/help.md"
+        "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:39:44Z",
+      "updated_at": "2026-10-31T00:53:37Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
-      "started_at": "2026-10-31T00:39:00Z",
-      "started_by": "claude:9fec227a",
-      "waiting_on": "user",
-      "questions": [
-        "Split the work? (a) T-292 = the phases-to-sprints migration in `atm migrate` (both files, staged), the changelog note and docs; (b) a new task, after T-293 and T-298, removes phases from atm-cli (`--phase`, `atm phases`, the phase in `add`/`list`/`status` and in `atm serve`’s overview summary, which the dashboard’s project cards read today). Removing them now would break the overview until T-298.",
-        "SR-8.3 says atm refuses to write a file that still has phases. That turns ~230 phase uses in 18 atm-cli scenario files into refusals to rewrite, for a safety net skills rarely need (they run `atm migrate` first). Keep the refusal (and rewrite the scenarios), or let commands keep working on unmigrated files and drop SR-8.3?"
+      "blocks": [
+        {
+          "from": "2026-10-31T00:39:44Z",
+          "to": "2026-10-31T00:53:37Z",
+          "on": "user"
+        }
       ],
-      "blocked_at": "2026-10-31T00:39:44Z"
+      "notes": [
+        {
+          "at": "2026-10-31T00:53:37Z",
+          "kind": "answer",
+          "text": "Split the work? (a) T-292 = the phases-to-sprints migration in `atm migrate` (both files, staged), the changelog note and docs; (b) a new task, after T-293 and T-298, removes phases from atm-cli (`--phase`, `atm phases`, the phase in `add`/`list`/`status` and in `atm serve`’s overview summary, which the dashboard’s project cards read today). Removing them now would break the overview until T-298. → Split: T-292 is the migration only (description updated); removing phases from atm-cli becomes a new task after T-293 and T-298.; SR-8.3 says atm refuses to write a file that still has phases. That turns ~230 phase uses in 18 atm-cli scenario files into refusals to rewrite, for a safety net skills rarely need (they run `atm migrate` first). Keep the refusal (and rewrite the scenarios), or let commands keep working on unmigrated files and drop SR-8.3? → Automatic migration in `atm migrate`, no write guard: SR-8.3 is dropped.",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-293",
@@ -11345,7 +11349,7 @@
         "SR-7.1"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-293"
       ],
@@ -11356,11 +11360,22 @@
         "dashboard/tests/e2e/filters.spec.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:42:08Z",
+      "updated_at": "2026-10-31T00:51:24Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T00:42:08Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "fbea6dd68414a711d106a9231145ad51c9e09fc2",
+      "completed_at": "2026-10-31T00:51:24Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T00:51:24Z",
+          "kind": "outcome",
+          "text": "Sprint (open first, the backlog, closed folded), Release and Component filters replace Phase; saved views drop phase filters and keep \"show finished\" as \"show closed\"; 387 e2e and 814 unit tests pass",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-295",

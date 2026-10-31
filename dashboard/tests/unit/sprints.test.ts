@@ -4,10 +4,15 @@ import {
   addedMidSprint,
   backlog,
   carriedCount,
+  daysUntil,
+  dueText,
   effectiveRelease,
+  headerSprint,
   sprintModel,
+  sprintSummary,
   sprintTasks,
 } from '../../src/lib/sprints';
+import { BACKLOG } from '../../src/lib/filters';
 import type { Task, TasksFile } from '../../src/lib/types';
 import { resolveVocabulary } from '../../src/lib/vocab';
 import fixture from '../fixtures/sprints.json';
@@ -58,6 +63,60 @@ describe('a migrated project', () => {
     const meta = { sprints: [{ id: '' }, { id: 'A', state: 'finished' }, { id: 'a' }, 'x'] };
     const m = sprintModel(meta, [], resolveVocabulary(meta));
     expect(m.sprints).toEqual([{ id: 'A', state: 'planned' }]);
+  });
+});
+
+describe('the sprint header', () => {
+  const vocab = resolveVocabulary(file.meta);
+  const noon = (date: string) => new Date(`${date}T12:00:00`).getTime();
+
+  it('shows the one sprint the Sprint filter selects, else the active one when it selects none', () => {
+    expect(headerSprint(model, new Set())?.id).toBe('Ada Lovelace');
+    expect(headerSprint(model, new Set(['foundations']))?.id).toBe('Foundations');
+    expect(headerSprint(model, new Set(['Foundations', 'Alan Turing']))).toBeUndefined();
+    expect(headerSprint(model, new Set([BACKLOG]))).toBeUndefined();
+    const planned = sprintModel({ sprints: [{ id: 'A' }] }, [], vocab);
+    expect(headerSprint(planned, new Set())).toBeUndefined();
+  });
+
+  it('counts days to the due date from the local day', () => {
+    expect(daysUntil('2026-04-12', noon('2026-04-09'))).toBe(3);
+    expect(daysUntil('2026-04-12', new Date('2026-04-12T23:59:00').getTime())).toBe(0);
+    expect(daysUntil('2026-04-12', noon('2026-04-14'))).toBe(-2);
+    expect(daysUntil('12 April', noon('2026-04-09'))).toBeUndefined();
+  });
+
+  it('says how far off the due date is', () => {
+    expect([3, 1, 0, -1, -4].map(dueText)).toEqual([
+      'due in 3 days',
+      'due tomorrow',
+      'due today',
+      '1 day overdue',
+      '4 days overdue',
+    ]);
+  });
+
+  it('sums up a sprint: done of total, added mid-sprint, carried in, days to due', () => {
+    const sprint = activeSprint(model)!;
+    const withDone = tasks.map((t) => (t.id === 'T-002' ? { ...t, status: 'done' } : t));
+    expect(sprintSummary(model, withDone, sprint, vocab, noon('2026-04-09'))).toEqual({
+      sprint,
+      done: 1,
+      total: 3,
+      added: 1,
+      carried: 1,
+      dueIn: 3,
+    });
+  });
+
+  it('leaves skipped tasks out of the total, and a closed sprint has no due date to count', () => {
+    const closed = { ...activeSprint(model)!, state: 'closed' as const };
+    const skipped = tasks.map((t) => (t.id === 'T-004' ? { ...t, status: 'skipped' } : t));
+    expect(sprintSummary(model, skipped, closed, vocab, noon('2026-04-09'))).toMatchObject({
+      done: 0,
+      total: 2,
+      dueIn: undefined,
+    });
   });
 });
 

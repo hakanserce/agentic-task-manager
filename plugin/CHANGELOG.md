@@ -21,6 +21,13 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   project joins its phase's sprint at the next `atm migrate`. `atm serve` leaves phases alone for now. Commands keep
   working on files not yet migrated.
 
+### Added
+- **Sprint header** (T-295, SR-7.2, `SprintHeader.svelte`): above the Kanban, List and Graph, the sprint the Sprint
+  filter selects, or the active one when it selects none: its name (and state, when not active), goal, due date
+  ("due in 3 days", "2 days overdue" in red), release, progress (done of the tasks not skipped) and, from
+  `sprint_history`, how many tasks were added mid-sprint and carried in (`headerSprint`, `sprintSummary` in
+  `lib/sprints.ts`).
+
 ### Fixed
 - `atm unblock` refused to record the answers when the questions and answers together were longer than 500
   characters; the limit now applies to each question and answer.

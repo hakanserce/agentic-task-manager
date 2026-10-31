@@ -11261,7 +11261,7 @@
         "SR-8.6"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-289",
         "T-291"
@@ -11272,7 +11272,7 @@
         "docs/v4/data-model.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:58:54Z",
+      "updated_at": "2026-10-31T01:13:35Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "blocks": [
@@ -11288,10 +11288,19 @@
           "kind": "answer",
           "text": "Split the work? (a) T-292 = the phases-to-sprints migration in `atm migrate` (both files, staged), the changelog note and docs; (b) a new task, after T-293 and T-298, removes phases from atm-cli (`--phase`, `atm phases`, the phase in `add`/`list`/`status` and in `atm serve`’s overview summary, which the dashboard’s project cards read today). Removing them now would break the overview until T-298. → Split: T-292 is the migration only (description updated); removing phases from atm-cli becomes a new task after T-293 and T-298.; SR-8.3 says atm refuses to write a file that still has phases. That turns ~230 phase uses in 18 atm-cli scenario files into refusals to rewrite, for a safety net skills rarely need (they run `atm migrate` first). Keep the refusal (and rewrite the scenarios), or let commands keep working on unmigrated files and drop SR-8.3? → Automatic migration in `atm migrate`, no write guard: SR-8.3 is dropped.",
           "by": "claude:9fec227a"
+        },
+        {
+          "at": "2026-10-31T01:13:35Z",
+          "kind": "outcome",
+          "text": "`atm migrate` turns phases into sprints in `tasks.json` and the archive, staged; `atm serve` leaves phases alone until T-320. Scenarios in `migrate-phases.json`; changelog has the update-first note.",
+          "by": "claude:9fec227a"
         }
       ],
       "started_at": "2026-10-31T00:58:54Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "f2ad5123797e3e07b237a672fa78676786c7e109",
+      "completed_at": "2026-10-31T01:13:35Z",
+      "completed_by": "claude:9fec227a"
     },
     {
       "id": "T-293",
@@ -11394,7 +11403,7 @@
         "SR-7.2"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-293"
       ],
@@ -11404,9 +11413,11 @@
         "dashboard/tests/e2e/sprints.spec.ts"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T01:13:39Z",
       "created_by": "Hakan Serce",
-      "updated_by": "Hakan Serce"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T01:13:39Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-296",

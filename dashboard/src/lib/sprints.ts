@@ -124,6 +124,68 @@ export function addedMidSprint(task: Task, sprint: Sprint): boolean {
   return !!(entry && sprint.start && Date.parse(entry.from) > Date.parse(sprint.start));
 }
 
+/** The sprint the header shows (SR-7.2): the one sprint the Sprint filter selects, or the active one when it selects
+ * none; undefined otherwise (several selected, or only the backlog). */
+export function headerSprint(model: SprintModel, selected: ReadonlySet<string>): Sprint | undefined {
+  if (selected.size === 0) return activeSprint(model);
+  if (selected.size !== 1) return undefined;
+  const [id] = selected;
+  return model.sprints.find((s) => s.id.toLowerCase() === id.toLowerCase());
+}
+
+const DAY = 86_400_000;
+
+/** Days from today (local) to a YYYY-MM-DD date: 0 today, negative once it has passed; undefined for a bad date */
+export function daysUntil(date: string, now: number): number | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!m) return undefined;
+  const today = new Date(now);
+  const due = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  return Math.round((due - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / DAY);
+}
+
+/** "due in 3 days", "due tomorrow", "due today", "1 day overdue", "4 days overdue" */
+export function dueText(days: number): string {
+  if (days > 1) return `due in ${days} days`;
+  if (days === 1) return 'due tomorrow';
+  if (days === 0) return 'due today';
+  return days === -1 ? '1 day overdue' : `${-days} days overdue`;
+}
+
+export interface SprintSummary {
+  sprint: Sprint;
+  /** Done-kind tasks */
+  done: number;
+  /** Its tasks but the skipped ones */
+  total: number;
+  /** Pulled in after the sprint started */
+  added: number;
+  /** Carried in from an earlier sprint */
+  carried: number;
+  /** Days to its due date (negative: overdue); undefined without one, or once it is closed */
+  dueIn?: number;
+}
+
+/** The figures the sprint header shows (SR-7.2), over `tasks` (the history, archived tasks too once loaded) */
+export function sprintSummary(
+  model: SprintModel,
+  tasks: Task[],
+  sprint: Sprint,
+  vocab: Vocabulary,
+  now: number,
+): SprintSummary {
+  const own = sprintTasks(model, tasks, sprint.id);
+  const kinds = own.map((t) => kindOf(vocab, t.status));
+  return {
+    sprint,
+    done: kinds.filter((k) => k === 'done').length,
+    total: kinds.filter((k) => k !== 'skipped').length,
+    added: own.filter((t) => addedMidSprint(t, sprint)).length,
+    carried: own.filter((t) => carriedCount(t, sprint.id) > 0).length,
+    dueIn: sprint.due && sprint.state !== 'closed' ? daysUntil(sprint.due, now) : undefined,
+  };
+}
+
 /** How many sprints the task was carried through before this one: the earlier entries for other sprints (SR-4.5) */
 export function carriedCount(task: Task, sprint: string): number {
   const history = Array.isArray(task.sprint_history) ? task.sprint_history : [];

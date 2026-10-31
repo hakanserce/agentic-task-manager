@@ -47,6 +47,11 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **`atm merged` releases a release** (T-308, SR-3.7, SR-5.6): when the PR it records completes a planned release
+  (all its tasks in `tasks.json`, by their own release or their sprint's, skipped ones aside, merged in that PR), the
+  release becomes `released` with its `pr` and `released_at`; otherwise atm says which tasks keep it planned
+  (`--json`: `released`, `pending`). `/atm:push` relays it, and on the base branch of a release-branch project
+  suggests `dev/<release>` from the active sprint's release, never renaming a branch.
 - **`atm releases notes <R>`** (T-307, §3.3): a Markdown draft of the release's changes from its tasks (by effective
   release, `tasks.json` and the archive): the done tasks grouped by type in the project's order, each with its ID,
   name and last outcome note, then what isn't done yet; `--json` gives the same as data. For the CHANGELOG and

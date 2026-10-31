@@ -55,7 +55,10 @@ and no PR was opened.
   commits that will be pushed (`git log --oneline @{upstream}..HEAD`) in your report: they reach the base branch with
   no review in between.
 - **pull-request:** you must *not* be on the base branch. If you are, offer to create a branch for the unpushed commits
-  (`git switch -c <name>`) and stop until the user agrees.
+  (`git switch -c <name>`) and stop until the user agrees. Suggest the name: in a project that works on release
+  branches (its `CLAUDE.md` says so, or its branches look like `dev/…`), `dev/<release>` from the active sprint's
+  release (`atm status` shows the active sprint and its release); otherwise a short name for the work. Never rename an
+  existing branch, yours or anyone's.
 - **Nothing uncommitted that you didn't write** (`git status`): another agent or the user may be working in this tree.
   Uncommitted work of your own: commit it first (`atm commit <id> --file ...` for a task's files).
 - **Verify** (unless `--no-verify` or `verify` is false): run the project's verify command, the one its `CLAUDE.md`
@@ -128,7 +131,9 @@ gh pr view <n> --json state,mergedAt
 ```
 
 and record a merge with `atm merged --pr <n> --at <mergedAt>`. Commit that on its own (`chore: record merged PRs`).
-The dashboard never calls GitHub; this is how it learns that tasks were merged.
+The dashboard never calls GitHub; this is how it learns that tasks were merged. `atm merged` also releases a planned
+release whose tasks are now all merged in that PR ("Released 1.0: …"), or says which of its tasks keep it planned:
+relay either line in the report.
 
 ## Step 8: Stop and report
 

@@ -8,7 +8,17 @@ import subprocess
 from .claims import agent_identity
 from .core import AtmError, git, in_git, now_iso, out, parse_iso, to_json, write_json_atomic
 from .lock import locked
-from .model import WORKFLOW_DEFAULTS, WORKFLOW_TYPES, find_task, load_tasks, touch, workflow_of
+from .model import (
+    WORKFLOW_DEFAULTS,
+    WORKFLOW_TYPES,
+    effective_release,
+    find_task,
+    kind_of,
+    load_tasks,
+    touch,
+    vocabulary,
+    workflow_of,
+)
 from .paths import find_paths
 
 # Pathspecs that stage more than the files named: another agent's work can be in the same tree
@@ -223,12 +233,63 @@ def cmd_merged(args):
         for task in changed:
             task["merged_at"] = args.at or stamp
             touch(task, agent, stamp)
-        if changed:
+        released, pending = release_with_merge(data, tasks, args.pr, args.at or stamp)
+        if changed or released:
             write_json_atomic(paths["tasks"], data)
     ids = [t["id"] for t in changed]
     if args.json:
-        out(to_json({"pr": args.pr, "tasks": ids, "already": [t["id"] for t in tasks if t not in changed]}))
-    elif ids:
+        out(
+            to_json(
+                {
+                    "pr": args.pr,
+                    "tasks": ids,
+                    "already": [t["id"] for t in tasks if t not in changed],
+                    "released": released,
+                    "pending": pending,
+                }
+            )
+        )
+        return
+    if ids:
         out(f"PR #{args.pr} merged: {', '.join(ids)}")
     else:
         out(f"PR #{args.pr}: already recorded as merged")
+    for release_id in released:
+        out(f"Released {release_id}: all its tasks are merged in PR #{args.pr}.")
+    for release_id, waiting in pending.items():
+        out(f"{release_id} stays planned: {', '.join(waiting)} {'is' if len(waiting) == 1 else 'are'} not merged in PR #{args.pr}.")
+
+
+def release_with_merge(data, merged, pr_number, at):
+    """Release the planned releases the merged PR completes (SR-3.7): every task of the release in tasks.json (its own
+    release, or its sprint's) is in this PR and merged; archived and skipped tasks don't hold it back. Sets its state,
+    `pr` and `released_at`. Returns (the released IDs, {release: the tasks still keeping it planned})."""
+    vocab = vocabulary(data)
+    touched = {effective_release(vocab, t) for t in merged} - {None}
+    released, pending = [], {}
+    for release in (data.get("meta") or {}).get("releases") or []:
+        if not isinstance(release, dict) or release.get("id") not in touched:
+            continue
+        if release.get("state", "planned") != "planned":
+            continue
+        own = [
+            t
+            for t in data["tasks"]
+            if isinstance(t, dict)
+            and effective_release(vocab, t) == release["id"]
+            and kind_of(vocab, t.get("status")) != "skipped"
+        ]
+        waiting = [
+            t.get("id")
+            for t in own
+            if not (isinstance(t.get("pr"), dict) and t["pr"].get("number") == pr_number and t.get("merged_at"))
+        ]
+        if waiting:
+            pending[release["id"]] = waiting
+            continue
+        url = next((t["pr"].get("url") for t in merged if isinstance(t["pr"].get("url"), str)), None)
+        release["state"] = "released"
+        release["pr"] = {"number": pr_number, **({"url": url} if url else {})}
+        release["released_at"] = at
+        released.append(release["id"])
+    return released, pending

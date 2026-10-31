@@ -10696,7 +10696,7 @@
         "CLAUDE.md"
       ],
       "created_at": "2026-10-27T16:41:57Z",
-      "updated_at": "2026-10-30T22:54:26Z",
+      "updated_at": "2026-10-31T00:14:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-30T21:05:45Z",
@@ -10715,7 +10715,8 @@
       "pr": {
         "number": 28,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
-      }
+      },
+      "merged_at": "2026-10-30T23:20:04Z"
     },
     {
       "id": "T-279",
@@ -10808,7 +10809,7 @@
         "dashboard/src/app.css"
       ],
       "created_at": "2026-10-27T22:13:42Z",
-      "updated_at": "2026-10-30T22:54:26Z",
+      "updated_at": "2026-10-31T00:14:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-30T22:46:46Z",
@@ -10827,7 +10828,8 @@
       "pr": {
         "number": 28,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
-      }
+      },
+      "merged_at": "2026-10-30T23:20:04Z"
     },
     {
       "id": "T-282",
@@ -10901,7 +10903,7 @@
         "dashboard/tests/e2e/visual.spec.ts"
       ],
       "created_at": "2026-10-27T22:34:40Z",
-      "updated_at": "2026-10-30T22:54:26Z",
+      "updated_at": "2026-10-31T00:14:28Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-30T22:04:31Z",
@@ -10920,7 +10922,8 @@
       "pr": {
         "number": 28,
         "url": "https://github.com/solo-swe/agentic-task-manager/pull/28"
-      }
+      },
+      "merged_at": "2026-10-30T23:20:04Z"
     },
     {
       "id": "T-284",

@@ -11082,7 +11082,7 @@
         "SR-2.9"
       ],
       "use_cases": [],
-      "status": "in_progress",
+      "status": "done",
       "dependencies": [
         "T-287"
       ],
@@ -11092,11 +11092,22 @@
         "tests/scripts/scenarios/sprints.json"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:23:24Z",
+      "updated_at": "2026-10-31T00:25:11Z",
       "created_by": "Hakan Serce",
       "updated_by": "claude:9fec227a",
       "started_at": "2026-10-31T00:23:24Z",
-      "started_by": "claude:9fec227a"
+      "started_by": "claude:9fec227a",
+      "commit": "14dc1aab5182c18fc65f5c4f4dfefa4b5229c044",
+      "completed_at": "2026-10-31T00:25:11Z",
+      "completed_by": "claude:9fec227a",
+      "notes": [
+        {
+          "at": "2026-10-31T00:25:11Z",
+          "kind": "outcome",
+          "text": "`generate_sprint_name` in `sprint_names.py`: a free name from ~300 historical people (ASCII, no apostrophes), or the local creation time `May 12-10:38pm` with `-n`; `ATM_SEED` fixes the pick. Scenarios moved to T-290, the first command that uses it",
+          "by": "claude:9fec227a"
+        }
+      ]
     },
     {
       "id": "T-289",
@@ -11155,7 +11166,7 @@
         "SR-3.1"
       ],
       "use_cases": [],
-      "status": "todo",
+      "status": "in_progress",
       "dependencies": [
         "T-287",
         "T-288"
@@ -11168,9 +11179,11 @@
         "docs/v4/atm-cli.md"
       ],
       "created_at": "2026-10-31T00:07:18Z",
-      "updated_at": "2026-10-31T00:25:09Z",
+      "updated_at": "2026-10-31T00:25:12Z",
       "created_by": "Hakan Serce",
-      "updated_by": "claude:9fec227a"
+      "updated_by": "claude:9fec227a",
+      "started_at": "2026-10-31T00:25:12Z",
+      "started_by": "claude:9fec227a"
     },
     {
       "id": "T-291",

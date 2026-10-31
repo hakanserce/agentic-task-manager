@@ -33,6 +33,7 @@ MODULES = [
     "query",
     "tasks",
     "edit",
+    "sprints",
     "phases",
     "merge",
     "archive",

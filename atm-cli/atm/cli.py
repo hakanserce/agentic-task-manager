@@ -14,6 +14,7 @@ from .merge import cmd_init, cmd_merge_driver
 from .migrate import cmd_migrate
 from .paths import cmd_paths
 from .phases import cmd_phases
+from .sprints import cmd_backlog, cmd_move, cmd_sprints
 from .logo import cmd_logo
 from .registry import cmd_projects
 from .repository import cmd_repository
@@ -104,6 +105,15 @@ commands:
   logo [set PATH | unset]
                  print, set or unset the project's logo for the dashboard (meta.logo: an SVG, PNG, WebP or ICO
                  file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
+  sprints [--all] | sprints add ["<name>"] [--goal T] [--release R] [--due DATE] [--after S]
+          | sprints edit <S> [--goal] [--release] [--due] | sprints start <S>
+                 the sprints in order with their task counts (closed ones with --all); add one (a name is
+                 generated without one), change one, or make one active (one at a time)
+  move <id>... --to <sprint>|next|active|backlog
+                 move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
+                 the backlog (claimed and finished tasks stay where they are)
+  backlog [--all]
+                 the tasks with no sprint (with --all, finished ones too)
   phases [--archived] | phases name <n> "<name>" | phases unname <n>
                  the phases with their names and task counts by kind; name or unname one phase (meta.phases)
   projects [add [PATH] | remove <id|PATH> | prune]
@@ -382,6 +392,22 @@ def build_parser():
     phases.add_argument("number", nargs="?", help="the phase number")
     phases.add_argument("name", nargs="?", help="name: the phase's name")
     phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
+    sprints = command("sprints", cmd_sprints, "the sprints with their task counts; add, edit or start one")
+    sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start"], help="what to do")
+    sprints.add_argument("name", nargs="?", help="the sprint's name (add: generated when left out)")
+    sprints.add_argument("--all", action="store_true", help="list: the closed sprints too")
+    sprints.add_argument("--goal", help="add, edit: what the sprint is for (empty: remove it)")
+    sprints.add_argument("--release", help="add, edit: the release it delivers to (empty: remove it)")
+    sprints.add_argument("--due", metavar="DATE", help="add, edit: the planned end, YYYY-MM-DD (empty: remove it)")
+    sprints.add_argument("--after", metavar="NAME", help="add: put it after this sprint (default: last)")
+    move = command("move", cmd_move, "move tasks into a sprint, the next sprint, the active one, or the backlog")
+    move.add_argument("ids", nargs="+", metavar="id", help="task IDs")
+    move.add_argument(
+        "--to", required=True, metavar="WHERE", help="a sprint's name, next, active, or backlog"
+    )
+    agent_option(move)
+    backlog = command("backlog", cmd_backlog, "the tasks with no sprint (not finished ones, unless --all)")
+    backlog.add_argument("--all", action="store_true", help="also the finished tasks with no sprint")
     projects = command("projects", cmd_projects, "the projects the dashboard shows: list, add, remove or prune them")
     projects.add_argument("action", nargs="?", default="list", choices=["list", "add", "remove", "prune"])
     projects.add_argument("target", nargs="?", help="add: the project's folder (default: here); remove: its ID or path")

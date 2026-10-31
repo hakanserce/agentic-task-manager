@@ -164,11 +164,17 @@ def cmd_list(args):
     if not tasks:
         out("No tasks match.")
         return
+    for line in list_lines(vocab, tasks):
+        out(line)
+
+
+def list_lines(vocab, tasks):
+    """One line per task, as `atm list` prints them: ID, status, phase, priority, labels, name."""
     id_width = max(len(str(t.get("id"))) for t in tasks)
     status_width = max(len(str(t.get("status"))) for t in tasks)
     for t in tasks:
         labels = t.get("labels") or []
-        out(
+        yield (
             f"{str(t.get('id')).ljust(id_width)}  {str(t.get('status')).ljust(status_width)}  "
             f"{str(t.get('phase')).ljust(3)} {priority_of(vocab, t)}  "
             + (f"[{', '.join(labels)}] " if labels else "")

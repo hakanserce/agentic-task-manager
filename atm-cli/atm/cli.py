@@ -447,6 +447,9 @@ def build_parser():
     sprints.add_argument(
         "--name", dest="new_name", metavar="NAME", help="close --carry-to new: the new sprint's name (default: generated)"
     )
+    sprints.add_argument(
+        "--reviewed", action="store_true", help="close: its batch tasks were reviewed with the user (the sprint review)"
+    )
     agent_option(sprints)
     sprints.add_argument("--all", action="store_true", help="list: the closed sprints too")
     sprints.add_argument("--goal", help="add, edit: what the sprint is for (empty: remove it)")

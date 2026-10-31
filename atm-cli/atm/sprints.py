@@ -31,16 +31,20 @@ def sprint_overview(data, archived, include_closed):
     """The sprints in order, each with its task counts by kind (tasks.json and the archive): {..., tasks, by_kind}."""
     vocab = vocabulary(data)
     counts = {s["id"]: {kind: 0 for kind in KINDS} for s in vocab["sprints"]}
+    pending = {s["id"]: 0 for s in vocab["sprints"]}
     for task in list(data["tasks"]) + list(archived):
         sprint = find_sprint(vocab, task.get("sprint")) if isinstance(task, dict) else None
         kind = kind_of(vocab, task.get("status")) if sprint else None
         if kind in KINDS:
             counts[sprint["id"]][kind] += 1
+        if sprint and task.get("sprint_review") == "pending":
+            pending[sprint["id"]] += 1
     return [
         {
             **s,
             "tasks": sum(counts[s["id"]].values()),
             "by_kind": {kind: n for kind, n in counts[s["id"]].items() if n},
+            "review_pending": pending[s["id"]],
         }
         for s in vocab["sprints"]
         if include_closed or s["state"] != "closed"
@@ -51,7 +55,10 @@ def describe_sprint(s):
     details = [s["state"]] + [f"{key} {s[key]}" for key in ("release", "due") if s.get(key)]
     counts = ", ".join(f"{kind} {n}" for kind, n in s["by_kind"].items())
     line = f"{s['id']} · {' · '.join(details)}: {s['tasks']} task{'' if s['tasks'] == 1 else 's'}"
-    return line + (f" ({counts})" if counts else "") + (f"\n  goal: {s['goal']}" if s.get("goal") else "")
+    line += f" ({counts})" if counts else ""
+    if s.get("review_pending"):
+        line += f"; {s['review_pending']} waiting for the sprint review"
+    return line + (f"\n  goal: {s['goal']}" if s.get("goal") else "")
 
 
 def taken_names(data, archived):
@@ -252,6 +259,15 @@ def sprints_close(paths, args):
                 f"{'it' if len(claimed) == 1 else 'them'} before closing the sprint",
                 2,
             )
+        # Batch tasks wait for the end-of-sprint review (SR-4.4): /atm:close-sprint reviews them, then --reviewed
+        pending = [t for t in own if t.get("sprint_review") == "pending"]
+        if pending and not args.reviewed:
+            ids = ", ".join(t["id"] for t in pending)
+            raise AtmError(
+                f"{ids} {'waits' if len(pending) == 1 else 'wait'} for the end-of-sprint review: review "
+                f"{'it' if len(pending) == 1 else 'them'} with the user (/atm:close-sprint), then close with --reviewed",
+                2,
+            )
         unfinished = [t for t in own if kind(t) not in ("done", "skipped")]
         if unfinished and not args.carry_to:
             ids = ", ".join(t["id"] for t in unfinished)
@@ -273,6 +289,9 @@ def sprints_close(paths, args):
             report["to"] = target or "backlog"
         for task in unfinished:
             set_sprint(task, target, stamp)
+            touch(task, actor, stamp)
+        for task in pending:
+            task["sprint_review"] = "reviewed"
             touch(task, actor, stamp)
         was_active = sprint.get("state") == "active"
         sprint["state"] = "closed"

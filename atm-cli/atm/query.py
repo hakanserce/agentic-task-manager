@@ -621,6 +621,8 @@ def cmd_status(args):
             **{k: active[k] for k in ("id", "goal", "due", "release", "start") if active.get(k)},
             "done": sum(1 for t in in_active if kind_of(vocab, t.get("status")) == "done"),
             "tasks": sum(1 for t in in_active if kind_of(vocab, t.get("status")) != "skipped"),
+            # Batch tasks waiting for the end-of-sprint review: they wait on the user (SR-4.4)
+            "review_pending": [t.get("id") for t in in_active if t.get("sprint_review") == "pending"],
         }
 
     def counts(key):
@@ -706,6 +708,8 @@ def cmd_status(args):
         out(f"sprint: {sprint['id']} (active): {' · '.join(details)}")
         if sprint.get("goal"):
             out(f"  goal: {sprint['goal']}")
+        if sprint["review_pending"]:
+            out(f"  waiting for the sprint review: {', '.join(sprint['review_pending'])} (/atm:close-sprint)")
     elif vocab["sprints"]:
         out("sprint: none active (plan one with /atm:plan-sprint)")
     out(f"{len(tasks)} tasks: {pairs(by_status)}")

@@ -101,6 +101,7 @@ New fields, all optional:
 | `merged_at` | `merged` | — | when that PR was merged |
 | `sprint` | `add --sprint`, `edit --sprint` | `edit --backlog` | the sprint the task is in; absent: the backlog ([sprints design](../sprints-and-releases-design.md) SR-2.5) |
 | `sprint_history` | atm-cli, when `sprint` changes | — | `[{sprint, from, to}]`: each sprint the task was in; the open entry has no `to` (SR-2.5) |
+| `sprint_review` | `done` by an agent on a `batch` task | `sprints close --reviewed` (`reviewed`), `reopen` | `pending` until the end-of-sprint review, then `reviewed` (SR-4.4) |
 
 | ID | P | Requirement |
 |---|---|---|

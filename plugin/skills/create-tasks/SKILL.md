@@ -80,6 +80,9 @@ For each requirement or feature:
   every task. Don't start a sprint here: `/atm:plan-sprint` plans and starts sprints with the user
 - In a project with **components** (`meta.components`, the parts of the project with the globs of their files),
   give each task the components its `files` are in (`"components": "auto"` sets them from the files; or name them)
+- Propose a **review mode** where a task needs one other than its component's or the project's (`meta.review`):
+  `blocker` (reviewed before anything goes on), `async` (reviewed while agents go on), `batch` (in the end-of-sprint
+  review) or `none`; set it with `"review"`
 - Assign types: `feature`, `bugfix`, `test`, `infra`, `docs`, `refactor`, `polish` (or the project's own, see Step 3)
 - Assign every task a **priority**, most urgent first: `P0` Critical/Required (the release can't go without it, or
   other work is blocked on it), `P1` High, `P2` Medium (the usual), `P3` Low/Nice-to-have. Use the project's own

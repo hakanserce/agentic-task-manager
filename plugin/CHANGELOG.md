@@ -47,6 +47,13 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **Review modes** (T-312, SR-3.8, SR-4.4): a task's effective mode (its own `review`, else its first component's,
+  else `meta.review`) decides how `atm done` ends it. An agent's `atm done` on an active `blocker` or `async` task is
+  refused (`atm review` instead); a `batch` task is done with its note as a `review` note and `sprint_review:
+  pending`; `none` is done as before. A person (an actor not starting with `claude:`) may always `atm done`.
+  `atm sprints close` refuses while a task in the sprint waits for the sprint review; `--reviewed` marks them
+  reviewed. `atm status` and `atm sprints` list them; `atm reopen` clears `sprint_review`. `/atm:create-tasks`
+  proposes a mode where one is needed.
 - **Components** (T-311, SR-2.7): `meta.components` (`[{id, label, paths, review}]`, `paths` globs over the
   project's files, checked with `meta`). In a project with components a task's components must name them. `atm add`
   and `atm edit --add-file` print the components a task's files suggest (with the `atm edit … --add-component`

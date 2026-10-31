@@ -591,6 +591,7 @@ def back_to_todo(task, vocab, actor, stamp, keep_commit=False):
         "waiting_on",
         "questions",
         "blocked_at",
+        "sprint_review",
     ):
         task.pop(field, None)
     if not keep_commit:
@@ -639,6 +640,8 @@ def change_status(
     if kind_of(vocab, current) not in allowed:
         expected = [s for kind in allowed for s in statuses_of(vocab, kind)]
         raise AtmError(f"can't {command} {task['id']}: it is {current}, not {' or '.join(expected)}")
+    if command == "done":
+        check_review_mode(task, data, agent)
     new = status_for(vocab, new_kind, status)
     if command == "start":
         blocking = unfinished_dependencies(data, task)
@@ -714,6 +717,26 @@ def change_status(
             task["completed_by"] = agent
         if commit:
             task["commit"] = commit
+        # A batch task an agent finishes waits for the end-of-sprint review (SR-4.4): its note is what to check
+        batch = old_kind == "active" and is_agent(agent) and effective_review(vocab, task) == "batch"
+        if batch:
+            task["sprint_review"] = "pending"
         if note:
-            add_note(task, "outcome", note, agent, stamp)
+            add_note(task, "review" if batch else "outcome", note, agent, stamp)
     return current
+
+
+def is_agent(actor):
+    """Whether an actor is an agent (a Claude Code session, "claude:…"); anyone else is a person."""
+    return isinstance(actor, str) and actor.startswith("claude:")
+
+
+def check_review_mode(task, data, agent):
+    """`atm done` by review mode (SR-3.8): an agent finishing an active task whose mode is `blocker` or `async` must
+    ask for the review instead. A person may always finish a task."""
+    vocab = vocabulary(data)
+    mode = effective_review(vocab, task)
+    if mode in ("blocker", "async") and is_agent(agent) and kind_of(vocab, task.get("status")) == "active":
+        raise AtmError(
+            f"{task['id']} is reviewed ({mode}): ask for it with atm review {task['id']} --note '<what to check>'", 2
+        )

@@ -1,4 +1,5 @@
 import { shortAgent } from './claims';
+import { effectiveRelease, NO_SPRINTS, type SprintModel } from './sprints';
 import { STAGE_LABELS, STAGES, stageOf, type Stage } from './stages';
 import type { Task } from './types';
 import { startedBy } from './work';
@@ -16,8 +17,21 @@ import {
   type Vocabulary,
 } from './vocab';
 
-export type FilterGroup = 'phase' | 'type' | 'status' | 'priority' | 'stage' | 'label' | 'agent';
-export const FILTER_GROUPS: FilterGroup[] = ['phase', 'type', 'status', 'priority', 'stage', 'label', 'agent'];
+export type FilterGroup =
+  'sprint' | 'release' | 'component' | 'type' | 'status' | 'priority' | 'stage' | 'label' | 'agent';
+export const FILTER_GROUPS: FilterGroup[] = [
+  'sprint',
+  'release',
+  'component',
+  'type',
+  'status',
+  'priority',
+  'stage',
+  'label',
+  'agent',
+];
+/** The Sprint filter's value for the tasks with no sprint (a colon keeps it apart from any sprint's name) */
+export const BACKLOG = ':backlog';
 
 /** Selected values per group; an empty set means "All". */
 export type Filters = Record<FilterGroup, ReadonlySet<string>>;
@@ -27,29 +41,31 @@ export interface FilterOption {
   label: string;
 }
 
-/** Up to this many phases, the Phase filter lists them all, with no toggle for the finished ones */
-export const PHASES_ALWAYS_SHOWN = 6;
+/** Up to this many sprints, the Sprint filter lists them all, with no toggle for the closed ones */
+export const SPRINTS_ALWAYS_SHOWN = 6;
 
 /**
- * The phase options the filter panel lists: all of them when there are few, or when `showFinished`; otherwise the
- * `active` phases (forecast.ts activePhases: the unfinished ones and the one that finished last) and any selected
- * phase, so a selection never hides. `hidden` counts the finished phases left out.
+ * The sprint options the filter panel lists: all of them when there are few, or when `showClosed`; otherwise the open
+ * ones (active, planned, the backlog) and any selected one, so a selection never hides. `hidden` counts the closed
+ * sprints left out (SR-7.1).
  */
-export function shownPhaseOptions(
+export function shownSprintOptions(
   options: FilterOption[],
-  active: ReadonlySet<string>,
+  closed: ReadonlySet<string>,
   selected: ReadonlySet<string>,
-  showFinished: boolean,
-): { shown: FilterOption[]; finished: number; hidden: number } {
-  const finished = options.filter((o) => !active.has(o.value)).length;
-  if (options.length <= PHASES_ALWAYS_SHOWN || finished === 0) return { shown: options, finished: 0, hidden: 0 };
-  const shown = showFinished ? options : options.filter((o) => active.has(o.value) || selected.has(o.value));
-  return { shown, finished, hidden: options.length - shown.length };
+  showClosed: boolean,
+): { shown: FilterOption[]; closed: number; hidden: number } {
+  const closedCount = options.filter((o) => closed.has(o.value)).length;
+  if (options.length <= SPRINTS_ALWAYS_SHOWN || closedCount === 0) return { shown: options, closed: 0, hidden: 0 };
+  const shown = showClosed ? options : options.filter((o) => !closed.has(o.value) || selected.has(o.value));
+  return { shown, closed: closedCount, hidden: options.length - shown.length };
 }
 
 export function emptyFilters(): Filters {
   return {
-    phase: new Set(),
+    sprint: new Set(),
+    release: new Set(),
+    component: new Set(),
     type: new Set(),
     status: new Set(),
     priority: new Set(),
@@ -62,7 +78,9 @@ export function emptyFilters(): Filters {
 /** Filters from plain lists of values (as saved per project). */
 export function filtersFrom(values: Record<FilterGroup, string[]>): Filters {
   return {
-    phase: new Set(values.phase),
+    sprint: new Set(values.sprint),
+    release: new Set(values.release),
+    component: new Set(values.component),
     type: new Set(values.type),
     status: new Set(values.status),
     priority: new Set(values.priority),
@@ -82,7 +100,18 @@ function byVocabulary(ids: string[]) {
  * The values a task has in each group: one, except labels (none or several). A task's priority is its effective one
  * (missing or unknown: the default).
  */
-function valuesOf(group: FilterGroup, t: Task, vocab: Vocabulary): string[] {
+export function filterValues(group: FilterGroup, t: Task, vocab: Vocabulary, model: SprintModel): string[] {
+  return valuesOf(group, t, vocab, model);
+}
+
+function valuesOf(group: FilterGroup, t: Task, vocab: Vocabulary, model: SprintModel): string[] {
+  if (group === 'sprint') return [model.sprintOf(t) ?? BACKLOG];
+  if (group === 'release') {
+    const release = effectiveRelease(model, t);
+    return release ? [release] : [];
+  }
+  if (group === 'component')
+    return Array.isArray(t.components) ? t.components.filter((c) => typeof c === 'string') : [];
   if (group === 'label') return labelsOf(vocab, t);
   if (group === 'stage') {
     const stage = stageOf(t, vocab);
@@ -92,21 +121,41 @@ function valuesOf(group: FilterGroup, t: Task, vocab: Vocabulary): string[] {
     const actor = startedBy(t);
     return actor ? [actor] : [];
   }
-  if (group === 'phase') return [String(t.phase)];
   if (group === 'priority') return [priorityOf(vocab, t)];
   return [group === 'type' ? t.type : t.status];
 }
 
 /**
- * Filter buttons for the values in the data: phases numerically (with their names), types, statuses and priorities
- * in the vocabulary's order and with its labels. Statuses list the whole vocabulary, so a status no task has yet
- * (To Do once everything is done) can still be chosen.
+ * The Sprint filter's options: the active sprint, the planned ones in order, the backlog, then the closed ones, most
+ * recent first; only sprints that have tasks here, and the backlog when some task has no sprint.
+ */
+function sprintOptions(tasks: Task[], model: SprintModel): FilterOption[] {
+  const used = new Set(tasks.map((t) => model.sprintOf(t) ?? BACKLOG));
+  const rank = { active: 0, planned: 1, closed: 3 } as const;
+  const sprints = model.sprints
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => used.has(s.id))
+    .sort((a, b) => rank[a.s.state] - rank[b.s.state] || (a.s.state === 'closed' ? b.i - a.i : a.i - b.i));
+  const options = sprints.map(({ s }) => ({ value: s.id, label: s.id }));
+  if (used.has(BACKLOG)) {
+    const at = sprints.findIndex(({ s }) => s.state === 'closed');
+    options.splice(at === -1 ? options.length : at, 0, { value: BACKLOG, label: 'Backlog' });
+  }
+  return options;
+}
+
+/**
+ * Filter buttons for the values in the data: sprints (sprintOptions), releases and components alphabetically, types,
+ * statuses and priorities in the vocabulary's order and with its labels. Statuses list the whole vocabulary, so a
+ * status no task has yet (To Do once everything is done) can still be chosen.
  */
 export function filterOptions(
   tasks: Task[],
   vocab: Vocabulary = DEFAULT_VOCABULARY,
+  model: SprintModel = NO_SPRINTS,
 ): Record<FilterGroup, FilterOption[]> {
-  const phases = [...new Set(tasks.map((t) => t.phase))].sort((a, b) => a - b);
+  const values = (group: FilterGroup) =>
+    [...new Set(tasks.flatMap((t) => valuesOf(group, t, vocab, model)))].sort((a, b) => a.localeCompare(b));
   const types = [...new Set(tasks.map((t) => t.type))].sort(byVocabulary(vocab.types.map((t) => t.id)));
   // Every status of the project, also those no task has now, then any unknown one a task uses
   const statuses = [...new Set([...vocab.statuses.map((s) => s.id), ...tasks.map((t) => t.status)])].sort(
@@ -116,13 +165,12 @@ export function filterOptions(
     (a, b) => priorityRank(vocab, a) - priorityRank(vocab, b),
   );
   const labels = [...new Set(tasks.flatMap((t) => labelsOf(vocab, t)))].sort(labelOrder(vocab));
-  const agents = [...new Set(tasks.flatMap((t) => valuesOf('agent', t, vocab)))].sort((a, b) => a.localeCompare(b));
-  const stages = new Set(tasks.flatMap((t) => valuesOf('stage', t, vocab)));
+  const agents = values('agent');
+  const stages = new Set(tasks.flatMap((t) => valuesOf('stage', t, vocab, model)));
   return {
-    phase: phases.map((p) => {
-      const name = vocab.phaseNames.get(p);
-      return { value: String(p), label: name ? `${p} · ${name}` : String(p) };
-    }),
+    sprint: sprintOptions(tasks, model),
+    release: values('release').map((r) => ({ value: r, label: r })),
+    component: values('component').map((c) => ({ value: c, label: c })),
     type: types.map((t) => ({ value: t, label: typeLabel(vocab, t) })),
     status: statuses.map((s) => ({ value: s, label: statusLabel(vocab, s) })),
     priority: priorities.map((p) => ({ value: p, label: `${p} ${priorityLabel(vocab, p)}` })),
@@ -133,10 +181,15 @@ export function filterOptions(
 }
 
 /** OR within a group (for labels: any of the selected ones), AND across groups. */
-export function filterTasks(tasks: Task[], filters: Filters, vocab: Vocabulary = DEFAULT_VOCABULARY): Task[] {
+export function filterTasks(
+  tasks: Task[],
+  filters: Filters,
+  vocab: Vocabulary = DEFAULT_VOCABULARY,
+  model: SprintModel = NO_SPRINTS,
+): Task[] {
   return tasks.filter((t) =>
     FILTER_GROUPS.every(
-      (group) => filters[group].size === 0 || valuesOf(group, t, vocab).some((v) => filters[group].has(v)),
+      (group) => filters[group].size === 0 || valuesOf(group, t, vocab, model).some((v) => filters[group].has(v)),
     ),
   );
 }
@@ -169,13 +222,14 @@ export function facetCounts(
   tasks: Task[],
   filters: Filters,
   vocab: Vocabulary = DEFAULT_VOCABULARY,
+  model: SprintModel = NO_SPRINTS,
 ): Record<FilterGroup, FacetCounts> {
   const result = {} as Record<FilterGroup, FacetCounts>;
   for (const group of FILTER_GROUPS) {
-    const others = filterTasks(tasks, { ...filters, [group]: new Set<string>() }, vocab);
+    const others = filterTasks(tasks, { ...filters, [group]: new Set<string>() }, vocab, model);
     const values = new Map<string, number>();
     for (const t of others) {
-      for (const v of valuesOf(group, t, vocab)) values.set(v, (values.get(v) ?? 0) + 1);
+      for (const v of valuesOf(group, t, vocab, model)) values.set(v, (values.get(v) ?? 0) + 1);
     }
     result[group] = { all: others.length, values };
   }

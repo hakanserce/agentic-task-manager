@@ -89,6 +89,9 @@ export function sprintModel(meta: TasksFile['meta'], tasks: Task[], vocab: Vocab
   return { sprints: [], derived: false, sprintOf: () => undefined };
 }
 
+/** A project without sprints */
+export const NO_SPRINTS: SprintModel = { sprints: [], derived: false, sprintOf: () => undefined };
+
 export function activeSprint(model: SprintModel): Sprint | undefined {
   return model.sprints.find((s) => s.state === 'active');
 }

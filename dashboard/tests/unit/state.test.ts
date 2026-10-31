@@ -156,9 +156,9 @@ describe('DashboardState', () => {
   it('filters', async () => {
     const s = new DashboardState();
     await s.load();
-    s.toggleFilter('phase', '1');
+    s.toggleFilter('sprint', 'Phase 1');
     expect(s.filtered.map((t) => t.id)).toEqual(['T-004', 'T-005', 'T-006', 'T-007']);
-    s.toggleFilter('phase', 'all');
+    s.toggleFilter('sprint', 'all');
     expect(s.filtered).toHaveLength(12);
   });
 

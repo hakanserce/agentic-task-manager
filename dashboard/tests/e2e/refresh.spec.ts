@@ -25,12 +25,12 @@ test.describe('reload', () => {
   test('active filters survive a reload', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'list' });
     await openFilters(page);
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     tasksServer.use(standardWithT005Done());
     await page.locator('#reload-btn').click();
     await expect(page.locator('.task-card[data-id="T-005"]')).toHaveClass(/status-done/);
     await expect(matchCount(page)).toHaveText('4 of 12 tasks');
-    await expect(filterButton(page, 'phase', '1')).toHaveClass(/active/);
+    await expect(filterButton(page, 'sprint', 'Phase 1')).toHaveClass(/active/);
   });
 });
 

@@ -293,10 +293,10 @@ test.describe('Kanban board', () => {
   test('filters apply; a status filter empties columns but keeps them', async ({ page, tasksServer }) => {
     await openKanban(page, tasksServer, 'kanban');
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(page.locator('.kanban-count')).toHaveText(['3', '1', '0', '1', '0', '1']);
     await expect(column(page, 'done').locator('.kanban-empty')).toHaveText('No tasks');
-    await filterButton(page, 'phase', 'all').click();
+    await filterButton(page, 'sprint', 'all').click();
     await filterButton(page, 'status', 'done').click();
     await filterButton(page, 'status', 'blocked').click();
     const columns = await page
@@ -314,10 +314,10 @@ test.describe('Kanban board', () => {
     await expect(completion.locator('svg.ring')).toHaveAttribute('aria-label', 'Tasks shown 67% done');
     await expect(completion).toHaveAttribute('title', 'Tasks shown: 24 of 36 done, 2 skipped');
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(page.locator('#kanban-completion-text')).toHaveText(/^0% · 0 of 6 done/);
     await expect(completion.locator('svg.ring')).toHaveAttribute('aria-label', 'Tasks shown 0% done');
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     await expect(completion.locator('.kanban-completion-pct')).not.toHaveText('0%');
   });
 });

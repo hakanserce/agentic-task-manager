@@ -4,17 +4,18 @@
     facetCounts,
     filterOptions,
     isActive,
-    shownPhaseOptions,
+    shownSprintOptions,
     type FilterGroup,
   } from '../lib/filters';
-  import { activePhases, forecastPhases } from '../lib/forecast';
   import { hasStage } from '../lib/stages';
   import { dashboard } from '../lib/state.svelte';
   import Icon from './Icon.svelte';
 
   // Compact: a search box and what is selected, as chips. The ⌄ opens every filter, one group per line.
   const LABELS: Record<FilterGroup, string> = {
-    phase: 'Phase',
+    sprint: 'Sprint',
+    release: 'Release',
+    component: 'Component',
     type: 'Type',
     status: 'Status',
     priority: 'Priority',
@@ -23,7 +24,9 @@
     agent: 'Started by',
   };
   const PLURALS: Record<FilterGroup, string> = {
-    phase: 'phases',
+    sprint: 'sprints',
+    release: 'releases',
+    component: 'components',
     type: 'types',
     status: 'statuses',
     priority: 'priorities',
@@ -31,33 +34,29 @@
     label: 'labels',
     agent: 'agents',
   };
-  const options = $derived(filterOptions(dashboard.base, dashboard.vocab));
-  // Labels only when some task has a label; Stage only when some task is in a PR or merged; Started by only when
-  // more than one actor started tasks
+  const options = $derived(filterOptions(dashboard.base, dashboard.vocab, dashboard.sprints));
+  // Sprint, Release, Component and Labels only when some task has one; Stage only when some task is in a PR or
+  // merged; Started by only when more than one actor started tasks
   const anyStage = $derived(dashboard.base.some(hasStage));
   const groups = $derived(
     FILTER_GROUPS.filter(
       (g) =>
-        (g !== 'label' || options.label.length > 0) &&
+        (!['sprint', 'release', 'component', 'label'].includes(g) || options[g].length > 0) &&
         (g !== 'stage' || anyStage) &&
         (g !== 'agent' || options.agent.length > 1),
     ),
   );
-  // With many phases, the Phase group lists the active ones (as on the Progress tab) and any selected one; a toggle
-  // shows the finished ones too
-  const activePhaseValues = $derived(
-    new Set(
-      activePhases(forecastPhases(dashboard.base, Date.now(), dashboard.base, dashboard.vocab).phases).map((p) =>
-        String(p.phase),
-      ),
-    ),
+  // With many sprints, the Sprint group lists the open ones (active, planned, the backlog) and any selected one; a
+  // toggle shows the closed ones too
+  const closedSprints = $derived(
+    new Set(dashboard.sprints.sprints.filter((s) => s.state === 'closed').map((s) => s.id)),
   );
-  const phaseOptions = $derived(
-    shownPhaseOptions(options.phase, activePhaseValues, dashboard.filters.phase, dashboard.filterFinishedPhases),
+  const sprintOptions = $derived(
+    shownSprintOptions(options.sprint, closedSprints, dashboard.filters.sprint, dashboard.filterClosedSprints),
   );
-  const optionsOf = (group: FilterGroup) => (group === 'phase' ? phaseOptions.shown : options[group]);
+  const optionsOf = (group: FilterGroup) => (group === 'sprint' ? sprintOptions.shown : options[group]);
   // How many tasks each button would show, given the search and the selections in the other groups
-  const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab));
+  const counts = $derived(facetCounts(dashboard.searched, dashboard.filters, dashboard.vocab, dashboard.sprints));
   let open = $state(false);
 
   const selected = $derived(
@@ -72,7 +71,7 @@
   }
 
   function ariaLabel(group: FilterGroup, value: string, label: string, n: number): string {
-    const name = value === 'all' ? `All ${PLURALS[group]}` : group === 'phase' ? `Phase ${label}` : label;
+    const name = value === 'all' ? `All ${PLURALS[group]}` : label;
     return `${name}, ${n} ${n === 1 ? 'task' : 'tasks'}`;
   }
 </script>
@@ -162,14 +161,14 @@
                   ></button
                 >
               {/each}
-              {#if group === 'phase' && (dashboard.filterFinishedPhases ? phaseOptions.finished > 0 : phaseOptions.hidden > 0)}
+              {#if group === 'sprint' && (dashboard.filterClosedSprints ? sprintOptions.closed > 0 : sprintOptions.hidden > 0)}
                 <button
                   class="filter-more"
-                  id="filter-finished-phases"
-                  aria-expanded={dashboard.filterFinishedPhases}
-                  title="Finished phases, except the one that finished last"
-                  onclick={() => (dashboard.filterFinishedPhases = !dashboard.filterFinishedPhases)}
-                  >{dashboard.filterFinishedPhases ? 'Hide finished' : `+ ${phaseOptions.hidden} finished`}</button
+                  id="filter-closed-sprints"
+                  aria-expanded={dashboard.filterClosedSprints}
+                  title="Closed sprints"
+                  onclick={() => (dashboard.filterClosedSprints = !dashboard.filterClosedSprints)}
+                  >{dashboard.filterClosedSprints ? 'Hide closed' : `+ ${sprintOptions.hidden} closed`}</button
                 >
               {/if}
             </div>

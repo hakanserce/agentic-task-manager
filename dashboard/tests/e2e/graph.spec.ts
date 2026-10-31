@@ -43,7 +43,7 @@ test.describe('dependency graph', () => {
   test('hidden dependencies are ignored for layout and edges', async ({ page, tasksServer }) => {
     await openDashboard(page, tasksServer, 'standard', { tab: 'graph' });
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(nodes(page)).toHaveCount(4);
     await expect(edges(page)).toHaveCount(2);
     // T-008 waits on phase 1 tasks, filtered out: it starts its chain at the left

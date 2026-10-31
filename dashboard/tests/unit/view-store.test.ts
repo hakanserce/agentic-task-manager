@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PREFS_KEY, setPref } from '../../src/lib/prefs';
+import { sprintModel } from '../../src/lib/sprints';
 import type { Task } from '../../src/lib/types';
+import { resolveVocabulary } from '../../src/lib/vocab';
 import {
   clearView,
   defaultView,
@@ -31,7 +33,9 @@ describe('reading and writing', () => {
   it('round-trips a view', () => {
     const view: SavedView = {
       filters: {
-        phase: ['1'],
+        sprint: ['Phase 1', ':backlog'],
+        release: ['1.0'],
+        component: ['api'],
         type: ['feature', 'test'],
         status: [],
         priority: ['P0'],
@@ -44,7 +48,7 @@ describe('reading and writing', () => {
       kanban: { groupByPhase: true, showSkipped: true, showAllDone: true },
       listSort: 'priority',
       progressPhase: 2,
-      filterFinishedPhases: true,
+      filterClosedSprints: true,
       progressRange: '14d',
       graphFiltered: 'dim',
       graphDimDone: true,
@@ -64,6 +68,17 @@ describe('reading and writing', () => {
     expect(view.progressRange).toBe('phase');
   });
 
+  it('a view saved before sprints: its phase filter is dropped, "finished phases" means closed sprints (SR-7.1)', () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ filters: { phase: ['1'], type: ['test'] }, filterFinishedPhases: true }),
+    );
+    const view = readView(key);
+    expect(view.filters).not.toHaveProperty('phase');
+    expect(view.filters.type).toEqual(['test']);
+    expect(view.filterClosedSprints).toBe(true);
+  });
+
   it('projects are kept apart', () => {
     writeView(key, { ...defaultView(), tab: 'progress' });
     expect(readView(projectKey({ id: 'p2' })).tab).toBe('kanban');
@@ -75,11 +90,11 @@ describe('reading and writing', () => {
     expect(readView(key)).toEqual(defaultView());
     localStorage.setItem(
       key,
-      JSON.stringify({ tab: 'nope', filters: { phase: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
+      JSON.stringify({ tab: 'nope', filters: { sprint: [1, '2'], type: 'x' }, kanban: 3, progressPhase: '1' }),
     );
     expect(readView(key)).toEqual({
       ...defaultView(),
-      filters: { phase: ['2'], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
+      filters: { ...defaultView().filters, sprint: ['2'] },
     });
   });
 
@@ -114,13 +129,20 @@ describe('reading and writing', () => {
 });
 
 describe('sanitizeView', () => {
-  const tasks = [{ ...task(0, 'feature', 'done'), labels: ['ux'], started_by: 'claude:a' }, task(1, 'test', 'todo')];
+  const tasks = [
+    { ...task(0, 'feature', 'done'), labels: ['ux'], started_by: 'claude:a', release: '1.0', components: ['api'] },
+    task(1, 'test', 'todo'),
+  ];
+  const vocab = resolveVocabulary({});
+  const model = sprintModel({}, tasks, vocab);
 
   it('drops filter values and a focused phase the tasks no longer have', () => {
     const view: SavedView = {
       ...defaultView(),
       filters: {
-        phase: ['0', '5'],
+        sprint: ['Phase 0', 'Phase 5'],
+        release: ['1.0', '0.9'],
+        component: ['api', 'gone'],
         type: ['feature', 'docs'],
         status: ['todo', 'blocked'],
         priority: ['P2', 'P0'],
@@ -131,10 +153,12 @@ describe('sanitizeView', () => {
       progressPhase: 5,
     };
     // Neither task has a priority: both are the default, P2
-    expect(sanitizeView(view, tasks)).toEqual({
+    expect(sanitizeView(view, tasks, vocab, model)).toEqual({
       ...view,
       filters: {
-        phase: ['0'],
+        sprint: ['Phase 0'],
+        release: ['1.0'],
+        component: ['api'],
         type: ['feature'],
         status: ['todo'],
         priority: ['P2'],
@@ -149,9 +173,9 @@ describe('sanitizeView', () => {
   it('keeps everything that still exists', () => {
     const view: SavedView = {
       ...defaultView(),
-      filters: { phase: ['1'], type: [], status: [], priority: [], stage: [], label: [], agent: [] },
+      filters: { ...defaultView().filters, sprint: ['Phase 1'] },
       progressPhase: 0,
     };
-    expect(sanitizeView(view, tasks)).toEqual(view);
+    expect(sanitizeView(view, tasks, vocab, model)).toEqual(view);
   });
 });

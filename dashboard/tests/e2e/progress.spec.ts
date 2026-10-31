@@ -168,12 +168,12 @@ test.describe('Progress tab: phase table', () => {
   }) => {
     await openProgress(page, tasksServer, 'progress');
     await openFilters(page);
-    await filterButton(page, 'phase', '2').click();
+    await filterButton(page, 'sprint', 'Phase 2').click();
     await expect(page.locator('#phase-table tbody tr')).toHaveCount(1);
     await expect(page.locator('#progress-basis')).toContainText('last 8 tasks');
     // Not phase 2's 5 tasks alone (43 m): the loop finishes phase 1 first, so the whole project's 51 m
     await expect(cells(page, 2).nth(4)).toContainText('51 m of agent work');
-    await expect(page.locator('#progress-filter-banner')).toContainText('Showing 6 of 16 tasks: phase 2');
+    await expect(page.locator('#progress-filter-banner')).toContainText('Showing 6 of 16 tasks: sprint Phase 2');
     await expect(page.locator('#burndown-focus')).toHaveText('All phases · matching tasks');
     await page.locator('#progress-clear-filters').click();
     await expect(page.locator('#progress-filter-banner')).toHaveCount(0);
@@ -331,7 +331,7 @@ test.describe('Progress tab: focus a phase', () => {
 
     await row(page, 2).click();
     await openFilters(page);
-    await filterButton(page, 'phase', '1').click();
+    await filterButton(page, 'sprint', 'Phase 1').click();
     await expect(page.locator('#burndown-focus')).toHaveText('All phases · matching tasks');
   });
 });

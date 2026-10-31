@@ -22,6 +22,12 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **`/atm:close-sprint`** (T-301, `skills/close-sprint/SKILL.md`, §4.3): closes a sprint with the user: reviews the
+  done tasks with their outcome notes (follow-ups through `/atm:create-tasks`); decides each unfinished task (carried
+  over by default, back to the backlog with `atm move`, or skipped with `atm skip`); chooses where carried tasks go
+  (the next planned sprint, one of several, or a new one); closes it with `atm sprints close … --carry-to …` and
+  offers `/atm:plan-sprint`. The user decides each step; it pre-approves only `atm migrate`, `status`, `sprints`,
+  `list`, `show`, `deps`, `move` and `skip`.
 - **`/atm:plan-sprint`** (T-300, `skills/plan-sprint/SKILL.md`, SR-4.1, SR-4.2): plans a sprint with the user: shows
   the active sprint and what's left, the planned sprints, the backlog by label and component, and the last closed
   sprint's carried tasks; agrees on the sprint (`atm sprints add`/`edit`); goes through candidates (`atm move`,

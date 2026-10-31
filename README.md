@@ -130,9 +130,10 @@ claude --plugin-dir /path/to/agentic-task-manager/plugin
 
 ### Verify installation
 
-Type `/atm:` in Claude Code — you should see six skills in autocomplete:
+Type `/atm:` in Claude Code — you should see seven skills in autocomplete:
 - `/atm:create-tasks`
 - `/atm:plan-sprint`
+- `/atm:close-sprint`
 - `/atm:do-task`
 - `/atm:loop-tasks`
 - `/atm:push`
@@ -245,6 +246,17 @@ the backlog.
 
 It proposes and you decide: nothing is moved, started or dated without your yes, and new tasks go through
 `/atm:create-tasks`.
+
+### `/atm:close-sprint`
+
+**Close a sprint with you.**
+
+1. Reviews what the sprint got done with you: the done tasks and their outcomes (follow-ups go through
+   `/atm:create-tasks`)
+2. Decides with you what happens to each unfinished task: carried over (the default), back to the backlog, or skipped
+3. Chooses with you where carried tasks go: the next planned sprint, another one, or a new one
+4. Closes it, which keeps the sprint's report (done, carried, added mid-sprint), and offers `/atm:plan-sprint` for the
+   next one
 
 ### `/atm:push`
 

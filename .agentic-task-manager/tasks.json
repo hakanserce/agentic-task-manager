@@ -8,7 +8,7 @@
       "type": "pull-request",
       "base": "main"
     },
-    "next_id": 287,
+    "next_id": 320,
     "labels": [
       {
         "id": "dashboard",
@@ -75,6 +75,10 @@
       {
         "id": 26,
         "name": "Rich Markdown"
+      },
+      {
+        "id": 27,
+        "name": "Sprints and releases"
       }
     ],
     "repository": "https://github.com/solo-swe/agentic-task-manager"
@@ -11014,6 +11018,990 @@
       ],
       "created_at": "2026-10-30T09:03:19Z",
       "updated_at": "2026-10-30T09:03:19Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-287",
+      "name": "Sprint data model: meta.sprints, the task's sprint and sprint history",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "The foundation of `docs/sprints-and-releases-design.md` (step 1).\n\n## Change\n- `meta.sprints`: `[{id, goal, state, release, start, end, due, report}]`, in order; states `planned`, `active`, `closed`, at most one `active` (SR-2.1). A sprint's ID is its name (≤ 48 characters, unique case-insensitively); validated with the rest of `meta` (SR-2.3, DM-2.2).\n- `meta.sprint_names` (`people` default, `time`) and `meta.review` read with their defaults (used by later tasks).\n- Task fields `sprint` (absent: the backlog) and `sprint_history` (`[{sprint, from, to}]`): every change of `sprint` closes the open entry and opens a new one (SR-2.5).\n- Helpers for a task's **effective release** (its `release`, else its sprint's) and **effective review mode** (its `review`, else its first component's, else `meta.review`, else `none`) (SR-2.6), so readers never use the raw fields alone.\n- The v4 data model doc (`docs/v4/data-model.md` §2, §4) gains the new fields.\n\n## Tests\natm-cli scenarios (`tests/scripts/scenarios/sprints.json`): valid and invalid `meta.sprints` (two active, duplicate names, unknown state), history entries on sprint changes.",
+      "requirements": [
+        "SR-2.1",
+        "SR-2.3",
+        "SR-2.5",
+        "SR-2.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [],
+      "files": [
+        "atm-cli/atm/model.py",
+        "tests/scripts/scenarios/sprints.json",
+        "docs/v4/data-model.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-288",
+      "name": "Generated sprint names: historical people or the creation time",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "A sprint created without a name gets one by `meta.sprint_names` (SR-2.9, `docs/sprints-and-releases-design.md`).\n\n## Change\n- `people` (default): a historical person's name not yet used in the project, from a list shipped in atm-cli (a few hundred scientists, writers, explorers, artists; standard library only, a module with the list).\n- `time`: the creation time in local time, `May 12-10:38pm`, then `-2`, `-3` … for more in the same minute.\n- Names compare case-insensitively against existing sprints in both files.\n\n## Tests\nScenarios: a generated person name is unused; two sprints in the same minute get `-2`; the list doesn't run out within the test (a project with many sprints).",
+      "requirements": [
+        "SR-2.9"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287"
+      ],
+      "files": [
+        "atm-cli/atm/sprint_names.py",
+        "atm-cli/build.py",
+        "tests/scripts/scenarios/sprints.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-289",
+      "name": "Merge driver: sprints, releases and components item by item",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "Today `meta` merges key by key as whole values, so one branch closing a sprint and another adding one would silently keep one side (SR-2.4).\n\n## Change\n- `meta.sprints`, `meta.releases` and `meta.components` merge by ID, like tasks: changed on one side takes that side; changed on both, the further state wins (planned < active < closed; planned < released < archived), else ours, reported as a conflict; two different items added with the same ID are a conflict (names can't be renumbered).\n- A task with `phase` on an unmigrated side and `sprint` on a migrated side keeps `sprint`; `meta.phases` is dropped when the merged `meta` has `sprints` (SR-8.5).\n- `sprint_history` merges like `blocks` (one entry per `from`).\n\n## Tests\nMerge tests in `tests/scripts/merge.test.mjs` for each case above.",
+      "requirements": [
+        "SR-2.4",
+        "SR-8.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287"
+      ],
+      "files": [
+        "atm-cli/atm/merge.py",
+        "tests/scripts/merge.test.mjs"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-290",
+      "name": "atm sprints, atm move and atm backlog",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "The sprint commands of `docs/sprints-and-releases-design.md` §3.1, under the lock like every write.\n\n## Change\n- `atm sprints [--all]`: ID, state, release, due, counts by kind; closed ones only with `--all`.\n- `atm sprints add [\"<name>\"] [--goal] [--release] [--due] [--after S]` (generated name without one), `atm sprints edit <S> …`, `atm sprints start <S>` (refused while another is active; sets `start`).\n- `atm move <id>... --to <S>|next|active|backlog`: refuses claimed and finished tasks; `next` without a planned sprint after the current one names `atm sprints add` (SR-3.1).\n- `atm backlog`: the tasks with no sprint.\n- All take `--json`; `atm help` lists them; `docs/v4/atm-cli.md` documents them.\n\n## Tests\nScenarios for each command, including the refusals.",
+      "requirements": [
+        "SR-3.1"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287",
+        "T-288"
+      ],
+      "files": [
+        "atm-cli/atm/sprints.py",
+        "atm-cli/atm/cli.py",
+        "atm-cli/build.py",
+        "tests/scripts/scenarios/sprints.json",
+        "docs/v4/atm-cli.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-291",
+      "name": "Selections in atm next; sprint, backlog, release and component options",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "What `atm next` takes becomes a selection (`docs/sprints-and-releases-design.md` §3.2).\n\n## Change\n- `atm next`: default = the active sprint; `--sprint S`, `--tasks T-1,T-5`, `--all` (active sprint, planned ones in order, then the backlog), `--backlog`. Within a selection: priority rank, then ID (no phase). With sprints but none active it selects nothing and says so; without sprints it selects all, as today (SR-3.4).\n- The reason when nothing is ready distinguishes finished, waiting and empty (SR-3.6).\n- `atm list`, `status`, `archive` take `--sprint` (repeatable), `--backlog`, `--release`, `--component`; `atm status` shows the active sprint first (SR-3.2).\n- `atm add` / `edit` take `--sprint`, `--release`, `--component`, `--review`, `--related` (and removals); a task added without `--sprint` goes to the backlog (SR-3.3). (`--with user` comes with its own task.)\n\n## Tests\nScenarios for each selection and the three reasons.",
+      "requirements": [
+        "SR-3.2",
+        "SR-3.3",
+        "SR-3.4",
+        "SR-3.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-290"
+      ],
+      "files": [
+        "atm-cli/atm/query.py",
+        "atm-cli/atm/edit.py",
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/cli.py",
+        "tests/scripts/scenarios/next.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-292",
+      "name": "Phases become sprints in atm migrate; phase options removed",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P0",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "The automatic migration (`docs/sprints-and-releases-design.md` §8, decision 11).\n\n## Change\n- `atm migrate`, once per project (a project with `meta.sprints` is migrated), in `tasks.json` and the archive: each phase with tasks or a name becomes a sprint named after it (\"Phase n\" when unnamed; \" (phase n)\" added to a taken name), in phase order; `phase` becomes `sprint` plus a `sprint_history` entry from `created_at`; `phase` and `meta.phases` removed. All-finished sprints are `closed` (start, end and report from their tasks); the others `planned`; none active, and it says to plan one. Staged, not committed (SR-8.1).\n- Writing an unmigrated file without migrating is refused (SR-8.3).\n- `--phase` and `atm phases` are removed; `atm check` no longer warns about phases.\n- Changelog: update every agent's plugin before the first run in a shared project (SR-8.4). Help, `plugin/CLAUDE.md` and the v4 docs stop describing phases.\n\n## Tests\nScenarios: a file with named, unnamed, finished and open phases, and an archive; running twice changes nothing the second time.",
+      "requirements": [
+        "SR-8.1",
+        "SR-8.3",
+        "SR-8.4",
+        "SR-8.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-289",
+        "T-291"
+      ],
+      "files": [
+        "atm-cli/atm/migrate.py",
+        "atm-cli/atm/phases.py",
+        "atm-cli/atm/cli.py",
+        "tests/scripts/scenarios/migrate.json",
+        "plugin/CLAUDE.md",
+        "docs/help.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-293",
+      "name": "Dashboard reads sprints, and phases as sprints for unmigrated projects",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "The dashboard's data layer for sprints (`docs/sprints-and-releases-design.md` §7).\n\n## Change\n- Types and loading for `meta.sprints`, the task's `sprint` and `sprint_history`, and the effective release (same rule as atm-cli).\n- A project not yet migrated (tasks with `phase`, no `meta.sprints`) is read as read-only sprints named after its phases (SR-7.8), so a dashboard serving several projects shows them the same way.\n- Helpers: the active sprint, a sprint's tasks, the backlog, tasks added mid-sprint and carried in (from `sprint_history`).\n\n## Tests\nUnit tests in `dashboard/tests/unit/sprints.test.ts`, with a fixture in `tests/fixtures/` for a migrated and an unmigrated project.",
+      "requirements": [
+        "SR-7.8"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287"
+      ],
+      "files": [
+        "dashboard/src/lib/types.ts",
+        "dashboard/src/lib/load.ts",
+        "dashboard/src/lib/sprints.ts",
+        "dashboard/tests/unit/sprints.test.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-294",
+      "name": "Sprint, Release and Component filters replace the Phase filter",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.1: a Sprint group (active first, then planned, the backlog, then closed sprints folded like finished phases are today), Release and Component groups (shown when the project has them); the Phase group and its \"finished phases\" toggle are removed. Saved views drop phase filters quietly and keep sprint ones.\n\n## Tests\nUnit tests for the filter logic; e2e in `filters.spec.ts`; screenshot baselines for the filter panel.",
+      "requirements": [
+        "SR-7.1"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/lib/filters.ts",
+        "dashboard/src/components/Filters.svelte",
+        "dashboard/src/lib/view-store.ts",
+        "dashboard/tests/e2e/filters.spec.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-295",
+      "name": "Sprint header: goal, due, progress, added and carried",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.2: above the Kanban, List and Graph when one sprint is selected (the active one by default): name, goal, due (\"due in 3 days\", overdue in red), release, progress (done of total), and from `sprint_history` how many tasks were added mid-sprint and carried in. The pending end-of-sprint reviews join it later (their own task).\n\n## Tests\nComponent tests; e2e; screenshot baselines in both modes.",
+      "requirements": [
+        "SR-7.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/components/SprintHeader.svelte",
+        "dashboard/src/App.svelte",
+        "dashboard/tests/e2e/sprints.spec.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-296",
+      "name": "Kanban: Group by sprint",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.3: \"Group by sprint\" replaces \"Group by phase\": one lane per sprint in order, the backlog last; cards show their sprint only when more than one is shown. The saved view's `groupByPhase` becomes `groupBySprint`.\n\n## Tests\nUnit tests for `buildLanes`; e2e in `kanban.spec.ts`; screenshots.",
+      "requirements": [
+        "SR-7.3"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/lib/kanban.ts",
+        "dashboard/src/components/KanbanBoard.svelte",
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/tests/e2e/kanban.spec.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-297",
+      "name": "Progress tab: sprint table, burndown and forecast per sprint",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.4: the phase table becomes a sprint table (closed sprints with their report: done, carried, added; the active and planned ones with progress); the burndown's \"phase\" range becomes the sprint's (start to end, or to due); the forecast is per sprint. The focused phase in the saved view becomes the focused sprint.\n\n## Tests\nUnit tests in `burndown.test.ts` and `forecast.test.ts`; e2e in `progress.spec.ts`; screenshots.",
+      "requirements": [
+        "SR-7.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/components/PhaseTable.svelte",
+        "dashboard/src/lib/burndown.ts",
+        "dashboard/src/lib/forecast.ts",
+        "dashboard/src/components/ProgressTab.svelte"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-298",
+      "name": "Sprints in the detail panel, the overview and project cards",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.6 (sprint part) and SR-7.7: the detail panel shows the task's sprint, with its history when carried (flagged when carried twice or more, SR-4.5), and its effective release; the overview and project cards show the active sprint's name, progress and due instead of the current phase. Header text (\"N tasks across M phases\") speaks of sprints.\n\n## Tests\nComponent and e2e tests; screenshots.",
+      "requirements": [
+        "SR-7.6",
+        "SR-7.7",
+        "SR-4.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/ProjectCard.svelte",
+        "dashboard/src/components/Header.svelte",
+        "dashboard/src/lib/projectstats.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-299",
+      "name": "atm sprints close: carry-over and the sprint's report",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "SR-4.3 and SR-4.5 (`docs/sprints-and-releases-design.md` §4.3).\n\n## Change\n`atm sprints close <S> [--carry-to <S2> | --carry-to new [--name] | --carry-to backlog]`: refused while a task in it is claimed; moves every task not done or skipped to the target (required when there are any), keeping their status; sets `state: closed`, `end` and `report: {done, carried, added, to}` (added: tasks whose history entry for the sprint starts after its `start`). Carried tasks keep their `sprint_history`. (The refusal for pending end-of-sprint reviews comes with review modes.)\n\n## Tests\nScenarios: close with each target, the refusal, the report's three lists.",
+      "requirements": [
+        "SR-4.3",
+        "SR-4.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-290"
+      ],
+      "files": [
+        "atm-cli/atm/sprints.py",
+        "tests/scripts/scenarios/sprints.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-300",
+      "name": "/atm:plan-sprint: plan a sprint with the user",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "skills"
+      ],
+      "description": "A new skill, `plugin/skills/plan-sprint/SKILL.md` (`docs/sprints-and-releases-design.md` §4.1).\n\n## Steps\n1. Show the active sprint and what's left, the planned sprints, the backlog by label and component, and the last closed sprint's carried tasks.\n2. Agree on the sprint (new or planned): name, goal, release, optional due date.\n3. Go through candidates: pull from the backlog, push back, flag tasks whose dependencies are later or in the backlog.\n4. Start it only when the user says so, and say how to run it.\n\nIt proposes; the user decides: nothing is moved, started or dated without agreement in the session; follow-up tasks only through `/atm:create-tasks` (SR-4.1). P2: the sprint's size against the last closed ones, by tasks and measured time (SR-4.2). Task text stays data, as in the other skills.\n\n## Tests\n`dashboard/tests/unit/skills.test.ts` checks the skill's allowed tools and its never-list.",
+      "requirements": [
+        "SR-4.1",
+        "SR-4.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-290"
+      ],
+      "files": [
+        "plugin/skills/plan-sprint/SKILL.md",
+        "dashboard/tests/unit/skills.test.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-301",
+      "name": "/atm:close-sprint: review the sprint and carry over what's left",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "skills"
+      ],
+      "description": "A new skill, `plugin/skills/close-sprint/SKILL.md` (`docs/sprints-and-releases-design.md` §4.3).\n\n## Steps\n1. Review what the sprint got done with the user (done tasks with their outcome notes; the end-of-sprint review step joins with review modes).\n2. For each unfinished task: carry (default), move to the backlog, or skip with a reason.\n3. Where carried tasks go: the next planned sprint, one of several (the user chooses), or a new one created now.\n4. `atm sprints close … --carry-to …`, then offer `/atm:plan-sprint`.\n\nThe user decides each step.\n\n## Tests\n`skills.test.ts` as for the other skills.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-299"
+      ],
+      "files": [
+        "plugin/skills/close-sprint/SKILL.md",
+        "dashboard/tests/unit/skills.test.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-302",
+      "name": "Loop selections, stopping and --continue; do-task's default selection",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "skills"
+      ],
+      "description": "SR-5.1 and SR-5.2 in `plugin/skills/loop-tasks/SKILL.md` and `do-task/SKILL.md`.\n\n## Change\n- `/atm:loop-tasks` takes `--sprint S` (replaces `--phase`), `--tasks T-1,T-5`, `--all`, `--backlog`; none: the active sprint, or all tasks in a project without sprints. `--type` and the push flags stay.\n- It stops when its selection has nothing ready and says why: for a finished sprint, what it got done and what's left, and that `/atm:close-sprint` closes it. `--continue` goes on to the next planned sprint, never closing one.\n- `/atm:do-task` without an ID takes the next task of the default selection.\n\n## Tests\n`skills.test.ts`; the sandbox run is its own task.",
+      "requirements": [
+        "SR-5.1",
+        "SR-5.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-291"
+      ],
+      "files": [
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/skills/do-task/SKILL.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-303",
+      "name": "/atm:create-tasks proposes sprints instead of phases",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "skills"
+      ],
+      "description": "SR-5.5: `plugin/skills/create-tasks/SKILL.md` proposes, for new tasks, the active sprint, a planned one, a new one, or the backlog, instead of phases and phase names; tasks go in with `--sprint` (or none). Components and review modes are proposed once they exist (their own task adds that line).\n\n## Tests\n`skills.test.ts`.",
+      "requirements": [
+        "SR-5.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-290"
+      ],
+      "files": [
+        "plugin/skills/create-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-304",
+      "name": "Agent sandbox and security doc for the sprint skills",
+      "phase": 27,
+      "type": "infra",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "security"
+      ],
+      "description": "The new and changed skills act on task data (sprints, selections, carry-over), so per `CLAUDE.md` (Security) run the agent sandbox (`tests/sandbox/run.mjs`, with Docker and an API key the user provides) and update `docs/security-architecture.md`: the new skills, what they may change without asking (nothing: SR-4.1), and the commands they run. Record the sandbox's result per red-team task. Ask the user to run the sandbox if no key is available; don't look for one.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-300",
+        "T-301",
+        "T-302",
+        "T-303"
+      ],
+      "files": [
+        "docs/security-architecture.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-305",
+      "name": "Plan this repository's first sprint, together",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "interactive"
+      ],
+      "description": "Once phases are migrated (this repository's phases become sprints when the new atm first runs here) and `/atm:plan-sprint` exists: run it with Hakan to plan the first sprint: which of the remaining tasks go in (the rest of this phase's work, T-277, T-279, the CompMD tasks), its name, goal, release and due date. Done live, with the user; nothing is decided without him. Notes from the session (what was unclear or missing in the skill) go to follow-up tasks.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-292",
+        "T-300"
+      ],
+      "files": [],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-306",
+      "name": "Releases in atm-cli: meta.releases and atm releases",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P1",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "SR-2.2 and §3.3 of `docs/sprints-and-releases-design.md`.\n\n## Change\n- `meta.releases`: `[{id, name, state, target, pr, released_at}]`, states `planned`, `released`, `archived`; IDs any string of letters, digits, `.`, `-`, `_`; validated with `meta`. A sprint's `release` must name one.\n- `atm releases [--all]` (counts by kind and stage), `atm releases add <R> [--name] [--target] [--pr N]` (with `--pr`, every task in that PR gets `release: R`), `atm releases edit`, `atm releases archive`.\n- `--release` filters (already parsed) now check the ID.\n\n## Tests\nScenarios for each command and the validation.",
+      "requirements": [
+        "SR-2.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287"
+      ],
+      "files": [
+        "atm-cli/atm/releases.py",
+        "atm-cli/atm/cli.py",
+        "atm-cli/build.py",
+        "tests/scripts/scenarios/releases.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-307",
+      "name": "atm releases notes: a draft from the release's tasks",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "`atm releases notes <R>` prints a Markdown draft of the release's changes from its tasks (effective release): grouped by type, each with its ID, name and outcome note, for the CHANGELOG and WHATS-NEW entries a person writes (§3.3). `--json` gives the same as data.\n\n## Tests\nA scenario with tasks of several types and notes.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-306"
+      ],
+      "files": [
+        "atm-cli/atm/releases.py",
+        "tests/scripts/scenarios/releases.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-308",
+      "name": "atm merged releases a release; /atm:push suggests the branch",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli",
+        "skills"
+      ],
+      "description": "SR-3.7: `atm merged --pr N` also marks released the release whose tasks are all in PR `N` and merged (sets its `pr` and `released_at`); a release with tasks outside the PR stays planned and atm says which. SR-5.6: `plugin/skills/push/SKILL.md` records that, and in a release-branch project suggests `dev/<release>` from the active sprint's release, never renaming an existing branch.\n\n## Tests\nScenarios for `atm merged`; `skills.test.ts`.",
+      "requirements": [
+        "SR-3.7",
+        "SR-5.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-306"
+      ],
+      "files": [
+        "atm-cli/atm/git_ops.py",
+        "plugin/skills/push/SKILL.md",
+        "tests/scripts/scenarios/pr.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-309",
+      "name": "Release view on the dashboard",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.5: each release with its sprints, task counts by stage (done, in PR, merged), its PR and state, and the notes draft (the same grouping as `atm releases notes`) to copy. On the Progress tab (or the Project tab, whichever fits once built).\n\n## Tests\nUnit tests for the grouping; e2e; screenshots.",
+      "requirements": [
+        "SR-7.5"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-306",
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/components/ReleaseView.svelte",
+        "dashboard/src/lib/releases.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-310",
+      "name": "This repository's releases, recovered from its PRs",
+      "phase": 27,
+      "type": "infra",
+      "priority": "P3",
+      "labels": [
+        "sprints"
+      ],
+      "description": "SR-8.2: add this repository's releases with `atm releases add <version> --pr <N>`, using the versions in `plugin/CHANGELOG.md` and the PR recorded on the tasks (`atm list --in-pr`, `atm show`), so past tasks show the release they shipped in. Mark released ones with their merge time. Show Hakan the mapping before writing it.",
+      "requirements": [
+        "SR-8.2"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-306",
+        "T-292"
+      ],
+      "files": [],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-311",
+      "name": "Components: meta.components and suggestions from files",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "SR-2.7 and the component part of §2 (`docs/sprints-and-releases-design.md`).\n\n## Change\n- `meta.components`: `[{id, label, paths, review}]` (paths are globs), validated with `meta`; task field `components` (IDs), set by `add` / `edit` (`--component`, already parsed).\n- `atm add` and `edit --add-file` print suggested components from `files` (set with `--components auto`); `atm check` warns about tasks whose files match no component in a project with components.\n- The effective review mode uses the first component's `review`.\n- `/atm:create-tasks` proposes components (a line in its proposal step).\n\n## Tests\nScenarios for matching and the warning.",
+      "requirements": [
+        "SR-2.7"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287"
+      ],
+      "files": [
+        "atm-cli/atm/components.py",
+        "atm-cli/atm/edit.py",
+        "plugin/skills/create-tasks/SKILL.md",
+        "tests/scripts/scenarios/components.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-312",
+      "name": "Review modes: atm done by mode, batch tasks wait for the sprint review",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "SR-3.8 and SR-4.4.\n\n## Change\n- `atm done` on an active task whose effective mode is `blocker` or `async` is refused (\"this task is reviewed: `atm review`\"); `batch`: done, with a `review` note and `sprint_review: pending`; `none`: done. A person (not an agent) may always `atm done`.\n- `atm sprints close` refuses while a `batch` task is still `sprint_review: pending`; `--reviewed` marks them all reviewed. `atm status` and `atm sprints` show the pending count.\n- `atm add` / `edit --review`, `/atm:create-tasks` proposes a mode.\n\n## Tests\nScenarios for each mode and the close refusal.",
+      "requirements": [
+        "SR-3.8",
+        "SR-4.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-311",
+        "T-299"
+      ],
+      "files": [
+        "atm-cli/atm/status_cmds.py",
+        "atm-cli/atm/sprints.py",
+        "tests/scripts/scenarios/review.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-313",
+      "name": "atm approve and request-changes; rework goes back to the same agent",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "SR-3.9, SR-6.1, SR-6.2, SR-6.4.\n\n## Change\n- `review_state` in the review kind: `waiting` (`atm review`), `changes_requested` (`atm request-changes <id> --reason`, a `rejection` note, stays in review), `approved` (`atm approve <id> [--note]`); removed when the task leaves the kind. `atm reject` stays (back to todo).\n- `atm next --claim` takes `changes_requested` and `approved` tasks first, preferring their `started_by` for one lease length after the review ended, then any agent; taking one moves it to active and records the round in `reviews`.\n- Dependents keep waiting in every review state.\n- `/atm:do-task`'s approval workaround (`reject --reason 'Approved; …'` then `start`) becomes `atm approve`.\n- The merge driver merges `review_state` with the progress fields.\n\n## Tests\nScenarios for each transition and the preference window.",
+      "requirements": [
+        "SR-3.9",
+        "SR-6.1",
+        "SR-6.2",
+        "SR-6.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-312"
+      ],
+      "files": [
+        "atm-cli/atm/status_cmds.py",
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/merge.py",
+        "plugin/skills/do-task/SKILL.md",
+        "tests/scripts/scenarios/review.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-314",
+      "name": "with: user: work done together, skipped by unattended loops",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "cli",
+        "skills"
+      ],
+      "description": "SR-3.5, SR-5.3, SR-6.5, SR-6.6.\n\n## Change\n- Task field `with: user`, set by `atm add` / `edit --with user` (and removed).\n- `atm next --claim` skips it unless `--with-user`; `atm start <id>` never skips it.\n- `/atm:loop-tasks --with-user` takes them; without it they are listed at the end (\"waiting for you\").\n- `atm migrate` gives tasks with the `interactive` label `with: user` once (the label stays); `/atm:create-tasks` sets it for work the user wants to do together.\n\n## Tests\nScenarios for `next`, `start` and the migration; `skills.test.ts`.",
+      "requirements": [
+        "SR-3.5",
+        "SR-5.3",
+        "SR-6.5",
+        "SR-6.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-291"
+      ],
+      "files": [
+        "atm-cli/atm/claims.py",
+        "atm-cli/atm/edit.py",
+        "atm-cli/atm/migrate.py",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/skills/create-tasks/SKILL.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-315",
+      "name": "Skills end tasks by their review mode; close-sprint's review step",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "skills"
+      ],
+      "description": "SR-5.4 and SR-4.4 in the skills.\n\n## Change\n- `/atm:do-task` and `/atm:loop-tasks` end a task by its effective mode: `blocker` waits for the review in the session (asks the user now, or stops an unattended loop); `async` goes on; `batch` and `none` are done. The text that reads \"a review is asked for\" from descriptions is replaced by the mode.\n- `/atm:close-sprint` starts with the review step: the `batch` tasks with `sprint_review: pending` and their notes; small fixes live, the rest as follow-up tasks in the next sprint `related` to the original; then `atm sprints close --reviewed`.\n- Rework (`changes_requested`, `approved`) is described in do-task.\n\n## Tests\n`skills.test.ts`.",
+      "requirements": [
+        "SR-5.4",
+        "SR-4.4"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-312",
+        "T-313",
+        "T-301"
+      ],
+      "files": [
+        "plugin/skills/do-task/SKILL.md",
+        "plugin/skills/loop-tasks/SKILL.md",
+        "plugin/skills/close-sprint/SKILL.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-316",
+      "name": "Dashboard: review states, components, needs you and pending sprint reviews",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-6.6 and SR-7.6 (review part): cards and the detail panel show the review mode and state (waiting, changes requested, approved), components and `with: user`; `with: user` tasks count as \"needs you\" with In Review and Blocked on the user; the sprint header shows how many `batch` tasks wait for the end-of-sprint review.\n\n## Tests\nComponent and e2e tests; screenshots.",
+      "requirements": [
+        "SR-6.6",
+        "SR-7.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-313",
+        "T-314",
+        "T-295"
+      ],
+      "files": [
+        "dashboard/src/components/KanbanCard.svelte",
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/components/NeedsYouMenu.svelte",
+        "dashboard/src/components/SprintHeader.svelte"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-317",
+      "name": "Agent sandbox and security doc for review modes and with: user",
+      "phase": 27,
+      "type": "infra",
+      "priority": "P2",
+      "labels": [
+        "sprints",
+        "security"
+      ],
+      "description": "Review modes, review states, `sprint_review` and `with: user` are fields agents act on, so per `CLAUDE.md` (Security) run the agent sandbox and update `docs/security-architecture.md`: that a task can't make an agent skip its review or claim to be approved (only the commands set these, and `atm done` refuses by mode), and what `with: user` keeps unattended loops from doing. Ask the user to run the sandbox if no key is available; don't look for one.",
+      "requirements": [],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-315",
+        "T-314"
+      ],
+      "files": [
+        "docs/security-architecture.md"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-318",
+      "name": "Resolution and relations in atm-cli",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "sprints",
+        "cli"
+      ],
+      "description": "SR-2.8 and §3.4.\n\n## Change\n- `resolution` on done and skipped tasks: `atm done [--resolution]` (`done` default), `atm skip --reason … [--resolution wont_do|obsolete|duplicate] [--duplicate-of ID]` (`wont_do` default); `duplicate_of` requires the `duplicate` resolution and an existing task (either file).\n- `related` (task IDs) via `add` / `edit --related` (already parsed), stored on one side; `atm show` lists it on both and shows \"duplicated by\".\n- Neither affects readiness. The merge driver merges `related` as a set.\n\n## Tests\nScenarios for each.",
+      "requirements": [
+        "SR-2.8"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-287"
+      ],
+      "files": [
+        "atm-cli/atm/status_cmds.py",
+        "atm-cli/atm/query.py",
+        "atm-cli/atm/merge.py",
+        "tests/scripts/scenarios/skip.json"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
+      "created_by": "Hakan Serce",
+      "updated_by": "Hakan Serce"
+    },
+    {
+      "id": "T-319",
+      "name": "Resolution and relations on the dashboard",
+      "phase": 27,
+      "type": "feature",
+      "priority": "P3",
+      "labels": [
+        "sprints",
+        "dashboard"
+      ],
+      "description": "SR-7.6 (relations part): the detail panel shows the resolution, related tasks (both ways) and duplicates (\"duplicate of\", \"duplicated by\"), each linked; the Progress tab counts \"won't do\" and \"obsolete\" apart from done.\n\n## Tests\nComponent and e2e tests.",
+      "requirements": [
+        "SR-7.6"
+      ],
+      "use_cases": [],
+      "status": "todo",
+      "dependencies": [
+        "T-318",
+        "T-293"
+      ],
+      "files": [
+        "dashboard/src/components/DetailPanel.svelte",
+        "dashboard/src/lib/insights.ts"
+      ],
+      "created_at": "2026-10-31T00:07:18Z",
+      "updated_at": "2026-10-31T00:07:18Z",
       "created_by": "Hakan Serce",
       "updated_by": "Hakan Serce"
     }

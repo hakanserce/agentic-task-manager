@@ -3600,6 +3600,117 @@ def sprints_start(paths, args):
     out(to_json(sprint) if args.json else f"The sprint “{sprint['id']}” is now active.")
 
 
+def in_sprint(task, sprint):
+    """Whether the task is in the sprint (names compare case-insensitively)."""
+    return (
+        isinstance(task, dict)
+        and isinstance(task.get("sprint"), str)
+        and task["sprint"].casefold() == sprint["id"].casefold()
+    )
+
+
+def added_mid_sprint(task, sprint):
+    """Whether the task joined the sprint after it started: its history entry for the sprint (the last one) begins
+    after the sprint's start (SR-2.5)."""
+    entries = [
+        e
+        for e in task.get("sprint_history") or []
+        if isinstance(e, dict) and isinstance(e.get("sprint"), str) and e["sprint"].casefold() == sprint["id"].casefold()
+    ]
+    start = sprint.get("start")
+    return bool(entries and start and isinstance(entries[-1].get("from"), str) and entries[-1]["from"] > start)
+
+
+def carry_target(data, vocab, sprint, args, taken):
+    """Where --carry-to sends the unfinished tasks: a sprint ID, None for the backlog, or a new planned sprint (added
+    to meta.sprints after the one closing). Returns (target, created sprint or None)."""
+    to = args.carry_to
+    if args.new_name and to != "new":
+        raise AtmError("--name names a new sprint: use it with --carry-to new", 2)
+    if to == "backlog":
+        return None, None
+    if to == "new":
+        name = (args.new_name or "").strip() or generate_sprint_name(vocab["sprint_names"], taken)
+        if find_sprint(vocab, name):
+            raise AtmError(f"there is already a sprint {find_sprint(vocab, name)['id']!r}", 2)
+        if len(name) > MAX_SPRINT_NAME:
+            raise AtmError(f"a sprint name is at most {MAX_SPRINT_NAME} characters", 2)
+        created = {"id": name, "state": "planned"}
+        sprints = data["meta"]["sprints"]
+        sprints.insert(next(i for i, s in enumerate(sprints) if s.get("id") == sprint["id"]) + 1, created)
+        return name, created
+    target = open_sprint(vocab, to)
+    if target == sprint["id"]:
+        raise AtmError(f"the tasks can't be carried to the sprint that is closing ({sprint['id']!r})", 2)
+    return target, None
+
+
+def sprints_close(paths, args):
+    """Close a sprint (SR-4.3): its unfinished tasks go to --carry-to, keeping their status and history (SR-4.5); the
+    sprint gets `end` and its report {done, carried, added, to}."""
+    actor = agent_identity(args.agent)
+    with locked(paths["dir"]):
+        data = load_tasks(paths)
+        archived = load_archive(paths)["tasks"]
+        vocab = vocabulary(data)
+        sprint = stored_sprint(data, args.name)
+        if sprint.get("state") == "closed":
+            raise AtmError(f"the sprint {sprint['id']!r} is already closed", 2)
+        own = [t for t in data["tasks"] if in_sprint(t, sprint)]
+        own_archived = [t for t in archived if in_sprint(t, sprint)]
+
+        def kind(task):
+            return kind_of(vocab, task.get("status"))
+
+        claimed = [t["id"] for t in own if kind(t) == "active"]
+        if claimed:
+            raise AtmError(
+                f"{', '.join(claimed)} {'is' if len(claimed) == 1 else 'are'} in progress: finish or release "
+                f"{'it' if len(claimed) == 1 else 'them'} before closing the sprint",
+                2,
+            )
+        unfinished = [t for t in own if kind(t) not in ("done", "skipped")]
+        if unfinished and not args.carry_to:
+            ids = ", ".join(t["id"] for t in unfinished)
+            raise AtmError(
+                f"{ids} {'is' if len(unfinished) == 1 else 'are'}n't finished: say where "
+                f"{'it goes' if len(unfinished) == 1 else 'they go'} with --carry-to <sprint>, new or backlog",
+                2,
+            )
+        target, created = (None, None)
+        if unfinished:
+            target, created = carry_target(data, vocab, sprint, args, taken_names(data, archived))
+        stamp = now_iso()
+        report = {
+            "done": [t["id"] for t in own + own_archived if kind(t) == "done"],
+            "carried": [t["id"] for t in unfinished],
+            "added": [t["id"] for t in own + own_archived if added_mid_sprint(t, sprint)],
+        }
+        if unfinished:
+            report["to"] = target or "backlog"
+        for task in unfinished:
+            set_sprint(task, target, stamp)
+            touch(task, actor, stamp)
+        was_active = sprint.get("state") == "active"
+        sprint["state"] = "closed"
+        sprint["end"] = stamp
+        sprint["report"] = report
+        vocabulary(data)
+        write_json_atomic(paths["tasks"], data)
+    if args.json:
+        out(to_json({"sprint": sprint, "created": created}))
+        return
+    line = f"Closed the sprint “{sprint['id']}”: {len(report['done'])} done"
+    if report["carried"]:
+        where = "the backlog" if target is None else f"“{target}”" + (" (new, planned)" if created else "")
+        line += f", {len(report['carried'])} carried to {where} ({', '.join(report['carried'])})"
+    if report["added"]:
+        line += f", {len(report['added'])} added mid-sprint"
+    out(line + ".")
+    if was_active:
+        out("No sprint is active now: start the next one (atm sprints start <name>), or plan one with /atm:plan-sprint.")
+
+
 def cmd_sprints(args):
     paths = find_paths(os.getcwd())
     if args.action in (None, "list"):
@@ -3611,7 +3722,7 @@ def cmd_sprints(args):
     else:
         if not args.name:
             raise AtmError(f"atm sprints {args.action} needs a sprint name", 2)
-        (sprints_edit if args.action == "edit" else sprints_start)(paths, args)
+        {"edit": sprints_edit, "start": sprints_start, "close": sprints_close}[args.action](paths, args)
 
 
 def move_target(vocab, task, to):
@@ -5663,8 +5774,11 @@ commands:
                  file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
   sprints [--all] | sprints add ["<name>"] [--goal T] [--release R] [--due DATE] [--after S]
           | sprints edit <S> [--goal] [--release] [--due] | sprints start <S>
+          | sprints close <S> [--carry-to <S2>|new [--name N]|backlog]
                  the sprints in order with their task counts (closed ones with --all); add one (a name is
-                 generated without one), change one, or make one active (one at a time)
+                 generated without one), change one, make one active (one at a time), or close one: its
+                 unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
+                 keeps a report of what was done, carried and added mid-sprint
   move <id>... --to <sprint>|next|active|backlog
                  move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
                  the backlog (claimed and finished tasks stay where they are)
@@ -5978,8 +6092,15 @@ def build_parser():
     phases.add_argument("name", nargs="?", help="name: the phase's name")
     phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
     sprints = command("sprints", cmd_sprints, "the sprints with their task counts; add, edit or start one")
-    sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start"], help="what to do")
+    sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start", "close"], help="what to do")
     sprints.add_argument("name", nargs="?", help="the sprint's name (add: generated when left out)")
+    sprints.add_argument(
+        "--carry-to", metavar="WHERE", help="close: where unfinished tasks go: a sprint's name, new, or backlog"
+    )
+    sprints.add_argument(
+        "--name", dest="new_name", metavar="NAME", help="close --carry-to new: the new sprint's name (default: generated)"
+    )
+    agent_option(sprints)
     sprints.add_argument("--all", action="store_true", help="list: the closed sprints too")
     sprints.add_argument("--goal", help="add, edit: what the sprint is for (empty: remove it)")
     sprints.add_argument("--release", help="add, edit: the release it delivers to (empty: remove it)")

@@ -108,8 +108,11 @@ commands:
                  file inside the project, at most 512 KB); without one, a logo.svg, .github/logo.png, ... is used
   sprints [--all] | sprints add ["<name>"] [--goal T] [--release R] [--due DATE] [--after S]
           | sprints edit <S> [--goal] [--release] [--due] | sprints start <S>
+          | sprints close <S> [--carry-to <S2>|new [--name N]|backlog]
                  the sprints in order with their task counts (closed ones with --all); add one (a name is
-                 generated without one), change one, or make one active (one at a time)
+                 generated without one), change one, make one active (one at a time), or close one: its
+                 unfinished tasks go to --carry-to (needed when there are any), keeping their status, and it
+                 keeps a report of what was done, carried and added mid-sprint
   move <id>... --to <sprint>|next|active|backlog
                  move to-do, blocked or in-review tasks into a sprint, the next planned one, the active one, or
                  the backlog (claimed and finished tasks stay where they are)
@@ -423,8 +426,15 @@ def build_parser():
     phases.add_argument("name", nargs="?", help="name: the phase's name")
     phases.add_argument("--archived", action="store_true", help="list: count the archived tasks too")
     sprints = command("sprints", cmd_sprints, "the sprints with their task counts; add, edit or start one")
-    sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start"], help="what to do")
+    sprints.add_argument("action", nargs="?", choices=["list", "add", "edit", "start", "close"], help="what to do")
     sprints.add_argument("name", nargs="?", help="the sprint's name (add: generated when left out)")
+    sprints.add_argument(
+        "--carry-to", metavar="WHERE", help="close: where unfinished tasks go: a sprint's name, new, or backlog"
+    )
+    sprints.add_argument(
+        "--name", dest="new_name", metavar="NAME", help="close --carry-to new: the new sprint's name (default: generated)"
+    )
+    agent_option(sprints)
     sprints.add_argument("--all", action="store_true", help="list: the closed sprints too")
     sprints.add_argument("--goal", help="add, edit: what the sprint is for (empty: remove it)")
     sprints.add_argument("--release", help="add, edit: the release it delivers to (empty: remove it)")

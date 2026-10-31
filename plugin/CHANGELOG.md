@@ -22,6 +22,11 @@ priority alone, `--phase` would select nothing; nothing is lost or rewritten).
   working on files not yet migrated.
 
 ### Added
+- **`atm sprints close <S> [--carry-to <S2> | new [--name N] | backlog]`** (T-299, SR-4.3, SR-4.5): refused while a
+  task in the sprint is in progress; its unfinished tasks (to do, blocked, in review) go to `--carry-to`, needed when
+  there are any, keeping their status and `sprint_history` (`new` adds a planned sprint right after it, named or
+  generated); the sprint becomes `closed` with `end` and `report: {done, carried, added, to}` (`done` counts archived
+  tasks too; `added`: joined after the sprint's `start`). `atm sprints` takes `--agent`.
 - **Sprint header** (T-295, SR-7.2, `SprintHeader.svelte`): above the Kanban, List and Graph, the sprint the Sprint
   filter selects, or the active one when it selects none: its name (and state, when not active), goal, due date
   ("due in 3 days", "2 days overdue" in red), release, progress (done of the tasks not skipped) and, from

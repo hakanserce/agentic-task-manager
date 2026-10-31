@@ -1,0 +1,292 @@
+[
+  {
+    "name": "close carries unfinished tasks to a planned sprint, keeping status and history; the report lists done, carried and added",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "Now", "state": "active", "start": "2026-05-01T09:00:00Z" },
+              { "id": "Next", "state": "planned" }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-04-30T09:00:00Z" }]
+            },
+            {
+              "id": "T-2",
+              "status": "in_review",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-05-03T09:00:00Z" }]
+            },
+            {
+              "id": "T-3",
+              "status": "skipped",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-04-30T09:00:00Z" }]
+            },
+            { "id": "T-4", "status": "todo" }
+          ]
+        },
+        ".agentic-task-manager/tasks-archive.json": {
+          "tasks": [
+            {
+              "id": "T-0",
+              "status": "done",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-04-30T09:00:00Z" }]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["sprints", "close", "Now", "--carry-to", "Next"],
+    "env": { "ATM_NOW": "2026-05-10T18:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdout": "Closed the sprint “Now”: 2 done, 1 carried to “Next” (T-2), 1 added mid-sprint.\nNo sprint is active now: start the next one (atm sprints start <name>), or plan one with /atm:plan-sprint.\n",
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Now",
+                "state": "closed",
+                "start": "2026-05-01T09:00:00Z",
+                "end": "2026-05-10T18:00:00Z",
+                "report": { "done": ["T-1", "T-0"], "carried": ["T-2"], "added": ["T-2"], "to": "Next" }
+              },
+              { "id": "Next", "state": "planned" }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "done",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-04-30T09:00:00Z" }]
+            },
+            {
+              "id": "T-2",
+              "status": "in_review",
+              "sprint": "Next",
+              "sprint_history": [
+                { "sprint": "Now", "from": "2026-05-03T09:00:00Z", "to": "2026-05-10T18:00:00Z" },
+                { "sprint": "Next", "from": "2026-05-10T18:00:00Z" }
+              ],
+              "updated_at": "2026-05-10T18:00:00Z",
+              "updated_by": "alice"
+            },
+            {
+              "id": "T-3",
+              "status": "skipped",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-04-30T09:00:00Z" }]
+            },
+            { "id": "T-4", "status": "todo" }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "close --carry-to new makes a planned sprint right after it, named or generated",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "Now", "state": "active", "start": "2026-05-01T09:00:00Z" },
+              { "id": "Later", "state": "planned" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "todo", "sprint": "Now" }]
+        }
+      }
+    },
+    "args": ["sprints", "close", "Now", "--carry-to", "new", "--name", "Polish", "--json"],
+    "env": { "ATM_NOW": "2026-05-10T18:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "json": {
+        "sprint": {
+          "id": "Now",
+          "state": "closed",
+          "start": "2026-05-01T09:00:00Z",
+          "end": "2026-05-10T18:00:00Z",
+          "report": { "done": [], "carried": ["T-1"], "added": [], "to": "Polish" }
+        },
+        "created": { "id": "Polish", "state": "planned" }
+      },
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Now",
+                "state": "closed",
+                "start": "2026-05-01T09:00:00Z",
+                "end": "2026-05-10T18:00:00Z",
+                "report": { "done": [], "carried": ["T-1"], "added": [], "to": "Polish" }
+              },
+              { "id": "Polish", "state": "planned" },
+              { "id": "Later", "state": "planned" }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "todo",
+              "sprint": "Polish",
+              "sprint_history": [{ "sprint": "Polish", "from": "2026-05-10T18:00:00Z" }],
+              "updated_at": "2026-05-10T18:00:00Z",
+              "updated_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "close --carry-to backlog takes the unfinished tasks out of any sprint",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "blocked",
+              "sprint": "Now",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-05-01T09:00:00Z" }]
+            }
+          ]
+        }
+      }
+    },
+    "args": ["sprints", "close", "Now", "--carry-to", "backlog"],
+    "env": { "ATM_NOW": "2026-05-10T18:00:00Z", "ATM_AGENT": "alice" },
+    "expect": {
+      "stdoutIncludes": ["Closed the sprint “Now”: 0 done, 1 carried to the backlog (T-1)."],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              {
+                "id": "Now",
+                "state": "closed",
+                "end": "2026-05-10T18:00:00Z",
+                "report": { "done": [], "carried": ["T-1"], "added": [], "to": "backlog" }
+              }
+            ]
+          },
+          "tasks": [
+            {
+              "id": "T-1",
+              "status": "blocked",
+              "sprint_history": [{ "sprint": "Now", "from": "2026-05-01T09:00:00Z", "to": "2026-05-10T18:00:00Z" }],
+              "updated_at": "2026-05-10T18:00:00Z",
+              "updated_by": "alice"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "a finished sprint closes without --carry-to",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }, { "id": "Next" }] },
+          "tasks": [{ "id": "T-1", "status": "done", "sprint": "Now" }]
+        }
+      }
+    },
+    "args": ["sprints", "close", "Now"],
+    "env": { "ATM_NOW": "2026-05-10T18:00:00Z" },
+    "expect": {
+      "stdoutIncludes": ["Closed the sprint “Now”: 1 done."]
+    }
+  },
+  {
+    "name": "close refuses while a task in the sprint is claimed, and without --carry-to when tasks are unfinished",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "in_progress", "sprint": "Now" },
+            { "id": "T-2", "status": "todo", "sprint": "Now" }
+          ]
+        }
+      }
+    },
+    "args": ["sprints", "close", "Now", "--carry-to", "backlog"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["T-1 is in progress: finish or release it before closing the sprint"],
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "in_progress", "sprint": "Now" },
+            { "id": "T-2", "status": "todo", "sprint": "Now" }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "unfinished tasks need --carry-to",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": { "sprints": [{ "id": "Now", "state": "active" }] },
+          "tasks": [
+            { "id": "T-1", "status": "todo", "sprint": "Now" },
+            { "id": "T-2", "status": "in_review", "sprint": "Now" }
+          ]
+        }
+      }
+    },
+    "args": ["sprints", "close", "Now"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["T-1, T-2 aren't finished: say where they go with --carry-to <sprint>, new or backlog"]
+    }
+  },
+  {
+    "name": "close refuses a closed sprint, carrying to the closing sprint, and --name without --carry-to new",
+    "setup": {
+      "files": {
+        ".agentic-task-manager/tasks.json": {
+          "meta": {
+            "sprints": [
+              { "id": "Old", "state": "closed" },
+              { "id": "Now", "state": "active" }
+            ]
+          },
+          "tasks": [{ "id": "T-1", "status": "todo", "sprint": "Now" }]
+        }
+      },
+      "commands": [
+        [
+          "sh",
+          "-c",
+          "\"$ATM\" sprints close Old 2>> out.txt; \"$ATM\" sprints close Now --carry-to Now 2>> out.txt; \"$ATM\" sprints close Now --carry-to backlog --name X 2>> out.txt; true"
+        ]
+      ]
+    },
+    "args": ["sprints", "close", "Now", "--carry-to", "Old"],
+    "expect": {
+      "exit": 2,
+      "stderrIncludes": ["closed"],
+      "files": {
+        "out.txt": "atm: the sprint 'Old' is already closed\natm: the tasks can't be carried to the sprint that is closing ('Now')\natm: --name names a new sprint: use it with --carry-to new\n"
+      }
+    }
+  }
+]
